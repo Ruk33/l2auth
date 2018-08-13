@@ -3,8 +3,6 @@ Simple Lineage 2 C4 server written as a learning exercise.
 Currently working only in WINDOWS but it is intended to make it work in LINUX as well.
 
 DEPENDENCIES
-- tommcrypt (https://github.com/libtom/libtomcrypt) -> To be deprecated in favor of OpenSSL
-- tommmath (https://github.com/libtom/libtommath) -> To be deprecated in favor of OpenSSL
 - OpenSSL (https://www.openssl.org/)
 
 REQUIREMENTS
@@ -14,7 +12,7 @@ OPENSSL
 To avoid building it, use http://p-nand-q.com/programming/windows/building_openssl_with_visual_studio_2013.html/
 
 RUNNING THE SERVER
-- make CFLAGS='-I<path/to/libtomcrypt/src/headers> -I<path/to/libtommath> -I<path/to/openssl/include/openssl> -L<path/to/libtomcrypt-with-dll> -L<path/to/libtommath-with-dll> -L<path/to/openssl-with-dll>'
+- make CFLAGS='-I<path/to/openssl/include/openssl> -L<path/to/openssl-with-dll>'
 - ./a.exe
 
 The server will start listening to address 127.0.0.1 (local) and port 2106.

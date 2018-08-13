@@ -25,7 +25,7 @@ void l2_client_create(struct l2_client* client)
 {
     unsigned char blowfish_key[] = "_;5.]94-31==-%xT!^[$";
     l2_blowfish_key_build(&client->blowfish_key, blowfish_key, sizeof(blowfish_key));
-    l2_rsa_key_build(&client->rsa_key, L2_RSA_KEY_DEFAULT_SIZE_IN_BYTES, L2_RSA_KEY_DEFAULT_E);
+    l2_rsa_key_build(&client->rsa_key, L2_RSA_KEY_DEFAULT_SIZE_IN_BITS, L2_RSA_KEY_DEFAULT_E);
 }
 
 void l2_client_accept(struct l2_client* client, struct l2_socket* server)
