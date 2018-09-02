@@ -8,7 +8,7 @@
 #define L2_SOCKET_WIN_ACCEPT_ERROR 5
 
 struct l2_socket {
-  void* socket;
+  int socket;
   struct l2_socket_strategy* strategy;
 };
 
