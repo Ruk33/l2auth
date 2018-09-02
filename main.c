@@ -1,4 +1,4 @@
-#include <socket_strategy/socket_strategy_windows.c>
+#include <socket_strategy/socket_strategy_linux.c>
 #include <core/l2_socket.c>
 #include <core/l2_server.c>
 #include <core/l2_client.c>
@@ -16,10 +16,10 @@ int main()
     struct l2_packet server_packet;
     struct l2_packet client_packet;
 
-    printf("Listening for connections\n");
+    printf("Listening for connections using Linux socket strategy\n");
     fflush(stdout);
 
-    socket_strategy_windows(&server_strategy);
+    socket_strategy_linux(&server_strategy);
     l2_server_create(&server, &server_strategy, 2106);
     l2_client_accept(&client, &server);
 
