@@ -1,21 +1,18 @@
 L2 AUTH
 Simple Lineage 2 C4 server written as a learning exercise.
-Currently working only in WINDOWS but it is intended to make it work in LINUX as well.
+Currently working in WINDOWS & LINUX (thanks to Docker).
 
-DEPENDENCIES
-- OpenSSL (https://www.openssl.org/)
+USING DOCKER
+- Install docker & docker-compose
+- `docker-compose up`
+- Server will start listening to address 127.0.0.1 (local) and port 2106.
 
-REQUIREMENTS
-- cygwin (http://www.cygwin.com/)
-
-OPENSSL
-To avoid building it, use http://p-nand-q.com/programming/windows/building_openssl_with_visual_studio_2013.html/
-
-RUNNING THE SERVER
-- make CFLAGS='-I<path/to/openssl/include/openssl> -L<path/to/openssl-with-dll>'
-- ./a.exe
-
-The server will start listening to address 127.0.0.1 (local) and port 2106.
+WITHOUT DOCKER
+- If using Windows, get cygwin
+- Get OpenSSL
+- `make CFLAGS='-I<path/to/openssl/include/openssl> -L<path/to/openssl-with-dll>' -o l2auth`
+- Run executable `l2auth`
+- Server will start listening to address 127.0.0.1 (local) and port 2106.
 
 WHAT TO EXPECT
 Right now, the server will listen for only one connection.
