@@ -1,28 +1,76 @@
 #ifndef L2AUTH_PACKET_C
 #define L2AUTH_PACKET_C
 
+#include <stdlib.h>
 #include <string.h>
+#include <core/l2_raw_packet.c>
 
-struct l2_packet {
-  char buffer[65535];
-  unsigned short size;
-};
+typedef l2_raw_packet l2_packet;
+typedef unsigned char l2_packet_type;
 
-void packet_init(struct l2_packet *packet, char packet_type)
+void l2_packet_init(
+        l2_packet* packet,
+        l2_packet_type type,
+        unsigned char* content,
+        unsigned short content_size
+)
 {
-    packet->buffer[0] = packet_type;
-    packet->size = 1;
+        unsigned short packet_size = sizeof(l2_packet_type) + content_size;
+        unsigned char packet_content[packet_size];
+
+        if (!packet || !content)
+                return;
+        
+        memcpy(packet_content, &type, sizeof(type));
+        memcpy(packet_content + sizeof(type), content, content_size);
+
+        l2_raw_packet_init(packet, packet_content, packet_size);
 }
 
-void packet_reset(struct l2_packet *packet)
+unsigned short l2_packet_calc_required_mem(unsigned short content_size)
 {
-    packet->size = 0;
+        return (
+                l2_raw_packet_calc_required_mem(content_size) +
+                sizeof(l2_packet_type)
+        );
 }
 
-void packet_write(struct l2_packet* packet, const void* data, unsigned short data_size)
+l2_packet* l2_packet_new(
+        l2_packet_type type,
+        unsigned char* content,
+        unsigned short content_size
+)
 {
-    memcpy(packet->buffer+packet->size, data, data_size);
-    packet->size += data_size;
+        l2_packet* packet = calloc(
+                l2_packet_calc_required_mem(content_size),
+                sizeof(l2_packet)
+        );
+
+        l2_packet_init(packet, type, content, content_size);
+
+        return packet;
+}
+
+l2_packet_type l2_packet_get_type(l2_packet* packet)
+{
+        l2_packet_type type = 0;
+        l2_raw_packet_content(packet, &type, 0, sizeof(type));
+        return type;
+}
+
+void l2_packet_content(
+        l2_packet* packet,
+        unsigned char* dest,
+        unsigned short start,
+        unsigned short end
+)
+{
+        l2_raw_packet_content(
+                packet,
+                dest,
+                sizeof(l2_packet_type) + start,
+                end
+        );
 }
 
 #endif //L2AUTH_PACKET_C

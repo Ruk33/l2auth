@@ -5,15 +5,18 @@
 
 enum login_fail_reason
 {
-  LOGIN_FAIL_REASON_USER_OR_PASSWORD_WRONG = 0x03
+        LOGIN_FAIL_REASON_USER_OR_PASSWORD_WRONG = 0x03
 };
 
-void server_packet_login_fail(struct l2_packet* packet, enum login_fail_reason reason)
+l2_packet* server_packet_login_fail(enum login_fail_reason reason)
 {
-    char packet_id = 0x01;
+        l2_packet_type type = 0x01;
 
-    packet_init(packet, packet_id);
-    packet_write(packet, (char*) &reason, sizeof(reason));
+        return l2_packet_new(
+                type,
+                (unsigned char*) &reason,
+                sizeof(reason)
+        );
 }
 
 #endif //L2AUTH_SERVER_PACKET_LOGIN_FAIL_C
