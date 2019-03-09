@@ -55,3 +55,4 @@ cmake-build-debug/
 build/
 .idea/
 .vscode/
+infer-out
