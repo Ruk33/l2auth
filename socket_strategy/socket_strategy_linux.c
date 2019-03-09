@@ -9,50 +9,74 @@
 
 int socket_strategy_linux_connect(struct l2_socket* l2_socket)
 {
-    return (l2_socket->socket = socket(AF_INET, SOCK_STREAM, 0));
+        return (l2_socket->socket = socket(AF_INET, SOCK_STREAM, 0));
 }
 
-int socket_strategy_linux_bind(struct l2_socket* l2_socket, unsigned short port)
+int socket_strategy_linux_bind(
+        struct l2_socket* l2_socket,
+        unsigned short port
+)
 {
-    struct sockaddr_in addr;
+        struct sockaddr_in addr;
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port = htons(port);
 
-    return bind(l2_socket->socket, (struct sockaddr *)&addr, sizeof(addr));
+        return bind(
+                l2_socket->socket,
+                (struct sockaddr *)&addr,
+                sizeof(addr)
+        );
 }
 
 int socket_strategy_linux_listen(struct l2_socket* l2_socket)
 {
-    return listen(l2_socket->socket, 3);
+        return listen(l2_socket->socket, 3);
 }
 
-int socket_strategy_linux_accept(struct l2_socket* server, struct l2_socket* client)
+int socket_strategy_linux_accept(
+        struct l2_socket* server,
+        struct l2_socket* client
+)
 {
-    struct sockaddr_in addr;
-    int addr_size = sizeof(addr);
-    return (client->socket = accept(server->socket, (struct sockaddr*) &addr, &addr_size));
+        struct sockaddr_in addr;
+        int addr_size = sizeof(addr);
+        client->socket = accept(
+                server->socket,
+                (struct sockaddr*) &addr,
+                &addr_size
+        );
+
+        return client->socket;
 }
 
-int socket_strategy_linux_receive(struct l2_socket* l2_socket, char* buffer, int buffer_size)
+int socket_strategy_linux_receive(
+        struct l2_socket* l2_socket,
+        unsigned char* buffer,
+        int buffer_size
+)
 {
-    return recv(l2_socket->socket, buffer, buffer_size, 0);
+        return recv(l2_socket->socket, buffer, buffer_size, 0);
 }
 
-int socket_strategy_linux_send(struct l2_socket* l2_socket, char* buffer, int buffer_size)
+int socket_strategy_linux_send(
+        struct l2_socket* l2_socket,
+        unsigned char* buffer,
+        int buffer_size
+)
 {
-    return send(l2_socket->socket, buffer, buffer_size, 0);
+        return send(l2_socket->socket, buffer, buffer_size, 0);
 }
 
 void socket_strategy_linux(struct l2_socket_strategy* socket_strategy)
 {
-    socket_strategy->connect = socket_strategy_linux_connect;
-    socket_strategy->bind = socket_strategy_linux_bind;
-    socket_strategy->listen = socket_strategy_linux_listen;
-    socket_strategy->accept = socket_strategy_linux_accept;
-    socket_strategy->receive = socket_strategy_linux_receive;
-    socket_strategy->send = socket_strategy_linux_send;
+        socket_strategy->connect = socket_strategy_linux_connect;
+        socket_strategy->bind = socket_strategy_linux_bind;
+        socket_strategy->listen = socket_strategy_linux_listen;
+        socket_strategy->accept = socket_strategy_linux_accept;
+        socket_strategy->receive = socket_strategy_linux_receive;
+        socket_strategy->send = socket_strategy_linux_send;
 }
 
 #endif //L2AUTH_SOCKET_STRATEGY_LINUX_C
