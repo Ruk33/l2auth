@@ -17,7 +17,7 @@ void l2_blowfish_key_build(
         int raw_key_size
 )
 {
-        memcpy(key->raw_key, raw_key, raw_key_size);
+        memcpy(key->raw_key, raw_key, (size_t) raw_key_size);
         BF_set_key(&key->key, raw_key_size, key->raw_key);
 }
 

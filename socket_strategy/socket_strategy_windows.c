@@ -1,6 +1,7 @@
 #ifndef L2AUTH_SOCKET_STRATEGY_WINDOWS_C
 #define L2AUTH_SOCKET_STRATEGY_WINDOWS_C
 
+#include <sys/types.h>
 #include <windows.h>
 #include <winsock2.h>
 #include <core/l2_socket.c>
@@ -65,19 +66,19 @@ int socket_strategy_windows_accept(
         return 0;
 }
 
-int socket_strategy_windows_receive(
+ssize_t socket_strategy_windows_receive(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
-        int buffer_size
+        size_t buffer_size
 )
 {
         return recv((SOCKET) l2_socket->socket, buffer, buffer_size, 0);
 }
 
-int socket_strategy_windows_send(
+ssize_t socket_strategy_windows_send(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
-        int buffer_size
+        size_t buffer_size
 )
 {
         return send((SOCKET) l2_socket->socket, buffer, buffer_size, 0);

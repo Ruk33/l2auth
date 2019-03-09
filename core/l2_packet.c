@@ -15,7 +15,7 @@ void l2_packet_init(
         unsigned short content_size
 )
 {
-        unsigned short packet_size = sizeof(l2_packet_type) + content_size;
+        l2_raw_packet_size packet_size = (l2_raw_packet_size) (sizeof(l2_packet_type) + content_size);
         unsigned char packet_content[packet_size];
 
         if (!packet || !content)
@@ -27,10 +27,10 @@ void l2_packet_init(
         l2_raw_packet_init(packet, packet_content, packet_size);
 }
 
-unsigned short l2_packet_calc_required_mem(unsigned short content_size)
+l2_raw_packet_size l2_packet_calculate_size(unsigned short content_size)
 {
-        return (
-                l2_raw_packet_calc_required_mem(content_size) +
+        return (l2_raw_packet_size) (
+                l2_raw_packet_calculate_size(content_size) +
                 sizeof(l2_packet_type)
         );
 }
@@ -42,7 +42,7 @@ l2_packet* l2_packet_new(
 )
 {
         l2_packet* packet = calloc(
-                l2_packet_calc_required_mem(content_size),
+                l2_packet_calculate_size(content_size),
                 sizeof(l2_packet)
         );
 
@@ -68,7 +68,7 @@ void l2_packet_content(
         l2_raw_packet_content(
                 packet,
                 dest,
-                sizeof(l2_packet_type) + start,
+                (unsigned short) (sizeof(l2_packet_type) + start),
                 end
         );
 }

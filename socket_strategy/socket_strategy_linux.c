@@ -1,6 +1,7 @@
 #ifndef L2AUTH_SOCKET_STRATEGY_LINUX_C
 #define L2AUTH_SOCKET_STRATEGY_LINUX_C
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -41,7 +42,7 @@ int socket_strategy_linux_accept(
 )
 {
         struct sockaddr_in addr;
-        int addr_size = sizeof(addr);
+        socklen_t addr_size = (socklen_t) sizeof(addr);
         client->socket = accept(
                 server->socket,
                 (struct sockaddr*) &addr,
@@ -51,19 +52,19 @@ int socket_strategy_linux_accept(
         return client->socket;
 }
 
-int socket_strategy_linux_receive(
+ssize_t socket_strategy_linux_receive(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
-        int buffer_size
+        size_t buffer_size
 )
 {
         return recv(l2_socket->socket, buffer, buffer_size, 0);
 }
 
-int socket_strategy_linux_send(
+ssize_t socket_strategy_linux_send(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
-        int buffer_size
+        size_t buffer_size
 )
 {
         return send(l2_socket->socket, buffer, buffer_size, 0);

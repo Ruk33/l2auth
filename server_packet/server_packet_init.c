@@ -9,25 +9,25 @@ l2_packet* server_packet_init(struct l2_rsa_key *rsa_key)
         l2_packet_type type = 0x00;
 
         unsigned char session_id[] = {
-                (char) 0xfd,
-                (char) 0x8a,
-                (char) 0x22,
-                (char) 0x00,
+                0xfd,
+                0x8a,
+                0x22,
+                0x00,
         };
 
         unsigned char protocol[] = {
-                (char) 0x5a,
-                (char) 0x78,
-                (char) 0x00,
-                (char) 0x00,
+                0x5a,
+                0x78,
+                0x00,
+                0x00,
         };
 
         int rsa_size = l2_rsa_key_size(rsa_key);
 
-        unsigned short content_size = (
+        unsigned short content_size = (unsigned short) (
                 sizeof(session_id) +
                 sizeof(protocol) +
-                rsa_size
+                (size_t) (rsa_size)
         );
 
         unsigned char content[content_size];

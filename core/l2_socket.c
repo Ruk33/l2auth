@@ -7,6 +7,8 @@
 #define L2_SOCKET_WIN_LISTEN_ERROR 4
 #define L2_SOCKET_WIN_ACCEPT_ERROR 5
 
+#include <sys/types.h>
+
 struct l2_socket {
         int socket;
         struct l2_socket_strategy* strategy;
@@ -17,8 +19,8 @@ struct l2_socket_strategy {
         int (* bind)(struct l2_socket* l2_socket, unsigned short port);
         int (* listen)(struct l2_socket* l2_socket);
         int (* accept)(struct l2_socket* server, struct l2_socket* client);
-        int (* receive)(struct l2_socket* l2_socket, unsigned char* buffer, int buffer_size);
-        int (* send)(struct l2_socket* l2_socket, unsigned char* buffer, int buffer_size);
+        ssize_t (* receive)(struct l2_socket* l2_socket, unsigned char* buffer, size_t buffer_size);
+        ssize_t (* send)(struct l2_socket* l2_socket, unsigned char* buffer, size_t buffer_size);
 };
 
 int l2_socket_connect(struct l2_socket* l2_socket, struct l2_socket_strategy* socket_type)
@@ -43,12 +45,12 @@ int l2_socket_accept(struct l2_socket* server, struct l2_socket* client)
         return server->strategy->accept(server, client);
 }
 
-int l2_socket_receive(struct l2_socket* socket, unsigned char* buffer, int buffer_size)
+ssize_t l2_socket_receive(struct l2_socket* socket, unsigned char* buffer, size_t buffer_size)
 {
         return socket->strategy->receive(socket, buffer, buffer_size);
 }
 
-int l2_socket_send(struct l2_socket* socket, unsigned char* buffer, int buffer_size)
+ssize_t l2_socket_send(struct l2_socket* socket, unsigned char* buffer, size_t buffer_size)
 {
         return socket->strategy->send(socket, buffer, buffer_size);
 }
