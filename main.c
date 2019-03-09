@@ -13,8 +13,8 @@ int main()
     struct l2_socket server;
     struct l2_client client;
 
-    struct l2_packet server_packet;
-    struct l2_packet client_packet;
+    l2_packet* server_packet;
+    l2_packet* client_packet;
 
     printf("Listening for connections using Linux socket strategy\n");
     fflush(stdout);
@@ -31,7 +31,7 @@ int main()
     fflush(stdout);
 
     while (1) {
-        l2_client_wait_and_decrypt_packet(&client, &client_packet);
+        client_packet = l2_client_wait_and_decrypt_packet(&client);
         printf("Received data from client\n");
         fflush(stdout);
 
@@ -41,7 +41,7 @@ int main()
             break;
         }
 
-        switch (get_client_packet_type(&client_packet)) {
+        switch (get_client_packet_type(client_packet)) {
         case CLIENT_PACKET_TYPE_REQUEST_AUTH_LOGIN:
             //
             break;
@@ -53,11 +53,8 @@ int main()
             break;
         }
 
-        //decrypt_client_request(&key, client_buffer+2, recv_size-2, client_buffer_decrypt);
-        //packet_type = client_buffer_decrypt[0] & 0xff;
-
-        server_packet_login_fail(&server_packet, LOGIN_FAIL_REASON_USER_OR_PASSWORD_WRONG);
-        l2_client_encrypt_and_send_packet(&client, &server_packet);
+        server_packet = server_packet_login_fail(LOGIN_FAIL_REASON_USER_OR_PASSWORD_WRONG);
+        l2_client_encrypt_and_send_packet(&client, server_packet);
     }
 
     return 0;

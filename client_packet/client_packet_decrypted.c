@@ -5,23 +5,31 @@
 #include <core/l2_blowfish_key.c>
 #include <core/decrypt_client_request.c>
 
-void client_packet_decrypted(
-        struct l2_packet* packet,
+l2_raw_packet* client_packet_decrypted(
         struct l2_blowfish_key* blowfish_key,
-        char* raw_data,
-        int raw_data_size
+        unsigned char* data,
+        unsigned short data_size
 )
 {
-    char *raw_data_without_packet_size_header = raw_data+2;
-    int raw_data_size_without_packet_size_header = raw_data_size-2;
+        unsigned char packet_length_header_size = sizeof(unsigned short);
+        unsigned short data_size_without_packet_size_header = data_size - packet_length_header_size;
+        unsigned char decrypted_content[data_size_without_packet_size_header];
+        unsigned char *data_without_packet_size_header = data + packet_length_header_size;
 
-    packet_reset(packet);
-    decrypt_client_request(
-            blowfish_key,
-            raw_data_without_packet_size_header,
-            raw_data_size_without_packet_size_header,
-            packet->buffer
-    );
+        if (!data || !data_size)
+                return NULL;
+
+        decrypt_client_request(
+                blowfish_key,
+                data_without_packet_size_header,
+                data_size_without_packet_size_header,
+                decrypted_content
+        );
+
+        return l2_raw_packet_new(
+                decrypted_content,
+                data_size_without_packet_size_header
+        );
 }
 
 #endif //L2AUTH_CLIENT_PACKET_DECRYPTED_C
