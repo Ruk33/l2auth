@@ -1,6 +1,7 @@
 #ifndef L2AUTH_L2_CLIENT_C
 #define L2AUTH_L2_CLIENT_C
 
+#include <sys/types.h>
 #include <core/l2_socket.c>
 #include <core/l2_rsa_key.c>
 #include <core/l2_blowfish_key.c>
@@ -17,7 +18,7 @@ struct l2_client {
         struct l2_rsa_key rsa_key;
         struct l2_blowfish_key blowfish_key;
 
-        int received_data_size;
+        ssize_t received_data_size;
         unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
 };
 
@@ -61,7 +62,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct l2_client* client)
         return client_packet_decrypted(
                 &client->blowfish_key,
                 client->received_data,
-                client->received_data_size
+                (unsigned short) client->received_data_size
         );
 }
 

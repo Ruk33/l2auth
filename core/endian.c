@@ -18,19 +18,19 @@ unsigned int decode32be(const void* src)
 void encode32le(void* dst, unsigned int val)
 {
         unsigned char* buf = dst;
-        buf[0] = val;
-        buf[1] = val >> 8;
-        buf[2] = val >> 16;
-        buf[3] = val >> 24;
+        buf[0] = (unsigned char) val;
+        buf[1] = (unsigned char) (val >> 8);
+        buf[2] = (unsigned char) (val >> 16);
+        buf[3] = (unsigned char) (val >> 24);
 }
 
 void encode32be(void* dst, unsigned int val)
 {
         unsigned char* buf = dst;
-        buf[3] = val;
-        buf[2] = val >> 8;
-        buf[1] = val >> 16;
-        buf[0] = val >> 24;
+        buf[3] = (unsigned char) val;
+        buf[2] = (unsigned char) (val >> 8);
+        buf[1] = (unsigned char) (val >> 16);
+        buf[0] = (unsigned char) (val >> 24);
 }
 
 #endif //L2AUTH_ENDIAN_C
