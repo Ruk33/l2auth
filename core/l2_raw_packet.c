@@ -1,6 +1,7 @@
 #ifndef L2AUTH_RAW_PACKET_C
 #define L2AUTH_RAW_PACKET_C
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,6 +26,16 @@ void l2_raw_packet_init(
 
         memcpy(packet, &size_header, sizeof(size_header));
         memcpy(packet + sizeof(size_header), content, content_size);
+
+        printf("\nraw packet created");
+        printf("\npacket size: %d", size_header);
+        printf("\npacket bytes (including size header): ");
+
+        for (int i = 0; i < size_header; i++)
+                printf("%x ", packet[i]);
+
+        printf("\n");
+        fflush(stdout);
 }
 
 l2_raw_packet* l2_raw_packet_new(
@@ -62,7 +73,11 @@ void l2_raw_packet_content(
         if (!packet || !dest)
                 return;
         
-        memcpy(dest, packet + sizeof(l2_raw_packet_size) + start, end);
+        memcpy(
+                dest,
+                packet + sizeof(l2_raw_packet_size) + start,
+                end
+        );
 }
 
 #endif //L2AUTH_RAW_PACKET_C
