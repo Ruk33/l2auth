@@ -66,6 +66,24 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct l2_client* client)
         );
 }
 
+int l2_client_decrypt_client_packet(
+        struct l2_client* client,
+        l2_packet* packet,
+        unsigned char* dest
+)
+{
+        unsigned short packet_content_size = l2_packet_get_content_size(packet);
+        unsigned char packet_content[packet_content_size];
+
+        l2_packet_content(packet, packet_content, 0, packet_content_size);
+
+        return l2_rsa_key_decrypt(
+                &client->rsa_key,
+                packet_content,
+                dest
+        );
+}
+
 int l2_client_connection_ended(struct l2_client* client)
 {
         return client->received_data_size<=0;
