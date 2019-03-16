@@ -2,7 +2,7 @@
 #define L2AUTH_L2_CLIENT_C
 
 #include <sys/types.h>
-#include <libs/log.c/src/log.c>
+#include <log/log.h>
 #include <core/l2_socket.c>
 #include <core/l2_rsa_key.c>
 #include <core/l2_blowfish_key.c>

@@ -2,16 +2,9 @@ L2 AUTH
 Simple Lineage 2 C4 server written as a learning exercise.
 Currently working in WINDOWS & LINUX (thanks to Docker).
 
-USING DOCKER
+RUNNING THE SERVER USING DOCKER
 - Install docker & docker-compose
 - `docker-compose up`
-- Server will start listening to address 127.0.0.1 (local) and port 2106.
-
-WITHOUT DOCKER
-- If using Windows, get cygwin
-- Get OpenSSL
-- `make CFLAGS='-I<path/to/openssl/include/openssl> -L<path/to/openssl-with-dll>' -o l2auth`
-- Run executable `l2auth`
 - Server will start listening to address 127.0.0.1 (local) and port 2106.
 
 WHAT TO EXPECT
@@ -30,6 +23,8 @@ Please see doc/screenshot.
 
 CREDITS
 - l2jserver (http://l2jserver.com/)
+- http://fursoffers.narod.ru/Packets.htm
+- https://code.google.com/archive/p/l2adenalib/wikis/L2LoginServerProtocol.wiki
 
 LICENCE
 MIT
