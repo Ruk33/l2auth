@@ -1,6 +1,7 @@
 #ifndef L2AUTH_SOCKET_STRATEGY_LINUX_C
 #define L2AUTH_SOCKET_STRATEGY_LINUX_C
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -11,6 +12,12 @@
 int socket_strategy_linux_connect(struct l2_socket* l2_socket)
 {
         return (l2_socket->socket = socket(AF_INET, SOCK_STREAM, 0));
+}
+
+int socket_strategy_linux_close(struct l2_socket* l2_socket)
+{
+        shutdown(l2_socket->socket, SHUT_RDWR);
+        return close(l2_socket->socket);
 }
 
 int socket_strategy_linux_bind(
@@ -73,6 +80,7 @@ ssize_t socket_strategy_linux_send(
 void socket_strategy_linux(struct l2_socket_strategy* socket_strategy)
 {
         socket_strategy->connect = socket_strategy_linux_connect;
+        socket_strategy->close = socket_strategy_linux_close;
         socket_strategy->bind = socket_strategy_linux_bind;
         socket_strategy->listen = socket_strategy_linux_listen;
         socket_strategy->accept = socket_strategy_linux_accept;
