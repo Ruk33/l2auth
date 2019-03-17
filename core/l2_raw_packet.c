@@ -69,4 +69,10 @@ void l2_raw_packet_content(
         );
 }
 
+void l2_raw_packet_free(l2_raw_packet* packet)
+{
+        if (packet)
+                free(packet);
+}
+
 #endif //L2AUTH_RAW_PACKET_C

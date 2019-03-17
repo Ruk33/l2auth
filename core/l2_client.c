@@ -39,7 +39,7 @@ void l2_client_accept(struct l2_client* client, struct l2_socket* server)
         log_info("Connection accepted");
 }
 
-void l2_client_close(struct l2_client* client, struct l2_socket* server)
+void l2_client_close(struct l2_socket* server)
 {
         l2_socket_close(server);
         log_info("Connection closed");
@@ -65,11 +65,6 @@ void l2_client_encrypt_and_send_packet(struct l2_client* client, l2_raw_packet* 
 {
         l2_raw_packet *encrypted_packet = server_packet_encrypted(packet, &client->blowfish_key);
         l2_client_send_packet(client, encrypted_packet);
-}
-
-void l2_client_send_init_packet(struct l2_client* client)
-{
-        l2_client_send_packet(client, server_packet_init(&client->rsa_key));
 }
 
 l2_raw_packet* l2_client_wait_and_decrypt_packet(struct l2_client* client)
