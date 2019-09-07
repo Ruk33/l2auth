@@ -8,9 +8,8 @@
 #include <core/l2_blowfish_key.c>
 #include <core/l2_packet.c>
 #include <core/send_packet.c>
-#include <server_packet/server_packet_encrypted.c>
-#include <server_packet/server_packet_init.c>
-#include <client_packet/client_packet_decrypted.c>
+#include <packet/server/encrypt.c>
+#include <packet/client/decrypt.c>
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
 
@@ -32,7 +31,11 @@ void l2_client_create(struct l2_client* client)
         l2_rsa_key_build(&client->rsa_key);
 }
 
-void l2_client_accept(struct l2_client* client, struct l2_socket* server)
+void l2_client_accept
+(
+        struct l2_client* client,
+        struct l2_socket* server
+)
 {
         l2_socket_accept(server, &client->socket);
         l2_client_create(client);
@@ -45,7 +48,11 @@ void l2_client_close(struct l2_socket* server)
         log_info("Connection closed");
 }
 
-void l2_client_send_packet(struct l2_client* client, l2_raw_packet* packet)
+void l2_client_send_packet
+(
+        struct l2_client* client,
+        l2_raw_packet* packet
+)
 {
         l2_raw_packet_size packet_size = l2_raw_packet_get_size(packet);
         char printable[packet_size * 3];
@@ -61,13 +68,20 @@ void l2_client_send_packet(struct l2_client* client, l2_raw_packet* packet)
         log_info("Packet bytes: %s", printable);
 }
 
-void l2_client_encrypt_and_send_packet(struct l2_client* client, l2_raw_packet* packet)
+void l2_client_encrypt_and_send_packet
+(
+        struct l2_client* client,
+        l2_raw_packet* packet
+)
 {
-        l2_raw_packet *encrypted_packet = server_packet_encrypted(packet, &client->blowfish_key);
+        l2_raw_packet *encrypted_packet = packet_server_encrypt(packet, &client->blowfish_key);
         l2_client_send_packet(client, encrypted_packet);
 }
 
-l2_raw_packet* l2_client_wait_and_decrypt_packet(struct l2_client* client)
+l2_raw_packet* l2_client_wait_and_decrypt_packet
+(
+        struct l2_client* client
+)
 {
         client->received_data_size = l2_socket_receive(
                 &client->socket,
@@ -77,14 +91,15 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct l2_client* client)
 
         log_info("Received data from client");
 
-        return client_packet_decrypted(
+        return packet_client_decrypt(
                 &client->blowfish_key,
                 client->received_data,
                 (unsigned short) client->received_data_size
         );
 }
 
-int l2_client_decrypt_client_packet(
+int l2_client_decrypt_client_packet
+(
         struct l2_client* client,
         l2_packet* packet,
         unsigned char* dest
@@ -107,4 +122,4 @@ int l2_client_connection_ended(struct l2_client* client)
         return client->received_data_size <= 0;
 }
 
-#endif //L2AUTH_L2_CLIENT_C
+#endif

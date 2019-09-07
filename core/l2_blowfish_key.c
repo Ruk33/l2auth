@@ -11,7 +11,8 @@ struct l2_blowfish_key {
         BF_KEY key;
 };
 
-void l2_blowfish_key_build(
+void l2_blowfish_key_build
+(
         struct l2_blowfish_key* key,
         unsigned char* raw_key,
         int raw_key_size
@@ -21,7 +22,8 @@ void l2_blowfish_key_build(
         BF_set_key(&key->key, raw_key_size, key->raw_key);
 }
 
-void l2_blowfish_encrypt(
+void l2_blowfish_encrypt
+(
         struct l2_blowfish_key* key,
         unsigned char* src,
         unsigned char* dest
@@ -30,7 +32,8 @@ void l2_blowfish_encrypt(
         BF_ecb_encrypt(src, dest, &key->key, BF_ENCRYPT);
 }
 
-void l2_blowfish_decrypt(
+void l2_blowfish_decrypt
+(
         struct l2_blowfish_key* key,
         unsigned char* src,
         unsigned char* dest
@@ -39,4 +42,4 @@ void l2_blowfish_decrypt(
         BF_ecb_encrypt(src, dest, &key->key, BF_DECRYPT);
 }
 
-#endif //L2AUTH_BLOWFISH_KEY_C
+#endif

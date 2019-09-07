@@ -7,6 +7,10 @@ RUNNING THE SERVER USING DOCKER
 - `docker-compose up`
 - Server will start listening to address 127.0.0.1 (local) and port 2106.
 
+SETTING UP DEV ENVIRONMENT
+- Follow instructions to build log dependency from Dockerfile
+- `sudo apt install libssl-dev`
+
 WHAT TO EXPECT
 Right now, the server will listen for only one connection.
 After the client connects and sends a user & password, the server will always send an incorrect user/password packet.
@@ -17,6 +21,10 @@ This means, the server is capable of:
 - Encrypt connection with RSA & Blowfish
 - Send Lineage 2 packets
 - Receive Lineage 2 packets
+
+TODO
+- Correctly handle big/little endian
+- Display terms of service view
 
 SCREENSHOTS
 Please see doc/screenshot.

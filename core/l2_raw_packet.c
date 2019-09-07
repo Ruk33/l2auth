@@ -7,12 +7,16 @@
 typedef unsigned short l2_raw_packet_size;
 typedef unsigned char l2_raw_packet;
 
-l2_raw_packet_size l2_raw_packet_calculate_size(unsigned short content_size)
+l2_raw_packet_size l2_raw_packet_calculate_size
+(
+        unsigned short content_size
+)
 {
         return (l2_raw_packet_size) (sizeof(l2_raw_packet_size) + content_size);
 }
 
-void l2_raw_packet_init(
+void l2_raw_packet_init
+(
         l2_raw_packet* packet,
         unsigned char* content,
         unsigned short content_size
@@ -27,7 +31,8 @@ void l2_raw_packet_init(
         memcpy(packet + sizeof(size_header), content, content_size);
 }
 
-l2_raw_packet* l2_raw_packet_new(
+l2_raw_packet* l2_raw_packet_new
+(
         unsigned char* content,
         unsigned short content_size
 )
@@ -52,7 +57,8 @@ l2_raw_packet_size l2_raw_packet_get_size(l2_raw_packet* packet)
         return size;
 }
 
-void l2_raw_packet_content(
+void l2_raw_packet_content
+(
         l2_raw_packet* packet,
         unsigned char* dest,
         unsigned short start,
@@ -75,4 +81,4 @@ void l2_raw_packet_free(l2_raw_packet* packet)
                 free(packet);
 }
 
-#endif //L2AUTH_RAW_PACKET_C
+#endif
