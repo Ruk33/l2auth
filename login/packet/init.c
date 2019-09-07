@@ -1,10 +1,10 @@
-#ifndef L2AUTH_SERVER_PACKET_INIT_C
-#define L2AUTH_SERVER_PACKET_INIT_C
+#ifndef L2AUTH_LOGIN_PACKET_INIT_C
+#define L2AUTH_LOGIN_PACKET_INIT_C
 
 #include <core/l2_rsa_key.c>
 #include <core/l2_packet.c>
 
-l2_packet* server_packet_init(struct l2_rsa_key *rsa_key)
+l2_packet* login_packet_init(struct l2_rsa_key *rsa_key)
 {
         l2_packet_type type = 0x00;
 
@@ -43,4 +43,4 @@ l2_packet* server_packet_init(struct l2_rsa_key *rsa_key)
         );
 }
 
-#endif //L2AUTH_SERVER_PACKET_INIT_C
+#endif

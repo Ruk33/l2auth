@@ -4,12 +4,15 @@
 #include <core/l2_socket.c>
 #include <core/l2_client.c>
 #include <core/l2_packet.c>
-#include <core/l2_client_packet_type.c>
+//#include <core/l2_client_packet_type.c>
+#include <packet/client/type.c>
 #include <util/get_client_packet_type.c>
-#include <server_packet/server_packet_login_fail.c>
-#include <server_packet/server_packet_gg_auth.c>
+#include <login/packet/init.c>
+#include <login/packet/fail.c>
+#include <login/packet/gg_auth.c>
 
-void l2_server_create(
+void l2_server_create
+(
         struct l2_socket *server,
         struct l2_socket_strategy *socket_type,
         unsigned short port
@@ -20,7 +23,10 @@ void l2_server_create(
         l2_socket_listen(server);
 }
 
-void l2_server_accept_and_handle_connection(struct l2_socket *server)
+void l2_server_accept_and_handle_connection
+(
+        struct l2_socket *server
+)
 {
         struct l2_client client;
 
@@ -29,7 +35,7 @@ void l2_server_accept_and_handle_connection(struct l2_socket *server)
 
         l2_client_accept(&client, server);
 
-        server_packet = server_packet_init(&client.rsa_key);
+        server_packet = login_packet_init(&client.rsa_key);
         l2_client_send_packet(&client, server_packet);
         // crete packet | log action | send it
         // treat it as if we were dealing with a pipe
@@ -43,15 +49,13 @@ void l2_server_accept_and_handle_connection(struct l2_socket *server)
                 }
 
                 switch (get_client_packet_type(client_packet)) {
-                case CLIENT_PACKET_TYPE_REQUEST_AUTH_LOGIN:
+                case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
                         //l2_client_decrypt_client_packet(&client, client_packet, decrypted);
-                        //memcpy(username, decrypted + 0x62, 14);
-                        //memcpy(password, decrypted + 0x70, 16);
-                        server_packet = server_packet_login_fail(LOGIN_FAIL_REASON_USER_OR_PASSWORD_WRONG);
+                        server_packet = login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
                         l2_client_encrypt_and_send_packet(&client, server_packet);
                         break;
-                case CLIENT_PACKET_TYPE_GG_AUTH:
-                        server_packet = server_packet_gg_auth(GG_AUTH_RESPONSE_SKIP_GG);
+                case PACKET_CLIENT_TYPE_GG_AUTH:
+                        server_packet = login_packet_gg_auth(LOGIN_PACKET_GG_AUTH_RESPONSE_SKIP_GG);
                         l2_client_encrypt_and_send_packet(&client, server_packet);
                         break;
                 default:
@@ -63,9 +67,12 @@ void l2_server_accept_and_handle_connection(struct l2_socket *server)
         l2_client_close(server);
 }
 
-void l2_server_wait_and_accept_connections(struct l2_socket *server)
+void l2_server_wait_and_accept_connections
+(
+        struct l2_socket *server
+)
 {
         l2_server_accept_and_handle_connection(server);
 }
 
-#endif //L2AUTH_L2_SERVER_C
+#endif

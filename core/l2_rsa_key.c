@@ -53,7 +53,11 @@ void l2_rsa_key_scramble_modulo(unsigned char* n)
         };
 };
 
-void l2_rsa_key_modulus(struct l2_rsa_key* key, unsigned char* dest)
+void l2_rsa_key_modulus
+(
+        struct l2_rsa_key* key,
+        unsigned char* dest
+)
 {
         const BIGNUM *n;
         RSA_get0_key(key->rsa_key, &n, NULL, NULL);
@@ -66,7 +70,12 @@ int l2_rsa_key_size(struct l2_rsa_key* key)
         return RSA_size(key->rsa_key);
 }
 
-int l2_rsa_key_decrypt(struct l2_rsa_key* key, unsigned char* src, unsigned char* dest)
+int l2_rsa_key_decrypt
+(
+        struct l2_rsa_key* key,
+        unsigned char* src,
+        unsigned char* dest
+)
 {
         return RSA_private_decrypt(
                 l2_rsa_key_size(key),
@@ -77,4 +86,4 @@ int l2_rsa_key_decrypt(struct l2_rsa_key* key, unsigned char* src, unsigned char
         );
 }
 
-#endif //L2AUTH_BUILD_RSA_KEY_C
+#endif
