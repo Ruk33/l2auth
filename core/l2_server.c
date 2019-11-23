@@ -11,6 +11,7 @@
 #include <login/packet/init.c>
 #include <login/packet/fail.c>
 #include <login/packet/gg_auth.c>
+#include <login/session_key.c>
 #include <login/handler/request_auth_login.c>
 
 void l2_server_create
@@ -31,6 +32,7 @@ void l2_server_accept_and_handle_connection
 )
 {
         struct l2_client client;
+        struct LoginSessionKey* session_key = login_session_key_create();
 
         l2_packet *server_packet;
         l2_packet *client_packet;
@@ -59,7 +61,8 @@ void l2_server_accept_and_handle_connection
                 switch (get_client_packet_type(client_packet)) {
                 case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
                         server_packet = login_handler_request_auth_login(
-                                decrypted_packet
+                                decrypted_packet,
+                                session_key
                         );
                         break;
                 case PACKET_CLIENT_TYPE_GG_AUTH:

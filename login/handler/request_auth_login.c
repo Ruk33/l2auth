@@ -5,9 +5,15 @@
 #include <core/l2_packet.c>
 #include <packet/helper.c>
 #include <login/helper.c>
-#include <login/packet/fail.c>
+#include <login/packet/ok.c>
+#include <login/session_key.c>
+//#include <login/packet/fail.c>
 
-l2_packet* login_handler_request_auth_login(unsigned char* packet)
+l2_packet* login_handler_request_auth_login
+(
+        unsigned char* packet,
+        struct LoginSessionKey* session_key
+)
 {
         unsigned char username[14];
         unsigned char password[16];
@@ -18,7 +24,8 @@ l2_packet* login_handler_request_auth_login(unsigned char* packet)
         log_info("Username %s", username);
         log_info("Password %s", password);
 
-        return login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
+        return login_packet_ok(session_key);
+        //return login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
 }
 
 #endif

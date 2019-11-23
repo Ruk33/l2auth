@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <time.h>
 #include <socket_strategy/socket_strategy_linux.c>
 #include <core/l2_socket.c>
 #include <core/l2_server.c>
@@ -7,6 +9,8 @@ int main()
         struct l2_socket_strategy socket_strategy;
         struct l2_socket server;
 
+        srand(time(NULL));
+
         socket_strategy_linux(&socket_strategy);
         l2_server_create(&server, &socket_strategy, 2106);
 
@@ -14,7 +18,7 @@ int main()
                 l2_server_wait_and_accept_connections(&server);
         }
 
-        l2_client_close(server); 
+        l2_client_close(&server); 
 
         return 0;
 }
