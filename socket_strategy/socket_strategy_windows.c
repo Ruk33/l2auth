@@ -21,7 +21,8 @@ int socket_strategy_windows_connect(struct l2_socket* l2_socket)
         return 0;
 }
 
-int socket_strategy_windows_bind(
+int socket_strategy_windows_bind
+(
         struct l2_socket* l2_socket,
         unsigned short port
 )
@@ -46,7 +47,8 @@ int socket_strategy_windows_listen(struct l2_socket* l2_socket)
         return 0;
 }
 
-int socket_strategy_windows_accept(
+int socket_strategy_windows_accept
+(
         struct l2_socket* server,
         struct l2_socket* client
 )
@@ -66,7 +68,8 @@ int socket_strategy_windows_accept(
         return 0;
 }
 
-ssize_t socket_strategy_windows_receive(
+ssize_t socket_strategy_windows_receive
+(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
@@ -75,7 +78,8 @@ ssize_t socket_strategy_windows_receive(
         return recv((SOCKET) l2_socket->socket, buffer, buffer_size, 0);
 }
 
-ssize_t socket_strategy_windows_send(
+ssize_t socket_strategy_windows_send
+(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size

@@ -13,7 +13,8 @@
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
 
-struct l2_client {
+struct l2_client
+{
         struct l2_socket socket;
         struct l2_rsa_key rsa_key;
         struct l2_blowfish_key blowfish_key;

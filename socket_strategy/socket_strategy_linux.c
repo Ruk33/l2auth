@@ -43,7 +43,8 @@ int socket_strategy_linux_listen(struct l2_socket* l2_socket)
         return listen(l2_socket->socket, 3);
 }
 
-int socket_strategy_linux_accept(
+int socket_strategy_linux_accept
+(
         struct l2_socket* server,
         struct l2_socket* client
 )
@@ -59,7 +60,8 @@ int socket_strategy_linux_accept(
         return client->socket;
 }
 
-ssize_t socket_strategy_linux_receive(
+ssize_t socket_strategy_linux_receive
+(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
@@ -68,7 +70,8 @@ ssize_t socket_strategy_linux_receive(
         return recv(l2_socket->socket, buffer, buffer_size, 0);
 }
 
-ssize_t socket_strategy_linux_send(
+ssize_t socket_strategy_linux_send
+(
         struct l2_socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
