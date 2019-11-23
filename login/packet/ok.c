@@ -1,17 +1,14 @@
 #ifndef L2AUTH_LOGIN_PACKET_OK_C
 #define L2AUTH_LOGIN_PACKET_OK_C
 
-#include <stdlib.h>
-#include <string.h>
 #include <log/log.h>
 #include <core/l2_packet.c>
+#include <core/byte_buffer.c>
 #include <login/session_key.c>
 
 l2_packet* login_packet_ok(struct LoginSessionKey *session_key)
 {
         l2_packet_type type = 0x03;
-        size_t key1_size = session_key ? sizeof(session_key->loginOK1) : 0;
-        size_t key2_size = session_key ? sizeof(session_key->loginOK2) : 0;
         unsigned char content_after_keys[] = {
                 0x00,
                 0x00,
@@ -62,27 +59,26 @@ l2_packet* login_packet_ok(struct LoginSessionKey *session_key)
                 0x00,
                 0x00,
         };
-        size_t content_after_keys_size = sizeof(content_after_keys);
-        size_t content_size = key1_size + key2_size + content_after_keys_size;
-        unsigned char* content = calloc(content_size, sizeof(char));
+        struct ByteBuffer* buffer = byte_buffer_create();
         l2_packet* packet;
 
         if (session_key) {
-                memcpy(content, &session_key->loginOK1, key1_size);
-                memcpy(content + key1_size, &session_key->loginOK2, key2_size);
+                log_info("Using keys: '%d' - '%d'", session_key->loginOK1, session_key->loginOK2);
+                byte_buffer_append(buffer, &session_key->loginOK1, sizeof(session_key->loginOK1));
+                byte_buffer_append(buffer, &session_key->loginOK2, sizeof(session_key->loginOK2));
         } else {
                 log_info("Warning, no session key was provided");
         }
 
-        memcpy(content + key1_size + key2_size, &content_after_keys, sizeof(content_after_keys));
+        byte_buffer_append(buffer, &content_after_keys, sizeof(content_after_keys));
 
         packet = l2_packet_new(
                 type,
-                content,
-                (unsigned short) content_size
+                byte_buffer_content(buffer),
+                (unsigned short) byte_buffer_size(buffer)
         );
 
-        free(content);
+        byte_buffer_free(buffer);
 
         return packet;
 }
