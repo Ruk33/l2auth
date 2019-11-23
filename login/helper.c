@@ -5,8 +5,8 @@
 
 void login_helper_username_from_packet
 (
-        char *decrypted_packet,
-        char *dest
+        unsigned char *decrypted_packet,
+        unsigned char *dest
 )
 {
         memcpy(dest, decrypted_packet + 0x62, 14);
@@ -14,8 +14,8 @@ void login_helper_username_from_packet
 
 void login_helper_password_from_packet
 (
-        char *decrypted_packet,
-        char* dest
+        unsigned char *decrypted_packet,
+        unsigned char* dest
 )
 {
         memcpy(dest, decrypted_packet + 0x70, 16);

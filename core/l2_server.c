@@ -10,6 +10,7 @@
 #include <login/packet/init.c>
 #include <login/packet/fail.c>
 #include <login/packet/gg_auth.c>
+#include <login/handler/request_auth_login.c>
 
 void l2_server_create
 (
@@ -33,6 +34,8 @@ void l2_server_accept_and_handle_connection
         l2_packet *server_packet;
         l2_packet *client_packet;
 
+        unsigned char decrypted_packet[65535];
+
         l2_client_accept(&client, server);
 
         server_packet = login_packet_init(&client.rsa_key);
@@ -42,27 +45,29 @@ void l2_server_accept_and_handle_connection
         // free_packet(send_packet(log_and_return_packet(create_packet())))
 
         while (1) {
+                server_packet = NULL;
                 client_packet = l2_client_wait_and_decrypt_packet(&client);
 
                 if (l2_client_connection_ended(&client)) {
                         break;
                 }
 
+                l2_client_decrypt_client_packet(&client, client_packet, decrypted_packet);
+
                 switch (get_client_packet_type(client_packet)) {
                 case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
-                        //l2_client_decrypt_client_packet(&client, client_packet, decrypted);
-                        server_packet = login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
-                        l2_client_encrypt_and_send_packet(&client, server_packet);
+                        server_packet = login_handler_request_auth_login(decrypted_packet);
                         break;
                 case PACKET_CLIENT_TYPE_GG_AUTH:
                         server_packet = login_packet_gg_auth(LOGIN_PACKET_GG_AUTH_RESPONSE_SKIP_GG);
-                        l2_client_encrypt_and_send_packet(&client, server_packet);
                         break;
                 default:
                         // ignore invalid packet
                         break;
                 }
         }
+
+        if (server_packet) l2_client_encrypt_and_send_packet(&client, server_packet);
 
         l2_client_close(server);
 }
