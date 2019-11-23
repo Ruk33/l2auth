@@ -13,8 +13,7 @@ SETTING UP DEV ENVIRONMENT
 
 WHAT TO EXPECT
 Right now, the server will listen for only one connection.
-After the client connects and sends a user & password, the server will always send an incorrect user/password packet.
-This means, the server is capable of:
+For the time being, the server is capable of:
 - Create socket/connection
 - Listen for connections
 - Accept connections
@@ -23,8 +22,14 @@ This means, the server is capable of:
 - Receive Lineage 2 packets
 
 TODO
-- Correctly handle big/little endian
-- Display terms of service view
+[ ] Correctly handle big/little endian
+[x] Display terms of service view
+[x] Display server list
+[ ] Allow to enter game server
+[ ] Create character
+[ ] Enter world
+[ ] Walk
+[ ] Lua integration
 
 SCREENSHOTS
 Please see doc/screenshot.
