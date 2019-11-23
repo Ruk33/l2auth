@@ -75,7 +75,11 @@ void l2_client_encrypt_and_send_packet
         l2_raw_packet* packet
 )
 {
-        l2_raw_packet *encrypted_packet = packet_server_encrypt(packet, &client->blowfish_key);
+        l2_raw_packet *encrypted_packet;
+
+        if (!client || !packet) return;
+
+        encrypted_packet = packet_server_encrypt(packet, &client->blowfish_key);
         l2_client_send_packet(client, encrypted_packet);
 }
 

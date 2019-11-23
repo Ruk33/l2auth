@@ -8,9 +8,13 @@ int main()
         struct l2_socket server;
 
         socket_strategy_linux(&socket_strategy);
-
         l2_server_create(&server, &socket_strategy, 2106);
-        l2_server_wait_and_accept_connections(&server);
+
+        while (1) {
+                l2_server_wait_and_accept_connections(&server);
+        }
+
+        l2_client_close(server); 
 
         return 0;
 }
