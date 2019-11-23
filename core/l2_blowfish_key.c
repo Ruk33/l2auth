@@ -6,7 +6,7 @@
 
 #define BLOWFISH_MAX_KEY_SIZE_LENGTH 56
 
-struct l2_blowfish_key
+struct L2BlowfishKey
 {
         unsigned char raw_key[BLOWFISH_MAX_KEY_SIZE_LENGTH];
         BF_KEY key;
@@ -14,7 +14,7 @@ struct l2_blowfish_key
 
 void l2_blowfish_key_build
 (
-        struct l2_blowfish_key* key,
+        struct L2BlowfishKey* key,
         unsigned char* raw_key,
         int raw_key_size
 )
@@ -25,7 +25,7 @@ void l2_blowfish_key_build
 
 void l2_blowfish_encrypt
 (
-        struct l2_blowfish_key* key,
+        struct L2BlowfishKey* key,
         unsigned char* src,
         unsigned char* dest
 )
@@ -35,7 +35,7 @@ void l2_blowfish_encrypt
 
 void l2_blowfish_decrypt
 (
-        struct l2_blowfish_key* key,
+        struct L2BlowfishKey* key,
         unsigned char* src,
         unsigned char* dest
 )

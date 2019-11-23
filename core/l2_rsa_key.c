@@ -4,7 +4,7 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 
-struct l2_rsa_key
+struct L2RSAKey
 {
         RSA* rsa_key;
 };
@@ -12,7 +12,7 @@ struct l2_rsa_key
 #define L2_RSA_KEY_DEFAULT_SIZE_IN_BITS 1024
 #define L2_RSA_KEY_DEFAULT_E 65537
 
-void l2_rsa_key_build(struct l2_rsa_key* key)
+void l2_rsa_key_build(struct L2RSAKey* key)
 {
         const char e_char[] = "65537";
         BIGNUM* e = BN_new();
@@ -56,7 +56,7 @@ void l2_rsa_key_scramble_modulo(unsigned char* n)
 
 void l2_rsa_key_modulus
 (
-        struct l2_rsa_key* key,
+        struct L2RSAKey* key,
         unsigned char* dest
 )
 {
@@ -66,14 +66,14 @@ void l2_rsa_key_modulus
         l2_rsa_key_scramble_modulo(dest);
 }
 
-int l2_rsa_key_size(struct l2_rsa_key* key)
+int l2_rsa_key_size(struct L2RSAKey* key)
 {
         return RSA_size(key->rsa_key);
 }
 
 int l2_rsa_key_decrypt
 (
-        struct l2_rsa_key* key,
+        struct L2RSAKey* key,
         unsigned char* src,
         unsigned char* dest
 )

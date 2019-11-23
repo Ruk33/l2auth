@@ -6,7 +6,7 @@
 
 l2_raw_packet* packet_client_decrypt
 (
-        struct l2_blowfish_key* blowfish_key,
+        struct L2BlowfishKey* blowfish_key,
         unsigned char* data,
         unsigned short data_size
 )

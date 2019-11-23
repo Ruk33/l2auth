@@ -9,19 +9,19 @@
 #include <netdb.h>
 #include <core/l2_socket.c>
 
-int socket_strategy_linux_connect(struct l2_socket* l2_socket)
+int socket_strategy_linux_connect(struct L2Socket* l2_socket)
 {
         return (l2_socket->socket = socket(AF_INET, SOCK_STREAM, 0));
 }
 
-int socket_strategy_linux_close(struct l2_socket* l2_socket)
+int socket_strategy_linux_close(struct L2Socket* l2_socket)
 {
         shutdown(l2_socket->socket, SHUT_RDWR);
         return close(l2_socket->socket);
 }
 
 int socket_strategy_linux_bind(
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned short port
 )
 {
@@ -38,15 +38,15 @@ int socket_strategy_linux_bind(
         );
 }
 
-int socket_strategy_linux_listen(struct l2_socket* l2_socket)
+int socket_strategy_linux_listen(struct L2Socket* l2_socket)
 {
         return listen(l2_socket->socket, 3);
 }
 
 int socket_strategy_linux_accept
 (
-        struct l2_socket* server,
-        struct l2_socket* client
+        struct L2Socket* server,
+        struct L2Socket* client
 )
 {
         struct sockaddr_in addr;
@@ -62,7 +62,7 @@ int socket_strategy_linux_accept
 
 ssize_t socket_strategy_linux_receive
 (
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
 )
@@ -72,7 +72,7 @@ ssize_t socket_strategy_linux_receive
 
 ssize_t socket_strategy_linux_send
 (
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
 )
@@ -80,7 +80,7 @@ ssize_t socket_strategy_linux_send
         return send(l2_socket->socket, buffer, buffer_size, 0);
 }
 
-void socket_strategy_linux(struct l2_socket_strategy* socket_strategy)
+void socket_strategy_linux(struct L2SocketStrategy* socket_strategy)
 {
         socket_strategy->connect = socket_strategy_linux_connect;
         socket_strategy->close = socket_strategy_linux_close;

@@ -6,8 +6,8 @@
 
 int main()
 {
-        struct l2_socket_strategy socket_strategy;
-        struct l2_socket server;
+        struct L2SocketStrategy socket_strategy;
+        struct L2Socket server;
 
         srand(time(NULL));
 

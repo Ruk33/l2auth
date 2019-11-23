@@ -13,11 +13,11 @@
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
 
-struct l2_client
+struct L2Client
 {
-        struct l2_socket socket;
-        struct l2_rsa_key rsa_key;
-        struct l2_blowfish_key blowfish_key;
+        struct L2Socket socket;
+        struct L2RSAKey rsa_key;
+        struct L2BlowfishKey blowfish_key;
 
         ssize_t received_data_size;
         unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
@@ -25,7 +25,7 @@ struct l2_client
         FILE* log_file;
 };
 
-void l2_client_create(struct l2_client* client)
+void l2_client_create(struct L2Client* client)
 {
         unsigned char blowfish_key[] = "_;5.]94-31==-%xT!^[$";
         l2_blowfish_key_build(&client->blowfish_key, blowfish_key, sizeof(blowfish_key));
@@ -34,8 +34,8 @@ void l2_client_create(struct l2_client* client)
 
 void l2_client_accept
 (
-        struct l2_client* client,
-        struct l2_socket* server
+        struct L2Client* client,
+        struct L2Socket* server
 )
 {
         l2_socket_accept(server, &client->socket);
@@ -43,7 +43,7 @@ void l2_client_accept
         log_info("Connection accepted");
 }
 
-void l2_client_close(struct l2_socket* server)
+void l2_client_close(struct L2Socket* server)
 {
         l2_socket_close(server);
         log_info("Connection closed");
@@ -51,7 +51,7 @@ void l2_client_close(struct l2_socket* server)
 
 void l2_client_send_packet
 (
-        struct l2_client* client,
+        struct L2Client* client,
         l2_raw_packet* packet
 )
 {
@@ -71,7 +71,7 @@ void l2_client_send_packet
 
 void l2_client_encrypt_and_send_packet
 (
-        struct l2_client* client,
+        struct L2Client* client,
         l2_raw_packet* packet
 )
 {
@@ -85,7 +85,7 @@ void l2_client_encrypt_and_send_packet
 
 l2_raw_packet* l2_client_wait_and_decrypt_packet
 (
-        struct l2_client* client
+        struct L2Client* client
 )
 {
         client->received_data_size = l2_socket_receive(
@@ -105,7 +105,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet
 
 int l2_client_decrypt_client_packet
 (
-        struct l2_client* client,
+        struct L2Client* client,
         l2_packet* packet,
         unsigned char* dest
 )
@@ -122,7 +122,7 @@ int l2_client_decrypt_client_packet
         );
 }
 
-int l2_client_connection_ended(struct l2_client* client)
+int l2_client_connection_ended(struct L2Client* client)
 {
         return client->received_data_size <= 0;
 }
