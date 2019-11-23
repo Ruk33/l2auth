@@ -6,7 +6,8 @@
 
 #define BLOWFISH_MAX_KEY_SIZE_LENGTH 56
 
-struct l2_blowfish_key {
+struct l2_blowfish_key
+{
         unsigned char raw_key[BLOWFISH_MAX_KEY_SIZE_LENGTH];
         BF_KEY key;
 };

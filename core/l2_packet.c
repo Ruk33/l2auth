@@ -16,11 +16,13 @@ void l2_packet_init
         unsigned short content_size
 )
 {
-        l2_raw_packet_size packet_size = (l2_raw_packet_size) (sizeof(l2_packet_type) + content_size);
+        l2_raw_packet_size packet_size = (l2_raw_packet_size) (
+                sizeof(l2_packet_type) +
+                content_size
+        );
         unsigned char packet_content[packet_size];
 
-        if (!packet || !content)
-                return;
+        if (!packet || !content) return;
         
         memcpy(packet_content, &type, sizeof(type));
         memcpy(packet_content + sizeof(type), content, content_size);
@@ -65,7 +67,11 @@ l2_packet_type l2_packet_get_type(l2_packet* packet)
 
 unsigned short l2_packet_get_content_size(l2_packet* packet)
 {
-        return (unsigned short) (l2_raw_packet_get_size(packet) - sizeof(l2_raw_packet_size) - sizeof(l2_packet_type));
+        return (unsigned short) (
+                l2_raw_packet_get_size(packet) -
+                sizeof(l2_raw_packet_size) -
+                sizeof(l2_packet_type)
+        );
 }
 
 void l2_packet_content

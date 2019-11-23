@@ -9,12 +9,14 @@
 
 #include <sys/types.h>
 
-struct l2_socket {
+struct l2_socket
+{
         int socket;
         struct l2_socket_strategy* strategy;
 };
 
-struct l2_socket_strategy {
+struct l2_socket_strategy
+{
         int (* connect)(struct l2_socket* l2_socket);
         int (* close)(struct l2_socket* l2_socket);
         int (* bind)(struct l2_socket* l2_socket, unsigned short port);

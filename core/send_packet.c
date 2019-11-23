@@ -4,7 +4,11 @@
 #include <core/l2_socket.c>
 #include <core/l2_packet.c>
 
-void send_packet(struct l2_socket* client, l2_raw_packet* packet)
+void send_packet
+(
+        struct l2_socket* client,
+        l2_raw_packet* packet
+)
 {
         l2_socket_send(
                 client,

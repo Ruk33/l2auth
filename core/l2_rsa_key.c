@@ -4,7 +4,8 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 
-struct l2_rsa_key {
+struct l2_rsa_key
+{
         RSA* rsa_key;
 };
 

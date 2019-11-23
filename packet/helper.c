@@ -4,28 +4,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned short packet_helper_size(void *packet)
+unsigned short packet_helper_size(void* packet)
 {
         unsigned short size = 0;
-
-        if (packet)
-                memcpy(&size, packet, sizeof(packet));
-
+        if (packet) memcpy(&size, packet, sizeof(size));
         return size;
 }
 
-unsigned char packet_helper_type(void *packet)
+unsigned short packet_helper_full_size(void* packet)
 {
-        size_t size_header = sizeof(short);
+        if (!packet) return 0;
+        return (unsigned short) (
+                sizeof(unsigned short) +
+                packet_helper_size(packet)
+        );
+}
+
+unsigned char packet_helper_type(void* packet)
+{
         unsigned char type = 0;
-
-        if (packet)
-                memcpy(&type, size_header + packet, sizeof(type));
-
+        if (packet) memcpy(&type, sizeof(unsigned short) + packet, sizeof(type));
         return type;
 }
 
-void* packet_helper_content
+void packet_helper_content
 (
         void* packet,
         void* dest,
@@ -35,8 +37,7 @@ void* packet_helper_content
         size_t size_header = sizeof(unsigned short);
         size_t type_header = sizeof(unsigned char);
 
-        if (!packet || !dest)
-                return;
+        if (!packet || !dest) return;
 
         memcpy(
                 dest,
