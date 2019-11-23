@@ -4,7 +4,7 @@
 #include <core/l2_rsa_key.c>
 #include <core/l2_packet.c>
 
-l2_packet* login_packet_init(struct l2_rsa_key *rsa_key)
+l2_packet* login_packet_init(struct L2RSAKey *rsa_key)
 {
         l2_packet_type type = 0x00;
 

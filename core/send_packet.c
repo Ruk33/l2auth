@@ -6,7 +6,7 @@
 
 void send_packet
 (
-        struct l2_socket* client,
+        struct L2Socket* client,
         l2_raw_packet* packet
 )
 {

@@ -16,8 +16,8 @@
 
 void l2_server_create
 (
-        struct l2_socket *server,
-        struct l2_socket_strategy *socket_type,
+        struct L2Socket *server,
+        struct L2SocketStrategy *socket_type,
         unsigned short port
 )
 {
@@ -28,10 +28,10 @@ void l2_server_create
 
 void l2_server_accept_and_handle_connection
 (
-        struct l2_socket *server
+        struct L2Socket *server
 )
 {
-        struct l2_client client;
+        struct L2Client client;
         struct LoginSessionKey* session_key = login_session_key_create();
 
         l2_packet *server_packet;
@@ -86,7 +86,7 @@ void l2_server_accept_and_handle_connection
 
 void l2_server_wait_and_accept_connections
 (
-        struct l2_socket *server
+        struct L2Socket *server
 )
 {
         l2_server_accept_and_handle_connection(server);

@@ -8,7 +8,7 @@
 l2_raw_packet* packet_server_encrypt
 (
         l2_raw_packet* to_encrypt,
-        struct l2_blowfish_key* key
+        struct L2BlowfishKey* key
 )
 {
         unsigned short packet_size = l2_raw_packet_get_size(

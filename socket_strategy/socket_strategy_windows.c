@@ -6,7 +6,7 @@
 #include <winsock2.h>
 #include <core/l2_socket.c>
 
-int socket_strategy_windows_connect(struct l2_socket* l2_socket)
+int socket_strategy_windows_connect(struct L2Socket* l2_socket)
 {
         WSADATA wsa;
 
@@ -23,7 +23,7 @@ int socket_strategy_windows_connect(struct l2_socket* l2_socket)
 
 int socket_strategy_windows_bind
 (
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned short port
 )
 {
@@ -39,7 +39,7 @@ int socket_strategy_windows_bind
         return 0;
 }
 
-int socket_strategy_windows_listen(struct l2_socket* l2_socket)
+int socket_strategy_windows_listen(struct L2Socket* l2_socket)
 {
         if (listen((SOCKET) l2_socket->socket, 3) != 0)
                 return L2_SOCKET_WIN_LISTEN_ERROR;
@@ -49,8 +49,8 @@ int socket_strategy_windows_listen(struct l2_socket* l2_socket)
 
 int socket_strategy_windows_accept
 (
-        struct l2_socket* server,
-        struct l2_socket* client
+        struct L2Socket* server,
+        struct L2Socket* client
 )
 {
         SOCKADDR_IN addr;
@@ -70,7 +70,7 @@ int socket_strategy_windows_accept
 
 ssize_t socket_strategy_windows_receive
 (
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
 )
@@ -80,7 +80,7 @@ ssize_t socket_strategy_windows_receive
 
 ssize_t socket_strategy_windows_send
 (
-        struct l2_socket* l2_socket,
+        struct L2Socket* l2_socket,
         unsigned char* buffer,
         size_t buffer_size
 )
@@ -88,7 +88,7 @@ ssize_t socket_strategy_windows_send
         return send((SOCKET) l2_socket->socket, buffer, buffer_size, 0);
 }
 
-void socket_strategy_windows(struct l2_socket_strategy* socket_strategy)
+void socket_strategy_windows(struct L2SocketStrategy* socket_strategy)
 {
         socket_strategy->connect = socket_strategy_windows_connect;
         socket_strategy->bind = socket_strategy_windows_bind;
