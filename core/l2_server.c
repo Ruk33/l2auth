@@ -1,6 +1,7 @@
 #ifndef L2AUTH_L2_SERVER_C
 #define L2AUTH_L2_SERVER_C
 
+#include <stdlib.h>
 #include <core/l2_socket.c>
 #include <core/l2_client.c>
 #include <core/l2_packet.c>
@@ -34,15 +35,12 @@ void l2_server_accept_and_handle_connection
         l2_packet *server_packet;
         l2_packet *client_packet;
 
-        unsigned char decrypted_packet[65535];
+        unsigned char *decrypted_packet = calloc(65535, sizeof(char));
 
         l2_client_accept(&client, server);
 
         server_packet = login_packet_init(&client.rsa_key);
         l2_client_send_packet(&client, server_packet);
-        // crete packet | log action | send it
-        // treat it as if we were dealing with a pipe
-        // free_packet(send_packet(log_and_return_packet(create_packet())))
 
         while (1) {
                 server_packet = NULL;
@@ -52,24 +50,35 @@ void l2_server_accept_and_handle_connection
                         break;
                 }
 
-                l2_client_decrypt_client_packet(&client, client_packet, decrypted_packet);
+                l2_client_decrypt_client_packet(
+                        &client,
+                        client_packet,
+                        decrypted_packet
+                );
 
                 switch (get_client_packet_type(client_packet)) {
                 case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
-                        server_packet = login_handler_request_auth_login(decrypted_packet);
+                        server_packet = login_handler_request_auth_login(
+                                decrypted_packet
+                        );
                         break;
                 case PACKET_CLIENT_TYPE_GG_AUTH:
-                        server_packet = login_packet_gg_auth(LOGIN_PACKET_GG_AUTH_RESPONSE_SKIP_GG);
+                        server_packet = login_packet_gg_auth(
+                                LOGIN_PACKET_GG_AUTH_RESPONSE_SKIP_GG
+                        );
                         break;
                 default:
                         // ignore invalid packet
                         break;
                 }
+
+                l2_client_encrypt_and_send_packet(
+                        &client,
+                        server_packet
+                );
         }
 
-        if (server_packet) l2_client_encrypt_and_send_packet(&client, server_packet);
-
-        l2_client_close(server);
+        free(decrypted_packet);
 }
 
 void l2_server_wait_and_accept_connections
