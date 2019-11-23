@@ -12,15 +12,20 @@
 struct Server* create_dummy_server()
 {
         struct Server* server = malloc(sizeof(struct Server));
+        unsigned char online = 0x01;
+        int clock = 0x02;
+        unsigned char show_brackets = 0x01;
 
         server->id = 1;
-        server->ip = inet_addr("127.0.0.1");
+        server->ip = inet_addr("0.0.0.0");
         server->port = 7777;
         server->age_limit = 0x0f;
-        server->pvp = 0x00;
-        server->players_count = 600;
+        server->pvp = 0x01;
+        server->players_count = 5;
         server->max_players = 650;
-        server->test = 0x00;
+        server->status = online;
+        server->extra = 0x00 | clock;
+        server->brackets = show_brackets;
 
         return server;
 }
@@ -43,7 +48,9 @@ l2_packet* login_packet_server_list()
         byte_buffer_append(buffer, &server->pvp, sizeof(server->pvp));
         byte_buffer_append(buffer, &server->players_count, sizeof(server->players_count));
         byte_buffer_append(buffer, &server->max_players, sizeof(server->max_players));
-        byte_buffer_append(buffer, &server->test, sizeof(server->test));
+        byte_buffer_append(buffer, &server->status, sizeof(server->status));
+        byte_buffer_append(buffer, &server->extra, sizeof(server->extra));
+        byte_buffer_append(buffer, &server->brackets, sizeof(server->brackets));
 
         packet = l2_packet_new(
                 type,

@@ -12,7 +12,9 @@ struct Server
         unsigned char pvp;
         unsigned short players_count;
         unsigned short max_players;
-        unsigned char test;
+        unsigned char status; // 0x00 down, 0x01 up
+        int extra; // test & clock
+        unsigned char brackets;
 };
 
 #endif
