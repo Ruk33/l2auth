@@ -13,6 +13,7 @@
 #include <login/packet/gg_auth.c>
 #include <login/session_key.c>
 #include <login/handler/request_auth_login.c>
+#include <login/handler/request_server_list.c>
 
 void l2_server_create
 (
@@ -64,6 +65,9 @@ void l2_server_accept_and_handle_connection
                                 decrypted_packet,
                                 session_key
                         );
+                        break;
+                case PACKET_CLIENT_TYPE_REQUEST_SERVER_LIST:
+                        server_packet = login_handler_request_server_list();
                         break;
                 case PACKET_CLIENT_TYPE_GG_AUTH:
                         server_packet = login_packet_gg_auth(
