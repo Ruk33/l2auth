@@ -20,14 +20,23 @@ void l2_packet_init
                 sizeof(l2_packet_type) +
                 content_size
         );
-        unsigned char packet_content[packet_size];
+        unsigned char* packet_content;
 
-        if (!packet || !content) return;
+        if (!packet) {
+                log_fatal("Trying to initialize packet but none was passed");
+                return;
+        }
+        if (!content || content_size == 0) {
+                log_warn("Trying to initialize packet but no content was passed");
+        }
         
+        packet_content = calloc(packet_size, sizeof(char));
         memcpy(packet_content, &type, sizeof(type));
         memcpy(packet_content + sizeof(type), content, content_size);
 
         l2_raw_packet_init(packet, packet_content, packet_size);
+
+        free(packet_content);
 }
 
 l2_raw_packet_size l2_packet_calculate_size
@@ -61,7 +70,9 @@ l2_packet* l2_packet_new
 l2_packet_type l2_packet_get_type(l2_packet* packet)
 {
         l2_packet_type type = 0;
-        l2_raw_packet_content(packet, &type, 0, sizeof(type));
+        if (packet) {
+                l2_raw_packet_content(packet, &type, 0, sizeof(type));
+        }
         return type;
 }
 

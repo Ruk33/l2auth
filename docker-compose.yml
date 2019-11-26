@@ -1,9 +1,15 @@
 version: '3'
 
 services:
-  app:
-    build: .
+  loginserver:
+    build: ./login
     volumes:
-      - .:/usr/src/l2auth
+      - .:/usr/src/loginserver
     ports:
       - "2106:2106"
+  gameserver:
+    build: ./game
+    volumes:
+      - .:/usr/src/gameserver
+    ports:
+      - "7777:7777"

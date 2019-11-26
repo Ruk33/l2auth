@@ -67,7 +67,7 @@ l2_packet* login_packet_ok(struct LoginSessionKey *session_key)
                 byte_buffer_append(buffer, &session_key->loginOK1, sizeof(session_key->loginOK1));
                 byte_buffer_append(buffer, &session_key->loginOK2, sizeof(session_key->loginOK2));
         } else {
-                log_info("Warning, no session key was provided");
+                log_fatal("No session key was provided in login ok packet");
         }
 
         byte_buffer_append(buffer, &content_after_keys, sizeof(content_after_keys));

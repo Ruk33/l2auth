@@ -1,6 +1,7 @@
 #ifndef L2AUTH_PACKET_CLIENT_DECRYPT_C
 #define L2AUTH_PACKET_CLIENT_DECRYPT_C
 
+#include <log/log.h>
 #include <core/l2_raw_packet.c>
 #include <core/l2_blowfish_key.c>
 
@@ -26,8 +27,10 @@ l2_raw_packet* packet_client_decrypt
                 * 8
         );
 
-        if (!data || !data_size)
+        if (!data || !data_size) {
+                log_fatal("Trying to decrypt null/empty packet");
                 return NULL;
+        }
 
         for (
                 unsigned short i = 0;

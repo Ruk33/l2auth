@@ -9,14 +9,14 @@ int main()
         struct L2SocketStrategy socket_strategy;
         struct L2Socket server;
 
-        srand(time(NULL));
+        srand((unsigned int) time(NULL));
 
         socket_strategy_linux(&socket_strategy);
         l2_server_create(&server, &socket_strategy, 2106);
 
-        while (1) {
+        //while (1) {
                 l2_server_wait_and_accept_connections(&server);
-        }
+        //}
 
         l2_client_close(&server); 
 
