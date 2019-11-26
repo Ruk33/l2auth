@@ -1,9 +1,10 @@
 #ifndef L2AUTH_PACKET_SERVER_ENCRYPT_C
 #define L2AUTH_PACKET_SERVER_ENCRYPT_C
 
+#include <stdlib.h>
+#include <core/endian.c>
 #include <core/l2_blowfish_key.c>
 #include <core/l2_raw_packet.c>
-#include <core/endian.c>
 
 l2_raw_packet* packet_server_encrypt
 (
@@ -11,14 +12,15 @@ l2_raw_packet* packet_server_encrypt
         struct L2BlowfishKey* key
 )
 {
-        unsigned short packet_size = l2_raw_packet_get_size(
-                to_encrypt
-        );
-        unsigned char packet_content[packet_size];
+        unsigned short packet_size =
+                l2_raw_packet_get_size(to_encrypt);
+        unsigned char* packet_content = calloc(packet_size, sizeof(char));
 
         unsigned short encrypted_packet_size = 
                 (unsigned short) ((packet_size / 8 + 1) * 8);
-        unsigned char encrypted_content[encrypted_packet_size];
+        unsigned char* encrypted_content = calloc(encrypted_packet_size, sizeof(char));
+
+        l2_raw_packet* raw_packet;
 
         l2_raw_packet_content(
                 to_encrypt,
@@ -44,10 +46,15 @@ l2_raw_packet* packet_server_encrypt
                 encode32le(encrypted_content + 4 + i, decode32be(encrypted_content + 4 + i));
         }
 
-        return l2_raw_packet_new(
+        raw_packet = l2_raw_packet_new(
                 encrypted_content,
                 encrypted_packet_size
         );
+
+        free(packet_content);
+        free(encrypted_content);
+
+        return raw_packet;
 }
 
 #endif

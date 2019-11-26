@@ -7,7 +7,7 @@
 #include <login/helper.c>
 #include <login/packet/ok.c>
 #include <login/session_key.c>
-//#include <login/packet/fail.c>
+#include <login/packet/fail.c>
 
 l2_packet* login_handler_request_auth_login
 (
@@ -18,6 +18,16 @@ l2_packet* login_handler_request_auth_login
         unsigned char username[14];
         unsigned char password[16];
 
+        if (!packet) {
+                log_fatal("Trying to handle auth login request but no packet was passed");
+                return login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
+        }
+
+        if (!session_key) {
+                log_fatal("Trying to handle auth login request but no session key was passed");
+                return login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
+        }
+
         login_helper_username_from_packet(packet, username);
         login_helper_password_from_packet(packet, password);
 
@@ -25,7 +35,6 @@ l2_packet* login_handler_request_auth_login
         log_info("Password %s", password);
 
         return login_packet_ok(session_key);
-        //return login_packet_fail(LOGIN_PACKET_FAIL_REASON_USER_OR_PASSWORD_WRONG);
 }
 
 #endif

@@ -2,18 +2,18 @@
 #define L2AUTH_L2_SERVER_C
 
 #include <stdlib.h>
+#include <log/log.h>
 #include <core/l2_socket.c>
 #include <core/l2_client.c>
 #include <core/l2_packet.c>
-//#include <core/l2_client_packet_type.c>
 #include <packet/client/type.c>
-#include <util/get_client_packet_type.c>
 #include <login/packet/init.c>
 #include <login/packet/fail.c>
 #include <login/packet/gg_auth.c>
 #include <login/session_key.c>
 #include <login/handler/request_auth_login.c>
 #include <login/handler/request_server_list.c>
+#include <login/handler/request_login_server.c>
 
 void l2_server_create
 (
@@ -22,6 +22,14 @@ void l2_server_create
         unsigned short port
 )
 {
+        if (!server) {
+                log_fatal("Trying to create l2 server but none was passed");
+                return;
+        }
+        if (!socket_type) {
+                log_fatal("Trying to create l2 server but no socket strategy was passed");
+                return;
+        }
         l2_socket_connect(server, socket_type);
         l2_socket_bind(server, port);
         l2_socket_listen(server);
@@ -33,12 +41,20 @@ void l2_server_accept_and_handle_connection
 )
 {
         struct L2Client client;
-        struct LoginSessionKey* session_key = login_session_key_create();
+        struct LoginSessionKey* session_key;
 
         l2_packet *server_packet;
         l2_packet *client_packet;
 
-        unsigned char *decrypted_packet = calloc(65535, sizeof(char));
+        unsigned char *decrypted_packet;
+
+        if (!server) {
+                log_fatal("Trying to accept and handle connection but no server was passed");
+                return;
+        }
+
+        session_key = login_session_key_create();
+        decrypted_packet = calloc(65535, sizeof(char));
 
         l2_client_accept(&client, server);
 
@@ -50,7 +66,13 @@ void l2_server_accept_and_handle_connection
                 client_packet = l2_client_wait_and_decrypt_packet(&client);
 
                 if (l2_client_connection_ended(&client)) {
+                        log_info("Client connection closed");
                         break;
+                }
+
+                if (!client_packet) {
+                        log_error("Client packet was not able to decrypt");
+                        continue;
                 }
 
                 l2_client_decrypt_client_packet(
@@ -59,10 +81,15 @@ void l2_server_accept_and_handle_connection
                         decrypted_packet
                 );
 
-                switch (get_client_packet_type(client_packet)) {
+                switch (l2_packet_get_type(client_packet)) {
                 case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
                         server_packet = login_handler_request_auth_login(
                                 decrypted_packet,
+                                session_key
+                        );
+                        break;
+                case PACKET_CLIENT_TYPE_REQUEST_LOGIN_SERVER:
+                        server_packet = login_handler_request_login_server(
                                 session_key
                         );
                         break;
@@ -93,6 +120,10 @@ void l2_server_wait_and_accept_connections
         struct L2Socket *server
 )
 {
+        if (!server) {
+                log_fatal("Trying to wait and accept for connections but no socket was passed");
+                return;
+        }
         l2_server_accept_and_handle_connection(server);
 }
 

@@ -11,7 +11,7 @@ RUN mv log.c/src/log.h /usr/include/log
 
 EXPOSE 2106
 
-COPY . /usr/src/l2auth
-WORKDIR /usr/src/l2auth
+COPY . /usr/src/loginserver
+WORKDIR /usr/src/loginserver
 
-CMD make && ./build/l2auth
+CMD cd login && make && ./build/loginserver
