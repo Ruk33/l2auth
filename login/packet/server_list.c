@@ -6,12 +6,16 @@
 #include <arpa/inet.h>
 #include <core/l2_packet.c>
 #include <core/byte_buffer.c>
-#include <login/server.c>
-#include <login/session_key.c>
+#include <login/dto/server.c>
+#include <login/dto/session_key.c>
 
-struct Server* create_dummy_server(unsigned char server_id, unsigned short players_count)
+struct LoginDtoServer* create_dummy_server
+(       
+        unsigned char server_id,
+        unsigned short players_count
+)
 {
-        struct Server* server = malloc(sizeof(struct Server));
+        struct LoginDtoServer* server = malloc(sizeof(struct LoginDtoServer));
         unsigned char online = 0x01;
         //int clock = 0x02;
         unsigned char hide_brackets = 0x00;
@@ -36,8 +40,8 @@ l2_packet* login_packet_server_list()
         l2_packet_type type = 0x04;
         unsigned char server_count = 2;
         unsigned char reserved_space = 0x00;
-        struct Server* bartz = create_dummy_server(1, 400);
-        struct Server* yeah = create_dummy_server(2, 40);
+        struct LoginDtoServer* bartz = create_dummy_server(1, 400);
+        struct LoginDtoServer* yeah = create_dummy_server(2, 40);
         struct ByteBuffer* buffer = byte_buffer_create();
         unsigned char ip[] = { 127, 0, 0, 1 }; // TODO check why inetaddr doest not work here
         l2_packet* packet;

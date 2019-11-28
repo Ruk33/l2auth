@@ -3,7 +3,7 @@
 
 #include <arpa/inet.h>
 
-struct Server
+struct LoginDtoServer
 {
         unsigned char id;
         in_addr_t ip;

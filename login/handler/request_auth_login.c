@@ -6,13 +6,13 @@
 #include <packet/helper.c>
 #include <login/helper.c>
 #include <login/packet/ok.c>
-#include <login/session_key.c>
+#include <login/dto/session_key.c>
 #include <login/packet/fail.c>
 
 l2_packet* login_handler_request_auth_login
 (
         unsigned char* packet,
-        struct LoginSessionKey* session_key
+        struct LoginDtoSessionKey* session_key
 )
 {
         unsigned char username[14];

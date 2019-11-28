@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-struct LoginSessionKey
+struct LoginDtoSessionKey
 {
         int playOK1;
         int playOK2;
@@ -11,9 +11,9 @@ struct LoginSessionKey
         int loginOK2;
 };
 
-struct LoginSessionKey* login_session_key_create()
+struct LoginDtoSessionKey* login_session_key_create()
 {
-        struct LoginSessionKey* session_key = malloc(sizeof(struct LoginSessionKey));
+        struct LoginDtoSessionKey* session_key = malloc(sizeof(struct LoginDtoSessionKey));
 
         session_key->playOK1 = rand();
         session_key->playOK2 = rand();
