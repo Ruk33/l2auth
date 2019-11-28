@@ -15,7 +15,7 @@ struct LoginDtoServer* create_dummy_server
         unsigned short players_count
 )
 {
-        struct LoginDtoServer* server = malloc(sizeof(struct LoginDtoServer));
+        struct LoginDtoServer* server = calloc(1, sizeof(struct LoginDtoServer));
         unsigned char online = 0x01;
         //int clock = 0x02;
         unsigned char hide_brackets = 0x00;

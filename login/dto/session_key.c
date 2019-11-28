@@ -13,7 +13,7 @@ struct LoginDtoSessionKey
 
 struct LoginDtoSessionKey* login_session_key_create()
 {
-        struct LoginDtoSessionKey* session_key = malloc(sizeof(struct LoginDtoSessionKey));
+        struct LoginDtoSessionKey* session_key = calloc(1, sizeof(struct LoginDtoSessionKey));
 
         session_key->playOK1 = rand();
         session_key->playOK2 = rand();
