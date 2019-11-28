@@ -30,7 +30,7 @@ void game_server_accept_and_handle_connection
         struct L2Socket *server
 )
 {
-        struct L2Client client;
+        struct L2Client* client = l2_client_new();
 
         l2_packet *server_packet;
         l2_packet *client_packet;
@@ -39,14 +39,14 @@ void game_server_accept_and_handle_connection
         int protocol = 0;
         int char_list_sent = 0;
 
-        l2_client_accept(&client, server);
+        l2_client_accept(client, server);
         log_info("Gameserver connection accepted");
 
         while (1) {
                 server_packet = NULL;
-                client_packet = l2_client_wait_packet_for_gameserver(&client);
+                client_packet = l2_client_wait_packet_for_gameserver(client);
 
-                if (l2_client_connection_ended(&client)) {
+                if (l2_client_connection_ended(client)) {
                         log_info("Gameserver client connection closed");
                         break;
                 }
@@ -82,7 +82,7 @@ void game_server_accept_and_handle_connection
                 }
 
                 l2_client_encrypt_and_send_packet(
-                        &client,
+                        client,
                         server_packet
                 );
         }

@@ -23,8 +23,6 @@ l2_packet* login_packet_play_ok
                 log_fatal("No session key was provided in login play ok");
         }
 
-        log_info("buffer content, %s", byte_buffer_content(buffer));
-
         packet = l2_packet_new(
                 type,
                 byte_buffer_content(buffer),

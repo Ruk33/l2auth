@@ -18,25 +18,27 @@
 
 struct L2Client
 {
-        struct L2Socket socket;
-        struct L2RSAKey rsa_key;
-        struct L2BlowfishKey blowfish_key;
+        struct L2Socket* socket;
+        struct L2RSAKey* rsa_key;
+        struct L2BlowfishKey* blowfish_key;
 
         ssize_t received_data_size;
-        unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
+        unsigned char* received_data;
 
         FILE* log_file;
 };
 
-void l2_client_create(struct L2Client* client)
+struct L2Client* l2_client_new()
 {
-        unsigned char blowfish_key[] = "_;5.]94-31==-%xT!^[$";
-        if (!client) {
-                log_fatal("No client was provided when creating l2 client");
-                return;
-        }
-        l2_blowfish_key_build(&client->blowfish_key, blowfish_key, sizeof(blowfish_key));
-        l2_rsa_key_build(&client->rsa_key);
+        struct L2Client* client = calloc(1, sizeof(struct L2Client));
+
+        client->socket = calloc(1, sizeof(struct L2Socket));
+        client->rsa_key = l2_rsa_key_new();
+        client->blowfish_key = l2_blowfish_key_new();
+        client->received_data_size = 0;
+        client->received_data = calloc(65535, sizeof(char));
+
+        return client;
 }
 
 void l2_client_accept
@@ -53,8 +55,7 @@ void l2_client_accept
                 log_fatal("No server passed when accepting client connection");
                 return;
         }
-        l2_socket_accept(server, &client->socket);
-        l2_client_create(client);
+        l2_socket_accept(server, client->socket);
         log_info("Connection accepted");
 }
 
@@ -90,7 +91,7 @@ void l2_client_send_packet
         packet_size = l2_raw_packet_get_size(packet);
         printable = calloc((size_t) (packet_size * 3), sizeof(char));
 
-        send_packet(&client->socket, packet);
+        send_packet(client->socket, packet);
         log_info("Sent packet");
 
         log_info("Packet size: %d", packet_size);
@@ -121,7 +122,7 @@ void l2_client_encrypt_and_send_packet
                 return;
         }
 
-        encrypted_packet = packet_server_encrypt(packet, &client->blowfish_key);
+        encrypted_packet = packet_server_encrypt(packet, client->blowfish_key);
         l2_client_send_packet(client, encrypted_packet);
 }
 
@@ -136,7 +137,7 @@ l2_raw_packet* l2_client_wait_packet_for_gameserver
         }
 
         client->received_data_size = l2_socket_receive(
-                &client->socket,
+                client->socket,
                 client->received_data,
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
@@ -148,7 +149,7 @@ l2_raw_packet* l2_client_wait_packet_for_gameserver
         
         ssize_t content_without_size_header_size = (
                 client->received_data_size ?
-                client->received_data_size - sizeof(short) :
+                (ssize_t) (client->received_data_size - (ssize_t) sizeof(short)) :
                 client->received_data_size
         );
 
@@ -171,7 +172,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet
         }
 
         client->received_data_size = l2_socket_receive(
-                &client->socket,
+                client->socket,
                 client->received_data,
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
@@ -179,7 +180,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet
         log_info("Received data from client to loginserver");
 
         return packet_client_decrypt(
-                &client->blowfish_key,
+                client->blowfish_key,
                 client->received_data,
                 (unsigned short) client->received_data_size
         );
@@ -215,7 +216,7 @@ int l2_client_decrypt_client_packet
         l2_packet_content(packet, packet_content, 0, packet_content_size);
 
         decrypt_result = l2_rsa_key_decrypt(
-                &client->rsa_key,
+                client->rsa_key,
                 packet_content,
                 dest
         );

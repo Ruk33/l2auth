@@ -40,7 +40,7 @@ void l2_server_accept_and_handle_connection
         struct L2Socket *server
 )
 {
-        struct L2Client client;
+        struct L2Client* client = l2_client_new();
         struct LoginDtoSessionKey* session_key;
 
         l2_packet *server_packet;
@@ -56,16 +56,16 @@ void l2_server_accept_and_handle_connection
         session_key = login_session_key_create();
         decrypted_packet = calloc(65535, sizeof(char));
 
-        l2_client_accept(&client, server);
+        l2_client_accept(client, server);
 
-        server_packet = login_packet_init(&client.rsa_key);
-        l2_client_send_packet(&client, server_packet);
+        server_packet = login_packet_init(client->rsa_key);
+        l2_client_send_packet(client, server_packet);
 
         while (1) {
                 server_packet = NULL;
-                client_packet = l2_client_wait_and_decrypt_packet(&client);
+                client_packet = l2_client_wait_and_decrypt_packet(client);
 
-                if (l2_client_connection_ended(&client)) {
+                if (l2_client_connection_ended(client)) {
                         log_info("Client connection closed");
                         break;
                 }
@@ -76,7 +76,7 @@ void l2_server_accept_and_handle_connection
                 }
 
                 l2_client_decrypt_client_packet(
-                        &client,
+                        client,
                         client_packet,
                         decrypted_packet
                 );
@@ -107,7 +107,7 @@ void l2_server_accept_and_handle_connection
                 }
 
                 l2_client_encrypt_and_send_packet(
-                        &client,
+                        client,
                         server_packet
                 );
         }

@@ -26,7 +26,7 @@ void l2_packet_init
                 log_fatal("Trying to initialize packet but none was passed");
                 return;
         }
-        if (!content || content_size == 0) {
+        if (!content || !content_size) {
                 log_warn("Trying to initialize packet but no content was passed");
         }
         
