@@ -4,9 +4,12 @@
 #include <log/log.h>
 #include <core/l2_packet.c>
 #include <core/byte_buffer.c>
-#include <login/session_key.c>
+#include <login/dto/session_key.c>
 
-l2_packet* login_packet_play_ok(struct LoginSessionKey *session_key)
+l2_packet* login_packet_play_ok
+(
+        struct LoginDtoSessionKey *session_key
+)
 {
         l2_packet_type type = 0x07;
         struct ByteBuffer* buffer = byte_buffer_create();

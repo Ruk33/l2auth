@@ -10,7 +10,7 @@
 #include <login/packet/init.c>
 #include <login/packet/fail.c>
 #include <login/packet/gg_auth.c>
-#include <login/session_key.c>
+#include <login/dto/session_key.c>
 #include <login/handler/request_auth_login.c>
 #include <login/handler/request_server_list.c>
 #include <login/handler/request_login_server.c>
@@ -41,7 +41,7 @@ void l2_server_accept_and_handle_connection
 )
 {
         struct L2Client client;
-        struct LoginSessionKey* session_key;
+        struct LoginDtoSessionKey* session_key;
 
         l2_packet *server_packet;
         l2_packet *client_packet;

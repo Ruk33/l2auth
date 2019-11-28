@@ -1,7 +1,7 @@
 #ifndef L2AUTH_LOGIN_HELPER_C
 #define L2AUTH_LOGIN_HELPER_C
 
-#include <stdio.h>
+#include <string.h>
 
 void login_helper_username_from_packet
 (
