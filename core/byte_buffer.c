@@ -1,5 +1,5 @@
-#ifndef L2AUTH_BYTE_BUFFER_C
-#define L2AUTH_BYTE_BUFFER_C
+#ifndef L2AUTH_BYTE_BUFFER_C_
+#define L2AUTH_BYTE_BUFFER_C_
 
 #include <stdlib.h>
 #include <log/log.h>
