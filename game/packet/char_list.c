@@ -7,12 +7,11 @@
 l2_packet* game_packet_char_list()
 {
         l2_packet_type type = 0x13;
-        unsigned int char_count = 0;
-
+        unsigned char content[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         return l2_packet_new(
                 type,
-                (unsigned char*) &char_count,
-                sizeof(char_count)
+                &content,
+                sizeof(content)
         );
 }
 

@@ -50,10 +50,12 @@ void game_server_accept_and_handle_connection
                         break;
                 }
 
+                log_info("Packet type from client before decrypt %02X", client_raw_packet[2] & 0xff);
                 if (client_raw_packet[2] & 0xff)
                         game_crypt_decrypt(client_raw_packet + 2, l2_raw_packet_get_size(client_raw_packet), decrypt_key);
 
                 game_crypt_checksum(client_raw_packet + 2, l2_raw_packet_get_size(client_raw_packet));
+                log_info("Packet type from client %02X", client_raw_packet[2] & 0xff);
 
                 switch (client_raw_packet[2] & 0xff)
                 {

@@ -25,7 +25,7 @@ void game_crypt_encrypt
         }
 
         for (int i = 0; i < len; i++) {
-               temp2 = data[i]/* & 0xff*/;
+               temp2 = data[i] & 0xff;
                data[i] = (unsigned char) (temp2 ^ key[i & 7] ^ temp);
                temp = data[i];
         };
@@ -54,8 +54,8 @@ void game_crypt_decrypt
         int temp2 = 0;
         unsigned int old = 0;
 
-        for (int i = 0; i < len; ++i) {
-               temp2 = data[i]/* & 0xff*/;
+        for (int i = 0; i < len; i++) {
+               temp2 = data[i] & 0xff;
                data[i] = (unsigned char) (temp2 ^ key[i & 7] ^ temp);
                temp = temp2;
         };

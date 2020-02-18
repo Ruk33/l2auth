@@ -38,12 +38,11 @@ struct LoginDtoServer* create_dummy_server
 l2_packet* login_packet_server_list()
 {
         l2_packet_type type = 0x04;
-        unsigned char server_count = 2;
+        unsigned char server_count = 1;
         unsigned char reserved_space = 0x00;
         struct LoginDtoServer* bartz = create_dummy_server(1, 400);
-        struct LoginDtoServer* yeah = create_dummy_server(2, 40);
         struct ByteBuffer* buffer = byte_buffer_create();
-        unsigned char ip[] = { 127, 0, 0, 1 }; // TODO check why inetaddr doest not work here
+        unsigned char ip[] = { 0, 0, 0, 0 }; // TODO check why inetaddr doest not work here
         l2_packet* packet;
 
         byte_buffer_append(buffer, &server_count, sizeof(server_count));
@@ -59,17 +58,6 @@ l2_packet* login_packet_server_list()
         byte_buffer_append(buffer, &bartz->extra, sizeof(bartz->extra));
         byte_buffer_append(buffer, &bartz->brackets, sizeof(bartz->brackets));
 
-        byte_buffer_append(buffer, &yeah->id, sizeof(yeah->id));
-        byte_buffer_append(buffer, &ip, sizeof(ip));
-        byte_buffer_append(buffer, &yeah->port, sizeof(yeah->port));
-        byte_buffer_append(buffer, &yeah->age_limit, sizeof(yeah->age_limit));
-        byte_buffer_append(buffer, &yeah->pvp, sizeof(yeah->pvp));
-        byte_buffer_append(buffer, &yeah->players_count, sizeof(yeah->players_count));
-        byte_buffer_append(buffer, &yeah->max_players, sizeof(yeah->max_players));
-        byte_buffer_append(buffer, &yeah->status, sizeof(yeah->status));
-        byte_buffer_append(buffer, &yeah->extra, sizeof(yeah->extra));
-        byte_buffer_append(buffer, &yeah->brackets, sizeof(yeah->brackets));
-
         packet = l2_packet_new(
                 type,
                 byte_buffer_content(buffer),
@@ -77,7 +65,6 @@ l2_packet* login_packet_server_list()
         );
 
         free(bartz);
-        free(yeah);
         byte_buffer_free(buffer);
 
         return packet;
