@@ -8,7 +8,7 @@
 
 l2_packet* game_packet_player_auth_request
 (
-        unsigned char* account,
+        char* account,
         size_t account_length,
         struct LoginDtoSessionKey* key
 )
@@ -24,14 +24,10 @@ l2_packet* game_packet_player_auth_request
                 byte_buffer_append(buffer, ch, 2);
         }
 
-        ch[0] = 0x00;
-        ch[1] = 0x00;
-        byte_buffer_append(buffer, ch, 2);
-
-        byte_buffer_append(buffer, &key->playOK1, sizeof(int));
-        byte_buffer_append(buffer, &key->playOK2, sizeof(int));
-        byte_buffer_append(buffer, &key->loginOK1, sizeof(int));
-        byte_buffer_append(buffer, &key->loginOK2, sizeof(int));
+        byte_buffer_append(buffer, &key->playOK1, sizeof(key->playOK1));
+        byte_buffer_append(buffer, &key->playOK2, sizeof(key->playOK2));
+        byte_buffer_append(buffer, &key->loginOK1, sizeof(key->loginOK1));
+        byte_buffer_append(buffer, &key->loginOK2, sizeof(key->loginOK2));
 
         packet = l2_packet_new(
                 type,
