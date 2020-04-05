@@ -70,8 +70,8 @@ l2_packet* game_packet_enter_world()
         unsigned int fly_walk_speed = 10;
         double movement_speed_multiplier = 1;
         double atk_speed_multiplier = 1;
-        double collision_radius = 10;
-        double collision_height = 10;
+        double collision_radius = 9;
+        double collision_height = 23;
         unsigned int hair_style = 0;
         unsigned int hair_color = 0;
         unsigned int face = 0;
