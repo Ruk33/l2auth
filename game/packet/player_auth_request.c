@@ -16,9 +16,9 @@ l2_packet* game_packet_player_auth_request
         l2_packet_type type = 0x05;
         struct ByteBuffer* buffer = byte_buffer_create();
         l2_packet* packet;
-        unsigned char ch[] = {0x00, 0x00};
+        char ch[] = {0x00, 0x00};
 
-        for (int i = 0; i < account_length; i++) {
+        for (size_t i = 0; i < account_length; i++) {
                 ch[0] = account[i];
                 ch[1] = 0x00;
                 byte_buffer_append(buffer, ch, 2);

@@ -14,7 +14,11 @@
 #include <game/packet/char_list.c>
 #include <game/packet/player_auth_request.c>
 #include <game/handler/protocol_version.c>
+#include <game/handler/encrypt.c>
 #include <game/handler/auth_login.c>
+#include <game/handler/new_character.c>
+#include <game/handler/create_character.c>
+#include <game/handler/select_character.c>
 
 void game_server_accept_and_handle_connection
 (
@@ -25,7 +29,16 @@ void game_server_accept_and_handle_connection
 
         l2_raw_packet *client_raw_packet;
 
-        unsigned char blowfish_key[40];
+        unsigned char encrypt_key[] = {
+                0x94,
+                0x35,
+                0x00,
+                0x00,
+                0xa1,
+                0x6c,
+                0x54,
+                0x87,
+        };
 
         unsigned char decrypt_key[] = {
                 0x94,
@@ -38,7 +51,10 @@ void game_server_accept_and_handle_connection
                 0x87,
         };
 
-        hex_generate(blowfish_key, sizeof(blowfish_key));
+        int enable_decrypt = 0;
+        unsigned short packet_size = 0;
+        unsigned short sz = 0;
+
         l2_client_accept(client, server);
         log_info("Gameserver connection accepted");
 
@@ -50,16 +66,27 @@ void game_server_accept_and_handle_connection
                         break;
                 }
 
-                log_info("Packet type from client before decrypt %02X", client_raw_packet[2] & 0xff);
-                if (client_raw_packet[2] & 0xff)
-                        game_crypt_decrypt(client_raw_packet + 2, l2_raw_packet_get_size(client_raw_packet), decrypt_key);
+                memcpy(&packet_size, client_raw_packet, sizeof(packet_size));
+                sz = packet_size;
 
-                game_crypt_checksum(client_raw_packet + 2, l2_raw_packet_get_size(client_raw_packet));
+                if (packet_size > 1) sz -= 2;
+
+                log_info("Packet size: %d", packet_size);
+                log_info("Packet type from client before decrypt %02X", client_raw_packet[2] & 0xff);
+
+                if (enable_decrypt) {
+                        game_crypt_decrypt(
+                                client_raw_packet + 2,
+                                sz,
+                                decrypt_key
+                        );
+                }
                 log_info("Packet type from client %02X", client_raw_packet[2] & 0xff);
 
                 switch (client_raw_packet[2] & 0xff)
                 {
                 case 0x00: // protocol version
+                        enable_decrypt = 1;
                         l2_client_send_packet(
                                 client,
                                 game_handler_protocol_version(client_raw_packet)
@@ -68,7 +95,44 @@ void game_server_accept_and_handle_connection
                 case 0x08: // auth request
                         l2_client_send_packet(
                                 client,
-                                game_handler_auth_login(client_raw_packet)
+                                game_handler_encrypt(
+                                        game_handler_auth_login(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0x0e: // new char
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_new_character(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0x0b: // create char
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_create_character(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_auth_login(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0x0d:
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_select_character(client_raw_packet),
+                                        encrypt_key
+                                )
                         );
                         break;
                 default:
