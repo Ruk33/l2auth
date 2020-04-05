@@ -7,16 +7,15 @@
 #include <core/byte_buffer.c>
 #include <login/dto/session_key.c>
 
-l2_packet* game_packet_char_selected()
+l2_packet* game_packet_char_selected(int playOK1)
 {
         l2_packet_type type = 0x15;
         struct ByteBuffer* buffer = byte_buffer_create();
         l2_packet* packet;
 
-        unsigned char name[] = "ruke";
+        unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
         unsigned int char_id = 0x00;
-        unsigned char title[] = "Test";
-        unsigned int session_id = 0;
+        unsigned char title[] = { 0, 0 };
         unsigned int clan_id = 0;
         unsigned int empty = 0;
         unsigned int sex = 0x00;
@@ -43,7 +42,7 @@ l2_packet* game_packet_char_selected()
         byte_buffer_append(buffer, name, sizeof(name));
         byte_buffer_append(buffer, &char_id, sizeof(char_id));
         byte_buffer_append(buffer, title, sizeof(title));
-        byte_buffer_append(buffer, &session_id, sizeof(session_id));
+        byte_buffer_append(buffer, &playOK1, sizeof(playOK1));
         byte_buffer_append(buffer, &clan_id, sizeof(clan_id));
         byte_buffer_append(buffer, &empty, sizeof(empty));
         byte_buffer_append(buffer, &sex, sizeof(sex));

@@ -19,6 +19,9 @@
 #include <game/handler/new_character.c>
 #include <game/handler/create_character.c>
 #include <game/handler/select_character.c>
+#include <game/handler/d0.c>
+#include <game/handler/request_quests.c>
+#include <game/handler/enter_world.c>
 
 void game_server_accept_and_handle_connection
 (
@@ -54,6 +57,8 @@ void game_server_accept_and_handle_connection
         int enable_decrypt = 0;
         unsigned short packet_size = 0;
         unsigned short sz = 0;
+
+        struct LoginDtoSessionKey* session_key = login_session_key_create();
 
         l2_client_accept(client, server);
         log_info("Gameserver connection accepted");
@@ -96,7 +101,10 @@ void game_server_accept_and_handle_connection
                         l2_client_send_packet(
                                 client,
                                 game_handler_encrypt(
-                                        game_handler_auth_login(client_raw_packet),
+                                        game_handler_auth_login(
+                                                client_raw_packet,
+                                                session_key
+                                        ),
                                         encrypt_key
                                 )
                         );
@@ -121,16 +129,37 @@ void game_server_accept_and_handle_connection
                         l2_client_send_packet(
                                 client,
                                 game_handler_encrypt(
-                                        game_handler_auth_login(client_raw_packet),
+                                        game_handler_auth_login(client_raw_packet, session_key),
                                         encrypt_key
                                 )
                         );
                         break;
-                case 0x0d:
+                case 0x0d: // selected char (entering world)
                         l2_client_send_packet(
                                 client,
                                 game_handler_encrypt(
-                                        game_handler_select_character(client_raw_packet),
+                                        game_handler_select_character(client_raw_packet, session_key->playOK1),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0xd0: // request auto ss or bsps
+                        game_handler_d0(client_raw_packet);
+                        break;
+                case 0x63: // request quest list
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_request_quests(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0x03: // enter world
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_enter_world(client_raw_packet),
                                         encrypt_key
                                 )
                         );

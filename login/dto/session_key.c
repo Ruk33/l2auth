@@ -5,6 +5,7 @@
 
 struct LoginDtoSessionKey
 {
+        char login_name[20];
         int playOK1;
         int playOK2;
         int loginOK1;
