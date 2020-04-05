@@ -22,6 +22,7 @@
 #include <game/handler/d0.c>
 #include <game/handler/request_quests.c>
 #include <game/handler/enter_world.c>
+#include <game/handler/restart.c>
 
 void game_server_accept_and_handle_connection
 (
@@ -160,6 +161,22 @@ void game_server_accept_and_handle_connection
                                 client,
                                 game_handler_encrypt(
                                         game_handler_enter_world(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        break;
+                case 0x46: // restart
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_restart(client_raw_packet),
+                                        encrypt_key
+                                )
+                        );
+                        l2_client_send_packet(
+                                client,
+                                game_handler_encrypt(
+                                        game_handler_auth_login(client_raw_packet, session_key),
                                         encrypt_key
                                 )
                         );
