@@ -2,8 +2,10 @@
 #define L2AUTH_PACKET_CLIENT_DECRYPT_C
 
 #include <log/log.h>
-#include <core/l2_raw_packet.c>
-#include <core/l2_blowfish_key.c>
+#include <core/endian.h>
+#include <core/l2_raw_packet.h>
+#include <core/l2_blowfish_key.h>
+#include <packet/client/decrypt.h>
 
 l2_raw_packet* packet_client_decrypt
 (

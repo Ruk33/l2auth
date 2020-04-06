@@ -2,8 +2,10 @@
 #define L2AUTH_LOGIN_PACKET_INIT_C
 
 #include <stdlib.h>
-#include <core/l2_rsa_key.c>
-#include <core/l2_packet.c>
+#include <log/log.h>
+#include <core/l2_rsa_key.h>
+#include <core/l2_packet.h>
+#include <login/packet/init.h>
 
 l2_packet* login_packet_init(struct L2RSAKey *rsa_key)
 {

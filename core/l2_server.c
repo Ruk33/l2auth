@@ -3,17 +3,18 @@
 
 #include <stdlib.h>
 #include <log/log.h>
-#include <core/l2_socket.c>
-#include <core/l2_client.c>
-#include <core/l2_packet.c>
-#include <packet/client/type.c>
-#include <login/packet/init.c>
-#include <login/packet/fail.c>
-#include <login/packet/gg_auth.c>
-#include <login/dto/session_key.c>
-#include <login/handler/request_auth_login.c>
-#include <login/handler/request_server_list.c>
-#include <login/handler/request_login_server.c>
+#include <core/l2_socket.h>
+#include <core/l2_client.h>
+#include <core/l2_packet.h>
+#include <packet/client/type.h>
+#include <login/packet/init.h>
+#include <login/packet/fail.h>
+#include <login/packet/gg_auth.h>
+#include <login/dto/session_key.h>
+#include <login/handler/request_auth_login.h>
+#include <login/handler/request_server_list.h>
+#include <login/handler/request_login_server.h>
+#include <core/l2_server.h>
 
 void l2_server_create
 (

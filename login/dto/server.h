@@ -1,5 +1,5 @@
-#ifndef L2AUTH_LOGIN_SERVER_C
-#define L2AUTH_LOGIN_SERVER_C
+#ifndef L2AUTH_LOGIN_SERVER_H
+#define L2AUTH_LOGIN_SERVER_H
 
 #include <arpa/inet.h>
 

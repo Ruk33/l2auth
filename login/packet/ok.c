@@ -2,9 +2,10 @@
 #define L2AUTH_LOGIN_PACKET_OK_C
 
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <core/byte_buffer.c>
-#include <login/dto/session_key.c>
+#include <core/l2_packet.h>
+#include <core/byte_buffer.h>
+#include <login/dto/session_key.h>
+#include <login/packet/ok.h>
 
 l2_packet* login_packet_ok
 (

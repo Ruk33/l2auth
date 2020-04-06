@@ -2,8 +2,9 @@
 #define L2AUTH_LOGIN_HANDLER_REQUEST_SERVER_LIST_C
 
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <login/packet/server_list.c>
+#include <core/l2_packet.h>
+#include <login/packet/server_list.h>
+#include <login/handler/request_server_list.h>
 
 l2_packet* login_handler_request_server_list()
 {

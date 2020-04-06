@@ -4,9 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <log/log.h>
-
-typedef unsigned short l2_raw_packet_size;
-typedef unsigned char l2_raw_packet;
+#include <core/l2_raw_packet.h>
 
 l2_raw_packet_size l2_raw_packet_calculate_size
 (

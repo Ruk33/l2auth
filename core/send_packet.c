@@ -1,8 +1,9 @@
 #ifndef L2AUTH_SEND_PACKET_C
 #define L2AUTH_SEND_PACKET_C
 
-#include <core/l2_socket.c>
-#include <core/l2_packet.c>
+#include <core/l2_socket.h>
+#include <core/l2_packet.h>
+#include <core/send_packet.h>
 
 void send_packet
 (
@@ -17,4 +18,4 @@ void send_packet
         );
 }
 
-#endif //L2AUTH_SEND_PACKET_C
+#endif

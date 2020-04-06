@@ -3,10 +3,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <core/l2_raw_packet.c>
-
-typedef l2_raw_packet l2_packet;
-typedef unsigned char l2_packet_type;
+#include <log/log.h>
+#include <core/l2_raw_packet.h>
+#include <core/l2_packet.h>
 
 void l2_packet_init
 (

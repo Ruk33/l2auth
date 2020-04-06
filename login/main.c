@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <time.h>
-#include <socket_strategy/socket_strategy_linux.c>
-#include <core/l2_socket.c>
-#include <core/l2_server.c>
+#include <core/l2_socket.h>
+#include <socket_strategy/socket_strategy_linux.h>
+#include <core/l2_server.h>
 
 int main()
 {
@@ -18,7 +18,7 @@ int main()
                 l2_server_wait_and_accept_connections(server);
         //}
 
-        l2_client_close(server); 
+        l2_client_close(server);
 
         return 0;
 }

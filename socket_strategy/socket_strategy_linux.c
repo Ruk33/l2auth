@@ -7,7 +7,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <core/l2_socket.c>
+#include <core/l2_socket.h>
+#include <socket_strategy/socket_strategy_linux.h>
 
 int socket_strategy_linux_connect(struct L2Socket* l2_socket)
 {

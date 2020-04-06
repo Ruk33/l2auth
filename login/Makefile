@@ -1,2 +1,21 @@
-loginserver: main.c
-	gcc -o ./build/loginserver main.c -std=c99 -I.. -llog -lcrypto -lssl -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
+csrc = $(wildcard *.c) \
+	$(wildcard dto/*.c) \
+	$(wildcard handler/*.c) \
+	$(wildcard packet/*.c) \
+	$(wildcard ../core/*.c) \
+	$(wildcard ../packet/*.c) \
+	$(wildcard ../packet/client/*.c) \
+	$(wildcard ../packet/server/*.c) \
+	$(wildcard ../socket_strategy/*.c)
+obj = $(csrc:.c=.o)
+
+CC = gcc
+CLIBS = -llog -lcrypto -lssl
+CFLAGS = $(CLIBS) -I.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
+
+loginserver: $(obj)
+	$(CC) -o $@ $^ $(CLIBS)
+
+.PHONY: clean
+clean:
+	rm -f $(obj) loginserver

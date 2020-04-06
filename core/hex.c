@@ -2,6 +2,7 @@
 #define L2AUTH_HEX_C
 
 #include <stdlib.h>
+#include <core/hex.h>
 
 void hex_generate(unsigned char* dest, size_t size)
 {

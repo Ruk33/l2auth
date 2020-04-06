@@ -2,9 +2,10 @@
 #define L2AUTH_LOGIN_HANDLER_REQUEST_LOGIN_SERVER_C
 
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <login/dto/session_key.c>
-#include <login/packet/play_ok.c>
+#include <core/l2_packet.h>
+#include <login/dto/session_key.h>
+#include <login/packet/play_ok.h>
+#include <login/handler/request_login_server.h>
 
 l2_packet* login_handler_request_login_server
 (

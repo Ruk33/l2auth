@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <packet/helper.h>
 
 unsigned short packet_helper_size(void* packet)
 {

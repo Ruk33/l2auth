@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <core/l2_packet.c>
-#include <core/byte_buffer.c>
-#include <login/dto/server.c>
-#include <login/dto/session_key.c>
+#include <core/l2_packet.h>
+#include <core/byte_buffer.h>
+#include <login/dto/server.h>
+#include <login/dto/session_key.h>
+#include <login/packet/server_list.h>
 
 struct LoginDtoServer* create_dummy_server
 (       

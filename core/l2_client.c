@@ -5,28 +5,16 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <log/log.h>
-#include <core/l2_socket.c>
-#include <core/l2_rsa_key.c>
-#include <core/l2_blowfish_key.c>
-#include <core/l2_raw_packet.c>
-#include <core/l2_packet.c>
-#include <core/send_packet.c>
-#include <packet/server/encrypt.c>
-#include <packet/client/decrypt.c>
-
-#define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
-
-struct L2Client
-{
-        struct L2Socket* socket;
-        struct L2RSAKey* rsa_key;
-        struct L2BlowfishKey* blowfish_key;
-
-        ssize_t received_data_size;
-        unsigned char* received_data;
-
-        FILE* log_file;
-};
+#include <core/circular_memory_alloc.h>
+#include <core/l2_socket.h>
+#include <core/l2_rsa_key.h>
+#include <core/l2_blowfish_key.h>
+#include <core/l2_raw_packet.h>
+#include <core/l2_packet.h>
+#include <core/send_packet.h>
+#include <packet/server/encrypt.h>
+#include <packet/client/decrypt.h>
+#include <core/l2_client.h>
 
 struct L2Client* l2_client_new()
 {
@@ -37,8 +25,14 @@ struct L2Client* l2_client_new()
         client->blowfish_key = l2_blowfish_key_new();
         client->received_data_size = 0;
         client->received_data = calloc(65535, sizeof(char));
+        client->memory = circular_memory_alloc_reserve_space(65535);
 
         return client;
+}
+
+circular_memory_space* l2_client_alloc(struct L2Client* client, size_t how_much)
+{
+        return circular_memory_alloc(client->memory, how_much);
 }
 
 void l2_client_accept
@@ -89,7 +83,7 @@ void l2_client_send_packet
         }
 
         packet_size = l2_raw_packet_get_size(packet);
-        printable = calloc((size_t) (packet_size * 3), sizeof(char));
+        printable = l2_client_alloc(client, packet_size * 3 * sizeof(char));
 
         send_packet(client->socket, packet);
         log_info("Sent packet");
@@ -100,8 +94,6 @@ void l2_client_send_packet
                 sprintf(printable + i * 3, "%02X ", packet[i]);
 
         log_info("Packet bytes: %s", printable);
-
-        free(printable);
 }
 
 void l2_client_encrypt_and_send_packet
@@ -122,7 +114,7 @@ void l2_client_encrypt_and_send_packet
                 return;
         }
 
-        encrypted_packet = packet_server_encrypt(packet, client->blowfish_key);
+        encrypted_packet = packet_server_encrypt(client, packet);
         l2_client_send_packet(client, encrypted_packet);
 }
 

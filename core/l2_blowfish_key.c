@@ -5,12 +5,7 @@
 #include <string.h>
 #include <openssl/blowfish.h>
 #include <log/log.h>
-
-struct L2BlowfishKey
-{
-        unsigned char* raw_key;
-        BF_KEY* key;
-};
+#include <core/l2_blowfish_key.h>
 
 struct L2BlowfishKey* l2_blowfish_key_new()
 {

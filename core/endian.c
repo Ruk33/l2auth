@@ -1,5 +1,7 @@
-#ifndef L2AUTH_ENDIAN_C
-#define L2AUTH_ENDIAN_C
+#ifndef L2AUTH_ENDIAN_H
+#define L2AUTH_ENDIAN_H
+
+#include <core/endian.h>
 
 unsigned int decode32le(const void* src)
 {
@@ -33,4 +35,4 @@ void encode32be(void* dst, unsigned int val)
         buf[0] = (unsigned char) (val >> 24);
 }
 
-#endif //L2AUTH_ENDIAN_C
+#endif

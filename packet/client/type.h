@@ -1,5 +1,5 @@
-#ifndef L2AUTH_PACKET_CLIENT_TYPE_C
-#define L2AUTH_PACKET_CLIENT_TYPE_C
+#ifndef L2AUTH_PACKET_CLIENT_TYPE_H
+#define L2AUTH_PACKET_CLIENT_TYPE_H
 
 enum packet_client_type
 {

@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <log/log.h>
+#include <core/byte_buffer.h>
 
 struct ByteBuffer
 {
