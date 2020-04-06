@@ -1,8 +1,9 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_LIST
-#define L2AUTH_LOGIN_GAME_PACKET_CHAR_LIST
+#ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_LIST_C
+#define L2AUTH_LOGIN_GAME_PACKET_CHAR_LIST_C
 
-#include <core/l2_packet.c>
-#include <core/byte_buffer.c>
+#include <core/l2_packet.h>
+#include <core/byte_buffer.h>
+#include <game/packet/char_list.h>
 
 l2_packet* game_packet_char_list(int play_ok_1)
 {

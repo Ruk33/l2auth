@@ -3,10 +3,11 @@
 
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <login/dto/session_key.c>
-#include <game/packet/player_auth_request.c>
-#include <game/packet/char_list.c>
+#include <core/l2_packet.h>
+#include <login/dto/session_key.h>
+#include <game/packet/player_auth_request.h>
+#include <game/packet/char_list.h>
+#include <game/handler/auth_login.h>
 
 void game_handler_cpy_login_name(l2_raw_packet* packet, char* dest)
 {

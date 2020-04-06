@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <log/log.h>
-#include <socket_strategy/socket_strategy_linux.c>
-#include <core/l2_socket.c>
-#include <core/l2_server.c>
-#include <game/server.c>
+#include <socket_strategy/socket_strategy_linux.h>
+#include <core/l2_client.h>
+#include <core/l2_socket.h>
+#include <core/l2_server.h>
+#include <game/server.h>
 
 int main()
 {

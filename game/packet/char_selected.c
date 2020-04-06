@@ -1,11 +1,12 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED
-#define L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED
+#ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
+#define L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
 
 #include <stdlib.h>
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <core/byte_buffer.c>
-#include <login/dto/session_key.c>
+#include <core/l2_packet.h>
+#include <core/byte_buffer.h>
+#include <login/dto/session_key.h>
+#include <game/packet/char_selected.h>
 
 l2_packet* game_packet_char_selected(int playOK1)
 {

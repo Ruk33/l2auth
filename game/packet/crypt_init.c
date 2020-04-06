@@ -1,7 +1,8 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT
-#define L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT
+#ifndef L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT_C
+#define L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT_C
 
-#include <core/l2_packet.c>
+#include <core/l2_packet.h>
+#include <game/packet/crypt_init.h>
 
 l2_packet* game_packet_crypt_init()
 {

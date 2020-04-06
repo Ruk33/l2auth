@@ -3,9 +3,10 @@
 
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_raw_packet.c>
-#include <core/l2_packet.c>
-#include <game/packet/quest_list.c>
+#include <core/l2_raw_packet.h>
+#include <core/l2_packet.h>
+#include <game/packet/quest_list.h>
+#include <game/handler/request_quests.h>
 
 l2_packet* game_handler_request_quests(l2_raw_packet* request)
 {

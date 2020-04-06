@@ -3,9 +3,10 @@
 
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_raw_packet.c>
-#include <core/l2_packet.c>
-#include <game/packet/restart.c>
+#include <core/l2_raw_packet.h>
+#include <core/l2_packet.h>
+#include <game/packet/restart.h>
+#include <game/handler/restart.h>
 
 l2_packet* game_handler_restart(l2_raw_packet* request)
 {

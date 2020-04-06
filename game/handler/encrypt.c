@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_raw_packet.c>
-#include <core/l2_packet.c>
-#include <game/crypt.c>
-#include <core/byte_buffer.c>
+#include <core/l2_raw_packet.h>
+#include <core/l2_packet.h>
+#include <game/crypt.h>
+#include <core/byte_buffer.h>
+#include <game/handler/encrypt.h>
 
 l2_packet* game_handler_encrypt
 (

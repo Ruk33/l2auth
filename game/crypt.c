@@ -1,7 +1,8 @@
-#ifndef L2AUTH_LOGIN_GAME_CRYPT
-#define L2AUTH_LOGIN_GAME_CRYPT
+#ifndef L2AUTH_LOGIN_GAME_CRYPT_C
+#define L2AUTH_LOGIN_GAME_CRYPT_C
 
 #include <log/log.h>
+#include <game/crypt.h>
 
 void game_crypt_encrypt
 (

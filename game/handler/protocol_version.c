@@ -3,8 +3,9 @@
 
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_packet.c>
-#include <game/packet/crypt_init.c>
+#include <core/l2_packet.h>
+#include <game/packet/crypt_init.h>
+#include <game/handler/protocol_version.h>
 
 l2_packet* game_handler_protocol_version(l2_raw_packet* request)
 {

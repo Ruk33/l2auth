@@ -1,7 +1,8 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_RESTART
-#define L2AUTH_LOGIN_GAME_PACKET_RESTART
+#ifndef L2AUTH_LOGIN_GAME_PACKET_RESTART_C
+#define L2AUTH_LOGIN_GAME_PACKET_RESTART_C
 
-#include <core/l2_packet.c>
+#include <core/l2_packet.h>
+#include <game/packet/restart.h>
 
 l2_packet* game_packet_restart()
 {

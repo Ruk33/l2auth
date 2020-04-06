@@ -1,8 +1,9 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD
-#define L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD
+#ifndef L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
+#define L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
 
-#include <core/l2_packet.c>
-#include <core/byte_buffer.c>
+#include <core/l2_packet.h>
+#include <core/byte_buffer.h>
+#include <game/packet/enter_world.h>
 
 l2_packet* game_packet_enter_world()
 {
