@@ -7,6 +7,13 @@
 #include <openssl/rsa.h>
 #include <core/l2_rsa_key.h>
 
+struct L2RSAKey
+{
+        char* raw_e;
+        BIGNUM* e;
+        RSA* rsa_key;
+};
+
 struct L2RSAKey* l2_rsa_key_new()
 {
         struct L2RSAKey* key = calloc(1, sizeof(struct L2RSAKey));

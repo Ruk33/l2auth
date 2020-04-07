@@ -2,6 +2,7 @@
 #define L2AUTH_LOGIN_PACKET_INIT_C
 
 #include <stdlib.h>
+#include <string.h>
 #include <log/log.h>
 #include <core/l2_rsa_key.h>
 #include <core/l2_packet.h>

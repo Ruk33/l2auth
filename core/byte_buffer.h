@@ -3,15 +3,15 @@
 
 #include <stdlib.h>
 
-struct ByteBuffer;
+struct ByteBuffer
+{
+        unsigned char* content;
+        size_t size;
+        size_t used_space;
+};
 
 struct ByteBuffer* byte_buffer_create();
 void byte_buffer_free(struct ByteBuffer* buffer);
-void byte_buffer_realloc_if_required
-(
-        struct ByteBuffer* buffer,
-        size_t required
-);
 void byte_buffer_append
 (
         struct ByteBuffer* buffer,

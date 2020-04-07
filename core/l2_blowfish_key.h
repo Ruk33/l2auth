@@ -3,11 +3,7 @@
 
 #include <openssl/blowfish.h>
 
-struct L2BlowfishKey
-{
-        unsigned char* raw_key;
-        BF_KEY* key;
-};
+struct L2BlowfishKey;
 
 struct L2BlowfishKey* l2_blowfish_key_new();
 void l2_blowfish_encrypt

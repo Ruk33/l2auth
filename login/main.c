@@ -3,6 +3,7 @@
 #include <core/l2_socket.h>
 #include <socket_strategy/socket_strategy_linux.h>
 #include <core/l2_server.h>
+#include <core/l2_client.h>
 
 int main()
 {

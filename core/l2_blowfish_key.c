@@ -7,6 +7,12 @@
 #include <log/log.h>
 #include <core/l2_blowfish_key.h>
 
+struct L2BlowfishKey
+{
+        unsigned char* raw_key;
+        BF_KEY* key;
+};
+
 struct L2BlowfishKey* l2_blowfish_key_new()
 {
         char raw_key[] = "_;5.]94-31==-%xT!^[$";

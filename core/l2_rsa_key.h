@@ -4,12 +4,7 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 
-struct L2RSAKey
-{
-        char* raw_e;
-        BIGNUM* e;
-        RSA* rsa_key;
-};
+struct L2RSAKey;
 
 #define L2_RSA_KEY_DEFAULT_SIZE_IN_BITS 1024
 

@@ -2,15 +2,9 @@
 #define L2AUTH_BYTE_BUFFER_C
 
 #include <stdlib.h>
+#include <string.h>
 #include <log/log.h>
 #include <core/byte_buffer.h>
-
-struct ByteBuffer
-{
-        unsigned char* content;
-        size_t size;
-        size_t used_space;
-};
 
 struct ByteBuffer* byte_buffer_create()
 {

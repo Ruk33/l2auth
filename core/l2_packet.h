@@ -13,7 +13,6 @@ void l2_packet_init
         unsigned char* content,
         unsigned short content_size
 );
-l2_raw_packet_size l2_packet_calculate_size(unsigned short content_size);
 l2_packet* l2_packet_new
 (
         l2_packet_type type,

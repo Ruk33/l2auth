@@ -1,5 +1,5 @@
-#ifndef L2AUTH_ENDIAN_H
-#define L2AUTH_ENDIAN_H
+#ifndef L2AUTH_ENDIAN_C
+#define L2AUTH_ENDIAN_C
 
 #include <core/endian.h>
 

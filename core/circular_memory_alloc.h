@@ -36,24 +36,6 @@
 
 typedef char circular_memory_space;
 
-void circular_memory_alloc_set_max_space
-(
-        circular_memory_space* space,
-        size_t max_space
-);
-size_t circular_memory_alloc_max_space(circular_memory_space* space);
-void circular_memory_alloc_set_cursor
-(
-        circular_memory_space* space,
-        size_t new_cursor
-);
-size_t circular_memory_alloc_cursor(circular_memory_space* space);
-circular_memory_space* circular_memory_alloc_block
-(
-        circular_memory_space* space,
-        size_t cursor,
-        size_t block_memory
-);
 circular_memory_space* circular_memory_alloc_reserve_space
 (
         size_t to_be_reserved
