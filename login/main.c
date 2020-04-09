@@ -1,25 +1,25 @@
 #include <stdlib.h>
 #include <time.h>
-#include <core/l2_socket.h>
-#include <socket_strategy/socket_strategy_linux.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
+#include <log/log.h>
+#include <login/server.h>
 
 int main()
 {
-        struct L2SocketStrategy* socket_strategy = calloc(1, sizeof(struct L2SocketStrategy));
-        struct L2Socket* server = calloc(1, sizeof(struct L2Socket));
+        size_t mem_in_bytes_per_player = 1024 * 1024;
+        struct LoginServer* server = login_server_create(1, mem_in_bytes_per_player);
+        unsigned short port = 2106;
 
         srand((unsigned int) time(NULL));
 
-        socket_strategy_linux(socket_strategy);
-        l2_server_create(server, socket_strategy, 2106);
+        log_info("Starting loginserver");
 
-        //while (1) {
-                l2_server_wait_and_accept_connections(server);
-        //}
+        if (server == NULL) {
+                log_fatal("Not able to allocate memory for loginserver");
+                exit(1);
+        }
 
-        l2_client_close(server);
+        login_server_listen(server, port);
+        login_server_accept_client(server);
 
         return 0;
 }

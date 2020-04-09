@@ -1,10 +1,18 @@
 #ifndef L2AUTH_BYTE_BUFFER_C
 #define L2AUTH_BYTE_BUFFER_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <log/log.h>
 #include <core/byte_buffer.h>
+
+struct ByteBuffer
+{
+        unsigned char* content;
+        size_t size;
+        size_t used_space;
+};
 
 struct ByteBuffer* byte_buffer_create()
 {
@@ -19,10 +27,7 @@ struct ByteBuffer* byte_buffer_create()
 
 void byte_buffer_free(struct ByteBuffer* buffer)
 {
-        if (!buffer) {
-                log_warn("Trying to free NULL byte buffer");
-                return;
-        }
+        assert(buffer);
         if (buffer->content) free(buffer->content);
         free(buffer);
 }
@@ -33,12 +38,11 @@ void byte_buffer_realloc_if_required
         size_t required
 )
 {
+        assert(buffer);
+        assert(required);
+
         size_t new_required_mem = 0;
 
-        if (!buffer) {
-                log_fatal("Trying to append content in NULL byte buffer");
-                return;
-        }
         if (buffer->size >= buffer->used_space + required) return;
 
         buffer->size = buffer->size > 0 ? buffer->size : 16;
@@ -62,15 +66,9 @@ void byte_buffer_append
         size_t content_size
 )
 {
-        if (!buffer) {
-                log_fatal("Trying to append content in NULL byte buffer");
-                return;
-        }
-
-        if (!content || !content_size) {
-                log_warn("Trying to append null/empty content into byte buffer");
-                return;
-        }
+        assert(buffer);
+        assert(content);
+        assert(content_size);
 
         byte_buffer_realloc_if_required(buffer, content_size);
         memcpy(buffer->content + buffer->used_space, content, content_size);

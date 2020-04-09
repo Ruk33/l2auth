@@ -3,12 +3,7 @@
 
 #include <stdlib.h>
 
-struct ByteBuffer
-{
-        unsigned char* content;
-        size_t size;
-        size_t used_space;
-};
+struct ByteBuffer;
 
 struct ByteBuffer* byte_buffer_create();
 void byte_buffer_free(struct ByteBuffer* buffer);

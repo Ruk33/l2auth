@@ -1,6 +1,7 @@
 #ifndef L2AUTH_PACKET_SERVER_ENCRYPT_C
 #define L2AUTH_PACKET_SERVER_ENCRYPT_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <core/endian.h>
 #include <core/l2_client.h>
@@ -15,16 +16,19 @@ l2_raw_packet* packet_server_encrypt
         l2_raw_packet* to_encrypt
 )
 {
-        struct L2BlowfishKey* key = client->blowfish_key;
+        assert(client);
+        assert(to_encrypt);
+
+        struct L2BlowfishKey* key = l2_client_blowfish_key(client);
 
         unsigned short packet_size = l2_raw_packet_get_size(to_encrypt);
         unsigned char* packet_content = 
-                l2_client_alloc(client, packet_size * sizeof(char));
+                l2_client_alloc_temp_mem(client, packet_size * sizeof(char));
 
         unsigned short encrypted_packet_size = 
                 (unsigned short) ((packet_size / 8 + 1) * 8);
         unsigned char* encrypted_content =
-                l2_client_alloc(client, encrypted_packet_size * sizeof(char));
+                l2_client_alloc_temp_mem(client, encrypted_packet_size * sizeof(char));
 
         l2_raw_packet* raw_packet;
 

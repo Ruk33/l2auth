@@ -1,6 +1,7 @@
 #ifndef L2AUTH_BUILD_RSA_KEY_C
 #define L2AUTH_BUILD_RSA_KEY_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <openssl/bn.h>
@@ -9,18 +10,23 @@
 
 struct L2RSAKey
 {
-        char* raw_e;
+        char raw_e[6];
         BIGNUM* e;
         RSA* rsa_key;
 };
 
-struct L2RSAKey* l2_rsa_key_new()
+size_t l2_rsa_key_struct_size()
 {
-        struct L2RSAKey* key = calloc(1, sizeof(struct L2RSAKey));
+        return sizeof(struct L2RSAKey);
+}
+
+void l2_rsa_key_init(struct L2RSAKey* key)
+{
+        assert(key);
+
         char raw_e[] = "65537";
         size_t raw_e_size = sizeof(raw_e);
 
-        key->raw_e = calloc(raw_e_size, sizeof(char));
         key->e = BN_new();
         key->rsa_key = RSA_new();
 
@@ -33,8 +39,6 @@ struct L2RSAKey* l2_rsa_key_new()
                 key->e,
                 NULL
         );
-
-        return key;
 }
 
 void l2_rsa_key_scramble_modulo(unsigned char* n)
@@ -64,12 +68,10 @@ void l2_rsa_key_scramble_modulo(unsigned char* n)
         };
 };
 
-void l2_rsa_key_modulus
-(
-        struct L2RSAKey* key,
-        unsigned char* dest
-)
+void l2_rsa_key_modulus(struct L2RSAKey* key, unsigned char* dest)
 {
+        assert(key);
+        assert(dest);
         const BIGNUM *n;
         RSA_get0_key(key->rsa_key, &n, NULL, NULL);
         BN_bn2bin(n, dest);
@@ -78,6 +80,7 @@ void l2_rsa_key_modulus
 
 int l2_rsa_key_size(struct L2RSAKey* key)
 {
+        assert(key);
         return RSA_size(key->rsa_key);
 }
 

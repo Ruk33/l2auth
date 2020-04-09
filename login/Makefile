@@ -18,4 +18,4 @@ loginserver: $(obj)
 
 .PHONY: clean
 clean:
-	rm -f $(obj) loginserver
+	rm -f $(obj) build/loginserver

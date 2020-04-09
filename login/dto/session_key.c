@@ -1,19 +1,17 @@
 #ifndef L2AUTH_LOGIN_SESSION_KEY_C
 #define L2AUTH_LOGIN_SESSION_KEY_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <login/dto/session_key.h>
 
-struct LoginDtoSessionKey* login_session_key_create()
+void login_session_key_init(struct LoginDtoSessionKey* session)
 {
-        struct LoginDtoSessionKey* session_key = calloc(1, sizeof(struct LoginDtoSessionKey));
-
-        session_key->playOK1 = rand();
-        session_key->playOK2 = rand();
-        session_key->loginOK1 = rand();
-        session_key->loginOK2 = rand();
-
-        return session_key;
+        assert(session);
+        session->playOK1 = rand();
+        session->playOK2 = rand();
+        session->loginOK1 = rand();
+        session->loginOK2 = rand();
 }
 
 #endif

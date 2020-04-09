@@ -12,22 +12,30 @@
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
 
-struct L2Client
-{
-        struct L2Socket* socket;
-        struct L2RSAKey* rsa_key;
-        struct L2BlowfishKey* blowfish_key;
+struct L2Client;
 
-        ssize_t received_data_size;
-        unsigned char* received_data;
-
-        FILE* log_file;
-
-        circular_memory_space* memory;
-};
-
+struct LoginDtoSessionKey* l2_client_session(struct L2Client* client);
+/*
+ * (franco.montenegro)
+ * Should we really expose the RSA key?
+ */
+struct L2RSAKey* l2_client_rsa_key(struct L2Client* client);
+/*
+ * (franco.montenegro)
+ * Should we really expose the Blowfish key?
+ */
+struct L2BlowfishKey* l2_client_blowfish_key(struct L2Client* client);
+size_t l2_client_struct_size();
+void l2_client_init(struct L2Client* client);
 struct L2Client* l2_client_new();
-circular_memory_space* l2_client_alloc(struct L2Client* client, size_t how_much);
+void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much);
+l2_packet* l2_client_create_packet
+(
+        struct L2Client* client,
+        l2_packet_type type,
+        unsigned char* content,
+        size_t content_size
+);
 void l2_client_accept(struct L2Client* client, struct L2Socket* server);
 void l2_client_close(struct L2Socket* server);
 void l2_client_send_packet(struct L2Client* client, l2_raw_packet* packet);

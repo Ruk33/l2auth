@@ -2,8 +2,8 @@
 #define L2AUTH_LOGIN_PACKET_OK_H
 
 #include <core/l2_packet.h>
-#include <login/dto/session_key.h>
+#include <core/l2_client.h>
 
-l2_packet* login_packet_ok(struct LoginDtoSessionKey* session_key);
+l2_packet* login_packet_ok(struct L2Client* client);
 
 #endif

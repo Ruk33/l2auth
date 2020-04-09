@@ -6,6 +6,7 @@
 typedef l2_raw_packet l2_packet;
 typedef unsigned char l2_packet_type;
 
+l2_raw_packet_size l2_packet_calculate_size(unsigned short content_size);
 void l2_packet_init
 (
         l2_packet* packet,

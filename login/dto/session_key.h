@@ -10,6 +10,6 @@ struct LoginDtoSessionKey
         int loginOK2;
 };
 
-struct LoginDtoSessionKey* login_session_key_create();
+void login_session_key_init(struct LoginDtoSessionKey* session);
 
 #endif
