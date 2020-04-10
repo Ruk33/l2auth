@@ -1,12 +1,14 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <log/log.h>
 #include <login/server.h>
+#include <core/memory.h>
 
 int main()
 {
-        size_t mem_in_bytes_per_player = 1024 * 1024;
-        struct LoginServer* server = login_server_create(1, mem_in_bytes_per_player);
+        size_t max_players = 1;
+        struct LoginServer* server = login_server_create(max_players);
         unsigned short port = 2106;
 
         srand((unsigned int) time(NULL));
@@ -18,8 +20,7 @@ int main()
                 exit(1);
         }
 
-        login_server_listen(server, port);
-        login_server_accept_client(server);
+        login_server_start(server, port);
 
         return 0;
 }

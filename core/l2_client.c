@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <log/log.h>
+#include <core/memory.h>
 #include <core/circular_memory_alloc.h>
 #include <core/l2_socket.h>
 #include <core/l2_rsa_key.h>
@@ -18,12 +19,8 @@
 #include <packet/client/decrypt.h>
 #include <core/l2_client.h>
 
-/*
- * (franco.montenegro)
- * Fix me, we shouldn't have to hardcode the amount of memory here
- * 65551 = 65535 + sizeof(size_t) * 2 (metadata used by circular memory alloc)
- */
-#define MEMORY_PER_CLIENT_IN_BYTES (65551)
+#define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
+#define MEMORY_PER_CLIENT_IN_BYTES 131072
 
 struct L2Client
 {
@@ -34,9 +31,10 @@ struct L2Client
         struct LoginDtoSessionKey session;
 
         ssize_t received_data_size;
-        unsigned char received_data[65535];
+        unsigned char received_data[65536];
 
-        circular_memory_space memory[MEMORY_PER_CLIENT_IN_BYTES];
+        circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
+        memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
 };
 
 struct LoginDtoSessionKey* l2_client_session(struct L2Client* client)
@@ -81,7 +79,14 @@ void l2_client_init(struct L2Client* client)
 
         login_session_key_init(&client->session);
 
-        circular_memory_alloc_init(client->memory, MEMORY_PER_CLIENT_IN_BYTES);
+        memory_init(
+                client->preallocated_memory,
+                MEMORY_PER_CLIENT_IN_BYTES
+        );
+        circular_memory_alloc_init(
+                client->temp_memory,
+                TEMP_MEMORY_PER_CLIENT_IN_BYTES
+        );
 }
 
 struct L2Client* l2_client_new()
@@ -91,11 +96,25 @@ struct L2Client* l2_client_new()
         return client;
 }
 
+void* l2_client_alloc(struct L2Client* client, size_t how_much)
+{
+        assert(client);
+        assert(how_much);
+        return memory_alloc(client->preallocated_memory, how_much);
+}
+
+void l2_client_alloc_free(struct L2Client* client, void* block)
+{
+        assert(client);
+        assert(block);
+        memory_free(block);
+}
+
 void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much)
 {
         assert(client);
         assert(how_much);
-        return (void*) circular_memory_alloc(client->memory, how_much);
+        return (void*) circular_memory_alloc(client->temp_memory, how_much);
 }
 
 l2_packet* l2_client_create_packet
@@ -146,7 +165,10 @@ void l2_client_send_packet(struct L2Client* client, l2_raw_packet* packet)
         assert(packet);
 
         l2_raw_packet_size packet_size = l2_raw_packet_get_size(packet);
-        char *printable = l2_client_alloc_temp_mem(client, (size_t) packet_size * 3 * sizeof(char));
+        char *printable = l2_client_alloc_temp_mem(
+                client,
+                (size_t) packet_size * 3 * sizeof(char)
+        );
 
         send_packet(&client->socket, packet);
 

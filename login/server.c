@@ -21,22 +21,16 @@ struct LoginServer {
          * being, this will do
          */
         void* clients;
-        void* clients_memory;
 };
 
 void login_server_free(struct LoginServer* server)
 {
         assert(server);
         if (server->clients) free(server->clients);
-        if (server->clients_memory) free(server->clients_memory);
         free(server);
 }
 
-struct LoginServer* login_server_create
-(
-        size_t max_players,
-        size_t mem_in_bytes_per_player
-)
+struct LoginServer* login_server_create(size_t max_players)
 {
         struct LoginServer* server = calloc(1, sizeof(struct LoginServer));
 
@@ -45,11 +39,9 @@ struct LoginServer* login_server_create
         }
 
         server->accepted_clients = 0;
-
         server->clients = calloc(max_players, l2_client_struct_size());
-        server->clients_memory = calloc(max_players, mem_in_bytes_per_player);
 
-        if (server->clients == NULL || server->clients_memory == NULL) {
+        if (server->clients == NULL) {
                 login_server_free(server);
                 return NULL;
         }
@@ -95,6 +87,13 @@ void login_server_accept_client(struct LoginServer* server)
         server->accepted_clients += 1;
 
         login_handler_client(server, client);
+}
+
+void login_server_start(struct LoginServer* server, unsigned short port)
+{
+        assert(server);
+        login_server_listen(server, port);
+        login_server_accept_client(server);
 }
 
 #endif

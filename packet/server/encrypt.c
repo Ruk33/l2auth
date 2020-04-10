@@ -30,7 +30,10 @@ l2_raw_packet* packet_server_encrypt
         unsigned char* encrypted_content =
                 l2_client_alloc_temp_mem(client, encrypted_packet_size * sizeof(char));
 
-        l2_raw_packet* raw_packet;
+        l2_raw_packet* raw_packet = l2_client_alloc_temp_mem(
+                client,
+                l2_raw_packet_calculate_size(encrypted_packet_size)
+        );
 
         l2_raw_packet_content(
                 to_encrypt,
@@ -56,7 +59,8 @@ l2_raw_packet* packet_server_encrypt
                 encode32le(encrypted_content + 4 + i, decode32be(encrypted_content + 4 + i));
         }
 
-        raw_packet = l2_raw_packet_new(
+        l2_raw_packet_init(
+                raw_packet,
                 encrypted_content,
                 encrypted_packet_size
         );

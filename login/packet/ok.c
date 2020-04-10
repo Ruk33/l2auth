@@ -15,6 +15,8 @@ l2_packet* login_packet_ok(struct L2Client* client)
 
         l2_packet_type type = 0x03;
         struct LoginDtoSessionKey* session_key = l2_client_session(client);
+        struct ByteBuffer* buffer = byte_buffer_create();
+        l2_packet* packet;
         unsigned char content_after_keys[] = {
                 0x00,
                 0x00,
@@ -65,8 +67,6 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 0x00,
                 0x00,
         };
-        struct ByteBuffer* buffer = byte_buffer_create();
-        l2_packet* packet;
 
         assert(session_key);
 
@@ -86,7 +86,6 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 &session_key->loginOK2,
                 sizeof(session_key->loginOK2)
         );
-
         byte_buffer_append(
                 buffer,
                 &content_after_keys,

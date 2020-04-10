@@ -6,7 +6,7 @@
 #include <string.h>
 #include <core/memory.h>
 
-void memory_alloc_init_block(memory* block, size_t reserved)
+void memory_init_block(memory* block, size_t reserved)
 {
         assert(block);
         assert(reserved);
@@ -18,7 +18,7 @@ void memory_alloc_init_block(memory* block, size_t reserved)
         memset(block + reserved_metadata, 0, is_used_metadata + real_free_space);
 }
 
-void memory_alloc_init(memory* mem, size_t reserved)
+void memory_init(memory* mem, size_t reserved)
 {
         assert(mem);
         assert(reserved);
@@ -26,10 +26,10 @@ void memory_alloc_init(memory* mem, size_t reserved)
         assert(reserved - max_metadata > 0);
         size_t real_free_space = reserved - max_metadata;
         memcpy(mem, &real_free_space, sizeof(real_free_space));
-        memory_alloc_init_block(mem + max_metadata, real_free_space);
+        memory_init_block(mem + max_metadata, real_free_space);
 }
 
-size_t memory_alloc_max(memory* block)
+size_t memory_reserved(memory* block)
 {
         assert(block);
         size_t max = 0;
@@ -37,7 +37,7 @@ size_t memory_alloc_max(memory* block)
         return max;
 }
 
-size_t memory_alloc_reserved_by_block(memory* block)
+size_t memory_reserved_by_block(memory* block)
 {
         assert(block);
         size_t reserved = 0;
@@ -50,7 +50,7 @@ size_t memory_alloc_reserved_by_block(memory* block)
         return reserved;
 }
 
-int memory_alloc_is_block_used(memory* block)
+int memory_is_block_being_used(memory* block)
 {
         assert(block);
         return (int) *(block - sizeof(unsigned char));
@@ -61,7 +61,7 @@ memory* memory_alloc(memory* from, size_t how_much)
         assert(from);
         assert(how_much);
 
-        size_t max = memory_alloc_max(from);
+        size_t max = memory_reserved(from);
         assert(max - how_much > 0);
 
         size_t max_metadata = sizeof(size_t);
@@ -82,20 +82,20 @@ memory* memory_alloc(memory* from, size_t how_much)
 
         while (end < max) {
                 block = from + end;
-                mem_in_block = memory_alloc_reserved_by_block(block);
+                mem_in_block = memory_reserved_by_block(block);
 
                 if (start_end_mem == 0) start = end;
                 else start_end_mem += reserved_metadata + is_used_metadata;
 
                 end += reserved_metadata + is_used_metadata + mem_in_block;
-                if (memory_alloc_is_block_used(block)) {
+                if (memory_is_block_being_used(block)) {
                         start_end_mem = 0;
                         continue;
                 }
                 start_end_mem += mem_in_block;
 
                 if (start_end_mem - how_much_with_metadata < 10) {
-                        memory_alloc_init_block(
+                        memory_init_block(
                                 from + start - reserved_metadata - is_used_metadata,
                                 start_end_mem
                         );
@@ -104,11 +104,11 @@ memory* memory_alloc(memory* from, size_t how_much)
                 }
 
                 if (start_end_mem > how_much_with_metadata) {
-                        memory_alloc_init_block(
+                        memory_init_block(
                                 from + start - reserved_metadata - is_used_metadata,
                                 how_much_with_metadata
                         );
-                        memory_alloc_init_block(
+                        memory_init_block(
                                 from + start + how_much,
                                 start_end_mem - how_much
                         );

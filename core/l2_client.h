@@ -28,6 +28,8 @@ struct L2BlowfishKey* l2_client_blowfish_key(struct L2Client* client);
 size_t l2_client_struct_size();
 void l2_client_init(struct L2Client* client);
 struct L2Client* l2_client_new();
+void* l2_client_alloc(struct L2Client* client, size_t how_much);
+void l2_client_alloc_free(struct L2Client* client, void* how_much);
 void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much);
 l2_packet* l2_client_create_packet
 (
