@@ -13,6 +13,7 @@
 #include <core/l2_blowfish_key.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
+#include <core/byte_builder.h>
 #include <core/send_packet.h>
 #include <login/dto/session_key.h>
 #include <packet/server/encrypt.h>
@@ -94,6 +95,13 @@ struct L2Client* l2_client_new()
         struct L2Client* client = calloc(1, sizeof(struct L2Client));
         l2_client_init(client);
         return client;
+}
+
+byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
+{
+        size_t to_be_allocated = byte_builder_calculate_size(how_much);
+        byte_builder* builder = l2_client_alloc(client, to_be_allocated);
+        return byte_builder_init(builder, to_be_allocated);
 }
 
 void* l2_client_alloc(struct L2Client* client, size_t how_much)
@@ -189,8 +197,6 @@ void l2_client_encrypt_and_send_packet
 {
         assert(client);
         assert(packet);
-
-        log_info("Encrypting packet");
         l2_raw_packet *encrypted_packet = packet_server_encrypt(client, packet);
         l2_client_send_packet(client, encrypted_packet);
 }

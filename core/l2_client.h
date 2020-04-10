@@ -9,6 +9,7 @@
 #include <core/l2_blowfish_key.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
+#include <core/byte_builder.h>
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65535
 
@@ -28,6 +29,7 @@ struct L2BlowfishKey* l2_client_blowfish_key(struct L2Client* client);
 size_t l2_client_struct_size();
 void l2_client_init(struct L2Client* client);
 struct L2Client* l2_client_new();
+byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much);
 void* l2_client_alloc(struct L2Client* client, size_t how_much);
 void l2_client_alloc_free(struct L2Client* client, void* how_much);
 void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much);

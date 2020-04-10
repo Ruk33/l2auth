@@ -5,7 +5,7 @@
 #include <log/log.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/byte_builder.h>
 #include <login/dto/session_key.h>
 #include <login/packet/ok.h>
 
@@ -15,8 +15,6 @@ l2_packet* login_packet_ok(struct L2Client* client)
 
         l2_packet_type type = 0x03;
         struct LoginDtoSessionKey* session_key = l2_client_session(client);
-        struct ByteBuffer* buffer = byte_buffer_create();
-        l2_packet* packet;
         unsigned char content_after_keys[] = {
                 0x00,
                 0x00,
@@ -67,6 +65,13 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 0x00,
                 0x00,
         };
+        byte_builder* buffer = l2_client_byte_builder(
+                client,
+                sizeof(session_key->loginOK1) +
+                sizeof(session_key->loginOK2) +
+                sizeof(content_after_keys)
+        );
+        l2_packet* packet;
 
         assert(session_key);
 
@@ -76,30 +81,28 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 session_key->loginOK2
         );
 
-        byte_buffer_append(
+        byte_builder_append(
                 buffer,
-                &session_key->loginOK1,
+                (unsigned char *) &session_key->loginOK1,
                 sizeof(session_key->loginOK1)
         );
-        byte_buffer_append(
+        byte_builder_append(
                 buffer,
-                &session_key->loginOK2,
+                (unsigned char *) &session_key->loginOK2,
                 sizeof(session_key->loginOK2)
         );
-        byte_buffer_append(
+        byte_builder_append(
                 buffer,
-                &content_after_keys,
+                content_after_keys,
                 sizeof(content_after_keys)
         );
 
         packet = l2_client_create_packet(
                 client,
                 type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
         );
-
-        byte_buffer_free(buffer);
 
         return packet;
 }
