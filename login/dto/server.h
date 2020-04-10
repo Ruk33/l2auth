@@ -6,7 +6,7 @@
 struct LoginDtoServer
 {
         unsigned char id;
-        in_addr_t ip;
+        //in_addr_t ip;
         int port;
         unsigned char age_limit;
         unsigned char pvp;

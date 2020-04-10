@@ -10,6 +10,8 @@
 #include <login/handler/client.h>
 #include <packet/client/type.h>
 #include <login/handler/request_auth_login.h>
+#include <login/handler/request_login_server.h>
+#include <login/handler/request_server_list.h>
 #include <login/handler/gg.h>
 #include <login/server.h>
 
@@ -48,6 +50,18 @@ void login_handler_client(struct LoginServer* server, struct L2Client* client)
                                 server,
                                 client,
                                 decrypted_packet
+                        );
+                        break;
+                case PACKET_CLIENT_TYPE_REQUEST_LOGIN_SERVER:
+                        login_handler_request_login_server(
+                                server,
+                                client
+                        );
+                        break;
+                case PACKET_CLIENT_TYPE_REQUEST_SERVER_LIST:
+                        login_handler_request_server_list(
+                                server,
+                                client
                         );
                         break;
                 case PACKET_CLIENT_TYPE_GG_AUTH:

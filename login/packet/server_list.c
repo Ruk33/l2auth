@@ -1,22 +1,26 @@
 #ifndef L2AUTH_LOGIN_PACKET_SERVER_LIST_C
 #define L2AUTH_LOGIN_PACKET_SERVER_LIST_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/l2_client.h>
+#include <core/byte_builder.h>
 #include <login/dto/server.h>
 #include <login/dto/session_key.h>
 #include <login/packet/server_list.h>
 
-struct LoginDtoServer* create_dummy_server
-(       
+void initialize_dummy_server
+(
+        struct LoginDtoServer* server,
         unsigned char server_id,
         unsigned short players_count
 )
 {
-        struct LoginDtoServer* server = calloc(1, sizeof(struct LoginDtoServer));
+        assert(server);
+
         unsigned char online = 0x01;
         //int clock = 0x02;
         unsigned char hide_brackets = 0x00;
@@ -32,43 +36,96 @@ struct LoginDtoServer* create_dummy_server
         //server->extra = 0x00 | clock;
         server->extra = 0x00;
         server->brackets = hide_brackets;
-
-        return server;
 }
 
-l2_packet* login_packet_server_list()
+l2_packet* login_packet_server_list(struct L2Client* client)
 {
+        assert(client);
         l2_packet_type type = 0x04;
         unsigned char server_count = 1;
         unsigned char reserved_space = 0x00;
-        struct LoginDtoServer* bartz = create_dummy_server(1, 400);
-        struct ByteBuffer* buffer = byte_buffer_create();
-        unsigned char ip[] = { 0, 0, 0, 0 }; // TODO check why inetaddr doest not work here
-        l2_packet* packet;
-
-        byte_buffer_append(buffer, &server_count, sizeof(server_count));
-        byte_buffer_append(buffer, &reserved_space, sizeof(reserved_space));
-        byte_buffer_append(buffer, &bartz->id, sizeof(bartz->id));
-        byte_buffer_append(buffer, &ip, sizeof(ip));
-        byte_buffer_append(buffer, &bartz->port, sizeof(bartz->port));
-        byte_buffer_append(buffer, &bartz->age_limit, sizeof(bartz->age_limit));
-        byte_buffer_append(buffer, &bartz->pvp, sizeof(bartz->pvp));
-        byte_buffer_append(buffer, &bartz->players_count, sizeof(bartz->players_count));
-        byte_buffer_append(buffer, &bartz->max_players, sizeof(bartz->max_players));
-        byte_buffer_append(buffer, &bartz->status, sizeof(bartz->status));
-        byte_buffer_append(buffer, &bartz->extra, sizeof(bartz->extra));
-        byte_buffer_append(buffer, &bartz->brackets, sizeof(bartz->brackets));
-
-        packet = l2_packet_new(
-                type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+        struct LoginDtoServer* bartz = l2_client_alloc_temp_mem(
+                client,
+                sizeof(struct LoginDtoServer)
+        );
+        /*
+         * (franco.montenegro)
+         * Check why inetaddr does not work here
+         */
+        unsigned char ip[] = { 0, 0, 0, 0 };
+        byte_builder* buffer = l2_client_byte_builder(
+                client,
+                sizeof(server_count) +
+                sizeof(reserved_space) +
+                sizeof(ip) +
+                sizeof(struct LoginDtoServer)
         );
 
-        free(bartz);
-        byte_buffer_free(buffer);
+        initialize_dummy_server(bartz, 1, 400);
 
-        return packet;
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &server_count,
+                sizeof(server_count)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &reserved_space,
+                sizeof(reserved_space)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->id,
+                sizeof(bartz->id)
+        );
+        byte_builder_append(buffer, ip, sizeof(ip));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->port,
+                sizeof(bartz->port)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->age_limit,
+                sizeof(bartz->age_limit)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->pvp,
+                sizeof(bartz->pvp)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->players_count,
+                sizeof(bartz->players_count)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->max_players,
+                sizeof(bartz->max_players)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->status,
+                sizeof(bartz->status)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->extra,
+                sizeof(bartz->extra)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &bartz->brackets,
+                sizeof(bartz->brackets)
+        );
+
+        return l2_client_create_packet(
+                client,
+                type,
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
+        );
 }
 
 #endif

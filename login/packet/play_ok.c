@@ -1,38 +1,46 @@
 #ifndef L2AUTH_LOGIN_PACKET_PLAY_OK_C
 #define L2AUTH_LOGIN_PACKET_PLAY_OK_C
 
+#include <assert.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/byte_builder.h>
 #include <login/dto/session_key.h>
 #include <login/packet/play_ok.h>
 
-l2_packet* login_packet_play_ok
-(
-        struct LoginDtoSessionKey *session_key
-)
+l2_packet* login_packet_play_ok(struct L2Client* client)
 {
+        assert(client);
         l2_packet_type type = 0x07;
-        struct ByteBuffer* buffer = byte_buffer_create();
-        l2_packet* packet;
-
-        if (session_key) {
-                log_info("Using play OK ids %d - %d", session_key->playOK1, session_key->playOK2);
-                byte_buffer_append(buffer, &session_key->playOK1, sizeof(int));
-                byte_buffer_append(buffer, &session_key->playOK2, sizeof(int));
-        } else {
-                log_fatal("No session key was provided in login play ok");
-        }
-
-        packet = l2_packet_new(
-                type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+        struct LoginDtoSessionKey* session = l2_client_session(client);
+        assert(session);
+        byte_builder* buffer = l2_client_byte_builder(
+                client,
+                sizeof(session->playOK1) + sizeof(session->playOK2)
         );
 
-        byte_buffer_free(buffer);
+        log_info(
+                "Using play OK ids %d - %d",
+                session->playOK1,
+                session->playOK2
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &session->playOK1,
+                sizeof(session->playOK1)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &session->playOK2,
+                sizeof(session->playOK2)
+        );
 
-        return packet;
+        return l2_client_create_packet(
+                client,
+                type,
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
+        );
 }
 
 #endif

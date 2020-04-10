@@ -55,11 +55,10 @@ void byte_builder_append
         assert(builder);
         assert(content);
         size_t allocated_metadata = sizeof(size_t);
-        size_t len_metadata = sizeof(size_t);
         size_t len = byte_builder_length(builder);
         size_t new_len = content_size + len;
         assert(byte_builder_allocated_mem(builder) >= new_len);
-        memcpy(builder - allocated_metadata - len_metadata + len, content, content_size);
+        memcpy(builder + len, content, content_size);
         memcpy(builder - allocated_metadata, &new_len, sizeof(new_len));
 }
 
