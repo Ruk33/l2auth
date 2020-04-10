@@ -8,11 +8,11 @@
 #include <login/dto/session_key.h>
 #include <login/handler/new_connection.h>
 #include <login/handler/client.h>
-#include <packet/client/type.h>
 #include <login/handler/request_auth_login.h>
 #include <login/handler/request_login_server.h>
 #include <login/handler/request_server_list.h>
 #include <login/handler/gg.h>
+#include <login/packet/client_type.h>
 #include <login/server.h>
 
 void login_handler_client(struct LoginServer* server, struct L2Client* client)
@@ -23,7 +23,7 @@ void login_handler_client(struct LoginServer* server, struct L2Client* client)
         l2_packet *client_packet = NULL;
         unsigned char *decrypted_packet = NULL;
 
-        log_info("Handling new client");
+        log_info("Handling new client from loginserver");
         login_handler_new_connection(server, client);
 
         while (1) {
@@ -45,26 +45,26 @@ void login_handler_client(struct LoginServer* server, struct L2Client* client)
                 );
 
                 switch (l2_packet_get_type(client_packet)) {
-                case PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
+                case LOGIN_PACKET_CLIENT_TYPE_REQUEST_AUTH_LOGIN:
                         login_handler_request_auth_login(
                                 server,
                                 client,
                                 decrypted_packet
                         );
                         break;
-                case PACKET_CLIENT_TYPE_REQUEST_LOGIN_SERVER:
+                case LOGIN_PACKET_CLIENT_TYPE_REQUEST_LOGIN_SERVER:
                         login_handler_request_login_server(
                                 server,
                                 client
                         );
                         break;
-                case PACKET_CLIENT_TYPE_REQUEST_SERVER_LIST:
+                case LOGIN_PACKET_CLIENT_TYPE_REQUEST_SERVER_LIST:
                         login_handler_request_server_list(
                                 server,
                                 client
                         );
                         break;
-                case PACKET_CLIENT_TYPE_GG_AUTH:
+                case LOGIN_PACKET_CLIENT_TYPE_GG_AUTH:
                         login_handler_gg(server, client);
                         break;
                 default:
@@ -76,7 +76,7 @@ void login_handler_client(struct LoginServer* server, struct L2Client* client)
                 }
         }
 
-        log_info("Client connection closed");
+        log_info("Loginserver client connection closed");
 }
 
 #endif

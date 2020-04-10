@@ -85,15 +85,16 @@ void login_server_accept_client(struct LoginServer* server)
         l2_client_init(client);
         l2_client_accept(client, &server->socket);
         server->accepted_clients += 1;
-
         login_handler_client(server, client);
+        server->accepted_clients -= 1;
+        l2_client_close(client);
 }
 
 void login_server_start(struct LoginServer* server, unsigned short port)
 {
         assert(server);
         login_server_listen(server, port);
-        login_server_accept_client(server);
+        while(1) login_server_accept_client(server);
 }
 
 #endif

@@ -99,6 +99,8 @@ struct L2Client* l2_client_new()
 
 byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
 {
+        assert(client);
+        assert(how_much);
         size_t to_be_allocated = byte_builder_calculate_size(how_much);
         byte_builder* builder = l2_client_alloc(client, to_be_allocated);
         return byte_builder_init(builder, to_be_allocated);
@@ -160,10 +162,10 @@ void l2_client_accept(struct L2Client* client, struct L2Socket* server)
         log_info("Connection accepted");
 }
 
-void l2_client_close(struct L2Socket* server)
+void l2_client_close(struct L2Client* client)
 {
-        assert(server);
-        l2_socket_close(server);
+        assert(client);
+        l2_socket_close(&client->socket);
         log_info("Connection closed");
 }
 
@@ -201,7 +203,7 @@ void l2_client_encrypt_and_send_packet
         l2_client_send_packet(client, encrypted_packet);
 }
 
-l2_raw_packet* l2_client_wait_packet_for_gameserver(struct L2Client* client)
+l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
 {
         assert(client);
 
@@ -222,12 +224,18 @@ l2_raw_packet* l2_client_wait_packet_for_gameserver(struct L2Client* client)
                 client->received_data_size
         );
 
-        log_info("Received data from client to gameserver");
+        l2_raw_packet* packet = l2_client_alloc_temp_mem(
+                client,
+                l2_raw_packet_calculate_size((unsigned short) content_without_size_header_size)
+        );
 
-        return l2_raw_packet_new(
+        l2_raw_packet_init(
+                packet,
                 content_without_size_header,
                 (unsigned short) content_without_size_header_size
         );
+
+        return packet;
 }
 
 l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
@@ -239,8 +247,6 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
                 client->received_data,
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
-
-        log_info("Received data from client to loginserver");
 
         return packet_client_decrypt(
                 client->blowfish_key,

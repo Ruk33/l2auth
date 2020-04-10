@@ -11,16 +11,16 @@ int main()
         struct LoginServer* server = login_server_create(max_players);
         unsigned short port = 2106;
 
-        srand((unsigned int) time(NULL));
-
-        log_info("Starting loginserver");
-
         if (server == NULL) {
                 log_fatal("Not able to allocate memory for loginserver");
                 exit(1);
         }
 
+        srand((unsigned int) time(NULL));
+
+        log_info("Starting loginserver");
         login_server_start(server, port);
+        log_info("Closing loginserver");
 
         return 0;
 }

@@ -41,14 +41,14 @@ l2_packet* l2_client_create_packet
         size_t content_size
 );
 void l2_client_accept(struct L2Client* client, struct L2Socket* server);
-void l2_client_close(struct L2Socket* server);
+void l2_client_close(struct L2Client* client);
 void l2_client_send_packet(struct L2Client* client, l2_raw_packet* packet);
 void l2_client_encrypt_and_send_packet
 (
         struct L2Client* client,
         l2_raw_packet* packet
 );
-l2_raw_packet* l2_client_wait_packet_for_gameserver(struct L2Client* client);
+l2_raw_packet* l2_client_wait_packet(struct L2Client* client);
 l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client);
 int l2_client_decrypt_client_packet
 (
