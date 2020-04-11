@@ -25,6 +25,7 @@ void l2_packet_init
         );
 
         unsigned char* packet_content = calloc(packet_size, sizeof(char));
+
         memcpy(packet_content, &type, sizeof(type));
         memcpy(packet_content + sizeof(type), content, content_size);
 
@@ -33,10 +34,7 @@ void l2_packet_init
         free(packet_content);
 }
 
-l2_raw_packet_size l2_packet_calculate_size
-(
-        unsigned short content_size
-)
+l2_raw_packet_size l2_packet_calculate_size(unsigned short content_size)
 {
         return (l2_raw_packet_size) (
                 l2_raw_packet_calculate_size(content_size) +
@@ -44,30 +42,13 @@ l2_raw_packet_size l2_packet_calculate_size
         );
 }
 
-l2_packet* l2_packet_new
-(
-        l2_packet_type type,
-        unsigned char* content,
-        unsigned short content_size
-)
-{
-        assert(content);
-
-        l2_packet* packet = calloc(
-                l2_packet_calculate_size(content_size),
-                sizeof(l2_packet)
-        );
-
-        l2_packet_init(packet, type, content, content_size);
-
-        return packet;
-}
-
 l2_packet_type l2_packet_get_type(l2_packet* packet)
 {
         assert(packet);
+
         l2_packet_type type = 0;
         l2_raw_packet_content(packet, &type, 0, sizeof(type));
+
         return type;
 }
 

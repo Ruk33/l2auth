@@ -10,10 +10,14 @@ void memory_init_block(memory* block, size_t reserved)
 {
         assert(block);
         assert(reserved);
+
         size_t reserved_metadata = sizeof(size_t);
+
         size_t is_used_metadata = sizeof(unsigned char);
         assert(reserved - reserved_metadata - is_used_metadata > 0);
+
         size_t real_free_space = reserved - reserved_metadata - is_used_metadata;
+
         memcpy(block, &real_free_space, sizeof(real_free_space));
         memset(block + reserved_metadata, 0, is_used_metadata + real_free_space);
 }

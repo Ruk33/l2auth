@@ -37,11 +37,13 @@
 typedef char circular_memory_space;
 
 size_t circular_memory_alloc_metadata_size();
+
 void circular_memory_alloc_init
 (
         circular_memory_space* space,
         size_t to_be_reserved
 );
+
 circular_memory_space* circular_memory_alloc
 (
         circular_memory_space* space,

@@ -5,7 +5,11 @@
 #include <sys/types.h>
 #include <core/l2_socket.h>
 
-int l2_socket_connect(struct L2Socket* l2_socket, struct L2SocketStrategy* socket_type)
+int l2_socket_connect
+(
+        struct L2Socket* l2_socket,
+        struct L2SocketStrategy* socket_type
+)
 {
         assert(l2_socket);
         assert(socket_type);
@@ -40,14 +44,23 @@ int l2_socket_accept(struct L2Socket* server, struct L2Socket* client)
         return server->strategy->accept(server, client);
 }
 
-ssize_t l2_socket_receive(struct L2Socket* socket, unsigned char* buffer, size_t buffer_size)
+ssize_t l2_socket_receive
+(
+        struct L2Socket* socket,
+        unsigned char* buffer, size_t buffer_size
+)
 {
         assert(socket);
         assert(buffer);
         return socket->strategy->receive(socket, buffer, buffer_size);
 }
 
-ssize_t l2_socket_send(struct L2Socket* socket, unsigned char* buffer, size_t buffer_size)
+ssize_t l2_socket_send
+(
+        struct L2Socket* socket,
+        unsigned char* buffer,
+        size_t buffer_size
+)
 {
         assert(socket);
         assert(buffer);

@@ -27,8 +27,10 @@ void circular_memory_alloc_set_max_space
 size_t circular_memory_alloc_max_space(circular_memory_space* space)
 {
         assert(space);
+
         size_t max_space = 0;
         memcpy(&max_space, space, sizeof(max_space));
+
         return max_space;
 }
 
@@ -45,8 +47,10 @@ void circular_memory_alloc_set_cursor
 size_t circular_memory_alloc_cursor(circular_memory_space* space)
 {
         assert(space);
+
         size_t cursor = 0;
         memcpy(&cursor, space + sizeof(size_t), sizeof(cursor));
+
         return cursor;
 }
 
@@ -58,10 +62,12 @@ circular_memory_space* circular_memory_alloc_block
 )
 {
         assert(space);
+
         size_t metadata_header = circular_memory_alloc_metadata_size();
         circular_memory_space* block = space + metadata_header + cursor;
 
         memset(block, 0, block_memory);
+
         return block;
 }
 
@@ -72,6 +78,7 @@ void circular_memory_alloc_init
 )
 {
         assert(space);
+        assert(to_be_reserved);
 
         size_t metadata = circular_memory_alloc_metadata_size();
         assert(to_be_reserved - metadata > 0);
@@ -89,6 +96,7 @@ circular_memory_space* circular_memory_alloc
 )
 {
         assert(space);
+        assert(required);
 
         size_t max_space = circular_memory_alloc_max_space(space);
         size_t cursor = circular_memory_alloc_cursor(space);

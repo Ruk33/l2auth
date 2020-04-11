@@ -37,25 +37,6 @@ void l2_raw_packet_init
         memcpy(packet + sizeof(size_header), content, content_size);
 }
 
-l2_raw_packet* l2_raw_packet_new
-(
-        unsigned char* content,
-        unsigned short content_size
-)
-{
-        assert(content);
-        assert(content_size);
-
-        l2_raw_packet* packet = calloc(
-                l2_raw_packet_calculate_size(content_size),
-                sizeof(l2_raw_packet)
-        );
-
-        l2_raw_packet_init(packet, content, content_size);
-
-        return packet;
-}
-
 l2_raw_packet_size l2_raw_packet_get_size(l2_raw_packet* packet)
 {
         assert(packet);
@@ -80,12 +61,6 @@ void l2_raw_packet_content
                 packet + sizeof(l2_raw_packet_size) + start,
                 end
         );
-}
-
-void l2_raw_packet_free(l2_raw_packet* packet)
-{
-        assert(packet);
-        free(packet);
 }
 
 #endif

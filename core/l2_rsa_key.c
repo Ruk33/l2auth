@@ -72,7 +72,9 @@ void l2_rsa_key_modulus(struct L2RSAKey* key, unsigned char* dest)
 {
         assert(key);
         assert(dest);
+
         const BIGNUM *n;
+
         RSA_get0_key(key->rsa_key, &n, NULL, NULL);
         BN_bn2bin(n, dest);
         l2_rsa_key_scramble_modulo(dest);

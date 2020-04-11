@@ -31,7 +31,7 @@ struct L2Client
         struct LoginDtoSessionKey session;
 
         ssize_t received_data_size;
-        unsigned char received_data[65536];
+        unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
 
         circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
         memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
@@ -89,19 +89,17 @@ void l2_client_init(struct L2Client* client)
         );
 }
 
-struct L2Client* l2_client_new()
-{
-        struct L2Client* client = calloc(1, sizeof(struct L2Client));
-        l2_client_init(client);
-        return client;
-}
-
 byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
 {
         assert(client);
         assert(how_much);
+
         size_t to_be_allocated = byte_builder_calculate_size(how_much);
-        byte_builder* builder = l2_client_alloc_temp_mem(client, to_be_allocated);
+        byte_builder* builder = l2_client_alloc_temp_mem(
+                client,
+                to_be_allocated
+        );
+
         return byte_builder_init(builder, to_be_allocated);
 }
 
@@ -126,30 +124,42 @@ void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much)
         return (void*) circular_memory_alloc(client->temp_memory, how_much);
 }
 
-l2_packet* l2_client_create_packet
+l2_raw_packet* l2_client_create_raw_packet
 (
         struct L2Client* client,
-        l2_packet_type type,
         unsigned char* content,
-        size_t content_size
+        unsigned short content_size
 )
 {
         assert(client);
         assert(content);
         assert(content_size);
-        l2_raw_packet_size packet_size = l2_packet_calculate_size(
-                (unsigned short) content_size
-        );
-        l2_packet* packet = (l2_packet *) l2_client_alloc_temp_mem(
-                client,
-                packet_size
-        );
-        l2_packet_init(
-                packet,
-                type,
-                content,
-                (unsigned short) content_size
-        );
+
+        l2_raw_packet_size packet_size = l2_raw_packet_calculate_size(content_size);
+        l2_raw_packet* packet = l2_client_alloc_temp_mem(client, packet_size);
+
+        l2_raw_packet_init(packet, content, content_size);
+
+        return packet;
+}
+
+l2_packet* l2_client_create_packet
+(
+        struct L2Client* client,
+        l2_packet_type type,
+        unsigned char* content,
+        unsigned short content_size
+)
+{
+        assert(client);
+        assert(content);
+        assert(content_size);
+
+        l2_raw_packet_size packet_size = l2_packet_calculate_size(content_size);
+        l2_packet* packet = l2_client_alloc_temp_mem(client, packet_size);
+
+        l2_packet_init(packet, type, content, content_size);
+
         return packet;
 }
 
@@ -202,6 +212,7 @@ void l2_client_encrypt_and_send_packet
 {
         assert(client);
         assert(packet);
+
         l2_raw_packet *encrypted_packet = packet_server_encrypt(client, packet);
         l2_client_send_packet(client, encrypted_packet);
 }
@@ -209,6 +220,8 @@ void l2_client_encrypt_and_send_packet
 l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
 {
         assert(client);
+
+        unsigned char* content_without_size_header = NULL;
 
         client->received_data_size = l2_socket_receive(
                 &client->socket,
@@ -220,9 +233,9 @@ l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
                 return NULL;
         }
 
-        unsigned char* content_without_size_header =
+        content_without_size_header =
                 client->received_data_size ?
-                client->received_data + sizeof(short) :
+                client->received_data + sizeof(l2_raw_packet_size) :
                 client->received_data;
         
         ssize_t content_without_size_header_size = (
@@ -256,7 +269,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
         );
 
         return packet_client_decrypt(
-                client->blowfish_key,
+                client,
                 client->received_data,
                 (unsigned short) client->received_data_size
         );
