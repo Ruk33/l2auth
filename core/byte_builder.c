@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <log/log.h>
 #include <core/byte_builder.h>
 
 size_t byte_builder_calculate_size(size_t to_be_allocated)
@@ -39,9 +40,8 @@ size_t byte_builder_allocated_mem(byte_builder* builder)
 size_t byte_builder_length(byte_builder* builder)
 {
         assert(builder);
-        size_t allocated_metadata = sizeof(size_t);
         size_t length = 0;
-        memcpy(&length, builder - allocated_metadata, sizeof(length));
+        memcpy(&length, builder - sizeof(length), sizeof(length));
         return length;
 }
 
@@ -57,6 +57,7 @@ void byte_builder_append
         size_t allocated_metadata = sizeof(size_t);
         size_t len = byte_builder_length(builder);
         size_t new_len = content_size + len;
+        log_info("Mem: %ld, Len: %ld, New len: %ld", byte_builder_allocated_mem(builder), len, new_len);
         assert(byte_builder_allocated_mem(builder) >= new_len);
         memcpy(builder + len, content, content_size);
         memcpy(builder - allocated_metadata, &new_len, sizeof(new_len));

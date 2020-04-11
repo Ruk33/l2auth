@@ -1,13 +1,15 @@
 #ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_TEMPLATE_C
 #define L2AUTH_LOGIN_GAME_PACKET_CHAR_TEMPLATE_C
 
+#include <assert.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/l2_client.h>
+#include <core/byte_builder.h>
 #include <game/packet/char_template.h>
 
 void append_char
 (
-        struct ByteBuffer* buffer,
+        byte_builder* buffer,
         unsigned int race,
         unsigned int class,
         unsigned int str,
@@ -21,42 +23,42 @@ void append_char
         unsigned int separator_46 = 0x46;
         unsigned int separator_0a = 0x0a;
 
-        byte_buffer_append(buffer, &race, sizeof(race)); 
-        byte_buffer_append(buffer, &class, sizeof(class));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &race, sizeof(race)); 
+        byte_builder_append(buffer, (unsigned char *) &class, sizeof(class));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &str, sizeof(str));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &str, sizeof(str));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &dex, sizeof(dex));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &dex, sizeof(dex));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &con, sizeof(con));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &con, sizeof(con));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &_int, sizeof(_int));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &_int, sizeof(_int));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &wit, sizeof(wit));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
-        byte_buffer_append(buffer, &separator_46, sizeof(separator_46));
+        byte_builder_append(buffer, (unsigned char *) &wit, sizeof(wit));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &separator_46, sizeof(separator_46));
 
-        byte_buffer_append(buffer, &men, sizeof(men));
-        byte_buffer_append(buffer, &separator_0a, sizeof(separator_0a));
+        byte_builder_append(buffer, (unsigned char *) &men, sizeof(men));
+        byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
 }
 
-l2_packet* game_packet_char_template()
+l2_packet* game_packet_char_template(struct L2Client* client)
 {
-        l2_packet* packet;
+        assert(client);
         l2_packet_type type = 0x17;
-        struct ByteBuffer* buffer = byte_buffer_create();
+        byte_builder* buffer = l2_client_byte_builder(client, 1000);
         unsigned int chars = 10;
 
-        byte_buffer_append(buffer, &chars, sizeof(chars));
+        byte_builder_append(buffer, (unsigned char *) &chars, sizeof(chars));
 
         append_char(buffer, 0, 0, /*str*/ 40, /* dex */ 30, /* con */ 43, /* int */ 21, /* wit */ 11, /* men */ 25); // human fighter
         append_char(buffer, 0, 0, /*str*/ 40, /* dex */ 30, /* con */ 43, /* int */ 21, /* wit */ 11, /* men */ 25); // human fighter
@@ -73,15 +75,12 @@ l2_packet* game_packet_char_template()
         
         append_char(buffer, 4, 53, /*str*/ 39, /* dex */ 29, /* con */ 45, /* int */ 20, /* wit */ 10, /* men */ 27); // dwarf
 
-        packet = l2_packet_new(
+        return l2_client_create_packet(
+                client,
                 type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
         );
-
-        byte_buffer_free(buffer);
-
-        return packet;
 }
 
 #endif

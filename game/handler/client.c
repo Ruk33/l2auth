@@ -11,6 +11,7 @@
 #include <game/packet/client_type.h>
 #include <game/handler/protocol_version.h>
 #include <game/handler/auth_login.h>
+#include <game/handler/new_character.h>
 #include <game/handler/client.h>
 
 void game_handler_client
@@ -89,6 +90,26 @@ void game_handler_client
                                 client_packet,
                                 encrypt_key
                         );
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_NEW_CHAR:
+                        game_handler_new_character(
+                                server,
+                                client,
+                                client_packet,
+                                encrypt_key
+                        );
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_CREATE_CHAR:
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_SELECTED_CHAR:
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_REQUEST_AUTO_SS_BSPS:
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_REQUEST_QUEST_LIST:
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_ENTER_WORLD:
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_RESTART:
                         break;
                 default:
                         log_info("Oops, non implemented packet");

@@ -1,6 +1,7 @@
 #ifndef L2AUTH_GAME_HANDLER_ENCRYPT_C
 #define L2AUTH_GAME_HANDLER_ENCRYPT_C
 
+#include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <game/crypt.h>
@@ -19,6 +20,7 @@ l2_packet* game_handler_encrypt
                 packet_size,
                 encrypt_key
         );
+        log_info("Packet encrypted");
         return request;
 }
 

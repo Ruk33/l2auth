@@ -102,7 +102,7 @@ byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
         assert(client);
         assert(how_much);
         size_t to_be_allocated = byte_builder_calculate_size(how_much);
-        byte_builder* builder = l2_client_alloc(client, to_be_allocated);
+        byte_builder* builder = l2_client_alloc_temp_mem(client, to_be_allocated);
         return byte_builder_init(builder, to_be_allocated);
 }
 
