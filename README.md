@@ -49,23 +49,15 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `socket_strategy`: Contains logic for using linux and windows sockets
 
 ## To do
-[ ] Correctly handle big/little endian
-
-[x] Display terms of service view
-
-[x] Display server list
-
-[x] Allow to enter game server
-
-[ ] Create character
-
-[x] Enter world
-
-[ ] Walk
-
-[ ] Lua integration
-
-[x] Handle multiple connections
+- [ ] Correctly handle big/little endian
+- [x] Display terms of service view
+- [x] Display server list
+- [x] Allow to enter game server
+- [ ] Create character
+- [x] Enter world
+- [ ] Walk
+- [ ] Lua integration
+- [x] Handle multiple connections
 
 ## Screenshots
 Please see doc/screenshot.
