@@ -62,22 +62,6 @@ void l2_client_init(struct L2Client* client)
         assert(client);
         client->received_data_size = 0;
 
-        /*
-         * (franco.montenegro)
-         * Clients need to be able to allocate memory, so make sure
-         * we get a memory manager, memory pool, whatever that allows
-         * us to do this
-         */
-        client->rsa_key = calloc(1, l2_rsa_key_struct_size());
-        if (client->rsa_key) {
-                l2_rsa_key_init(client->rsa_key);
-        }
-
-        client->blowfish_key = calloc(1, l2_blowfish_key_struct_size());
-        if (client->blowfish_key) {
-                l2_blowfish_key_init(client->blowfish_key);
-        }
-
         login_session_key_init(&client->session);
 
         memory_init(
@@ -89,6 +73,20 @@ void l2_client_init(struct L2Client* client)
                 client->temp_memory,
                 TEMP_MEMORY_PER_CLIENT_IN_BYTES
         );
+
+        client->rsa_key = l2_client_alloc(
+                client,
+                l2_rsa_key_struct_size()
+        );
+        
+        client->blowfish_key = l2_client_alloc(
+                client,
+                l2_blowfish_key_struct_size()
+        );
+
+        l2_rsa_key_init(client->rsa_key);
+        l2_blowfish_key_init(client->blowfish_key);
+
 }
 
 byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
@@ -176,7 +174,12 @@ void l2_client_accept(struct L2Client* client, struct L2Socket* server)
 void l2_client_close(struct L2Client* client)
 {
         assert(client);
+
+        l2_client_alloc_free(client, client->rsa_key);
+        l2_client_alloc_free(client, client->blowfish_key);
+
         l2_socket_close(&client->socket);
+
         log_info("Connection closed");
 }
 
