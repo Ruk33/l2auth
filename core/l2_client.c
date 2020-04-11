@@ -273,6 +273,10 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
 
+        if (client->received_data_size == 0) {
+                return NULL;
+        }
+
         return packet_client_decrypt(
                 client,
                 client->received_data,
