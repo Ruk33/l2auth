@@ -4,10 +4,10 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
 #include <login/dto/session_key.h>
-#include <game/server.h>
 #include <game/packet/player_auth_request.h>
 #include <game/packet/char_list.h>
 #include <game/handler/encrypt.h>
@@ -25,7 +25,7 @@ void game_handler_cpy_login_name(l2_raw_packet* packet, char* dest)
 
 void game_handler_auth_login
 (
-        struct GameServer* server,
+        struct L2Server* server,
         struct L2Client* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key

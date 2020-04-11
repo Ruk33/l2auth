@@ -4,9 +4,9 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_raw_packet.h>
-#include <game/server.h>
 #include <game/crypt.h>
 #include <game/packet/client_type.h>
 #include <game/handler/protocol_version.h>
@@ -15,7 +15,7 @@
 
 void game_handler_client
 (
-        struct GameServer* server,
+        struct L2Server* server,
         struct L2Client* client
 )
 {

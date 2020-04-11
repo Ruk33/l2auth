@@ -3,15 +3,15 @@
 
 #include <assert.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
-#include <login/server.h>
 #include <login/packet/play_ok.h>
 #include <login/handler/request_login_server.h>
 
 void login_handler_request_login_server
 (
-        struct LoginServer* server,
+        struct L2Server* server,
         struct L2Client* client
 )
 {

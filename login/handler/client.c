@@ -3,25 +3,25 @@
 
 #include <assert.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
 #include <login/dto/session_key.h>
 #include <login/handler/new_connection.h>
-#include <login/handler/client.h>
 #include <login/handler/request_auth_login.h>
 #include <login/handler/request_login_server.h>
 #include <login/handler/request_server_list.h>
 #include <login/handler/gg.h>
 #include <login/packet/client_type.h>
-#include <login/server.h>
+#include <login/handler/client.h>
 
-void login_handler_client(struct LoginServer* server, struct L2Client* client)
+void login_handler_client(struct L2Server* server, struct L2Client* client)
 {
         assert(server);
         assert(client);
 
-        l2_packet *client_packet = NULL;
-        unsigned char *decrypted_packet = NULL;
+        l2_packet* client_packet = NULL;
+        unsigned char* decrypted_packet = NULL;
 
         log_info("Handling new client from loginserver");
         login_handler_new_connection(server, client);

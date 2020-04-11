@@ -3,18 +3,18 @@
 
 #include <assert.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
 #include <packet/helper.h>
 #include <login/helper.h>
-#include <login/server.h>
 #include <login/packet/ok.h>
 #include <login/dto/session_key.h>
 #include <login/handler/request_auth_login.h>
 
 void login_handler_request_auth_login
 (
-        struct LoginServer* server,
+        struct L2Server* server,
         struct L2Client* client,
         l2_packet* packet
 )

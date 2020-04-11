@@ -2,14 +2,14 @@
 #define L2AUTH_LOGIN_HANDLER_GG_C
 
 #include <assert.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
-#include <login/server.h>
 #include <login/packet/gg_auth.h>
 #include <login/handler/gg.h>
 
 void login_handler_gg
 (
-        struct LoginServer* server,
+        struct L2Server* server,
         struct L2Client* client
 )
 {

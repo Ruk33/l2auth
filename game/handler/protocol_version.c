@@ -4,15 +4,15 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
+#include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
-#include <game/server.h>
 #include <game/packet/crypt_init.h>
 #include <game/handler/protocol_version.h>
 
 void game_handler_protocol_version
 (
-        struct GameServer* server,
+        struct L2Server* server,
         struct L2Client* client,
         l2_raw_packet* request
 )
