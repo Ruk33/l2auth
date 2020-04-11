@@ -12,7 +12,7 @@ SETTING UP DEV ENVIRONMENT
 - `sudo apt install libssl-dev`
 
 WHAT TO EXPECT
-Right now, the server will listen for only one connection.
+Right now, the server will listen for up to two connections.
 For the time being, the server is capable of:
 - Create socket/connection
 - Listen for connections
@@ -20,6 +20,10 @@ For the time being, the server is capable of:
 - Encrypt connection with RSA & Blowfish
 - Send Lineage 2 packets
 - Receive Lineage 2 packets
+- Log in
+- Enter world
+- Restart
+- Very early multiple connection support
 
 TODO
 [ ] Correctly handle big/little endian
@@ -30,6 +34,7 @@ TODO
 [x] Enter world
 [ ] Walk
 [ ] Lua integration
+[x] Handle multiple connections
 
 SCREENSHOTS
 Please see doc/screenshot.
