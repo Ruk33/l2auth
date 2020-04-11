@@ -71,9 +71,6 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 sizeof(session_key->loginOK2) +
                 sizeof(content_after_keys)
         );
-        l2_packet* packet;
-
-        assert(session_key);
 
         log_info(
                 "Using keys: '%d' - '%d'",
@@ -97,14 +94,12 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 sizeof(content_after_keys)
         );
 
-        packet = l2_client_create_packet(
+        return l2_client_create_packet(
                 client,
                 type,
                 buffer,
                 (unsigned short) byte_builder_length(buffer)
         );
-
-        return packet;
 }
 
 #endif

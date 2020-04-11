@@ -11,7 +11,7 @@ l2_packet* game_packet_char_create_ok()
 
         return l2_packet_new(
                 type,
-                &content,
+                (unsigned char *) &content,
                 (unsigned short) sizeof(content)
         );
 }
