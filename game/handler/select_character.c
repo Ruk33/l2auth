@@ -6,7 +6,6 @@
 #include <core/l2_packet.h>
 #include <core/l2_server.h>
 #include <core/l2_client.h>
-#include <game/packet/player_auth_request.h>
 #include <game/packet/char_selected.h>
 #include <game/handler/encrypt.h>
 #include <game/handler/select_character.h>

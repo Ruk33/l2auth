@@ -8,7 +8,6 @@
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
 #include <login/dto/session_key.h>
-#include <game/packet/player_auth_request.h>
 #include <game/packet/char_list.h>
 #include <game/handler/encrypt.h>
 #include <game/handler/auth_login.h>
