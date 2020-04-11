@@ -36,7 +36,10 @@ void login_handler_client(struct ConnectionThread* conn)
                         continue;
                 }
 
-                decrypted_packet = l2_client_alloc_temp_mem(client, 65535);
+                decrypted_packet = l2_client_alloc_temp_mem(
+                        client,
+                        L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
+                );
 
                 l2_client_decrypt_client_packet(
                         client,

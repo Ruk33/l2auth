@@ -75,8 +75,8 @@ int game_crypt_checksum(unsigned char* data, size_t len)
 {
         long chksum = 0;
         size_t count = (size_t) (len - 4);
-        long ecx = -1;
         size_t i =0;
+        long ecx;
 
         for (i = 0; i < count; i += 4) {
                 ecx  = (long) data[i] &0xff;

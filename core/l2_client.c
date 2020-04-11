@@ -69,10 +69,14 @@ void l2_client_init(struct L2Client* client)
          * us to do this
          */
         client->rsa_key = calloc(1, l2_rsa_key_struct_size());
-        l2_rsa_key_init(client->rsa_key);
+        if (client->rsa_key) {
+                l2_rsa_key_init(client->rsa_key);
+        }
 
         client->blowfish_key = calloc(1, l2_blowfish_key_struct_size());
-        l2_blowfish_key_init(client->blowfish_key);
+        if (client->blowfish_key) {
+                l2_blowfish_key_init(client->blowfish_key);
+        }
 
         login_session_key_init(&client->session);
 
@@ -80,6 +84,7 @@ void l2_client_init(struct L2Client* client)
                 client->preallocated_memory,
                 MEMORY_PER_CLIENT_IN_BYTES
         );
+
         circular_memory_alloc_init(
                 client->temp_memory,
                 TEMP_MEMORY_PER_CLIENT_IN_BYTES
@@ -288,7 +293,7 @@ int l2_client_decrypt_client_packet
                 client,
                 packet_content_size * sizeof(char)
         );
-        int decrypt_result = -1;
+        int decrypt_result;
 
         l2_packet_content(packet, packet_content, 0, packet_content_size);
 

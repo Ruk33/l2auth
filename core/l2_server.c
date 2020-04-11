@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <log/log.h>
 #include <core/connection_thread.h>
 #include <core/l2_client.h>
 #include <core/l2_socket.h>
@@ -75,7 +76,20 @@ void l2_server_accept_client
                 server->accepted_clients
         );
 
-        struct ConnectionThread* conn = calloc(1, sizeof(struct ConnectionThread));
+        struct ConnectionThread* conn;
+
+        if (client == NULL) {
+                log_fatal("Could not allocate memory to accept client");
+                return;
+        }
+
+        conn = calloc(1, sizeof(struct ConnectionThread));
+
+        if (conn == NULL) {
+                log_fatal("Could not allocate memory to accept client");
+                free(client);
+                return;
+        }
 
         conn->server = server;
         conn->client = client;

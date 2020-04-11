@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
@@ -21,14 +20,18 @@ void l2_packet_init
                 content_size
         );
 
-        unsigned char* packet_content = calloc(packet_size, sizeof(char));
+        memcpy(packet + sizeof(l2_raw_packet_size), &type, sizeof(type));
+        memcpy(
+                packet + sizeof(l2_raw_packet_size) + sizeof(type),
+                content,
+                content_size
+        );
 
-        memcpy(packet_content, &type, sizeof(type));
-        memcpy(packet_content + sizeof(type), content, content_size);
-
-        l2_raw_packet_init(packet, packet_content, packet_size);
-
-        free(packet_content);
+        l2_raw_packet_init(
+                packet,
+                packet + sizeof(l2_raw_packet_size),
+                packet_size
+        );
 }
 
 l2_raw_packet_size l2_packet_calculate_size(unsigned short content_size)
