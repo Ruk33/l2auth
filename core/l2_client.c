@@ -213,6 +213,10 @@ l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
 
+        if (client->received_data_size == 0) {
+                return NULL;
+        }
+
         unsigned char* content_without_size_header =
                 client->received_data_size ?
                 client->received_data + sizeof(short) :

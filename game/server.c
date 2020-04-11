@@ -1,192 +1,101 @@
-#ifndef L2AUTH_LOGIN_GAME_SERVER_C
-#define L2AUTH_LOGIN_GAME_SERVER_C
+#ifndef L2AUTH_GAME_SERVER_C
+#define L2AUTH_GAME_SERVER_C
 
+#include <assert.h>
 #include <stdlib.h>
-#include <string.h>
-#include <log/log.h>
 #include <core/l2_socket.h>
 #include <core/l2_client.h>
-#include <core/l2_packet.h>
-#include <core/hex.h>
-#include <login/dto/session_key.h>
-#include <game/crypt.h>
-#include <game/packet/crypt_init.h>
-#include <game/packet/char_list.h>
-#include <game/packet/player_auth_request.h>
-#include <game/handler/protocol_version.h>
-#include <game/handler/encrypt.h>
-#include <game/handler/auth_login.h>
-#include <game/handler/new_character.h>
-#include <game/handler/create_character.h>
-#include <game/handler/select_character.h>
-#include <game/handler/d0.h>
-#include <game/handler/request_quests.h>
-#include <game/handler/enter_world.h>
-#include <game/handler/restart.h>
+#include <socket_strategy/socket_strategy_linux.h>
+#include <game/handler/client.h>
 #include <game/server.h>
 
-void game_server_accept_and_handle_connection
+struct GameServer {
+        struct L2Socket socket;
+        struct L2SocketStrategy socket_strategy;
+        size_t accepted_clients;
+
+        /*
+         * (franco.montenegro)
+         * I'm sure there is a better way of pre-allocating
+         * a bunch of structs with unkown type, but for the time
+         * being, this will do
+         */
+        void* clients;
+};
+
+void game_server_free(struct GameServer* server)
+{
+        assert(server);
+        if (server->clients) free(server->clients);
+        free(server);
+}
+
+struct GameServer* game_server_create(size_t max_players)
+{
+        struct GameServer* server = calloc(1, sizeof(struct GameServer));
+
+        if (server == NULL) {
+                return NULL;
+        }
+
+        server->accepted_clients = 0;
+        server->clients = calloc(max_players, l2_client_struct_size());
+
+        if (server->clients == NULL) {
+                game_server_free(server);
+                return NULL;
+        }
+
+        return server;
+}
+
+void game_server_listen(struct GameServer* server, unsigned short port)
+{
+        assert(server);
+        /*
+         * (franco.montenegro)
+         * I don't like how we are forcing sockets to be
+         * linux, why does the server knows about this?
+         */
+        socket_strategy_linux(&server->socket_strategy);
+        l2_socket_connect(&server->socket, &server->socket_strategy);
+        l2_socket_bind(&server->socket, port);
+        l2_socket_listen(&server->socket);
+}
+
+struct L2Client* game_server_get_client
 (
-        struct L2Socket *server
+        struct GameServer* server,
+        size_t index
 )
 {
-        struct L2Client* client = l2_client_new();
+        assert(server);
+        return server->clients + (index * l2_client_struct_size());
+}
 
-        l2_raw_packet *client_raw_packet;
+void game_server_accept_client(struct GameServer* server)
+{
+        assert(server);
 
-        unsigned char encrypt_key[] = {
-                0x94,
-                0x35,
-                0x00,
-                0x00,
-                0xa1,
-                0x6c,
-                0x54,
-                0x87,
-        };
+        struct L2Client* client = game_server_get_client(
+                server,
+                server->accepted_clients
+        );
 
-        unsigned char decrypt_key[] = {
-                0x94,
-                0x35,
-                0x00,
-                0x00,
-                0xa1,
-                0x6c,
-                0x54,
-                0x87,
-        };
+        l2_client_init(client);
+        l2_client_accept(client, &server->socket);
 
-        int enable_decrypt = 0;
-        unsigned short packet_size = 0;
-        unsigned short sz = 0;
+        server->accepted_clients += 1;
+        game_handler_client(server, client);
+        server->accepted_clients -= 1;
+        l2_client_close(client);
+}
 
-        struct LoginDtoSessionKey* session_key = login_session_key_create();
-
-        l2_client_accept(client, server);
-        log_info("Gameserver connection accepted");
-
-        while (1) {
-                client_raw_packet = l2_client_wait_packet_for_gameserver(client);
-
-                if (l2_client_connection_ended(client)) {
-                        log_info("Gameserver client connection closed");
-                        break;
-                }
-
-                memcpy(&packet_size, client_raw_packet, sizeof(packet_size));
-                sz = packet_size;
-
-                if (packet_size > 1) sz -= 2;
-
-                log_info("Packet size: %d", packet_size);
-                log_info("Packet type from client before decrypt %02X", client_raw_packet[2] & 0xff);
-
-                if (enable_decrypt) {
-                        game_crypt_decrypt(
-                                client_raw_packet + 2,
-                                sz,
-                                decrypt_key
-                        );
-                }
-                log_info("Packet type from client %02X", client_raw_packet[2] & 0xff);
-
-                switch (client_raw_packet[2] & 0xff)
-                {
-                case 0x00: // protocol version
-                        enable_decrypt = 1;
-                        l2_client_send_packet(
-                                client,
-                                game_handler_protocol_version(client_raw_packet)
-                        );
-                        break;
-                case 0x08: // auth request
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_auth_login(
-                                                client_raw_packet,
-                                                session_key
-                                        ),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0x0e: // new char
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_new_character(client_raw_packet),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0x0b: // create char
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_create_character(client_raw_packet),
-                                        encrypt_key
-                                )
-                        );
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_auth_login(client_raw_packet, session_key),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0x0d: // selected char (entering world)
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_select_character(client_raw_packet, session_key->playOK1),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0xd0: // request auto ss or bsps
-                        game_handler_d0(client_raw_packet);
-                        break;
-                case 0x63: // request quest list
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_request_quests(client_raw_packet),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0x03: // enter world
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_enter_world(client_raw_packet),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                case 0x46: // restart
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_restart(client_raw_packet),
-                                        encrypt_key
-                                )
-                        );
-                        l2_client_send_packet(
-                                client,
-                                game_handler_encrypt(
-                                        game_handler_auth_login(client_raw_packet, session_key),
-                                        encrypt_key
-                                )
-                        );
-                        break;
-                default:
-                        log_info("default case to be implemented");
-                        break;
-                }
-        }
+void game_server_start(struct GameServer* server, unsigned short port)
+{
+        assert(server);
+        game_server_listen(server, port);
+        while(1) game_server_accept_client(server);
 }
 
 #endif

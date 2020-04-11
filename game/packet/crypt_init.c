@@ -2,9 +2,10 @@
 #define L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT_C
 
 #include <core/l2_packet.h>
+#include <core/l2_client.h>
 #include <game/packet/crypt_init.h>
 
-l2_packet* game_packet_crypt_init()
+l2_packet* game_packet_crypt_init(struct L2Client* client)
 {
         l2_packet_type type = 0x00;
         unsigned char content[] = {
@@ -20,7 +21,8 @@ l2_packet* game_packet_crypt_init()
                 0x87,
         };
 
-        return l2_packet_new(
+        return l2_client_create_packet(
+                client,
                 type,
                 content,
                 (unsigned short) sizeof(content)
