@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_PROTOCOL_VERSION_C
-#define L2AUTH_GAME_HANDLER_PROTOCOL_VERSION_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -39,5 +36,3 @@ void game_handler_protocol_version
                 game_packet_crypt_init(client)
         );
 }
-
-#endif

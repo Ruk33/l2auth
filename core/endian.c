@@ -1,6 +1,3 @@
-#ifndef L2AUTH_ENDIAN_C
-#define L2AUTH_ENDIAN_C
-
 #include <assert.h>
 #include <core/endian.h>
 
@@ -39,5 +36,3 @@ void encode32be(void* dst, unsigned int val)
         buf[1] = (unsigned char) (val >> 16);
         buf[0] = (unsigned char) (val >> 24);
 }
-
-#endif

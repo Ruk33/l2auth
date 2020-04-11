@@ -1,6 +1,3 @@
-#ifndef L2AUTH_PACKET_HELPER_C
-#define L2AUTH_PACKET_HELPER_C
-
 #include <stdlib.h>
 #include <string.h>
 #include <packet/helper.h>
@@ -46,5 +43,3 @@ void packet_helper_content
                 dest_size
         );
 }
-
-#endif

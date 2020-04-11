@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_CREATE_CHARACTER_C
-#define L2AUTH_GAME_HANDLER_CREATE_CHARACTER_C
-
 #include <log/log.h>
 #include <core/l2_server.h>
 #include <core/l2_client.h>
@@ -29,5 +26,3 @@ void game_handler_create_character
 
         game_handler_auth_login(server, client, request, encrypt_key);
 }
-
-#endif

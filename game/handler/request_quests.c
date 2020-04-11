@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_REQUEST_QUESTS_C
-#define L2AUTH_GAME_HANDLER_REQUEST_QUESTS_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -33,5 +30,3 @@ void game_handler_request_quests
                 game_handler_encrypt(response, encrypt_key)
         );
 }
-
-#endif

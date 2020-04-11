@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT_C
-#define L2AUTH_LOGIN_GAME_PACKET_CRYPT_INIT_C
-
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
 #include <game/packet/crypt_init.h>
@@ -28,5 +25,3 @@ l2_packet* game_packet_crypt_init(struct L2Client* client)
                 (unsigned short) sizeof(content)
         );
 }
-
-#endif

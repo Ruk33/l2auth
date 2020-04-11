@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_HELPER_C
-#define L2AUTH_LOGIN_HELPER_C
-
 #include <string.h>
 #include <login/helper.h>
 
@@ -21,5 +18,3 @@ void login_helper_password_from_packet
 {
         memcpy(dest, decrypted_packet + 0x70, 16);
 }
-
-#endif

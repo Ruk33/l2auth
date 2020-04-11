@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_HANDLER_CLIENT_C
-#define L2AUTH_LOGIN_HANDLER_CLIENT_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/connection_thread.h>
@@ -81,5 +78,3 @@ void login_handler_client(struct ConnectionThread* conn)
 
         log_info("Loginserver client connection closed");
 }
-
-#endif

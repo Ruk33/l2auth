@@ -1,6 +1,3 @@
-#ifndef L2AUTH_CIRCULAR_MEMORY_ALLOC_C
-#define L2AUTH_CIRCULAR_MEMORY_ALLOC_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -115,5 +112,3 @@ circular_memory_space* circular_memory_alloc
         circular_memory_alloc_set_cursor(space, new_cursor);
         return circular_memory_alloc_block(space, cursor, required);
 }
-
-#endif

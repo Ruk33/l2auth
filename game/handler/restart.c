@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_RESTART_C
-#define L2AUTH_GAME_HANDLER_RESTART_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -41,5 +38,3 @@ void game_handler_restart
                 encrypt_key
         );
 }
-
-#endif

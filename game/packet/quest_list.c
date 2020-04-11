@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_QUEST_LIST_C
-#define L2AUTH_LOGIN_GAME_PACKET_QUEST_LIST_C
-
 #include <assert.h>
 #include <core/l2_packet.h>
 #include <game/packet/quest_list.h>
@@ -24,5 +21,3 @@ l2_packet* game_packet_quest_list(struct L2Client* client)
                 (unsigned short) sizeof(content)
         );
 }
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
-#define L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <log/log.h>
@@ -102,5 +99,3 @@ l2_packet* game_packet_char_selected(struct L2Client* client)
                 (unsigned short) byte_builder_length(buffer)
         );
 }
-
-#endif

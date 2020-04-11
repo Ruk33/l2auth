@@ -1,6 +1,3 @@
-#ifndef L2AUTH_PACKET_CLIENT_DECRYPT_C
-#define L2AUTH_PACKET_CLIENT_DECRYPT_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/endian.h>
@@ -82,5 +79,3 @@ l2_raw_packet* packet_client_decrypt
                 data_size_without_packet_size_header
         );
 }
-
-#endif

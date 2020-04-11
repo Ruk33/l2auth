@@ -1,6 +1,3 @@
-#ifndef L2AUTH_BYTE_BUILDER_C
-#define L2AUTH_BYTE_BUILDER_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,5 +83,3 @@ void byte_builder_append
         memcpy(builder + len, content, content_size);
         memcpy(builder - allocated_metadata, &new_len, sizeof(new_len));
 }
-
-#endif

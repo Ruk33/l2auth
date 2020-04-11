@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_HANDLER_REQUEST_AUTH_LOGIN_C
-#define L2AUTH_LOGIN_HANDLER_REQUEST_AUTH_LOGIN_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/l2_server.h>
@@ -37,5 +34,3 @@ void login_handler_request_auth_login
                 login_packet_ok(client)
         );
 }
-
-#endif

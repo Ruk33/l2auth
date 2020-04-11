@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_NEW_CHARACTER_C
-#define L2AUTH_GAME_HANDLER_NEW_CHARACTER_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -31,5 +28,3 @@ void game_handler_new_character
                 game_handler_encrypt(response, encrypt_key)
         );
 }
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_PACKET_INIT_C
-#define L2AUTH_LOGIN_PACKET_INIT_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <log/log.h>
@@ -62,5 +59,3 @@ l2_packet* login_packet_init(struct L2Client* client)
                 (unsigned short) byte_builder_length(buffer)
         );
 }
-
-#endif

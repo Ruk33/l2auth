@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_PACKET_GG_AUTH_C
-#define L2AUTH_LOGIN_PACKET_GG_AUTH_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
@@ -25,5 +22,3 @@ l2_packet* login_packet_gg_auth
                 sizeof(response)
         );
 }
-
-#endif

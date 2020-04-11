@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_HANDLER_REQUEST_SERVER_LIST_C
-#define L2AUTH_LOGIN_HANDLER_REQUEST_SERVER_LIST_C
-
 #include <log/log.h>
 #include <core/l2_packet.h>
 #include <core/l2_server.h>
@@ -20,5 +17,3 @@ void login_handler_request_server_list
                 login_packet_server_list(client)
         );
 }
-
-#endif

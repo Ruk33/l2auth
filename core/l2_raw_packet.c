@@ -1,6 +1,3 @@
-#ifndef L2AUTH_RAW_PACKET_C
-#define L2AUTH_RAW_PACKET_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,5 +59,3 @@ void l2_raw_packet_content
                 end
         );
 }
-
-#endif

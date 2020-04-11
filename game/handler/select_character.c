@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_SELECT_CHARACTER_C
-#define L2AUTH_GAME_HANDLER_SELECT_CHARACTER_C
-
 #include <assert.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -30,5 +27,3 @@ void game_handler_select_character
                 game_handler_encrypt(response, encrypt_key)
         );
 }
-
-#endif

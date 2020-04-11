@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_ENTER_WORLD_C
-#define L2AUTH_GAME_HANDLER_ENTER_WORLD_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -33,5 +30,3 @@ void game_handler_enter_world
                 game_handler_encrypt(response, encrypt_key)
         );
 }
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef L2AUTH_PACKET_C
-#define L2AUTH_PACKET_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,5 +76,3 @@ void l2_packet_content
                 end
         );
 }
-
-#endif

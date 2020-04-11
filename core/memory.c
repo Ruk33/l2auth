@@ -1,6 +1,3 @@
-#ifndef L2AUTH_MEMORY_C
-#define L2AUTH_MEMORY_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,5 +134,3 @@ void memory_free(memory* block)
          * memset(block - sizeof(unsigned char), 0, reserved + sizeof(unsigned char));
          */
 }
-
-#endif

@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
-#define L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
-
 #include <assert.h>
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
@@ -264,5 +261,3 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
                 (unsigned short) byte_builder_length(buffer)
         );
 }
-
-#endif

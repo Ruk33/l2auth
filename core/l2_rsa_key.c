@@ -1,6 +1,3 @@
-#ifndef L2AUTH_BUILD_RSA_KEY_C
-#define L2AUTH_BUILD_RSA_KEY_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,5 +98,3 @@ int l2_rsa_key_decrypt
                 RSA_NO_PADDING
         );
 }
-
-#endif

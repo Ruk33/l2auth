@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_PACKET_PLAY_OK_C
-#define L2AUTH_LOGIN_PACKET_PLAY_OK_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
@@ -42,5 +39,3 @@ l2_packet* login_packet_play_ok(struct L2Client* client)
                 (unsigned short) byte_builder_length(buffer)
         );
 }
-
-#endif

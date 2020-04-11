@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_CLIENT_C
-#define L2AUTH_GAME_HANDLER_CLIENT_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -161,5 +158,3 @@ void game_handler_client(struct ConnectionThread* conn)
 
         log_info("Gameserver client connection closed");
 }
-
-#endif

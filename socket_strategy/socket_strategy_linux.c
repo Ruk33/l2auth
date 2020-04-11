@@ -1,6 +1,3 @@
-#ifndef L2AUTH_SOCKET_STRATEGY_LINUX_C
-#define L2AUTH_SOCKET_STRATEGY_LINUX_C
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -91,5 +88,3 @@ void socket_strategy_linux(struct L2SocketStrategy* socket_strategy)
         socket_strategy->receive = socket_strategy_linux_receive;
         socket_strategy->send = socket_strategy_linux_send;
 }
-
-#endif //L2AUTH_SOCKET_STRATEGY_LINUX_C

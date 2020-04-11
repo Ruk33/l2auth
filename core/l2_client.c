@@ -1,6 +1,3 @@
-#ifndef L2AUTH_L2_CLIENT_C
-#define L2AUTH_L2_CLIENT_C
-
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -309,5 +306,3 @@ int l2_client_connection_ended(struct L2Client* client)
         assert(client);
         return client->received_data_size <= 0;
 }
-
-#endif

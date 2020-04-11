@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_HANDLER_REQUEST_LOGIN_SERVER_C
-#define L2AUTH_LOGIN_HANDLER_REQUEST_LOGIN_SERVER_C
-
 #include <assert.h>
 #include <log/log.h>
 #include <core/l2_server.h>
@@ -21,5 +18,3 @@ void login_handler_request_login_server
         l2_packet* packet = login_packet_play_ok(client);
         l2_client_encrypt_and_send_packet(client, packet);
 }
-
-#endif

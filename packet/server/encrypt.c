@@ -1,6 +1,3 @@
-#ifndef L2AUTH_PACKET_SERVER_ENCRYPT_C
-#define L2AUTH_PACKET_SERVER_ENCRYPT_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <core/endian.h>
@@ -67,5 +64,3 @@ l2_raw_packet* packet_server_encrypt
 
         return raw_packet;
 }
-
-#endif

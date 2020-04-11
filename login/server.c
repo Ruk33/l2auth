@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_SERVER_C
-#define L2AUTH_LOGIN_SERVER_C
-
 #include <log/log.h>
 #include <core/l2_server.h>
 #include <login/handler/client.h>
@@ -19,5 +16,3 @@ void login_server_start_or_die(unsigned short port, size_t max_players)
 
         l2_server_start(server, port, login_handler_client);
 }
-
-#endif

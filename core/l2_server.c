@@ -1,6 +1,3 @@
-#ifndef L2AUTH_L2_SERVER_C
-#define L2AUTH_L2_SERVER_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -103,5 +100,3 @@ void l2_server_start
         l2_server_listen(server, port);
         while(1) l2_server_accept_client(server, handler);
 }
-
-#endif

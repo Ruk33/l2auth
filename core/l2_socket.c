@@ -1,6 +1,3 @@
-#ifndef L2AUTH_L2_SOCKET_C
-#define L2AUTH_L2_SOCKET_C
-
 #include <assert.h>
 #include <sys/types.h>
 #include <core/l2_socket.h>
@@ -66,5 +63,3 @@ ssize_t l2_socket_send
         assert(buffer);
         return socket->strategy->send(socket, buffer, buffer_size);
 }
-
-#endif

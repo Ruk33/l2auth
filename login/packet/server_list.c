@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_PACKET_SERVER_LIST_C
-#define L2AUTH_LOGIN_PACKET_SERVER_LIST_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -127,5 +124,3 @@ l2_packet* login_packet_server_list(struct L2Client* client)
                 (unsigned short) byte_builder_length(buffer)
         );
 }
-
-#endif

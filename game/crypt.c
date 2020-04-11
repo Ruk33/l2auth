@@ -1,6 +1,3 @@
-#ifndef L2AUTH_LOGIN_GAME_CRYPT_C
-#define L2AUTH_LOGIN_GAME_CRYPT_C
-
 #include <log/log.h>
 #include <game/crypt.h>
 
@@ -106,5 +103,3 @@ int game_crypt_checksum(unsigned char* data, size_t len)
 
         return ecx == chksum;
 }
-
-#endif

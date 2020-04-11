@@ -1,6 +1,3 @@
-#ifndef L2AUTH_BLOWFISH_KEY_C
-#define L2AUTH_BLOWFISH_KEY_C
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,5 +52,3 @@ void l2_blowfish_decrypt
         assert(dest);
         BF_ecb_encrypt(src, dest, &l2_key->key, BF_DECRYPT);
 }
-
-#endif

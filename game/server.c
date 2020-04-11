@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_SERVER_C
-#define L2AUTH_GAME_SERVER_C
-
 #include <log/log.h>
 #include <core/l2_server.h>
 #include <game/handler/client.h>
@@ -19,5 +16,3 @@ void game_server_start_or_die(unsigned short port, size_t max_players)
 
         l2_server_start(server, port, game_handler_client);
 }
-
-#endif

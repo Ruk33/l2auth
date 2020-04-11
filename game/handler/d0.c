@@ -1,6 +1,3 @@
-#ifndef L2AUTH_GAME_HANDLER_D0_C
-#define L2AUTH_GAME_HANDLER_D0_C
-
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
@@ -36,5 +33,3 @@ void game_handler_d0
                         break;
         }
 }
-
-#endif
