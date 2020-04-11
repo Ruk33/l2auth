@@ -14,7 +14,6 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
-#include <core/send_packet.h>
 #include <login/dto/session_key.h>
 #include <packet/server/encrypt.h>
 #include <packet/client/decrypt.h>
@@ -180,7 +179,11 @@ void l2_client_send_packet(struct L2Client* client, l2_raw_packet* packet)
                 (size_t) packet_size * 3 * sizeof(char)
         );
 
-        send_packet(&client->socket, packet);
+        l2_socket_send(
+                &client->socket,
+                packet,
+                l2_raw_packet_get_size(packet)
+        );
 
         log_info("Sent packet");
         log_info("Packet size: %d", packet_size);
