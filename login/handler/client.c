@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <log/log.h>
+#include <core/connection_thread.h>
 #include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
@@ -15,10 +16,12 @@
 #include <login/packet/client_type.h>
 #include <login/handler/client.h>
 
-void login_handler_client(struct L2Server* server, struct L2Client* client)
+void login_handler_client(struct ConnectionThread* conn)
 {
-        assert(server);
-        assert(client);
+        assert(conn);
+
+        struct L2Server* server = conn->server;
+        struct L2Client* client = conn->client;
 
         l2_packet* client_packet = NULL;
         unsigned char* decrypted_packet = NULL;

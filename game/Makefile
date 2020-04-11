@@ -15,7 +15,7 @@ csrc = $(wildcard *.c) \
 obj = $(csrc:.c=.o)
 
 CC = gcc
-CLIBS = -llog -lcrypto -lssl
+CLIBS = -lpthread -llog -lcrypto -lssl
 CFLAGS = $(CLIBS) -I.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 gameserver: $(obj)

@@ -3,11 +3,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <string.h>
 #include <log/log.h>
 #include <core/l2_client.h>
 #include <core/l2_rsa_key.h>
 #include <core/l2_packet.h>
+#include <core/byte_builder.h>
 #include <login/packet/init.h>
 
 l2_packet* login_packet_init(struct L2Client* client)
@@ -40,24 +40,26 @@ l2_packet* login_packet_init(struct L2Client* client)
                 (size_t) (rsa_size)
         );
 
-        unsigned char* content;
+        unsigned char* rsa_modulus = l2_client_alloc_temp_mem(
+                client,
+                (size_t) (rsa_size)
+        );
 
-        if (!rsa_key) {
-                log_fatal("No rsa key was passed in login init packet");
-                return NULL;
-        }
+        byte_builder* buffer = l2_client_byte_builder(
+                client,
+                content_size * sizeof(char)
+        );
 
-        content = l2_client_alloc_temp_mem(client, content_size * sizeof(char));
-
-        memcpy(content, session_id, sizeof(session_id));
-        memcpy(content + sizeof(session_id), protocol, sizeof(protocol));
-        l2_rsa_key_modulus(rsa_key, content + sizeof(session_id) + sizeof(protocol));
+        byte_builder_append(buffer, session_id, sizeof(session_id));
+        byte_builder_append(buffer, protocol, sizeof(protocol));
+        l2_rsa_key_modulus(rsa_key, rsa_modulus);
+        byte_builder_append(buffer, rsa_modulus, (size_t) (rsa_size));
 
         return l2_client_create_packet(
                 client,
                 type,
-                content,
-                content_size
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
         );
 }
 
