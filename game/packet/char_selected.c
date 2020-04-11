@@ -1,19 +1,24 @@
 #ifndef L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
 #define L2AUTH_LOGIN_GAME_PACKET_CHAR_SELECTED_C
 
+#include <assert.h>
 #include <stdlib.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/l2_client.h>
+#include <core/byte_builder.h>
 #include <login/dto/session_key.h>
 #include <game/packet/char_selected.h>
 
-l2_packet* game_packet_char_selected(int playOK1)
+l2_packet* game_packet_char_selected(struct L2Client* client)
 {
-        l2_packet_type type = 0x15;
-        struct ByteBuffer* buffer = byte_buffer_create();
-        l2_packet* packet;
+        assert(client);
 
+        l2_packet_type type = 0x15;
+        byte_builder* buffer = l2_client_byte_builder(client, 1000);
+
+        struct LoginDtoSessionKey* session = l2_client_session(client);
+        int playOK1 = session->playOK1;
         unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
         unsigned int char_id = 0x00;
         unsigned char title[] = { 0, 0 };
@@ -37,68 +42,65 @@ l2_packet* game_packet_char_selected(int playOK1)
         unsigned int men = 10;
         unsigned int dex = 10;
         unsigned int wit = 10;
-        unsigned char* thirty_empty = calloc(30, sizeof(unsigned char));
+        unsigned char* thirty_empty = l2_client_alloc_temp_mem(client, 30 * sizeof(unsigned char));
         unsigned int game_time = 10;
 
-        byte_buffer_append(buffer, name, sizeof(name));
-        byte_buffer_append(buffer, &char_id, sizeof(char_id));
-        byte_buffer_append(buffer, title, sizeof(title));
-        byte_buffer_append(buffer, &playOK1, sizeof(playOK1));
-        byte_buffer_append(buffer, &clan_id, sizeof(clan_id));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &sex, sizeof(sex));
-        byte_buffer_append(buffer, &race, sizeof(race));
-        byte_buffer_append(buffer, &class, sizeof(class));
-        byte_buffer_append(buffer, &active, sizeof(active));
-        byte_buffer_append(buffer, &x, sizeof(x));
-        byte_buffer_append(buffer, &y, sizeof(y));
-        byte_buffer_append(buffer, &z, sizeof(z));
-        byte_buffer_append(buffer, &current_hp, sizeof(current_hp));
-        byte_buffer_append(buffer, &current_mp, sizeof(current_mp));
-        byte_buffer_append(buffer, &sp, sizeof(sp));
-        byte_buffer_append(buffer, &exp, sizeof(exp));
-        byte_buffer_append(buffer, &level, sizeof(level));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &_int, sizeof(_int));
-        byte_buffer_append(buffer, &str, sizeof(str));
-        byte_buffer_append(buffer, &con, sizeof(con));
-        byte_buffer_append(buffer, &men, sizeof(men));
-        byte_buffer_append(buffer, &dex, sizeof(dex));
-        byte_buffer_append(buffer, &wit, sizeof(wit));
-        byte_buffer_append(buffer, thirty_empty, 30);
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &game_time, sizeof(game_time));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
+        byte_builder_append(buffer, name, sizeof(name));
+        byte_builder_append(buffer, (unsigned char *) &char_id, sizeof(char_id));
+        byte_builder_append(buffer, title, sizeof(title));
+        byte_builder_append(buffer, (unsigned char *) &playOK1, sizeof(playOK1));
+        byte_builder_append(buffer, (unsigned char *) &clan_id, sizeof(clan_id));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &sex, sizeof(sex));
+        byte_builder_append(buffer, (unsigned char *) &race, sizeof(race));
+        byte_builder_append(buffer, (unsigned char *) &class, sizeof(class));
+        byte_builder_append(buffer, (unsigned char *) &active, sizeof(active));
+        byte_builder_append(buffer, (unsigned char *) &x, sizeof(x));
+        byte_builder_append(buffer, (unsigned char *) &y, sizeof(y));
+        byte_builder_append(buffer, (unsigned char *) &z, sizeof(z));
+        byte_builder_append(buffer, (unsigned char *) &current_hp, sizeof(current_hp));
+        byte_builder_append(buffer, (unsigned char *) &current_mp, sizeof(current_mp));
+        byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
+        byte_builder_append(buffer, (unsigned char *) &exp, sizeof(exp));
+        byte_builder_append(buffer, (unsigned char *) &level, sizeof(level));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &_int, sizeof(_int));
+        byte_builder_append(buffer, (unsigned char *) &str, sizeof(str));
+        byte_builder_append(buffer, (unsigned char *) &con, sizeof(con));
+        byte_builder_append(buffer, (unsigned char *) &men, sizeof(men));
+        byte_builder_append(buffer, (unsigned char *) &dex, sizeof(dex));
+        byte_builder_append(buffer, (unsigned char *) &wit, sizeof(wit));
+        byte_builder_append(buffer, thirty_empty, 30);
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &game_time, sizeof(game_time));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
 
-        packet = l2_packet_new(
+        return l2_client_create_packet(
+                client,
                 type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
         );
-
-        byte_buffer_free(buffer);
-
-        return packet;
 }
 
 #endif

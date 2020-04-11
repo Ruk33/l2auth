@@ -1,15 +1,27 @@
 #ifndef L2AUTH_GAME_HANDLER_D0_C
 #define L2AUTH_GAME_HANDLER_D0_C
 
+#include <assert.h>
 #include <string.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
-#include <core/l2_packet.h>
+#include <core/l2_server.h>
+#include <core/l2_client.h>
 #include <game/handler/d0.h>
 
-l2_packet* game_handler_d0(l2_raw_packet* request)
+void game_handler_d0
+(
+        struct L2Server* server,
+        struct L2Client* client,
+        l2_raw_packet* request,
+        unsigned char* encrypt_key
+)
 {
-        l2_packet* packet = NULL;
+        assert(server);
+        assert(client);
+        assert(request);
+        assert(encrypt_key);
+
         unsigned short id = 0;
 
         memcpy(&id, request + 3, sizeof(id));
@@ -23,8 +35,6 @@ l2_packet* game_handler_d0(l2_raw_packet* request)
                         log_fatal("Unknown id to handle from packet D0");
                         break;
         }
-
-        return packet;
 }
 
 #endif

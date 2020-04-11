@@ -1,22 +1,24 @@
 #ifndef L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
 #define L2AUTH_LOGIN_GAME_PACKET_ENTER_WORLD_C
 
+#include <assert.h>
 #include <core/l2_packet.h>
-#include <core/byte_buffer.h>
+#include <core/l2_client.h>
+#include <core/byte_builder.h>
 #include <game/packet/enter_world.h>
 
-l2_packet* game_packet_enter_world()
+l2_packet* game_packet_enter_world(struct L2Client* client)
 {
+        assert(client);
         l2_packet_type type = 0x04;
-        struct ByteBuffer* buffer = byte_buffer_create();
-        l2_packet *packet;
+        byte_builder* buffer = l2_client_byte_builder(client, 1000);
 
         int x = -71338;
         int y = 258271;
         int z = -3104;
         int heading = 0;
         int object_id = 0;
-        char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
+        unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
         int race = 0;
         int sex = 0;
         int class = 0;
@@ -77,7 +79,7 @@ l2_packet* game_packet_enter_world()
         unsigned int hair_color = 0;
         unsigned int face = 0;
         unsigned int access_level = 0;
-        char title[] = { 'h', 0, 'i', 0, 0, 0 };
+        unsigned char title[] = { 'h', 0, 'i', 0, 0, 0 };
         unsigned int clan_id = 0;
         unsigned int clan_crest_id = 0;
         unsigned int ally_id = 0;
@@ -109,161 +111,158 @@ l2_packet* game_packet_enter_world()
         unsigned int fish_z = 0;
         unsigned int name_color = 0;
 
-        byte_buffer_append(buffer, &x, sizeof(x));
-        byte_buffer_append(buffer, &y, sizeof(y));
-        byte_buffer_append(buffer, &z, sizeof(z));
-        byte_buffer_append(buffer, &heading, sizeof(heading));
-        byte_buffer_append(buffer, &object_id, sizeof(object_id));
-        byte_buffer_append(buffer, name, sizeof(name));
-        byte_buffer_append(buffer, &race, sizeof(race));
-        byte_buffer_append(buffer, &sex, sizeof(sex));
-        byte_buffer_append(buffer, &class, sizeof(class));
-        byte_buffer_append(buffer, &level, sizeof(level));
-        byte_buffer_append(buffer, &exp, sizeof(exp));
-        byte_buffer_append(buffer, &str, sizeof(str));
-        byte_buffer_append(buffer, &dex, sizeof(dex));
-        byte_buffer_append(buffer, &con, sizeof(con));
-        byte_buffer_append(buffer, &_int, sizeof(_int));
-        byte_buffer_append(buffer, &wit, sizeof(wit));
-        byte_buffer_append(buffer, &men, sizeof(men));
-        byte_buffer_append(buffer, &max_hp, sizeof(max_hp));
-        byte_buffer_append(buffer, &hp, sizeof(hp));
-        byte_buffer_append(buffer, &max_mp, sizeof(max_mp));
-        byte_buffer_append(buffer, &mp, sizeof(mp));
-        byte_buffer_append(buffer, &sp, sizeof(sp));
-        byte_buffer_append(buffer, &current_load, sizeof(current_load));
-        byte_buffer_append(buffer, &max_load, sizeof(max_load));
-        byte_buffer_append(buffer, &unknown, sizeof(unknown));
+        byte_builder_append(buffer, (unsigned char *) &x, sizeof(x));
+        byte_builder_append(buffer, (unsigned char *) &y, sizeof(y));
+        byte_builder_append(buffer, (unsigned char *) &z, sizeof(z));
+        byte_builder_append(buffer, (unsigned char *) &heading, sizeof(heading));
+        byte_builder_append(buffer, (unsigned char *) &object_id, sizeof(object_id));
+        byte_builder_append(buffer, name, sizeof(name));
+        byte_builder_append(buffer, (unsigned char *) &race, sizeof(race));
+        byte_builder_append(buffer, (unsigned char *) &sex, sizeof(sex));
+        byte_builder_append(buffer, (unsigned char *) &class, sizeof(class));
+        byte_builder_append(buffer, (unsigned char *) &level, sizeof(level));
+        byte_builder_append(buffer, (unsigned char *) &exp, sizeof(exp));
+        byte_builder_append(buffer, (unsigned char *) &str, sizeof(str));
+        byte_builder_append(buffer, (unsigned char *) &dex, sizeof(dex));
+        byte_builder_append(buffer, (unsigned char *) &con, sizeof(con));
+        byte_builder_append(buffer, (unsigned char *) &_int, sizeof(_int));
+        byte_builder_append(buffer, (unsigned char *) &wit, sizeof(wit));
+        byte_builder_append(buffer, (unsigned char *) &men, sizeof(men));
+        byte_builder_append(buffer, (unsigned char *) &max_hp, sizeof(max_hp));
+        byte_builder_append(buffer, (unsigned char *) &hp, sizeof(hp));
+        byte_builder_append(buffer, (unsigned char *) &max_mp, sizeof(max_mp));
+        byte_builder_append(buffer, (unsigned char *) &mp, sizeof(mp));
+        byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
+        byte_builder_append(buffer, (unsigned char *) &current_load, sizeof(current_load));
+        byte_builder_append(buffer, (unsigned char *) &max_load, sizeof(max_load));
+        byte_builder_append(buffer, (unsigned char *) &unknown, sizeof(unknown));
 
-        byte_buffer_append(buffer, &paperdoll_under, sizeof(paperdoll_under));
-        byte_buffer_append(buffer, &paperdoll_rear, sizeof(paperdoll_rear));
-        byte_buffer_append(buffer, &paperdoll_lear, sizeof(paperdoll_lear));
-        byte_buffer_append(buffer, &paperdoll_neck, sizeof(paperdoll_neck));
-        byte_buffer_append(buffer, &paperdoll_rfinger, sizeof(paperdoll_rfinger));
-        byte_buffer_append(buffer, &paperdoll_lfinger, sizeof(paperdoll_lfinger));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_under, sizeof(paperdoll_under));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rear, sizeof(paperdoll_rear));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lear, sizeof(paperdoll_lear));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_neck, sizeof(paperdoll_neck));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rfinger, sizeof(paperdoll_rfinger));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lfinger, sizeof(paperdoll_lfinger));
         
-        byte_buffer_append(buffer, &paperdoll_head, sizeof(paperdoll_head));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_head, sizeof(paperdoll_head));
 
-        byte_buffer_append(buffer, &paperdoll_rhand, sizeof(paperdoll_rhand));
-        byte_buffer_append(buffer, &paperdoll_lhand, sizeof(paperdoll_lhand));
-        byte_buffer_append(buffer, &paperdoll_gloves, sizeof(paperdoll_gloves));
-        byte_buffer_append(buffer, &paperdoll_chest, sizeof(paperdoll_chest));
-        byte_buffer_append(buffer, &paperdoll_legs, sizeof(paperdoll_legs));
-        byte_buffer_append(buffer, &paperdoll_feet, sizeof(paperdoll_feet));
-        byte_buffer_append(buffer, &paperdoll_back, sizeof(paperdoll_back));
-        byte_buffer_append(buffer, &paperdoll_lrhand, sizeof(paperdoll_lrhand));
-        byte_buffer_append(buffer, &paperdoll_hair, sizeof(paperdoll_hair));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rhand, sizeof(paperdoll_rhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lhand, sizeof(paperdoll_lhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_gloves, sizeof(paperdoll_gloves));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_chest, sizeof(paperdoll_chest));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_legs, sizeof(paperdoll_legs));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_feet, sizeof(paperdoll_feet));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_back, sizeof(paperdoll_back));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lrhand, sizeof(paperdoll_lrhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_hair, sizeof(paperdoll_hair));
 
-        byte_buffer_append(buffer, &paperdoll_under, sizeof(paperdoll_under));
-        byte_buffer_append(buffer, &paperdoll_rear, sizeof(paperdoll_rear));
-        byte_buffer_append(buffer, &paperdoll_lear, sizeof(paperdoll_lear));
-        byte_buffer_append(buffer, &paperdoll_neck, sizeof(paperdoll_neck));
-        byte_buffer_append(buffer, &paperdoll_rfinger, sizeof(paperdoll_rfinger));
-        byte_buffer_append(buffer, &paperdoll_lfinger, sizeof(paperdoll_lfinger));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_under, sizeof(paperdoll_under));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rear, sizeof(paperdoll_rear));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lear, sizeof(paperdoll_lear));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_neck, sizeof(paperdoll_neck));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rfinger, sizeof(paperdoll_rfinger));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lfinger, sizeof(paperdoll_lfinger));
 
-        byte_buffer_append(buffer, &paperdoll_head, sizeof(paperdoll_head));
-        byte_buffer_append(buffer, &paperdoll_rhand, sizeof(paperdoll_rhand));
-        byte_buffer_append(buffer, &paperdoll_lhand, sizeof(paperdoll_lhand));
-        byte_buffer_append(buffer, &paperdoll_gloves, sizeof(paperdoll_gloves));
-        byte_buffer_append(buffer, &paperdoll_chest, sizeof(paperdoll_chest));
-        byte_buffer_append(buffer, &paperdoll_legs, sizeof(paperdoll_legs));
-        byte_buffer_append(buffer, &paperdoll_feet, sizeof(paperdoll_feet));
-        byte_buffer_append(buffer, &paperdoll_back, sizeof(paperdoll_back));
-        byte_buffer_append(buffer, &paperdoll_lrhand, sizeof(paperdoll_lrhand));
-        byte_buffer_append(buffer, &paperdoll_hair, sizeof(paperdoll_hair));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_head, sizeof(paperdoll_head));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_rhand, sizeof(paperdoll_rhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lhand, sizeof(paperdoll_lhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_gloves, sizeof(paperdoll_gloves));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_chest, sizeof(paperdoll_chest));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_legs, sizeof(paperdoll_legs));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_feet, sizeof(paperdoll_feet));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_back, sizeof(paperdoll_back));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_lrhand, sizeof(paperdoll_lrhand));
+        byte_builder_append(buffer, (unsigned char *) &paperdoll_hair, sizeof(paperdoll_hair));
 
-        byte_buffer_append(buffer, &p_atk, sizeof(p_atk));
-        byte_buffer_append(buffer, &p_atk_speed, sizeof(p_atk_speed));
-        byte_buffer_append(buffer, &p_def, sizeof(p_def));
-        byte_buffer_append(buffer, &evasion_rate, sizeof(evasion_rate));
-        byte_buffer_append(buffer, &accuracy, sizeof(accuracy));
-        byte_buffer_append(buffer, &critical_hit, sizeof(critical_hit));
-        byte_buffer_append(buffer, &m_atk, sizeof(m_atk));
-        byte_buffer_append(buffer, &m_atk_speed, sizeof(m_atk_speed));
-        byte_buffer_append(buffer, &p_atk_speed, sizeof(p_atk_speed));
-        byte_buffer_append(buffer, &m_def, sizeof(m_def));
+        byte_builder_append(buffer, (unsigned char *) &p_atk, sizeof(p_atk));
+        byte_builder_append(buffer, (unsigned char *) &p_atk_speed, sizeof(p_atk_speed));
+        byte_builder_append(buffer, (unsigned char *) &p_def, sizeof(p_def));
+        byte_builder_append(buffer, (unsigned char *) &evasion_rate, sizeof(evasion_rate));
+        byte_builder_append(buffer, (unsigned char *) &accuracy, sizeof(accuracy));
+        byte_builder_append(buffer, (unsigned char *) &critical_hit, sizeof(critical_hit));
+        byte_builder_append(buffer, (unsigned char *) &m_atk, sizeof(m_atk));
+        byte_builder_append(buffer, (unsigned char *) &m_atk_speed, sizeof(m_atk_speed));
+        byte_builder_append(buffer, (unsigned char *) &p_atk_speed, sizeof(p_atk_speed));
+        byte_builder_append(buffer, (unsigned char *) &m_def, sizeof(m_def));
 
-        byte_buffer_append(buffer, &pvp, sizeof(pvp));
-        byte_buffer_append(buffer, &karma, sizeof(karma));
+        byte_builder_append(buffer, (unsigned char *) &pvp, sizeof(pvp));
+        byte_builder_append(buffer, (unsigned char *) &karma, sizeof(karma));
 
-        byte_buffer_append(buffer, &run_speed, sizeof(run_speed));
-        byte_buffer_append(buffer, &walk_speed, sizeof(walk_speed));
-        byte_buffer_append(buffer, &swim_run_speed, sizeof(swim_run_speed));
-        byte_buffer_append(buffer, &swim_walk_speed, sizeof(swim_walk_speed));
-        byte_buffer_append(buffer, &fly_run_speed, sizeof(fly_run_speed));
-        byte_buffer_append(buffer, &fly_walk_speed, sizeof(fly_walk_speed));
-        byte_buffer_append(buffer, &fly_run_speed, sizeof(fly_run_speed));
-        byte_buffer_append(buffer, &fly_walk_speed, sizeof(fly_walk_speed));
-        byte_buffer_append(buffer, &movement_speed_multiplier, sizeof(movement_speed_multiplier));
-        byte_buffer_append(buffer, &atk_speed_multiplier, sizeof(atk_speed_multiplier));
+        byte_builder_append(buffer, (unsigned char *) &run_speed, sizeof(run_speed));
+        byte_builder_append(buffer, (unsigned char *) &walk_speed, sizeof(walk_speed));
+        byte_builder_append(buffer, (unsigned char *) &swim_run_speed, sizeof(swim_run_speed));
+        byte_builder_append(buffer, (unsigned char *) &swim_walk_speed, sizeof(swim_walk_speed));
+        byte_builder_append(buffer, (unsigned char *) &fly_run_speed, sizeof(fly_run_speed));
+        byte_builder_append(buffer, (unsigned char *) &fly_walk_speed, sizeof(fly_walk_speed));
+        byte_builder_append(buffer, (unsigned char *) &fly_run_speed, sizeof(fly_run_speed));
+        byte_builder_append(buffer, (unsigned char *) &fly_walk_speed, sizeof(fly_walk_speed));
+        byte_builder_append(buffer, (unsigned char *) &movement_speed_multiplier, sizeof(movement_speed_multiplier));
+        byte_builder_append(buffer, (unsigned char *) &atk_speed_multiplier, sizeof(atk_speed_multiplier));
 
-        byte_buffer_append(buffer, &collision_radius, sizeof(collision_radius));
-        byte_buffer_append(buffer, &collision_height, sizeof(collision_height));
+        byte_builder_append(buffer, (unsigned char *) &collision_radius, sizeof(collision_radius));
+        byte_builder_append(buffer, (unsigned char *) &collision_height, sizeof(collision_height));
 
-        byte_buffer_append(buffer, &hair_style, sizeof(hair_style));
-        byte_buffer_append(buffer, &hair_color, sizeof(hair_color));
-        byte_buffer_append(buffer, &face, sizeof(face));
-        byte_buffer_append(buffer, &access_level, sizeof(access_level));
+        byte_builder_append(buffer, (unsigned char *) &hair_style, sizeof(hair_style));
+        byte_builder_append(buffer, (unsigned char *) &hair_color, sizeof(hair_color));
+        byte_builder_append(buffer, (unsigned char *) &face, sizeof(face));
+        byte_builder_append(buffer, (unsigned char *) &access_level, sizeof(access_level));
 
-        byte_buffer_append(buffer, title, sizeof(title));
+        byte_builder_append(buffer, title, sizeof(title));
 
-        byte_buffer_append(buffer, &clan_id, sizeof(clan_id));
-        byte_buffer_append(buffer, &clan_crest_id, sizeof(clan_crest_id));
-        byte_buffer_append(buffer, &ally_id, sizeof(ally_id));
-        byte_buffer_append(buffer, &ally_crest_id, sizeof(ally_crest_id));
-        byte_buffer_append(buffer, &clan_leader, sizeof(clan_leader));
-        byte_buffer_append(buffer, &mount_type, sizeof(mount_type));
-        byte_buffer_append(buffer, &private_store_type, sizeof(private_store_type));
-        byte_buffer_append(buffer, &dwarven_craft, sizeof(dwarven_craft));
-        byte_buffer_append(buffer, &pk_kills, sizeof(pk_kills));
-        byte_buffer_append(buffer, &pvp_kills, sizeof(pvp_kills));
+        byte_builder_append(buffer, (unsigned char *) &clan_id, sizeof(clan_id));
+        byte_builder_append(buffer, (unsigned char *) &clan_crest_id, sizeof(clan_crest_id));
+        byte_builder_append(buffer, (unsigned char *) &ally_id, sizeof(ally_id));
+        byte_builder_append(buffer, (unsigned char *) &ally_crest_id, sizeof(ally_crest_id));
+        byte_builder_append(buffer, (unsigned char *) &clan_leader, sizeof(clan_leader));
+        byte_builder_append(buffer, (unsigned char *) &mount_type, sizeof(mount_type));
+        byte_builder_append(buffer, (unsigned char *) &private_store_type, sizeof(private_store_type));
+        byte_builder_append(buffer, (unsigned char *) &dwarven_craft, sizeof(dwarven_craft));
+        byte_builder_append(buffer, (unsigned char *) &pk_kills, sizeof(pk_kills));
+        byte_builder_append(buffer, (unsigned char *) &pvp_kills, sizeof(pvp_kills));
 
-        byte_buffer_append(buffer, &cubics, sizeof(cubics));
+        byte_builder_append(buffer, (unsigned char *) &cubics, sizeof(cubics));
 
-        byte_buffer_append(buffer, &party_member, sizeof(party_member));
-        byte_buffer_append(buffer, &abnormal_effect, sizeof(abnormal_effect));
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &clan_privileges, sizeof(clan_privileges));
+        byte_builder_append(buffer, (unsigned char *) &party_member, sizeof(party_member));
+        byte_builder_append(buffer, (unsigned char *) &abnormal_effect, sizeof(abnormal_effect));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &clan_privileges, sizeof(clan_privileges));
 
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
 
-        byte_buffer_append(buffer, &recomendation_left, sizeof(recomendation_left));
-        byte_buffer_append(buffer, &recomendation_have, sizeof(recomendation_have));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &inventory_limit, sizeof(inventory_limit));
+        byte_builder_append(buffer, (unsigned char *) &recomendation_left, sizeof(recomendation_left));
+        byte_builder_append(buffer, (unsigned char *) &recomendation_have, sizeof(recomendation_have));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &inventory_limit, sizeof(inventory_limit));
         
-        byte_buffer_append(buffer, &class_id, sizeof(class_id));
-        byte_buffer_append(buffer, &empty_int, sizeof(empty_int));
-        byte_buffer_append(buffer, &max_cp, sizeof(max_cp));
-        byte_buffer_append(buffer, &cp, sizeof(cp));
+        byte_builder_append(buffer, (unsigned char *) &class_id, sizeof(class_id));
+        byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
+        byte_builder_append(buffer, (unsigned char *) &max_cp, sizeof(max_cp));
+        byte_builder_append(buffer, (unsigned char *) &cp, sizeof(cp));
 
-        byte_buffer_append(buffer, &mounted, sizeof(mounted));
+        byte_builder_append(buffer, (unsigned char *) &mounted, sizeof(mounted));
 
-        byte_buffer_append(buffer, &clan_crest_large_id, sizeof(clan_crest_large_id));
-        byte_buffer_append(buffer, &hero_symbol, sizeof(hero_symbol));
-        byte_buffer_append(buffer, &hero, sizeof(hero));
+        byte_builder_append(buffer, (unsigned char *) &clan_crest_large_id, sizeof(clan_crest_large_id));
+        byte_builder_append(buffer, (unsigned char *) &hero_symbol, sizeof(hero_symbol));
+        byte_builder_append(buffer, (unsigned char *) &hero, sizeof(hero));
 
-        byte_buffer_append(buffer, &empty, sizeof(empty));
-        byte_buffer_append(buffer, &fish_x, sizeof(fish_x));
-        byte_buffer_append(buffer, &fish_y, sizeof(fish_y));
-        byte_buffer_append(buffer, &fish_z, sizeof(fish_z));
-        byte_buffer_append(buffer, &name_color, sizeof(name_color));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        byte_builder_append(buffer, (unsigned char *) &fish_x, sizeof(fish_x));
+        byte_builder_append(buffer, (unsigned char *) &fish_y, sizeof(fish_y));
+        byte_builder_append(buffer, (unsigned char *) &fish_z, sizeof(fish_z));
+        byte_builder_append(buffer, (unsigned char *) &name_color, sizeof(name_color));
 
-        packet = l2_packet_new(
+        return l2_client_create_packet(
+                client,
                 type,
-                byte_buffer_content(buffer),
-                (unsigned short) byte_buffer_size(buffer)
+                buffer,
+                (unsigned short) byte_builder_length(buffer)
         );
-
-        byte_buffer_free(buffer);
-
-        return packet;
 }
 
 #endif
