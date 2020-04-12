@@ -16,6 +16,7 @@
 #include <game/handler/request_quests.h>
 #include <game/handler/enter_world.h>
 #include <game/handler/restart.h>
+#include <game/handler/move_backwards_to_location.h>
 #include <game/handler/client.h>
 
 void game_handler_client(struct ConnectionThread* conn)
@@ -51,6 +52,7 @@ void game_handler_client(struct ConnectionThread* conn)
 
         int enable_decrypt = 0;
         unsigned short packet_size = 0;
+        l2_packet_type packet_type;
 
         log_info("Handling new client from gameserver");
         
@@ -76,13 +78,23 @@ void game_handler_client(struct ConnectionThread* conn)
                  * (franco.montenegro)
                  * Check why l2_packet_get_type is not working here
                  */
-                switch (client_packet[2] & 0xff) {
+                packet_type = (l2_packet_type) (client_packet[2] & 0xff);
+
+                switch (packet_type) {
                 case GAME_PACKET_CLIENT_TYPE_PROTOCOL_VERSION:
                         enable_decrypt = 1;
                         game_handler_protocol_version(
                                 server,
                                 client,
                                 client_packet
+                        );
+                        break;
+                case GAME_PACKET_CLIENT_TYPE_MOVE_BACKWARDS_TO_LOCATION:
+                        game_handler_move_backwards_to_location(
+                                server,
+                                client,
+                                client_packet,
+                                encrypt_key
                         );
                         break;
                 case GAME_PACKET_CLIENT_TYPE_AUTH_REQUEST:
@@ -150,7 +162,10 @@ void game_handler_client(struct ConnectionThread* conn)
                         );
                         break;
                 default:
-                        log_info("Oops, non implemented packet");
+                        log_error(
+                                "Oops, packet %02X not implemented",
+                                packet_type
+                        );
                         break;
                 }
 

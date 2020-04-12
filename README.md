@@ -57,7 +57,7 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - [x] Allow to enter game server
 - [ ] Create character
 - [x] Enter world
-- [ ] Walk
+- [x] Walk
 - [ ] Lua integration
 - [x] Handle multiple connections
 
