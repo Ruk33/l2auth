@@ -2,6 +2,8 @@
 Simple Lineage 2 C4 server written as a learning exercise.
 Currently working in WINDOWS & LINUX (thanks to Docker).
 
+![L2Auth Demo](doc/screenshot/demo.gif)
+
 ## Running the server with Docker
 - Install docker & docker-compose
 - `docker-compose up`
