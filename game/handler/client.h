@@ -3,6 +3,6 @@
 
 #include <core/connection_thread.h>
 
-void game_handler_client(struct ConnectionThread* conn);
+int game_handler_client(struct ConnectionThread* conn);
 
 #endif

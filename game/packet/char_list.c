@@ -18,7 +18,7 @@ l2_packet* game_packet_char_list(struct L2Client* client)
         int char_count = 0x01;
 
         unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
-        int char_id = 0x00;
+        int char_id = 0x01;
         unsigned char login[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
 
         int clan_id = 0x00;
@@ -92,8 +92,6 @@ l2_packet* game_packet_char_list(struct L2Client* client)
         int enchant_effect = 0x00;
 
         byte_builder* buffer = l2_client_byte_builder(client, 300);
-
-        l2_packet *packet;
 
         byte_builder_append(buffer, (unsigned char *) &char_count, sizeof(char_count));
         byte_builder_append(buffer, name, sizeof(name));
