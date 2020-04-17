@@ -16,7 +16,7 @@ csrc = $(wildcard *.c) \
 obj = $(csrc:.c=.o)
 
 CC = gcc
-CLIBS = -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,/home/ruke/l2auth/game/build
+CLIBS = -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
 CFLAGS = $(CLIBS) -fPIC -I.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 gameserver: $(obj)
