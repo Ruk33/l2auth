@@ -14,6 +14,7 @@
 #include <login/dto/session_key.h>
 #include <packet/server/encrypt.h>
 #include <packet/client/decrypt.h>
+#include <game/dto/char.h>
 #include <core/l2_client.h>
 
 #define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
@@ -32,6 +33,8 @@ struct L2Client
 
         circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
         memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
+
+        struct GameDtoChar character;
 };
 
 struct LoginDtoSessionKey* l2_client_session(struct L2Client* client)
@@ -57,10 +60,19 @@ size_t l2_client_struct_size()
         return sizeof(struct L2Client);
 }
 
+struct GameDtoChar* l2_client_get_char(struct L2Client* client)
+{
+        return &client->character;
+}
+
 void l2_client_init(struct L2Client* client)
 {
         assert(client);
         client->received_data_size = 0;
+
+        client->character.current_location.x = -71396;
+        client->character.current_location.y = 258272;
+        client->character.current_location.z = -3135;
 
         login_session_key_init(&client->session);
 

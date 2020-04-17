@@ -17,7 +17,7 @@
 #include <game/handler/enter_world.h>
 #include <game/handler/restart.h>
 #include <game/handler/move_backwards_to_location.h>
-// #include <game/handler/validate_position.h>
+#include <game/handler/validate_position.h>
 #include <game/handler/client.h>
 
 int game_handler_client(struct ConnectionThread* conn)
@@ -70,14 +70,14 @@ int game_handler_client(struct ConnectionThread* conn)
                         conn->encrypt_key
                 );
                 break;
-        // case GAME_PACKET_CLIENT_TYPE_VALIDATE_POS:
-        //         game_handler_validate_position(
-        //                 server,
-        //                 client,
-        //                 client_packet,
-        //                 conn->encrypt_key
-        //         );
-        //         break;
+        case GAME_PACKET_CLIENT_TYPE_VALIDATE_POS:
+                game_handler_validate_position(
+                        server,
+                        client,
+                        client_packet,
+                        conn->encrypt_key
+                );
+                break;
         case GAME_PACKET_CLIENT_TYPE_AUTH_REQUEST:
                 game_handler_auth_login(
                         server,

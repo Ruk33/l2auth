@@ -10,10 +10,13 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
+#include <game/dto/char.h>
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65536
 
 struct L2Client;
+
+struct GameDtoChar* l2_client_get_char(struct L2Client* client);
 
 struct LoginDtoSessionKey* l2_client_session(struct L2Client* client);
 

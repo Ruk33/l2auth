@@ -15,7 +15,7 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         int z = -3135;
         int heading = 0;
         int object_id = 0x01;
-        unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
+        unsigned char name[] = { 'R', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
         int race = 0;
         int sex = 0;
         int class = 0;
@@ -62,8 +62,8 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         unsigned int m_def = 20;
         unsigned int pvp = 0;
         unsigned int karma = 0;
-        unsigned int run_speed = 10;
-        unsigned int walk_speed = 10;
+        unsigned int run_speed = 100;
+        unsigned int walk_speed = 100;
         unsigned int swim_run_speed = 10;
         unsigned int swim_walk_speed = 10;
         unsigned int fly_run_speed = 10;
