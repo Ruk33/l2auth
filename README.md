@@ -55,11 +55,12 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - [x] Display terms of service view
 - [x] Display server list
 - [x] Allow to enter game server
-- [ ] Create character
+- [x] Create character
 - [x] Enter world
 - [x] Walk
-- [ ] Lua integration
+- [ ] Lua integration? since we got hot reload I don't know if it makes sense
 - [x] Handle multiple connections
+- [ ] See other players
 
 ## Screenshots
 Please see doc/screenshot.
