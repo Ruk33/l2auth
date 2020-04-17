@@ -5,14 +5,21 @@
 
 struct GameDtoChar
 {
-        unsigned char name[14];
-        unsigned char login[14];
+        char name[14];
+        char login[14];
 
         int char_id;
         int race_id;
         int class_id;
         int sex;
         int active;
+
+        int _int;
+        int str;
+        int con;
+        int men;
+        int dex;
+        int wit;
 
         int clan_id;
 

@@ -4,6 +4,7 @@ csrc = $(wildcard *.c) \
 	$(wildcard handler/*.c) \
 	$(wildcard packet/*.c) \
 	$(wildcard service/*.c) \
+	$(wildcard db/*.c) \
 	$(wildcard ../login/helper.c) \
 	$(wildcard ../login/dto/*.c) \
 	$(wildcard ../login/handler/*.c) \
@@ -16,7 +17,7 @@ csrc = $(wildcard *.c) \
 obj = $(csrc:.c=.o)
 
 CC = gcc
-CLIBS = -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
+CLIBS = -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
 CFLAGS = $(CLIBS) -fPIC -I.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 gameserver: $(obj)

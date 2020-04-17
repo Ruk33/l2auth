@@ -1,66 +1,48 @@
 #include <assert.h>
+#include <string.h>
+#include <log/log.h>
+#include <core/l2_string.h>
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
 #include <core/byte_builder.h>
 #include <login/dto/session_key.h>
+#include <game/service/char_list.h>
 #include <game/dto/char.h>
 #include <game/packet/char_list.h>
 
-l2_packet* game_packet_char_list(struct L2Client* client)
+void game_packet_char_list_add_char_to_buffer
+(
+        byte_builder* buffer,
+        int play_ok_1,
+        struct GameDtoChar* character
+)
 {
-        assert(client);
-
-        l2_packet_type type = 0x13;
-
-        struct LoginDtoSessionKey* key = l2_client_session(client);
-        int play_ok_1 = key->playOK1;
-
-        int char_count = 0x01;
-
-        unsigned char name[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
-        int char_id = 0x01;
-        unsigned char login[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
+        char login[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
 
         int clan_id = 0x00;
 
         int empty_space = 0x00;
 
-        int sex = 0x00;
-        int race = 0x00;
-        int class_id = 0x00;
+        int sp = 0;
+        int exp = 0;
+        int karma = 0;
 
-        int active = 0x01;
-
-        int x = 0x00;
-        int y = 0x00;
-        int z = 0x00;
-
-        double current_hp = 100.50;
-        double current_mp = 50.3;
-
-        int sp = 5;
-        int exp = 10;
-        int level = 10;
-        int karma = 1;
-
-        unsigned char empty_block[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-        int under_obj_id = 0x01;
-        int r_ear_obj_id = 0x01;
-        int l_ear_obj_id = 0x01;
-        int neck_obj_id = 0x01;
-        int r_finger_obj_id = 0x01;
-        int l_finger_obj_id = 0x01;
-        int head_obj_id = 0x01;
-        int r_hand_obj_id = 0x01;
-        int l_hand_obj_id = 0x01;
-        int gloves_obj_id = 0x01;
-        int chest_obj_id = 0x01;
-        int legs_obj_id = 0x01;
-        int feet_obj_id = 0x01;
-        int back_obj_id = 0x01;
-        int lr_hand_obj_id = 0x01;
-        int hair_obj_id = 0x01;
+        int under_obj_id = 0;
+        int r_ear_obj_id = 0;
+        int l_ear_obj_id = 0;
+        int neck_obj_id = 0;
+        int r_finger_obj_id = 0;
+        int l_finger_obj_id = 0;
+        int head_obj_id = 0;
+        int r_hand_obj_id = 0;
+        int l_hand_obj_id = 0;
+        int gloves_obj_id = 0;
+        int chest_obj_id = 0;
+        int legs_obj_id = 0;
+        int feet_obj_id = 0;
+        int back_obj_id = 0;
+        int lr_hand_obj_id = 0;
+        int hair_obj_id = 0;
 
         int under = 0;
         int r_ear = 0;
@@ -79,41 +61,129 @@ l2_packet* game_packet_char_list(struct L2Client* client)
         int lr_hand = 0;
         int hair = 0;
 
-        int hair_style = 0x01;
-        int hair_color = 0x01;
-        int face = 0x01;
+        int delete_days = 0;
 
-        double max_hp = 5000.0;
-        double max_mp = 100.0;
+        int auto_select = 0;
+        unsigned char enchant_effect = 0;
 
-        int delete_days = 0x00;
+        l2_string name[28];
 
-        int auto_select = 0x00;
-        int enchant_effect = 0x00;
+        memset(name, 0, 28);
+        l2_string_from_char(name, character->name, strlen(character->name));
+        
+        byte_builder_append(
+                buffer,
+                (unsigned char *) name,
+                l2_string_calculate_space_from_char(strlen(character->name) + 1)
+        );
 
-        byte_builder* buffer = l2_client_byte_builder(client, 300);
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->char_id,
+                sizeof(character->char_id)
+        );
 
-        byte_builder_append(buffer, (unsigned char *) &char_count, sizeof(char_count));
-        byte_builder_append(buffer, name, sizeof(name));
-        byte_builder_append(buffer, (unsigned char *) &char_id, sizeof(char_id));
-        byte_builder_append(buffer, login, sizeof(login));
-        byte_builder_append(buffer, (unsigned char *) &play_ok_1, sizeof(play_ok_1));
-        byte_builder_append(buffer, (unsigned char *) &clan_id, sizeof(clan_id));
-        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
-        byte_builder_append(buffer, (unsigned char *) &sex, sizeof(sex));
-        byte_builder_append(buffer, (unsigned char *) &race, sizeof(race));
-        byte_builder_append(buffer, (unsigned char *) &class_id, sizeof(class_id));
-        byte_builder_append(buffer, (unsigned char *) &active, sizeof(active));
-        byte_builder_append(buffer, (unsigned char *) &x, sizeof(x));
-        byte_builder_append(buffer, (unsigned char *) &y, sizeof(y));
-        byte_builder_append(buffer, (unsigned char *) &z, sizeof(z));
-        byte_builder_append(buffer, (unsigned char *) &current_hp, sizeof(current_hp));
-        byte_builder_append(buffer, (unsigned char *) &current_mp, sizeof(current_mp));
+        byte_builder_append(buffer, (unsigned char *) login, sizeof(login));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &play_ok_1,
+                sizeof(play_ok_1)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &clan_id,
+                sizeof(clan_id)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &empty_space,
+                sizeof(empty_space)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->sex,
+                sizeof(character->sex)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->race_id,
+                sizeof(character->race_id)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->class_id,
+                sizeof(character->class_id)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->active,
+                sizeof(character->active)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char * ) &empty_space,
+                sizeof(empty_space)
+                // (unsigned char *) &character->current_location.x,
+                // sizeof(character->current_location.x)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &empty_space,
+                sizeof(empty_space)
+                // (unsigned char *) &character->current_location.y,
+                // sizeof(character->current_location.y)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &empty_space,
+                sizeof(empty_space)
+                // (unsigned char *) &character->current_location.z,
+                // sizeof(character->current_location.z)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->current_hp,
+                sizeof(character->current_hp)
+        );
+        
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->current_mp,
+                sizeof(character->current_mp)
+        );
+
         byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
         byte_builder_append(buffer, (unsigned char *) &exp, sizeof(exp));
-        byte_builder_append(buffer, (unsigned char *) &level, sizeof(level));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->level,
+                sizeof(character->level)
+        );
+
         byte_builder_append(buffer, (unsigned char *) &karma, sizeof(karma));
-        byte_builder_append(buffer, empty_block, sizeof(empty_block));
+
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+        byte_builder_append(buffer, (unsigned char *) &empty_space, sizeof(empty_space));
+
         byte_builder_append(buffer, (unsigned char *) &under_obj_id, sizeof(under_obj_id));
         byte_builder_append(buffer, (unsigned char *) &r_ear_obj_id, sizeof(r_ear_obj_id));
         byte_builder_append(buffer, (unsigned char *) &l_ear_obj_id, sizeof(l_ear_obj_id));
@@ -130,6 +200,7 @@ l2_packet* game_packet_char_list(struct L2Client* client)
         byte_builder_append(buffer, (unsigned char *) &back_obj_id, sizeof(back_obj_id));
         byte_builder_append(buffer, (unsigned char *) &lr_hand_obj_id, sizeof(lr_hand_obj_id));
         byte_builder_append(buffer, (unsigned char *) &hair_obj_id, sizeof(hair_obj_id));
+
         byte_builder_append(buffer, (unsigned char *) &under, sizeof(under));
         byte_builder_append(buffer, (unsigned char *) &r_ear, sizeof(r_ear));
         byte_builder_append(buffer, (unsigned char *) &l_ear, sizeof(l_ear));
@@ -146,15 +217,91 @@ l2_packet* game_packet_char_list(struct L2Client* client)
         byte_builder_append(buffer, (unsigned char *) &back, sizeof(back));
         byte_builder_append(buffer, (unsigned char *) &lr_hand, sizeof(lr_hand));
         byte_builder_append(buffer, (unsigned char *) &hair, sizeof(hair));
-        byte_builder_append(buffer, (unsigned char *) &hair_style, sizeof(hair_style));
-        byte_builder_append(buffer, (unsigned char *) &hair_color, sizeof(hair_color));
-        byte_builder_append(buffer, (unsigned char *) &face, sizeof(face));
-        byte_builder_append(buffer, (unsigned char *) &max_hp, sizeof(max_hp));
-        byte_builder_append(buffer, (unsigned char *) &max_mp, sizeof(max_mp));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->hair_style,
+                sizeof(character->hair_style)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->hair_color,
+                sizeof(character->hair_color)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->face,
+                sizeof(character->face)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->max_hp,
+                sizeof(character->max_hp)
+        );
+
+        byte_builder_append(
+                buffer, 
+                (unsigned char *) &character->max_mp,
+                sizeof(character->max_mp)
+        );
+
         byte_builder_append(buffer, (unsigned char *) &delete_days, sizeof(delete_days));
-        byte_builder_append(buffer, (unsigned char *) &class_id, sizeof(class_id));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->class_id,
+                sizeof(character->class_id)
+        );
+
         byte_builder_append(buffer, (unsigned char *) &auto_select, sizeof(auto_select));
         byte_builder_append(buffer, (unsigned char *) &enchant_effect, sizeof(enchant_effect));
+}
+
+l2_packet* game_packet_char_list(struct L2Client* client)
+{
+        assert(client);
+
+        l2_packet_type type = 0x13;
+
+        struct LoginDtoSessionKey* key = l2_client_session(client);
+        int play_ok_1 = key->playOK1;
+        size_t max_chars = 5;
+        struct GameDtoChar** chars = l2_client_alloc_temp_mem(
+                client,
+                sizeof(struct GameDtoChar *) * max_chars
+        );
+        int char_count = 0;
+        byte_builder* buffer;
+
+        for (size_t i = 0; i < max_chars; i++) {
+                chars[i] = l2_client_alloc_temp_mem(
+                        client,
+                        sizeof(struct GameDtoChar)
+                );
+        }
+
+        char_count = game_service_char_list(chars, max_chars);
+        buffer = l2_client_byte_builder(
+                client,
+                (size_t) (300 * (char_count + 1))
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &char_count,
+                sizeof(char_count)
+        );
+
+        for (int i = 0; i < char_count; i++) {
+                game_packet_char_list_add_char_to_buffer(
+                        buffer,
+                        play_ok_1,
+                        chars[i]
+                );
+        }
 
         return l2_client_create_packet(
                 client,

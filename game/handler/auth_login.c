@@ -30,6 +30,7 @@ void game_handler_auth_login
         assert(server);
         assert(client);
         assert(request);
+
         struct LoginDtoSessionKey* session = l2_client_session(client);
         assert(session);
 
