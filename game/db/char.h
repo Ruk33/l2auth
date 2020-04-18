@@ -14,4 +14,10 @@ int game_db_char_list
         size_t how_many
 );
 
+void game_db_char_get_from_index
+(
+        game_db_conn* db,
+        struct GameDtoChar* character
+);
+
 #endif

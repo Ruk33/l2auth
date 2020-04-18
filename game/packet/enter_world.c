@@ -1,36 +1,23 @@
 #include <assert.h>
+#include <string.h>
+#include <log/log.h>
+#include <core/l2_string.h>
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
 #include <core/byte_builder.h>
+#include <game/dto/char.h>
 #include <game/packet/enter_world.h>
 
 l2_packet* game_packet_enter_world(struct L2Client* client)
 {
         assert(client);
+
         l2_packet_type type = 0x04;
         byte_builder* buffer = l2_client_byte_builder(client, 1000);
 
-        int x = -71396;
-        int y = 258272;
-        int z = -3135;
         int heading = 0;
         int object_id = 0x01;
-        unsigned char name[] = { 'R', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
-        int race = 0;
-        int sex = 0;
-        int class = 0;
-        int level = 1;
         int exp = 10;
-        unsigned int str = 10;
-        unsigned int dex = 10;
-        unsigned int con = 10;
-        unsigned int _int = 10;
-        unsigned int wit = 10;
-        unsigned int men = 10;
-        unsigned int max_hp = 100;
-        unsigned int hp = 100;
-        unsigned int max_mp = 200;
-        unsigned int mp = 100;
         unsigned int sp = 10;
         unsigned int current_load = 0;
         unsigned int max_load = 10;
@@ -72,9 +59,6 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         double atk_speed_multiplier = 1;
         double collision_radius = 9;
         double collision_height = 23;
-        unsigned int hair_style = 0x01;
-        unsigned int hair_color = 0x01;
-        unsigned int face = 0x01;
         unsigned int access_level = 0;
         unsigned char title[] = { 'h', 0, 'i', 0, 0, 0 };
         unsigned int clan_id = 0;
@@ -96,7 +80,6 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         unsigned short recomendation_left = 0;
         unsigned short recomendation_have = 0;
         unsigned short inventory_limit = 10;
-        unsigned int class_id = 0;
         unsigned int max_cp = 10;
         unsigned int cp = 10;
         unsigned char mounted[] = { 0 };
@@ -107,28 +90,134 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         unsigned int fish_y = 0;
         unsigned int fish_z = 0;
         unsigned int name_color = 4294967295;
+        struct GameDtoChar* character = l2_client_get_char(client);
+        l2_string name[28];
+        int int_hp = (int) character->current_hp;
+        int int_mp = (int) character->current_mp;
+        int int_max_hp = (int) character->max_hp;
+        int int_max_mp = (int) character->max_mp;
 
-        byte_builder_append(buffer, (unsigned char *) &x, sizeof(x));
-        byte_builder_append(buffer, (unsigned char *) &y, sizeof(y));
-        byte_builder_append(buffer, (unsigned char *) &z, sizeof(z));
+        log_info("Enter world, character information", character->name);
+        log_info("Name %s", character->name);
+        log_info("Char id %d", character->char_id);
+        log_info("Race id %d", character->race_id);
+        log_info("Class id %d", character->class_id);
+        log_info("Sex %d", character->sex);
+        log_info("Int %d", character->_int);
+        log_info("Str %d", character->str);
+        log_info("Con %d", character->con);
+        log_info("Men %d", character->men);
+        log_info("Dex %d", character->dex);
+        log_info("Wit %d", character->wit);
+        log_info("X %d", character->current_location.x);
+        log_info("Y %d", character->current_location.y);
+        log_info("Z %d", character->current_location.z);
+        log_info("Current hp %f", character->current_hp);
+        log_info("Current mp %f", character->current_mp);
+        log_info("Max hp %f", character->max_hp);
+        log_info("Max mp %f", character->max_mp);
+        log_info("Level %d", character->level);
+        log_info("Hair style %d", character->hair_style);
+        log_info("Hair color %d", character->hair_color);
+        log_info("Face ID %d", character->face);
+
+        memset(name, 0, 28);
+        l2_string_from_char(name, character->name, strlen(character->name));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->current_location.x,
+                sizeof(character->current_location.x)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->current_location.y,
+                sizeof(character->current_location.y)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->current_location.z,
+                sizeof(character->current_location.z)
+        );
         byte_builder_append(buffer, (unsigned char *) &heading, sizeof(heading));
         byte_builder_append(buffer, (unsigned char *) &object_id, sizeof(object_id));
-        byte_builder_append(buffer, name, sizeof(name));
-        byte_builder_append(buffer, (unsigned char *) &race, sizeof(race));
-        byte_builder_append(buffer, (unsigned char *) &sex, sizeof(sex));
-        byte_builder_append(buffer, (unsigned char *) &class, sizeof(class));
-        byte_builder_append(buffer, (unsigned char *) &level, sizeof(level));
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) name,
+                l2_string_calculate_space_from_char(strlen(character->name) + 1)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->race_id,
+                sizeof(character->race_id)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->sex,
+                sizeof(character->sex)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->class_id,
+                sizeof(character->class_id)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->level,
+                sizeof(character->level)
+        );
         byte_builder_append(buffer, (unsigned char *) &exp, sizeof(exp));
-        byte_builder_append(buffer, (unsigned char *) &str, sizeof(str));
-        byte_builder_append(buffer, (unsigned char *) &dex, sizeof(dex));
-        byte_builder_append(buffer, (unsigned char *) &con, sizeof(con));
-        byte_builder_append(buffer, (unsigned char *) &_int, sizeof(_int));
-        byte_builder_append(buffer, (unsigned char *) &wit, sizeof(wit));
-        byte_builder_append(buffer, (unsigned char *) &men, sizeof(men));
-        byte_builder_append(buffer, (unsigned char *) &max_hp, sizeof(max_hp));
-        byte_builder_append(buffer, (unsigned char *) &hp, sizeof(hp));
-        byte_builder_append(buffer, (unsigned char *) &max_mp, sizeof(max_mp));
-        byte_builder_append(buffer, (unsigned char *) &mp, sizeof(mp));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->str,
+                sizeof(character->str)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->dex,
+                sizeof(character->dex));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->con,
+                sizeof(character->con)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->_int,
+                sizeof(character->_int)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->wit,
+                sizeof(character->wit)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->men,
+                sizeof(character->men)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &int_max_hp,
+                sizeof(int_max_hp)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &int_hp,
+                sizeof(int_hp)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &int_max_mp,
+                sizeof(int_max_mp)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &int_mp,
+                sizeof(int_mp)
+        );
         byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
         byte_builder_append(buffer, (unsigned char *) &current_load, sizeof(current_load));
         byte_builder_append(buffer, (unsigned char *) &max_load, sizeof(max_load));
@@ -199,9 +288,21 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         byte_builder_append(buffer, (unsigned char *) &collision_radius, sizeof(collision_radius));
         byte_builder_append(buffer, (unsigned char *) &collision_height, sizeof(collision_height));
 
-        byte_builder_append(buffer, (unsigned char *) &hair_style, sizeof(hair_style));
-        byte_builder_append(buffer, (unsigned char *) &hair_color, sizeof(hair_color));
-        byte_builder_append(buffer, (unsigned char *) &face, sizeof(face));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->hair_style,
+                sizeof(character->hair_style)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->hair_color,
+                sizeof(character->hair_color)
+        );
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->face,
+                sizeof(character->face)
+        );
         byte_builder_append(buffer, (unsigned char *) &access_level, sizeof(access_level));
 
         byte_builder_append(buffer, title, sizeof(title));
@@ -237,12 +338,18 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
         byte_builder_append(buffer, (unsigned char *) &inventory_limit, sizeof(inventory_limit));
         
-        byte_builder_append(buffer, (unsigned char *) &class_id, sizeof(class_id));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->class_id,
+                sizeof(character->class_id)
+        );
+
         byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));
         byte_builder_append(buffer, (unsigned char *) &max_cp, sizeof(max_cp));
         byte_builder_append(buffer, (unsigned char *) &cp, sizeof(cp));
 
         byte_builder_append(buffer, (unsigned char *) &mounted, sizeof(mounted));
+        byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
 
         byte_builder_append(buffer, (unsigned char *) &clan_crest_large_id, sizeof(clan_crest_large_id));
         byte_builder_append(buffer, (unsigned char *) &hero_symbol, sizeof(hero_symbol));

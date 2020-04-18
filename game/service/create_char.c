@@ -1,9 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <log/log.h>
-#include <game/db/conn.h>
-#include <game/db/char.h>
 #include <game/dto/char.h>
+#include <game/service/persist_char.h>
 #include <game/service/create_char.h>
 
 void game_service_create_char(struct GameDtoChar* character)
@@ -47,7 +46,5 @@ void game_service_create_char(struct GameDtoChar* character)
         log_info("Hair color: %d", character->hair_color);
         log_info("Face: %d", character->face);
 
-        game_db_conn* db = game_db_conn_open();
-        game_db_char_save(db, character);
-        game_db_conn_close(db);
+        game_service_persist_char(character);
 }

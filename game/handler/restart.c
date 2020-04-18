@@ -5,6 +5,7 @@
 #include <core/l2_packet.h>
 #include <core/l2_server.h>
 #include <core/l2_client.h>
+#include <game/service/persist_char.h>
 #include <game/packet/restart.h>
 #include <game/handler/encrypt.h>
 #include <game/handler/auth_login.h>
@@ -25,7 +26,9 @@ void game_handler_restart
 
         l2_packet* response = game_packet_restart(client);
         log_info("Restarting");
-        
+
+        game_service_persist_char(l2_client_get_char(client));
+
         l2_client_send_packet(
                 client,
                 game_handler_encrypt(response, encrypt_key)

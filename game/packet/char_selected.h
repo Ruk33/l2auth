@@ -3,7 +3,12 @@
 
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
+#include <game/dto/char.h>
 
-l2_packet* game_packet_char_selected(struct L2Client* client);
+l2_packet* game_packet_char_selected
+(
+        struct L2Client* client,
+        struct GameDtoChar* character
+);
 
 #endif

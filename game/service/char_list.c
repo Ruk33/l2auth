@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 #include <game/db/conn.h>
 #include <game/db/char.h>
 #include <game/dto/char.h>
