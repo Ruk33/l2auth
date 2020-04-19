@@ -38,6 +38,7 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 
 ## Folder structure
 - `core`: Core modules, used by both login server and game server
+- `os`: OS related code (sockets, threads, etc.)
 - `game`: Game server code
 - `game/dto`: Data transfer objects
 - `game/handler`: Handlers for each client request (ie, entering world)
@@ -47,8 +48,6 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `login/dto`: Data transfer objects
 - `login/handler`: Handlers for each client request
 - `login/packet`: Packets sent by login server
-- `packet`: To be deprecated
-- `os`: OS related code (sockets, threads, etc.)
 
 ## To do
 - [ ] Correctly handle big/little endian
