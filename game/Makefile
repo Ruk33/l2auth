@@ -5,6 +5,7 @@ csrc = $(wildcard *.c) \
 	$(wildcard packet/*.c) \
 	$(wildcard service/*.c) \
 	$(wildcard db/*.c) \
+	$(wildcard db/sqlite3/*.c) \
 	$(wildcard ../login/helper.c) \
 	$(wildcard ../login/dto/*.c) \
 	$(wildcard ../login/handler/*.c) \

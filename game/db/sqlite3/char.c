@@ -5,6 +5,7 @@
 #include <log/log.h>
 #include <game/db/conn.h>
 #include <game/dto/char.h>
+#include <game/db/char.h>
 
 enum game_db_char_col {
         GAME_DB_CHAR_COL_EMPTY,
