@@ -11,8 +11,8 @@
 #include <core/byte_builder.h>
 #include <os/socket.h>
 #include <login/dto/session_key.h>
-#include <packet/server/encrypt.h>
-#include <packet/client/decrypt.h>
+#include <login/packet/blowfish_encrypt.h>
+#include <login/packet/blowfish_decrypt.h>
 #include <game/dto/char.h>
 #include <core/l2_client.h>
 
@@ -244,7 +244,7 @@ void l2_client_encrypt_and_send_packet
         assert(packet);
 
         l2_raw_packet *encrypted_packet =
-                packet_server_encrypt(client, packet);
+                login_packet_blowfish_encrypt(client, packet);
 
         l2_client_send_packet(client, encrypted_packet);
 }
@@ -304,7 +304,7 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
                 return NULL;
         }
 
-        return packet_client_decrypt(
+        return login_packet_blowfish_decrypt(
                 client,
                 client->received_data,
                 (unsigned short) client->received_data_size

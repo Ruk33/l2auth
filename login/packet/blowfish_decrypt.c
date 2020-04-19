@@ -1,12 +1,11 @@
 #include <assert.h>
-#include <log/log.h>
 #include <core/endian.h>
-#include <core/l2_raw_packet.h>
 #include <core/l2_client.h>
+#include <core/l2_raw_packet.h>
 #include <core/l2_blowfish_key.h>
-#include <packet/client/decrypt.h>
+#include <login/packet/blowfish_decrypt.h>
 
-l2_raw_packet* packet_client_decrypt
+l2_raw_packet* login_packet_blowfish_decrypt
 (
         struct L2Client* client,
         unsigned char* data,
@@ -16,7 +15,8 @@ l2_raw_packet* packet_client_decrypt
         assert(client);
         assert(data);
 
-        struct L2BlowfishKey* blowfish_key = l2_client_blowfish_key(client);
+        struct L2BlowfishKey* blowfish_key =
+                l2_client_blowfish_key(client);
 
         unsigned char packet_header_size =
                 (unsigned char) sizeof(l2_raw_packet_size);
@@ -37,7 +37,11 @@ l2_raw_packet* packet_client_decrypt
                 * 8
         );
 
-        for (unsigned short i = 0; i < decrypted_size; i = (unsigned short) (i + 8)) {
+        for (
+                unsigned short i = 0;
+                i < decrypted_size;
+                i = (unsigned short) (i + 8)
+        ) {
                 // blowfish uses big endian, l2 sends us little endian
                 // convert little endian to big endian
                 encode32be(
