@@ -3,7 +3,6 @@
 #include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
-#include <packet/helper.h>
 #include <login/helper.h>
 #include <login/packet/ok.h>
 #include <login/dto/session_key.h>
