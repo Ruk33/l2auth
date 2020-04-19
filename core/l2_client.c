@@ -1,16 +1,15 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <log/log.h>
 #include <core/memory.h>
 #include <core/circular_memory_alloc.h>
-#include <core/l2_socket.h>
 #include <core/l2_rsa_key.h>
 #include <core/l2_blowfish_key.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
+#include <os/socket.h>
 #include <login/dto/session_key.h>
 #include <packet/server/encrypt.h>
 #include <packet/client/decrypt.h>
@@ -22,13 +21,13 @@
 
 struct L2Client
 {
-        struct L2Socket socket;
+        os_socket_handler* socket_handler;
         struct L2RSAKey* rsa_key;
         struct L2BlowfishKey* blowfish_key;
 
         struct LoginDtoSessionKey session;
 
-        ssize_t received_data_size;
+        size_t received_data_size;
         unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
 
         circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
@@ -68,11 +67,8 @@ struct GameDtoChar* l2_client_get_char(struct L2Client* client)
 void l2_client_init(struct L2Client* client)
 {
         assert(client);
-        client->received_data_size = 0;
 
-        client->character.current_location.x = -71396;
-        client->character.current_location.y = 258272;
-        client->character.current_location.z = -3135;
+        client->received_data_size = 0;
 
         login_session_key_init(&client->session);
 
@@ -96,12 +92,20 @@ void l2_client_init(struct L2Client* client)
                 l2_blowfish_key_struct_size()
         );
 
+        client->socket_handler = l2_client_alloc(
+                client,
+                os_socket_handler_size()
+        );
+
         l2_rsa_key_init(client->rsa_key);
         l2_blowfish_key_init(client->blowfish_key);
-
 }
 
-byte_builder* l2_client_byte_builder(struct L2Client* client, size_t how_much)
+byte_builder* l2_client_byte_builder
+(
+        struct L2Client* client,
+        size_t how_much
+)
 {
         assert(client);
         assert(how_much);
@@ -133,7 +137,7 @@ void* l2_client_alloc_temp_mem(struct L2Client* client, size_t how_much)
 {
         assert(client);
         assert(how_much);
-        return (void*) circular_memory_alloc(client->temp_memory, how_much);
+        return (void *) circular_memory_alloc(client->temp_memory, how_much);
 }
 
 l2_raw_packet* l2_client_create_raw_packet
@@ -147,8 +151,10 @@ l2_raw_packet* l2_client_create_raw_packet
         assert(content);
         assert(content_size);
 
-        l2_raw_packet_size packet_size = l2_raw_packet_calculate_size(content_size);
-        l2_raw_packet* packet = l2_client_alloc_temp_mem(client, packet_size);
+        l2_raw_packet_size packet_size =
+                l2_raw_packet_calculate_size(content_size);
+        l2_raw_packet* packet =
+                l2_client_alloc_temp_mem(client, packet_size);
 
         l2_raw_packet_init(packet, content, content_size);
 
@@ -167,19 +173,25 @@ l2_packet* l2_client_create_packet
         assert(content);
         assert(content_size);
 
-        l2_raw_packet_size packet_size = l2_packet_calculate_size(content_size);
-        l2_packet* packet = l2_client_alloc_temp_mem(client, packet_size);
+        l2_raw_packet_size packet_size =
+                l2_packet_calculate_size(content_size);
+        l2_packet* packet =
+                l2_client_alloc_temp_mem(client, packet_size);
 
         l2_packet_init(packet, type, content, content_size);
 
         return packet;
 }
 
-void l2_client_accept(struct L2Client* client, struct L2Socket* server)
+void l2_client_accept
+(
+        struct L2Client* client,
+        os_socket_handler* server_socket
+)
 {
         assert(client);
-        assert(server);
-        l2_socket_accept(server, &client->socket);
+        assert(server_socket);
+        os_socket_accept(server_socket, client->socket_handler);
         log_info("Connection accepted");
 }
 
@@ -190,7 +202,8 @@ void l2_client_close(struct L2Client* client)
         l2_client_alloc_free(client, client->rsa_key);
         l2_client_alloc_free(client, client->blowfish_key);
 
-        l2_socket_close(&client->socket);
+        os_socket_close(client->socket_handler);
+        l2_client_alloc_free(client, client->socket_handler);
 
         log_info("Connection closed");
 }
@@ -206,8 +219,8 @@ void l2_client_send_packet(struct L2Client* client, l2_raw_packet* packet)
                 (size_t) packet_size * 3 * sizeof(char)
         );
 
-        l2_socket_send(
-                &client->socket,
+        os_socket_send(
+                client->socket_handler,
                 packet,
                 l2_raw_packet_get_size(packet)
         );
@@ -230,7 +243,9 @@ void l2_client_encrypt_and_send_packet
         assert(client);
         assert(packet);
 
-        l2_raw_packet *encrypted_packet = packet_server_encrypt(client, packet);
+        l2_raw_packet *encrypted_packet =
+                packet_server_encrypt(client, packet);
+
         l2_client_send_packet(client, encrypted_packet);
 }
 
@@ -240,8 +255,8 @@ l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
 
         unsigned char* content_without_size_header = NULL;
 
-        client->received_data_size = l2_socket_receive(
-                &client->socket,
+        client->received_data_size = os_socket_receive(
+                client->socket_handler,
                 client->received_data,
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
@@ -255,9 +270,9 @@ l2_raw_packet* l2_client_wait_packet(struct L2Client* client)
                 client->received_data + sizeof(l2_raw_packet_size) :
                 client->received_data;
         
-        ssize_t content_without_size_header_size = (
+        size_t content_without_size_header_size = (
                 client->received_data_size ?
-                (ssize_t) (client->received_data_size - (ssize_t) sizeof(short)) :
+                client->received_data_size - sizeof(short) :
                 client->received_data_size
         );
 
@@ -279,8 +294,8 @@ l2_raw_packet* l2_client_wait_and_decrypt_packet(struct L2Client* client)
 {
         assert(client);
 
-        client->received_data_size = l2_socket_receive(
-                &client->socket,
+        client->received_data_size = os_socket_receive(
+                client->socket_handler,
                 client->received_data,
                 L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES
         );
@@ -307,7 +322,8 @@ int l2_client_decrypt_client_packet
         assert(packet);
         assert(dest);
 
-        unsigned short packet_content_size = l2_packet_get_content_size(packet);
+        unsigned short packet_content_size =
+                l2_packet_get_content_size(packet);
         unsigned char* packet_content = l2_client_alloc_temp_mem(
                 client,
                 packet_content_size * sizeof(char)

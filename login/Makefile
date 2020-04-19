@@ -6,7 +6,8 @@ csrc = $(wildcard *.c) \
 	$(wildcard ../packet/*.c) \
 	$(wildcard ../packet/client/*.c) \
 	$(wildcard ../packet/server/*.c) \
-	$(wildcard ../socket_strategy/*.c)
+	$(wildcard ../os/*.c) \
+	$(wildcard ../os/linux/*.c)
 obj = $(csrc:.c=.o)
 
 CC = gcc

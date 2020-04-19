@@ -23,9 +23,12 @@ void memory_init(memory* mem, size_t reserved)
 {
         assert(mem);
         assert(reserved);
+
         size_t max_metadata = sizeof(size_t);
         assert(reserved - max_metadata > 0);
+
         size_t real_free_space = reserved - max_metadata;
+
         memcpy(mem, &real_free_space, sizeof(real_free_space));
         memory_init_block(mem + max_metadata, real_free_space);
 }
@@ -41,13 +44,16 @@ size_t memory_reserved(memory* block)
 size_t memory_reserved_by_block(memory* block)
 {
         assert(block);
+
         size_t reserved = 0;
         size_t is_used_metadata = sizeof(unsigned char);
+
         memcpy(
                 &reserved,
                 block - is_used_metadata - sizeof(size_t),
                 sizeof(reserved)
         );
+
         return reserved;
 }
 

@@ -4,19 +4,18 @@
 #include <log/log.h>
 #include <core/connection_thread.h>
 #include <core/l2_client.h>
-#include <core/l2_socket.h>
-#include <socket_strategy/socket_strategy_linux.h>
+#include <os/socket.h>
 #include <core/l2_server.h>
 
 struct L2Server {
-        struct L2Socket socket;
-        struct L2SocketStrategy socket_strategy;
+        os_socket_handler* socket_handler;
         size_t accepted_clients;
 };
 
 void l2_server_free(struct L2Server* server)
 {
         assert(server);
+        if (server->socket_handler) free(server->socket_handler);
         free(server);
 }
 
@@ -28,6 +27,13 @@ struct L2Server* l2_server_create(size_t max_players)
                 return NULL;
         }
 
+        server->socket_handler = calloc(1, os_socket_handler_size());
+
+        if (server->socket_handler == NULL) {
+                l2_server_free(server);
+                return NULL;
+        }
+
         server->accepted_clients = 0;
 
         return server;
@@ -36,15 +42,10 @@ struct L2Server* l2_server_create(size_t max_players)
 void l2_server_listen(struct L2Server* server, unsigned short port)
 {
         assert(server);
-        /*
-         * (franco.montenegro)
-         * I don't like how we are forcing sockets to be
-         * linux, why does the server knows about this?
-         */
-        socket_strategy_linux(&server->socket_strategy);
-        l2_socket_connect(&server->socket, &server->socket_strategy);
-        l2_socket_bind(&server->socket, port);
-        l2_socket_listen(&server->socket);
+
+        os_socket_connect(server->socket_handler);
+        os_socket_bind(server->socket_handler, port);
+        os_socket_listen(server->socket_handler, 3);
 }
 
 struct L2Client* l2_server_get_client
@@ -95,7 +96,7 @@ void l2_server_accept_client
         conn->client = client;
 
         l2_client_init(client);
-        l2_client_accept(client, &server->socket);
+        l2_client_accept(client, server->socket_handler);
         server->accepted_clients += 1;
         pthread_create(&conn->thread, NULL, handler, conn);
         //server->accepted_clients -= 1;

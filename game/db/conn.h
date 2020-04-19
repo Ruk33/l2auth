@@ -4,6 +4,7 @@
 typedef void game_db_conn;
 
 game_db_conn* game_db_conn_open();
+
 void game_db_conn_close(game_db_conn* db);
 
 #endif

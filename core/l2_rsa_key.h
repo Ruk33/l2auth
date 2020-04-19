@@ -5,9 +5,9 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 
-struct L2RSAKey;
-
 #define L2_RSA_KEY_DEFAULT_SIZE_IN_BITS 1024
+
+struct L2RSAKey;
 
 size_t l2_rsa_key_struct_size();
 

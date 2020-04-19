@@ -90,6 +90,10 @@ int l2_rsa_key_decrypt
         unsigned char* dest
 )
 {
+        assert(key);
+        assert(src);
+        assert(dest);
+
         return RSA_private_decrypt(
                 l2_rsa_key_size(key),
                 src,

@@ -25,7 +25,9 @@ typedef unsigned char memory;
  * memory_alloc_init(mem, mem_to_be_reserved);
  */
 void memory_init(memory* mem, size_t reserved);
+
 memory* memory_alloc(memory* from, size_t how_much);
+
 void memory_free(memory* block);
 
 #endif
