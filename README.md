@@ -48,7 +48,7 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `login/handler`: Handlers for each client request
 - `login/packet`: Packets sent by login server
 - `packet`: To be deprecated
-- `socket_strategy`: Contains logic for using linux and windows sockets
+- `os`: OS related code (sockets, threads, etc.)
 
 ## To do
 - [ ] Correctly handle big/little endian
