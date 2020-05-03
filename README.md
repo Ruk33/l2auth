@@ -13,6 +13,13 @@ Currently working in WINDOWS & LINUX (thanks to Docker).
 - Follow instructions to build log dependency from Dockerfile
 - `sudo apt install libssl-dev`
 
+## Hot code reload
+Hot code reload is a WIP feature, implemented for gameserver development.
+Just start the server up and execute `cd l2auth/gameserver && make lib`, this 
+will rebuild part  of the code and it will automatically get 
+injected in the running server without having to stop it, recompile and start 
+again. The code related to this feature is located on `l2auth/game/handler/dynamic_client.c`.
+
 ## What to expect
 Right now, the server will listen for up to two connections.
 For the time being, the server is capable of:
