@@ -40,3 +40,15 @@ size_t l2_string_calculate_space_from_char(size_t original_string)
 {
         return original_string * 2;
 }
+
+size_t l2_string_len(l2_string* src)
+{
+        assert(src);
+        l2_string* c = src;
+        size_t length = 0;
+        while (*c != 0) {
+                length++;
+                c += 2;
+        }
+        return length;
+}

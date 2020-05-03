@@ -18,6 +18,7 @@
 #include <game/handler/restart.h>
 #include <game/handler/move_backwards_to_location.h>
 #include <game/handler/validate_position.h>
+#include <game/handler/say.h>
 #include <game/handler/client.h>
 
 int game_handler_client(struct ConnectionThread* conn)
@@ -136,6 +137,14 @@ int game_handler_client(struct ConnectionThread* conn)
                 break;
         case GAME_PACKET_CLIENT_TYPE_RESTART:
                 game_handler_restart(
+                        server,
+                        client,
+                        client_packet,
+                        conn->encrypt_key
+                );
+                break;
+        case GAME_PACKET_CLIENT_TYPE_SAY:
+                game_handler_say(
                         server,
                         client,
                         client_packet,

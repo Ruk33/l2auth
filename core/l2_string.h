@@ -40,4 +40,9 @@ void l2_string_from_l2(l2_string* dest, l2_string* src, size_t size);
  */
 size_t l2_string_calculate_space_from_char(size_t original_string);
 
+/**
+ * Get string length (first occurrence of 00)
+ */
+size_t l2_string_len(l2_string* src);
+
 #endif

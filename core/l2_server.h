@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <core/l2_client.h>
+#include <core/l2_packet.h>
 #include <core/connection_thread.h>
 
 struct L2Server;
@@ -18,6 +19,12 @@ void l2_server_start(
         struct L2Server* server,
         unsigned short port,
         l2_server_accept_conn_handler handler
+);
+
+void l2_server_broadcast_packet_to_clients
+(
+        struct L2Server* server,
+        l2_packet* packet
 );
 
 void l2_server_free(struct L2Server* server);
