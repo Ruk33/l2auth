@@ -292,32 +292,32 @@ void game_db_char_get_from_index
                 NULL
         );
 
-        while (sqlite3_step(stmt) == SQLITE_ROW) {
-                character->char_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_ID - 1);
-                memset(character->name, 0, sizeof(character->name));
-                strcat(character->name, (const char *) sqlite3_column_text(stmt, GAME_DB_CHAR_COL_NAME - 1));
-                character->race_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_RACE_ID - 1);
-                character->sex = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_SEX - 1);
-                character->class_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_CLASS_ID - 1);
-                character->_int = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_INT - 1);
-                character->str = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_STR - 1);
-                character->con = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_CON - 1);
-                character->men = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_MEN - 1);
-                character->dex = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_DEX - 1);
-                character->wit = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_WIT - 1);
-                character->hair_style = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_HAIR_STYLE_ID - 1);
-                character->hair_color = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_HAIR_COLOR_ID - 1);
-                character->face = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_FACE_ID - 1);
-                character->current_location.x = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_X - 1);
-                character->current_location.y = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_Y - 1);
-                character->current_location.z = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_Z - 1);
-                character->max_hp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MAX_HP - 1);
-                character->max_mp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MAX_MP - 1);
-                character->current_hp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_HP - 1);
-                character->current_mp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MP - 1);
-                character->active = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_ACTIVE - 1);
-                character->level = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_LEVEL - 1);
-        }
+        sqlite3_step(stmt);
+
+        character->char_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_ID - 1);
+        memset(character->name, 0, sizeof(character->name));
+        strcat(character->name, (const char *) sqlite3_column_text(stmt, GAME_DB_CHAR_COL_NAME - 1));
+        character->race_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_RACE_ID - 1);
+        character->sex = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_SEX - 1);
+        character->class_id = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_CLASS_ID - 1);
+        character->_int = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_INT - 1);
+        character->str = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_STR - 1);
+        character->con = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_CON - 1);
+        character->men = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_MEN - 1);
+        character->dex = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_DEX - 1);
+        character->wit = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_WIT - 1);
+        character->hair_style = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_HAIR_STYLE_ID - 1);
+        character->hair_color = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_HAIR_COLOR_ID - 1);
+        character->face = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_FACE_ID - 1);
+        character->current_location.x = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_X - 1);
+        character->current_location.y = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_Y - 1);
+        character->current_location.z = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_Z - 1);
+        character->max_hp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MAX_HP - 1);
+        character->max_mp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MAX_MP - 1);
+        character->current_hp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_HP - 1);
+        character->current_mp = sqlite3_column_double(stmt, GAME_DB_CHAR_COL_MP - 1);
+        character->active = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_ACTIVE - 1);
+        character->level = sqlite3_column_int(stmt, GAME_DB_CHAR_COL_LEVEL - 1);
 
         sqlite3_finalize(stmt);
 }

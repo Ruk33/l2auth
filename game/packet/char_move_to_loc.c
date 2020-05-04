@@ -1,6 +1,8 @@
+#include <log/log.h>
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
+#include <game/dto/char.h>
 #include <game/dto/location.h>
 #include <game/packet/char_move_to_loc.h>
 
@@ -12,7 +14,13 @@ l2_packet* game_packet_char_move_to_loc
 )
 {
         l2_packet_type type = 0x01;
-        int obj_id = 0x01;
+        struct GameDtoChar* character = l2_client_get_char(client);
+        int obj_id = character->char_id;
+
+        log_fatal("char move to loc -> obj id %d", obj_id);
+        log_fatal("new x: %d, new y: %d, new z: %d", new_location.x, new_location.y, new_location.z);
+        log_fatal("prev x: %d, prev y: %d, prev z: %d", prev_location.x, prev_location.y, prev_location.z);
+
         byte_builder* buffer = l2_client_byte_builder(
                 client,
                 sizeof(obj_id) +

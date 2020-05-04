@@ -69,7 +69,7 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - [x] Walk
 - [ ] Lua integration? since we got hot reload I don't know if it makes sense
 - [x] Handle multiple connections
-- [ ] See other players
+- [x] See other players
 
 ## Screenshots
 Please see doc/screenshot.

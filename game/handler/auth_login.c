@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
+#include <core/l2_string.h>
 #include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
@@ -8,16 +9,6 @@
 #include <game/packet/char_list.h>
 #include <game/handler/encrypt.h>
 #include <game/handler/auth_login.h>
-
-void game_handler_cpy_login_name(l2_raw_packet* packet, char* dest)
-{
-        int z = 0;
-        for (int i = 3; packet[i]; i+=2) {
-                dest[z] = packet[i];
-                dest[z+1] = 0;
-                z++;
-        }
-}
 
 void game_handler_auth_login
 (
@@ -34,31 +25,34 @@ void game_handler_auth_login
         struct LoginDtoSessionKey* session = l2_client_session(client);
         assert(session);
 
-        size_t login_name_size = 0;
+        size_t login_len = l2_string_len(request + 3) + 1;
+        size_t login_name_as_string_len =
+                l2_string_calculate_space_from_char(login_len);
+        l2_string* login_name_as_string =
+                l2_client_alloc_temp_mem(client, login_name_as_string_len);
 
-        game_handler_cpy_login_name(request, session->login_name);
+        l2_string_from_l2(login_name_as_string, request + 3, login_name_as_string_len);
+        l2_string_to_char(login_name_as_string, session->login_name, login_len);
         log_info("Login name %s", session->login_name);
-
-        login_name_size = strlen(session->login_name) * 2 + 2;
 
         memcpy(
                 &session->playOK2,
-                request + 3 + login_name_size,
+                request + 3 + login_name_as_string_len,
                 sizeof(int)
         );
         memcpy(
                 &session->playOK1,
-                request + 3 + login_name_size + sizeof(int),
+                request + 3 + login_name_as_string_len + sizeof(int),
                 sizeof(int)
         );
         memcpy(
                 &session->loginOK1,
-                request + 3 + login_name_size + sizeof(int) * 2,
+                request + 3 + login_name_as_string_len + sizeof(int) * 2,
                 sizeof(int)
         );
         memcpy(
                 &session->loginOK2,
-                request + 3 + login_name_size + sizeof(int) * 3,
+                request + 3 + login_name_as_string_len + sizeof(int) * 3,
                 sizeof(int)
         );
 

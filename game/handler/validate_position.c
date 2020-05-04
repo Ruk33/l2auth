@@ -6,6 +6,7 @@
 #include <core/l2_raw_packet.h>
 #include <game/dto/location.h>
 #include <game/packet/validate_position.h>
+#include <game/packet/char_info.h>
 #include <game/service/char_movement.h>
 #include <game/handler/encrypt.h>
 #include <game/handler/validate_position.h>
@@ -49,9 +50,8 @@ void game_handler_validate_position
                 l2_client_get_char(client)->current_location,
                 heading
         );
+        l2_server_broadcast_packet_to_clients(server, response);
 
-        l2_client_send_packet(
-                client,
-                game_handler_encrypt(response, encrypt_key)
-        );
+        response = game_packet_char_info(client);
+        l2_server_broadcast_packet(server, client, response);
 }

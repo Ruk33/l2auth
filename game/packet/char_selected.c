@@ -29,7 +29,6 @@ l2_packet* game_packet_char_selected
         unsigned int empty = 0;
         unsigned int sp = 20;
         unsigned int exp = 10;
-        unsigned char* thirty_empty = l2_client_alloc_temp_mem(client, 30 * sizeof(unsigned char));
         unsigned int game_time = 10;
 
         l2_string name[28];
@@ -155,7 +154,10 @@ l2_packet* game_packet_char_selected
                 sizeof(character->wit)
         );
 
-        byte_builder_append(buffer, thirty_empty, 30);
+        for (int i = 0; i < 30; i++) {
+                byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
+        }
+
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));

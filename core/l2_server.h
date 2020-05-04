@@ -27,6 +27,13 @@ void l2_server_broadcast_packet_to_clients
         l2_packet* packet
 );
 
+void l2_server_broadcast_packet
+(
+        struct L2Server* server,
+        struct L2Client* from,
+        l2_packet* packet
+);
+
 void l2_server_free(struct L2Server* server);
 
 #endif

@@ -2,6 +2,7 @@
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
 #include <core/l2_client.h>
+#include <game/dto/char.h>
 #include <game/dto/location.h>
 #include <game/packet/validate_position.h>
 
@@ -15,7 +16,9 @@ l2_packet* game_packet_validate_position
         assert(client);
 
         l2_packet_type type = 0x61;
-        int char_id = 0x01;
+        struct GameDtoChar* character = l2_client_get_char(client);
+        int char_id = character->char_id;
+
         byte_builder* buffer = l2_client_byte_builder(
                 client,
                 sizeof(char_id) +

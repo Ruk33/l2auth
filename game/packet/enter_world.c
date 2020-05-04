@@ -16,28 +16,27 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         byte_builder* buffer = l2_client_byte_builder(client, 1000);
 
         int heading = 0;
-        int object_id = 0x01;
         int exp = 10;
         unsigned int sp = 10;
         unsigned int current_load = 0;
         unsigned int max_load = 10;
         unsigned int unknown = 0x28;
-        unsigned int paperdoll_under = 0x01;
-        unsigned int paperdoll_rear = 0x01;
-        unsigned int paperdoll_lear = 0x01;
-        unsigned int paperdoll_neck = 0x01;
-        unsigned int paperdoll_rfinger = 0x01;
-        unsigned int paperdoll_lfinger = 0x01;
-        unsigned int paperdoll_head = 0x01;
-        unsigned int paperdoll_rhand = 0x01;
-        unsigned int paperdoll_lhand = 0x01;
-        unsigned int paperdoll_gloves = 0x01;
-        unsigned int paperdoll_chest = 0x01;
-        unsigned int paperdoll_legs = 0x01;
-        unsigned int paperdoll_feet = 0x01;
-        unsigned int paperdoll_back = 0x01;
+        unsigned int paperdoll_under = 0x00;
+        unsigned int paperdoll_rear = 0x00;
+        unsigned int paperdoll_lear = 0x00;
+        unsigned int paperdoll_neck = 0x00;
+        unsigned int paperdoll_rfinger = 0x00;
+        unsigned int paperdoll_lfinger = 0x00;
+        unsigned int paperdoll_head = 0x00;
+        unsigned int paperdoll_rhand = 0x00;
+        unsigned int paperdoll_lhand = 0x00;
+        unsigned int paperdoll_gloves = 0x00;
+        unsigned int paperdoll_chest = 0x00;
+        unsigned int paperdoll_legs = 0x00;
+        unsigned int paperdoll_feet = 0x00;
+        unsigned int paperdoll_back = 0x00;
         unsigned int paperdoll_lrhand = 0;
-        unsigned int paperdoll_hair = 0x01;
+        unsigned int paperdoll_hair = 0x00;
         unsigned int p_atk = 20;
         unsigned int p_atk_speed = 20;
         unsigned int p_def = 20;
@@ -139,8 +138,17 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
                 (unsigned char *) &character->current_location.z,
                 sizeof(character->current_location.z)
         );
-        byte_builder_append(buffer, (unsigned char *) &heading, sizeof(heading));
-        byte_builder_append(buffer, (unsigned char *) &object_id, sizeof(object_id));
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &heading,
+                sizeof(heading)
+        );
+
+        byte_builder_append(
+                buffer,
+                (unsigned char *) &character->char_id,
+                sizeof(character->char_id)
+        );
 
         byte_builder_append(
                 buffer,
@@ -177,7 +185,8 @@ l2_packet* game_packet_enter_world(struct L2Client* client)
         byte_builder_append(
                 buffer,
                 (unsigned char *) &character->dex,
-                sizeof(character->dex));
+                sizeof(character->dex)
+        );
         byte_builder_append(
                 buffer,
                 (unsigned char *) &character->con,

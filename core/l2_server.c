@@ -22,6 +22,7 @@ void l2_server_broadcast_packet_to_clients
 )
 {
         assert(server);
+        assert(packet);
 
         struct ConnectionThread* conn;
         struct L2Client* client;
@@ -35,6 +36,48 @@ void l2_server_broadcast_packet_to_clients
         for (size_t i = 0; i < server->accepted_clients; i++) {
                 conn = server->clients[i];
                 client = conn->client;
+
+                encrypted_packet = l2_client_alloc_temp_mem(
+                        client,
+                        full_packet_size
+                );
+
+                memcpy(encrypted_packet, packet, full_packet_size);
+
+                l2_client_send_packet(
+                        client,
+                        game_handler_encrypt(encrypted_packet, conn->encrypt_key)
+                );
+        }
+}
+
+void l2_server_broadcast_packet
+(
+        struct L2Server* server,
+        struct L2Client* from,
+        l2_packet* packet
+)
+{
+        assert(server);
+        assert(from);
+        assert(packet);
+
+        if (server->accepted_clients - 1 == 0) return;
+
+        struct ConnectionThread* conn;
+        struct L2Client* client;
+        l2_raw_packet* encrypted_packet;
+        size_t packet_size = l2_raw_packet_get_size(packet);
+        size_t full_packet_size = l2_raw_packet_calculate_size(packet_size);
+
+        log_info("Broadcasting packet to the rest of the clients");
+        log_info("Clients count (ignoring myself): %ld", server->accepted_clients - 1);
+
+        for (size_t i = 0; i < server->accepted_clients; i++) {
+                conn = server->clients[i];
+                client = conn->client;
+
+                if (client == from) continue;
 
                 encrypted_packet = l2_client_alloc_temp_mem(
                         client,

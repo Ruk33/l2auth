@@ -56,8 +56,5 @@ void game_handler_move_backwards_to_location
                 new_location
         );
 
-        l2_client_send_packet(
-                client,
-                game_handler_encrypt(response, encrypt_key)
-        );
+       l2_server_broadcast_packet_to_clients(server, response);
 }
