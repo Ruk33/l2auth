@@ -1,6 +1,6 @@
 #include <log/log.h>
 #include <core/l2_server.h>
-#include <game/handler/dynamic_client.h>
+#include <game/action/hot_code_reload_entry_point/handler.h>
 #include <game/server.h>
 
 void game_server_start_or_die(unsigned short port, size_t max_players)
@@ -14,5 +14,5 @@ void game_server_start_or_die(unsigned short port, size_t max_players)
                 exit(1);
         }
 
-        l2_server_start(server, port, game_handler_dynamic_client);
+        l2_server_start(server, port, game_action_hot_code_reload_entry_point_handler);
 }

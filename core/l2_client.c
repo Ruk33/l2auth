@@ -9,11 +9,11 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
+#include <core/session_key.h>
 #include <os/socket.h>
-#include <login/dto/session_key.h>
 #include <login/packet/blowfish_encrypt.h>
 #include <login/packet/blowfish_decrypt.h>
-#include <game/dto/char.h>
+#include <game/entity/character.h>
 #include <core/l2_client.h>
 
 #define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
@@ -25,7 +25,7 @@ struct L2Client
         struct L2RSAKey* rsa_key;
         struct L2BlowfishKey* blowfish_key;
 
-        struct LoginDtoSessionKey session;
+        struct L2DtoSessionKey session;
 
         size_t received_data_size;
         unsigned char received_data[L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES];
@@ -33,10 +33,10 @@ struct L2Client
         circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
         memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
 
-        struct GameDtoChar character;
+        struct GameEntityCharacter character;
 };
 
-struct LoginDtoSessionKey* l2_client_session(struct L2Client* client)
+struct L2DtoSessionKey* l2_client_session(struct L2Client* client)
 {
         assert(client);
         return &client->session;
@@ -59,7 +59,7 @@ size_t l2_client_struct_size()
         return sizeof(struct L2Client);
 }
 
-struct GameDtoChar* l2_client_get_char(struct L2Client* client)
+struct GameEntityCharacter* l2_client_get_char(struct L2Client* client)
 {
         return &client->character;
 }
@@ -70,7 +70,7 @@ void l2_client_init(struct L2Client* client)
 
         client->received_data_size = 0;
 
-        login_session_key_init(&client->session);
+        l2_session_key_init(&client->session);
 
         memory_init(
                 client->preallocated_memory,

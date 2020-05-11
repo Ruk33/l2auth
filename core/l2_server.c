@@ -7,7 +7,7 @@
 #include <core/l2_client.h>
 #include <core/l2_server.h>
 #include <os/socket.h>
-#include <game/handler/encrypt.h>
+#include <game/service/crypt/packet/encrypt.h>
 
 struct L2Server {
         os_socket_handler* socket_handler;
@@ -46,7 +46,7 @@ void l2_server_broadcast_packet_to_clients
 
                 l2_client_send_packet(
                         client,
-                        game_handler_encrypt(encrypted_packet, conn->encrypt_key)
+                        game_service_crypt_packet_encrypt(encrypted_packet, conn->encrypt_key)
                 );
         }
 }
@@ -88,7 +88,7 @@ void l2_server_broadcast_packet
 
                 l2_client_send_packet(
                         client,
-                        game_handler_encrypt(encrypted_packet, conn->encrypt_key)
+                        game_service_crypt_packet_encrypt(encrypted_packet, conn->encrypt_key)
                 );
         }
 }

@@ -10,7 +10,7 @@
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
 #include <os/socket.h>
-#include <game/dto/char.h>
+#include <game/entity/character.h>
 
 #define L2_CLIENT_MAX_DATA_TO_RECEIVE_IN_BYTES 65536
 
@@ -23,9 +23,9 @@ void l2_client_init(struct L2Client* client);
 /**
  * Get playable character selected from client
  */
-struct GameDtoChar* l2_client_get_char(struct L2Client* client);
+struct GameEntityCharacter* l2_client_get_char(struct L2Client* client);
 
-struct LoginDtoSessionKey* l2_client_session(struct L2Client* client);
+struct L2DtoSessionKey* l2_client_session(struct L2Client* client);
 
 /*
  * (franco.montenegro)

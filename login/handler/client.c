@@ -4,7 +4,7 @@
 #include <core/l2_server.h>
 #include <core/l2_client.h>
 #include <core/l2_packet.h>
-#include <login/dto/session_key.h>
+#include <core/session_key.h>
 #include <login/handler/new_connection.h>
 #include <login/handler/request_auth_login.h>
 #include <login/handler/request_login_server.h>

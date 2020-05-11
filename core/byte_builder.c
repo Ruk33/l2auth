@@ -72,12 +72,15 @@ void byte_builder_append
         size_t len = byte_builder_length(builder);
         size_t new_len = content_size + len;
 
+        /*
         log_info(
                 "Mem: %ld, Len: %ld, New len: %ld",
                 byte_builder_allocated_mem(builder), 
                 len,
                 new_len
         );
+        */
+
         assert(byte_builder_allocated_mem(builder) >= new_len);
 
         memcpy(builder + len, content, content_size);

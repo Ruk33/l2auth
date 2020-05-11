@@ -2,14 +2,14 @@
 #include <log/log.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
-#include <login/dto/session_key.h>
+#include <core/session_key.h>
 #include <login/packet/play_ok.h>
 
 l2_packet* login_packet_play_ok(struct L2Client* client)
 {
         assert(client);
         l2_packet_type type = 0x07;
-        struct LoginDtoSessionKey* session = l2_client_session(client);
+        struct L2DtoSessionKey* session = l2_client_session(client);
         assert(session);
         byte_builder* buffer = l2_client_byte_builder(
                 client,

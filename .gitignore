@@ -56,3 +56,4 @@ build/
 .idea/
 .vscode/
 infer-out
+game/gameserver.db

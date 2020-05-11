@@ -99,7 +99,7 @@ circular_memory_space* circular_memory_alloc
         size_t cursor = circular_memory_alloc_cursor(space);
         size_t new_cursor = 0;
 
-        log_info("Max mem: %ld, asked: %ld", max_space, required);
+        // log_info("Max mem: %ld, asked: %ld", max_space, required);
         assert(max_space >= required);
 
         new_cursor = cursor + required;

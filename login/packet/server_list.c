@@ -6,7 +6,7 @@
 #include <core/l2_client.h>
 #include <core/byte_builder.h>
 #include <login/dto/server.h>
-#include <login/dto/session_key.h>
+#include <core/session_key.h>
 #include <login/packet/server_list.h>
 
 void initialize_dummy_server

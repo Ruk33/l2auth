@@ -8,8 +8,8 @@ csrc = $(wildcard *.c) \
 	$(wildcard ../packet/server/*.c) \
 	$(wildcard ../os/*.c) \
 	$(wildcard ../os/linux/*.c) \
-	$(wildcard ../game/handler/encrypt.c) \
-	$(wildcard ../game/crypt.c)
+	$(wildcard ../game/service/crypt/packet/*.c) \
+	$(wildcard ../game/service/crypt/*.c)
 obj = $(csrc:.c=.o)
 
 CC = gcc
