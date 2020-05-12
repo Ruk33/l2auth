@@ -1,8 +1,8 @@
 #ifndef L2AUTH_LOGIN_PACKET_GG_AUTH_H
 #define L2AUTH_LOGIN_PACKET_GG_AUTH_H
 
-#include <core/l2_client.h>
 #include <core/l2_packet.h>
+#include <login/client.h>
 
 enum login_packet_gg_auth_response
 {
@@ -11,7 +11,7 @@ enum login_packet_gg_auth_response
 
 l2_packet* login_packet_gg_auth
 (
-        struct L2Client* client,
+        struct LoginClient* client,
         enum login_packet_gg_auth_response response
 );
 

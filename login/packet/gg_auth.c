@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
+#include <login/client.h>
 #include <login/packet/gg_auth.h>
 
 l2_packet* login_packet_gg_auth
 (
-        struct L2Client* client,
+        struct LoginClient* client,
         enum login_packet_gg_auth_response response
 )
 {
@@ -15,7 +15,7 @@ l2_packet* login_packet_gg_auth
 
         log_info("Creating gg auth packet");
 
-        return l2_client_create_packet(
+        return login_client_create_packet(
                 client,
                 type,
                 (unsigned char*) &response,

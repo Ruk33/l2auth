@@ -2,14 +2,20 @@ csrc = $(wildcard *.c) \
 	$(wildcard dto/*.c) \
 	$(wildcard handler/*.c) \
 	$(wildcard packet/*.c) \
-	$(wildcard ../core/*.c) \
-	$(wildcard ../packet/*.c) \
-	$(wildcard ../packet/client/*.c) \
-	$(wildcard ../packet/server/*.c) \
+	$(wildcard ../core/byte_builder.c) \
+	$(wildcard ../core/byte_reader.c) \
+	$(wildcard ../core/circular_memory_alloc.c) \
+	$(wildcard ../core/endian.c) \
+	$(wildcard ../core/hex.c) \
+	$(wildcard ../core/l2_blowfish_key.c) \
+	$(wildcard ../core/l2_packet.c) \
+	$(wildcard ../core/l2_raw_packet.c) \
+	$(wildcard ../core/l2_rsa_key.c) \
+	$(wildcard ../core/l2_string.c) \
+	$(wildcard ../core/memory.c) \
+	$(wildcard ../core/session_key.c) \
 	$(wildcard ../os/*.c) \
-	$(wildcard ../os/linux/*.c) \
-	$(wildcard ../game/service/crypt/packet/*.c) \
-	$(wildcard ../game/service/crypt/*.c)
+	$(wildcard ../os/linux/*.c)
 obj = $(csrc:.c=.o)
 
 CC = gcc

@@ -1,13 +1,13 @@
 #include <assert.h>
 #include <core/endian.h>
-#include <core/l2_client.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_blowfish_key.h>
+#include <login/client.h>
 #include <login/packet/blowfish_decrypt.h>
 
 l2_raw_packet* login_packet_blowfish_decrypt
 (
-        struct L2Client* client,
+        struct LoginClient* client,
         unsigned char* data,
         unsigned short data_size
 )
@@ -16,7 +16,7 @@ l2_raw_packet* login_packet_blowfish_decrypt
         assert(data);
 
         struct L2BlowfishKey* blowfish_key =
-                l2_client_blowfish_key(client);
+                login_client_blowfish_key(client);
 
         unsigned char packet_header_size =
                 (unsigned char) sizeof(l2_raw_packet_size);
@@ -24,7 +24,7 @@ l2_raw_packet* login_packet_blowfish_decrypt
         unsigned short data_size_without_packet_size_header =
                 (unsigned short) (data_size - packet_header_size);
 
-        unsigned char* decrypted_content = l2_client_alloc_temp_mem(
+        unsigned char* decrypted_content = login_client_alloc_temp_mem(
                 client,
                 data_size_without_packet_size_header
         );
@@ -77,7 +77,7 @@ l2_raw_packet* login_packet_blowfish_decrypt
                 );
         }
 
-        return l2_client_create_raw_packet(
+        return login_client_create_raw_packet(
                 client,
                 decrypted_content,
                 data_size_without_packet_size_header

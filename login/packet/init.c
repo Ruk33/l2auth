@@ -1,19 +1,19 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <log/log.h>
-#include <core/l2_client.h>
 #include <core/l2_rsa_key.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
+#include <login/client.h>
 #include <login/packet/init.h>
 
-l2_packet* login_packet_init(struct L2Client* client)
+l2_packet* login_packet_init(struct LoginClient* client)
 {
         assert(client);
 
         l2_packet_type type = 0x00;
 
-        struct L2RSAKey *rsa_key = l2_client_rsa_key(client);
+        struct L2RSAKey *rsa_key = login_client_rsa_key(client);
 
         unsigned char session_id[] = {
                 0xfd,
@@ -37,12 +37,12 @@ l2_packet* login_packet_init(struct L2Client* client)
                 (size_t) (rsa_size)
         );
 
-        unsigned char* rsa_modulus = l2_client_alloc_temp_mem(
+        unsigned char* rsa_modulus = login_client_alloc_temp_mem(
                 client,
                 (size_t) (rsa_size)
         );
 
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = login_client_byte_builder(
                 client,
                 content_size * sizeof(char)
         );
@@ -52,7 +52,7 @@ l2_packet* login_packet_init(struct L2Client* client)
         l2_rsa_key_modulus(rsa_key, rsa_modulus);
         byte_builder_append(buffer, rsa_modulus, (size_t) (rsa_size));
 
-        return l2_client_create_packet(
+        return login_client_create_packet(
                 client,
                 type,
                 buffer,

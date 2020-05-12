@@ -3,15 +3,16 @@
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
 #include <core/session_key.h>
+#include <login/client.h>
 #include <login/packet/play_ok.h>
 
-l2_packet* login_packet_play_ok(struct L2Client* client)
+l2_packet* login_packet_play_ok(struct LoginClient* client)
 {
         assert(client);
         l2_packet_type type = 0x07;
-        struct L2DtoSessionKey* session = l2_client_session(client);
+        struct L2SessionKey* session = login_client_session(client);
         assert(session);
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = login_client_byte_builder(
                 client,
                 sizeof(session->playOK1) + sizeof(session->playOK2)
         );
@@ -32,7 +33,7 @@ l2_packet* login_packet_play_ok(struct L2Client* client)
                 sizeof(session->playOK2)
         );
 
-        return l2_client_create_packet(
+        return login_client_create_packet(
                 client,
                 type,
                 buffer,

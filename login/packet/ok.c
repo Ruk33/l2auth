@@ -1,17 +1,17 @@
 #include <assert.h>
 #include <log/log.h>
-#include <core/l2_client.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
 #include <core/session_key.h>
+#include <login/client.h>
 #include <login/packet/ok.h>
 
-l2_packet* login_packet_ok(struct L2Client* client)
+l2_packet* login_packet_ok(struct LoginClient* client)
 {
         assert(client);
 
         l2_packet_type type = 0x03;
-        struct L2DtoSessionKey* session_key = l2_client_session(client);
+        struct L2SessionKey* session_key = login_client_session(client);
         unsigned char content_after_keys[] = {
                 0x00,
                 0x00,
@@ -62,7 +62,7 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 0x00,
                 0x00,
         };
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = login_client_byte_builder(
                 client,
                 sizeof(session_key->loginOK1) +
                 sizeof(session_key->loginOK2) +
@@ -91,7 +91,7 @@ l2_packet* login_packet_ok(struct L2Client* client)
                 sizeof(content_after_keys)
         );
 
-        return l2_client_create_packet(
+        return login_client_create_packet(
                 client,
                 type,
                 buffer,

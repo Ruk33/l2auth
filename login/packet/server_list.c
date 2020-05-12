@@ -3,10 +3,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
 #include <login/dto/server.h>
 #include <core/session_key.h>
+#include <login/client.h>
 #include <login/packet/server_list.h>
 
 void initialize_dummy_server
@@ -35,13 +35,13 @@ void initialize_dummy_server
         server->brackets = hide_brackets;
 }
 
-l2_packet* login_packet_server_list(struct L2Client* client)
+l2_packet* login_packet_server_list(struct LoginClient* client)
 {
         assert(client);
         l2_packet_type type = 0x04;
         unsigned char server_count = 1;
         unsigned char reserved_space = 0x00;
-        struct LoginDtoServer* bartz = l2_client_alloc_temp_mem(
+        struct LoginDtoServer* bartz = login_client_alloc_temp_mem(
                 client,
                 sizeof(struct LoginDtoServer)
         );
@@ -50,7 +50,7 @@ l2_packet* login_packet_server_list(struct L2Client* client)
          * Check why inetaddr does not work here
          */
         unsigned char ip[] = { 0, 0, 0, 0 };
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = login_client_byte_builder(
                 client,
                 sizeof(server_count) +
                 sizeof(reserved_space) +
@@ -117,7 +117,7 @@ l2_packet* login_packet_server_list(struct L2Client* client)
                 sizeof(bartz->brackets)
         );
 
-        return l2_client_create_packet(
+        return login_client_create_packet(
                 client,
                 type,
                 buffer,
