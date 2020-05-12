@@ -48,12 +48,10 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `os`: OS related code (sockets, threads, etc.)
 - `os/<implementation>`: For the time being only Linux implementation are being written down but more can be added by easily creating a new folder and implementing all the header files in the `os` folder. Make sure to update `game/Makefile` to use the new implementation instead of `os/linux` (replace `$(wildcard ../os/linux/*.c)` with new implementation, ie `$(wildcard ../os/windows/*.c)`).
 - `game`: Game server code
-- `game/db`: Persistence related code
-- `game/db/<implementation>`: Currently I'm working with sqlite since it's the quickest/easiest to implement but, more can be added easily by adding a new folder, implementing all the header files residing in `game/db` and updating `game/Makefile` to include the new implementation instead of sqlite (replace `$(wildcard db/sqlite3/*.c)` with new implementation, ie `$(wildcard db/psql/*.c)`).
-- `game/dto`: Data transfer objects
-- `game/handler`: Handlers for each client request (ie, entering world)
-- `game/handler/client`: Entry point for all game server requests
-- `game/packet`: Packets sent by game server
+- `game/action`: Handlers & responses for each client request
+- `game/entity`: All game server entities such as characters
+- `game/service`: -
+- `game/storage`: Logic to persist information in disk
 - `login`: Login server code
 - `login/dto`: Data transfer objects
 - `login/handler`: Handlers for each client request
