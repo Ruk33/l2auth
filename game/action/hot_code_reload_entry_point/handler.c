@@ -1,10 +1,10 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/connection_thread.h>
+#include <game/connection.h>
 #include "handler.h"
 
-void game_action_hot_code_reload_entry_point_handler(struct ConnectionThread* conn)
+void game_action_hot_code_reload_entry_point_handler(struct GameConnection* conn)
 {
         unsigned char encrypt_key[] = {
                 0x94,
@@ -31,7 +31,7 @@ void game_action_hot_code_reload_entry_point_handler(struct ConnectionThread* co
         int closed_connection;
 
         void* library;
-        int (*client_handler)(struct ConnectionThread*);
+        int (*client_handler)(struct GameConnection*);
 
         log_info("Handling new client from gameserver");
 
@@ -48,7 +48,7 @@ void game_action_hot_code_reload_entry_point_handler(struct ConnectionThread* co
                         break;
                 }
 
-                client_handler = dlsym(library, "game_handler_client");
+                client_handler = dlsym(library, "game_action_entry_point_handler");
 
                 if (client_handler) {
                         log_info("Client handler successfully found");

@@ -3,16 +3,16 @@
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include "response.h"
 #include "handler.h"
 
 void game_action_enter_world_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )
@@ -25,7 +25,7 @@ void game_action_enter_world_handler
         l2_packet* response = game_action_enter_world_response(client);
         log_info("Entering world!");
         
-        l2_client_send_packet(
+        game_client_send_packet(
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)
         );

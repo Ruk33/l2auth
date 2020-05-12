@@ -1,16 +1,16 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
 #include <core/l2_packet.h>
+#include <game/server.h>
+#include <game/client.h>
 #include "response.h"
 #include "handler.h"
 
 void game_action_protocol_version_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request
 )
 {
@@ -31,7 +31,7 @@ void game_action_protocol_version_handler
         log_info("Protocol version %d", protocol);
         log_info("Returning crypt init");
 
-        l2_client_send_packet(
+        game_client_send_packet(
                 client,
                 game_action_protocol_version_response(client)
         );

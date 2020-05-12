@@ -2,11 +2,11 @@
 #include <string.h>
 #include <log/log.h>
 #include <core/l2_string.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_reader.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/service/character/create.h>
 #include <game/entity/character.h>
 #include <game/service/crypt/packet/encrypt.h>
@@ -16,7 +16,7 @@
 
 void game_handler_create_character_and_persist_into_db
 (
-        struct L2Client* client,
+        struct GameClient* client,
         l2_raw_packet* request
 )
 {
@@ -25,7 +25,7 @@ void game_handler_create_character_and_persist_into_db
 
         struct GameEntityCharacter character;
         size_t max_name_len = sizeof(character.name);
-        l2_string* l2_name = l2_client_alloc_temp_mem(
+        l2_string* l2_name = game_client_alloc_temp_mem(
                 client,
                 l2_string_calculate_space_from_char(max_name_len)
         );
@@ -37,7 +37,6 @@ void game_handler_create_character_and_persist_into_db
 
         request = (
                 request +
-                // (franco.montenegro) + 1 (null character)
                 l2_string_calculate_space_from_char(strlen(character.name) + 1)
         );
 
@@ -118,8 +117,8 @@ void game_handler_create_character_and_persist_into_db
 
 void game_action_create_character_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )
@@ -136,7 +135,7 @@ void game_action_create_character_handler
                 request
         );
 
-        l2_client_send_packet(
+        game_client_send_packet(
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)
         );

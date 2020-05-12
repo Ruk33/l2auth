@@ -1,7 +1,7 @@
 #ifndef L2AUTH_SESSION_KEY_H
 #define L2AUTH_SESSION_KEY_H
 
-struct L2DtoSessionKey
+struct L2SessionKey
 {
         char login_name[20];
         int playOK1;
@@ -10,6 +10,6 @@ struct L2DtoSessionKey
         int loginOK2;
 };
 
-void l2_session_key_init(struct L2DtoSessionKey* session);
+void l2_session_key_init(struct L2SessionKey* session);
 
 #endif

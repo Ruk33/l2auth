@@ -1,14 +1,14 @@
 #include <assert.h>
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include <game/entity/location.h>
 #include "response.h"
 
 l2_packet* game_action_validate_position_response
 (
-        struct L2Client* client,
+        struct GameClient* client,
         struct GameEntityLocation location,
         int heading
 )
@@ -16,10 +16,10 @@ l2_packet* game_action_validate_position_response
         assert(client);
 
         l2_packet_type type = 0x61;
-        struct GameEntityCharacter* character = l2_client_get_char(client);
+        struct GameEntityCharacter* character = game_client_get_char(client);
         int char_id = character->char_id;
 
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = game_client_byte_builder(
                 client,
                 sizeof(char_id) +
                 sizeof(struct GameEntityLocation) +
@@ -46,7 +46,7 @@ l2_packet* game_action_validate_position_response
 
         byte_builder_append(buffer, (unsigned char *) &heading, sizeof(heading));
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

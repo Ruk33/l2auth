@@ -3,9 +3,9 @@
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
 #include <game/entity/location.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/service/character/movement.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include "response.h"
@@ -13,8 +13,8 @@
 
 void game_action_move_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )
@@ -29,7 +29,7 @@ void game_action_move_handler
 
         l2_packet* response;
 
-        prev_location = &l2_client_get_char(client)->current_location;
+        prev_location = &game_client_get_char(client)->current_location;
 
         memcpy(&new_location.x, request + 3, sizeof(new_location.x));
         memcpy(&new_location.y, request + 3 + sizeof(new_location.x), sizeof(new_location.y));
@@ -46,7 +46,7 @@ void game_action_move_handler
         );
 
         game_service_character_movement_new_target(
-                l2_client_get_char(client),
+                game_client_get_char(client),
                 &new_location
         );
 
@@ -56,5 +56,5 @@ void game_action_move_handler
                 new_location
         );
 
-       l2_server_broadcast_packet_to_clients(server, response);
+       game_server_broadcast_packet_to_clients(server, response);
 }

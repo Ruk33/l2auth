@@ -3,9 +3,9 @@
 #include <log/log.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
 #include <core/session_key.h>
+#include <game/client.h>
 #include <game/service/character/list.h>
 #include <game/entity/character.h>
 #include "response.h"
@@ -260,16 +260,16 @@ void game_packet_char_list_add_char_to_buffer
         byte_builder_append(buffer, (unsigned char *) &enchant_effect, sizeof(enchant_effect));
 }
 
-l2_packet* game_action_auth_login_response(struct L2Client* client)
+l2_packet* game_action_auth_login_response(struct GameClient* client)
 {
         assert(client);
 
         l2_packet_type type = 0x13;
 
-        struct L2DtoSessionKey* key = l2_client_session(client);
+        struct L2SessionKey* key = game_client_session(client);
         int play_ok_1 = key->playOK1;
         size_t max_chars = 5;
-        struct GameEntityCharacter** chars = l2_client_alloc_temp_mem(
+        struct GameEntityCharacter** chars = game_client_alloc_temp_mem(
                 client,
                 sizeof(struct GameEntityCharacter *) * max_chars
         );
@@ -277,14 +277,14 @@ l2_packet* game_action_auth_login_response(struct L2Client* client)
         byte_builder* buffer;
 
         for (size_t i = 0; i < max_chars; i++) {
-                chars[i] = l2_client_alloc_temp_mem(
+                chars[i] = game_client_alloc_temp_mem(
                         client,
                         sizeof(struct GameEntityCharacter)
                 );
         }
 
         char_count = game_service_character_list(chars, max_chars);
-        buffer = l2_client_byte_builder(
+        buffer = game_client_byte_builder(
                 client,
                 (size_t) (300 * (char_count + 1))
         );
@@ -303,7 +303,7 @@ l2_packet* game_action_auth_login_response(struct L2Client* client)
                 );
         }
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

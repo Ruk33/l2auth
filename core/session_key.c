@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "session_key.h"
 
-void l2_session_key_init(struct L2DtoSessionKey* session)
+void l2_session_key_init(struct L2SessionKey* session)
 {
         assert(session);
         session->playOK1 = rand();

@@ -3,8 +3,8 @@
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/service/character/load.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include "response.h"
@@ -12,8 +12,8 @@
 
 void game_action_select_character_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )
@@ -24,7 +24,7 @@ void game_action_select_character_handler
         assert(encrypt_key);
 
         int selected_index = 0;
-        struct GameEntityCharacter* character = l2_client_get_char(client);
+        struct GameEntityCharacter* character = game_client_get_char(client);
         l2_packet* response;
 
         memcpy(&selected_index, request + 3, sizeof(selected_index));
@@ -57,7 +57,7 @@ void game_action_select_character_handler
 
         response = game_action_select_character_response(client, character);
         
-        l2_client_send_packet(
+        game_client_send_packet(
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)
         );

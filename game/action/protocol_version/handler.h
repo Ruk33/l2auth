@@ -2,13 +2,13 @@
 #define L2AUTH_GAME_ACTION_PROTOCOL_VERSION_H
 
 #include <core/l2_packet.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
+#include <game/server.h>
+#include <game/client.h>
 
 void game_action_protocol_version_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request
 );
 

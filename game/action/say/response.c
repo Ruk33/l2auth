@@ -1,21 +1,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/l2_string.h>
 #include <core/byte_builder.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include "response.h"
 
 l2_packet* game_action_say_response
 (
-        struct L2Client *client,
+        struct GameClient *client,
         l2_string* message
 )
 {
         l2_packet_type type = 0x4a;
         int text_type = 0;
-        struct GameEntityCharacter *character = l2_client_get_char(client);
+        struct GameEntityCharacter *character = game_client_get_char(client);
 
         size_t message_length = l2_string_len(message) + 1;
         size_t message_as_string_length =
@@ -25,9 +25,9 @@ l2_packet* game_action_say_response
         size_t name_as_string_len =
                 l2_string_calculate_space_from_char(name_len);
         l2_string* name_as_string =
-                l2_client_alloc_temp_mem(client, name_as_string_len);
+                game_client_alloc_temp_mem(client, name_as_string_len);
 
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = game_client_byte_builder(
                 client,
                 (
                         sizeof(character->char_id) +
@@ -52,7 +52,7 @@ l2_packet* game_action_say_response
         byte_builder_append(buffer, name_as_string, name_as_string_len);
         byte_builder_append(buffer, message, message_as_string_length);
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

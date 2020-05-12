@@ -3,17 +3,17 @@
 #include <log/log.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include "response.h"
 
-l2_packet* game_action_enter_world_response(struct L2Client* client)
+l2_packet* game_action_enter_world_response(struct GameClient* client)
 {
         assert(client);
 
         l2_packet_type type = 0x04;
-        byte_builder* buffer = l2_client_byte_builder(client, 1000);
+        byte_builder* buffer = game_client_byte_builder(client, 1000);
 
         int heading = 0;
         int exp = 10;
@@ -89,7 +89,7 @@ l2_packet* game_action_enter_world_response(struct L2Client* client)
         unsigned int fish_y = 0;
         unsigned int fish_z = 0;
         unsigned int name_color = 4294967295;
-        struct GameEntityCharacter* character = l2_client_get_char(client);
+        struct GameEntityCharacter* character = game_client_get_char(client);
         l2_string name[28];
         int int_hp = (int) character->current_hp;
         int int_mp = (int) character->current_mp;
@@ -370,7 +370,7 @@ l2_packet* game_action_enter_world_response(struct L2Client* client)
         byte_builder_append(buffer, (unsigned char *) &fish_z, sizeof(fish_z));
         byte_builder_append(buffer, (unsigned char *) &name_color, sizeof(name_color));
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

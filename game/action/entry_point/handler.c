@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/connection_thread.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
 #include <core/l2_raw_packet.h>
+#include <game/connection.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/service/crypt/decrypt.h>
 #include <game/action/request_type.h>
 #include <game/action/protocol_version/handler.h>
@@ -21,19 +21,19 @@
 #include <game/action/say/handler.h>
 #include "handler.h"
 
-int game_action_entry_point_handler(struct ConnectionThread* conn)
+int game_action_entry_point_handler(struct GameConnection* conn)
 {
         assert(conn);
 
-        struct L2Server* server = conn->server;
-        struct L2Client* client = conn->client;
+        struct GameServer* server = conn->server;
+        struct GameClient* client = conn->client;
 
-        l2_raw_packet *client_packet = l2_client_wait_packet(client);
+        l2_raw_packet *client_packet = game_client_wait_packet(client);
 
         unsigned short packet_size = 0;
         l2_packet_type packet_type;
 
-        if (l2_client_connection_ended(client)) return 1;
+        if (game_client_connection_ended(client)) return 1;
 
         memcpy(&packet_size, client_packet, sizeof(packet_size));
         if (packet_size > 1) {

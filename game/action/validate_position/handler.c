@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
 #include <core/l2_raw_packet.h>
+#include <game/server.h>
+#include <game/client.h>
 #include <game/entity/location.h>
 #include <game/action/character_info/response.h>
 #include <game/service/character/movement.h>
@@ -13,8 +13,8 @@
 
 void game_action_validate_position_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )
@@ -41,20 +41,20 @@ void game_action_validate_position_handler
         );
 
         game_service_character_movement_validate_and_update(
-                l2_client_get_char(client),
+                game_client_get_char(client),
                 &location
         );
 
         response = game_action_validate_position_response(
                 client,
-                l2_client_get_char(client)->current_location,
+                game_client_get_char(client)->current_location,
                 heading
         );
-        l2_server_broadcast_packet_to_clients(server, response);
+        game_server_broadcast_packet_to_clients(server, response);
 
         // (franco.montenegro) Refactor, validate shouldn't
         // send this response, there should be a handler
         // managing this response
         response = game_action_character_info_response(client);
-        l2_server_broadcast_packet(server, client, response);
+        game_server_broadcast_packet(server, client, response);
 }

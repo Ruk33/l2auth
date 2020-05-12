@@ -1,27 +1,27 @@
 #include <log/log.h>
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include <game/entity/location.h>
 #include "response.h"
 
 l2_packet* game_action_move_response
 (
-        struct L2Client* client,
+        struct GameClient* client,
         struct GameEntityLocation prev_location,
         struct GameEntityLocation new_location
 )
 {
         l2_packet_type type = 0x01;
-        struct GameEntityCharacter* character = l2_client_get_char(client);
+        struct GameEntityCharacter* character = game_client_get_char(client);
         int obj_id = character->char_id;
 
         log_fatal("char move to loc -> obj id %d", obj_id);
         log_fatal("new x: %d, new y: %d, new z: %d", new_location.x, new_location.y, new_location.z);
         log_fatal("prev x: %d, prev y: %d, prev z: %d", prev_location.x, prev_location.y, prev_location.z);
 
-        byte_builder* buffer = l2_client_byte_builder(
+        byte_builder* buffer = game_client_byte_builder(
                 client,
                 sizeof(obj_id) +
                 sizeof(new_location) +
@@ -62,7 +62,7 @@ l2_packet* game_action_move_response
                 sizeof(prev_location.z)
         );
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

@@ -19,10 +19,6 @@ csrc = $(wildcard *.c) \
 	$(wildcard service/crypt/*.c) \
 	$(wildcard service/crypt/packet/*.c) \
 	$(wildcard storage/sqlite3/*.c) \
-	$(wildcard ../login/helper.c) \
-	$(wildcard ../login/dto/*.c) \
-	$(wildcard ../login/handler/*.c) \
-	$(wildcard ../login/packet/*.c) \
 	$(wildcard ../core/*.c) \
 	$(wildcard ../os/*.c) \
 	$(wildcard ../os/linux/*.c)

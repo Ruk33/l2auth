@@ -4,24 +4,24 @@
 #include <log/log.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
 #include <core/session_key.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include "response.h"
 
 l2_packet* game_action_select_character_response
 (
-        struct L2Client* client,
+        struct GameClient* client,
         struct GameEntityCharacter* character
 )
 {
         assert(client);
 
         l2_packet_type type = 0x15;
-        byte_builder* buffer = l2_client_byte_builder(client, 1000);
+        byte_builder* buffer = game_client_byte_builder(client, 1000);
 
-        struct L2DtoSessionKey* session = l2_client_session(client);
+        struct L2SessionKey* session = game_client_session(client);
         int playOK1 = session->playOK1;
         
         unsigned char title[] = { 0, 0 };
@@ -181,7 +181,7 @@ l2_packet* game_action_select_character_response
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

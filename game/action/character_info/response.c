@@ -2,17 +2,17 @@
 #include <string.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
+#include <game/client.h>
 #include <game/entity/character.h>
 #include "response.h"
 
-l2_packet* game_action_character_info_response(struct L2Client* client)
+l2_packet* game_action_character_info_response(struct GameClient* client)
 {
         l2_packet_type type = 0x03;
-        struct GameEntityCharacter* character = l2_client_get_char(client);
+        struct GameEntityCharacter* character = game_client_get_char(client);
         size_t name_as_string_length = l2_string_calculate_space_from_char(strlen(character->name) + 1);
-        l2_string* name_as_string = l2_client_alloc_temp_mem(client, name_as_string_length);
+        l2_string* name_as_string = game_client_alloc_temp_mem(client, name_as_string_length);
         int heading = 0;
         int empty = 0;
         int pvp_flag = 0;
@@ -53,7 +53,7 @@ l2_packet* game_action_character_info_response(struct L2Client* client)
         int m_attack_speed = 1;
         int p_attack_speed = 1;
         
-        byte_builder* buffer = l2_client_byte_builder(client, 1000);
+        byte_builder* buffer = game_client_byte_builder(client, 1000);
 
         memset(name_as_string, 0, name_as_string_length);
         l2_string_from_char(name_as_string, character->name, strlen(character->name));
@@ -151,7 +151,7 @@ l2_packet* game_action_character_info_response(struct L2Client* client)
 
         byte_builder_append(buffer, &name_color, sizeof(name_color));
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,

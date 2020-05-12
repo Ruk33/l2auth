@@ -2,14 +2,14 @@
 #include <string.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
-#include <core/l2_server.h>
-#include <core/l2_client.h>
+#include <game/server.h>
+#include <game/client.h>
 #include "handler.h"
 
 void game_action_d0_handler
 (
-        struct L2Server* server,
-        struct L2Client* client,
+        struct GameServer* server,
+        struct GameClient* client,
         l2_raw_packet* request,
         unsigned char* encrypt_key
 )

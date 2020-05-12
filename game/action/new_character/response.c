@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <core/l2_packet.h>
-#include <core/l2_client.h>
 #include <core/byte_builder.h>
+#include <game/client.h>
 #include "response.h"
 
 void append_char
@@ -48,11 +48,11 @@ void append_char
         byte_builder_append(buffer, (unsigned char *) &separator_0a, sizeof(separator_0a));
 }
 
-l2_packet* game_action_new_character_response(struct L2Client* client)
+l2_packet* game_action_new_character_response(struct GameClient* client)
 {
         assert(client);
         l2_packet_type type = 0x17;
-        byte_builder* buffer = l2_client_byte_builder(client, 1000);
+        byte_builder* buffer = game_client_byte_builder(client, 1000);
         unsigned int chars = 10;
 
         byte_builder_append(buffer, (unsigned char *) &chars, sizeof(chars));
@@ -72,7 +72,7 @@ l2_packet* game_action_new_character_response(struct L2Client* client)
         
         append_char(buffer, 4, 53, /*str*/ 39, /* dex */ 29, /* con */ 45, /* int */ 20, /* wit */ 10, /* men */ 27); // dwarf
 
-        return l2_client_create_packet(
+        return game_client_create_packet(
                 client,
                 type,
                 buffer,
