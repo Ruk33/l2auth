@@ -24,7 +24,9 @@ void l2_raw_packet_init
  */
 l2_raw_packet_size l2_raw_packet_get_size(l2_raw_packet* packet);
 
-void l2_raw_packet_content
+unsigned char* l2_raw_packet_content(l2_raw_packet* packet);
+
+void l2_raw_packet_cpy_content
 (
         l2_raw_packet* packet,
         unsigned char* dest,

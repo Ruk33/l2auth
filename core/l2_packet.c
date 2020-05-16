@@ -47,7 +47,7 @@ l2_packet_type l2_packet_get_type(l2_packet* packet)
         assert(packet);
 
         l2_packet_type type = 0;
-        l2_raw_packet_content(packet, &type, 0, sizeof(type));
+        l2_raw_packet_cpy_content(packet, &type, 0, sizeof(type));
 
         return type;
 }
@@ -62,7 +62,13 @@ unsigned short l2_packet_get_content_size(l2_packet* packet)
         );
 }
 
-void l2_packet_content
+unsigned char* l2_packet_content(l2_packet* packet)
+{
+        assert(packet);
+        return l2_raw_packet_content(packet) + sizeof(l2_packet_type);
+}
+
+void l2_packet_cpy_content
 (
         l2_packet* packet,
         unsigned char* dest,
@@ -72,7 +78,7 @@ void l2_packet_content
 {
         assert(packet);
         assert(dest);
-        l2_raw_packet_content(
+        l2_raw_packet_cpy_content(
                 packet,
                 dest,
                 (unsigned short) (sizeof(l2_packet_type) + start),

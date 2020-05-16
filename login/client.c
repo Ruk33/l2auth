@@ -41,6 +41,7 @@ int login_client_init(struct LoginClient* client)
         size_t socket_handler_size = os_socket_handler_size();
 
         client->received_data_size = 0;
+        client->rsa_decrypted = 0;
         client->rsa_key = malloc(rsa_key_struct_size);
         client->blowfish_key = malloc(blowfish_struct_size);
         client->socket_handler = malloc(socket_handler_size);
@@ -207,7 +208,7 @@ int login_client_decrypt_rsa
         );
         int decrypt_result;
 
-        l2_packet_content(packet, packet_content, 0, packet_content_size);
+        l2_packet_cpy_content(packet, packet_content, 0, packet_content_size);
 
         decrypt_result = l2_rsa_key_decrypt(
                 client->rsa_key,

@@ -42,7 +42,13 @@ l2_raw_packet_size l2_raw_packet_get_size(l2_raw_packet* packet)
         return size;
 }
 
-void l2_raw_packet_content
+unsigned char* l2_raw_packet_content(l2_raw_packet* packet)
+{
+        assert(packet);
+        return packet + sizeof(l2_raw_packet_size);
+}
+
+void l2_raw_packet_cpy_content
 (
         l2_raw_packet* packet,
         unsigned char* dest,
@@ -55,7 +61,7 @@ void l2_raw_packet_content
         
         memcpy(
                 dest,
-                packet + sizeof(l2_raw_packet_size) + start,
+                l2_raw_packet_content(packet) + start,
                 end
         );
 }

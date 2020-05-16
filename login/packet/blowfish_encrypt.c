@@ -36,7 +36,7 @@ l2_raw_packet* login_packet_blowfish_encrypt
                 l2_raw_packet_calculate_size(encrypted_packet_size)
         );
 
-        l2_raw_packet_content(
+        l2_raw_packet_cpy_content(
                 to_encrypt,
                 packet_content,
                 0,
