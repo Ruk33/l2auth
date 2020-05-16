@@ -17,7 +17,7 @@ l2_packet* game_action_character_info_response(struct GameClient* client)
         int empty = 0;
         int pvp_flag = 0;
         int karma = 0;
-        int run_speed = 100;
+        int run_speed = 115;
         int walk_speed = 100;
         int swim_run_speed = 10;
         int swim_walk_speed = 10;

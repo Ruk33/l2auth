@@ -48,7 +48,7 @@ l2_packet* game_action_enter_world_response(struct GameClient* client)
         unsigned int m_def = 20;
         unsigned int pvp = 0;
         unsigned int karma = 0;
-        unsigned int run_speed = 100;
+        unsigned int run_speed = 115;
         unsigned int walk_speed = 100;
         unsigned int swim_run_speed = 10;
         unsigned int swim_walk_speed = 10;
