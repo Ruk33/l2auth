@@ -1,4 +1,5 @@
 csrc = $(wildcard *.c) \
+	$(wildcard request/action/*.c) \
 	$(wildcard request/auth_login/*.c) \
 	$(wildcard request/character_info/*.c) \
 	$(wildcard request/create_character/*.c) \

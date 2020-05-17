@@ -19,6 +19,7 @@
 #include <game/request/move/handler.h>
 #include <game/request/validate_position/handler.h>
 #include <game/request/say/handler.h>
+#include <game/request/action/handler.h>
 #include "handler.h"
 
 int game_request_entry_point_handler(struct GameConnection* conn)
@@ -54,8 +55,8 @@ int game_request_entry_point_handler(struct GameConnection* conn)
          */
         packet_type = (l2_packet_type) (client_packet[2] & 0xff);
 
-        log_error("--- Packet type %02X", packet_type);
-        log_error("--- Packet type without crap %02X", client_packet[2]);
+        log_error("Packet type %02X", packet_type);
+        log_error("Packet type without crap %02X", client_packet[2]);
 
         switch (packet_type) {
         case  GAME_REQUEST_TYPE_PROTOCOL_VERSION:
@@ -74,6 +75,13 @@ int game_request_entry_point_handler(struct GameConnection* conn)
                         conn->encrypt_key
                 );
                 break;
+        case GAME_REQUEST_TYPE_ACTION:
+                game_request_action_handler(
+                        server,
+                        client,
+                        client_packet,
+                        conn->encrypt_key
+                );
         case  GAME_REQUEST_TYPE_VALIDATE_POS:
                 game_request_validate_position_handler(
                         server,

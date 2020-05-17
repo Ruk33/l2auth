@@ -48,7 +48,7 @@ void game_request_hot_code_reload_entry_point_handler(struct GameConnection* con
                         break;
                 }
 
-                client_handler = dlsym(library, "game_action_entry_point_handler");
+                client_handler = dlsym(library, "game_request_entry_point_handler");
 
                 if (client_handler) {
                         log_info("Client handler successfully found");
