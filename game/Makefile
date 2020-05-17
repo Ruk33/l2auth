@@ -9,7 +9,7 @@ csrc = $(wildcard *.c) \
 	$(wildcard request/move/*.c) \
 	$(wildcard request/new_character/*.c) \
 	$(wildcard request/protocol_version/*.c) \
-	$(wildcard request/request_quests/*.c) \
+	$(wildcard request/quest_list/*.c) \
 	$(wildcard request/restart/*.c) \
 	$(wildcard request/say/*.c) \
 	$(wildcard request/select_character/*.c) \

@@ -3,7 +3,7 @@
 #include <game/client.h>
 #include "response.h"
 
-l2_packet* game_request_request_quests_response(struct GameClient* client)
+l2_packet* game_request_quest_list_response(struct GameClient* client)
 {
         assert(client);
 

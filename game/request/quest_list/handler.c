@@ -9,7 +9,7 @@
 #include "response.h"
 #include "handler.h"
 
-void game_request_request_quests_handler
+void game_request_quest_list_handler
 (
         struct GameServer* server,
         struct GameClient* client,
@@ -22,7 +22,7 @@ void game_request_request_quests_handler
         assert(request);
         assert(encrypt_key);
 
-        l2_packet* response = game_request_request_quests_response(client);
+        l2_packet* response = game_request_quest_list_response(client);
         log_info("Sending quests (empty obviously)");
         
         game_client_send_packet(

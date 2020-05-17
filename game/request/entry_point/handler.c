@@ -13,7 +13,7 @@
 #include <game/request/create_character/handler.h>
 #include <game/request/select_character/handler.h>
 #include <game/request/d0/handler.h>
-#include <game/request/request_quests/handler.h>
+#include <game/request/quest_list/handler.h>
 #include <game/request/enter_world/handler.h>
 #include <game/request/restart/handler.h>
 #include <game/request/move/handler.h>
@@ -123,7 +123,7 @@ int game_request_entry_point_handler(struct GameConnection* conn)
                 );
                 break;
         case  GAME_REQUEST_TYPE_REQUEST_QUEST_LIST:
-                game_request_request_quests_handler(
+                game_request_quest_list_handler(
                         server,
                         client,
                         client_packet,
