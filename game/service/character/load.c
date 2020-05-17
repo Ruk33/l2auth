@@ -9,7 +9,7 @@ void game_service_character_load(int index, struct GameEntityCharacter* characte
         assert(character);
 
 	game_storage_connection* db = game_storage_connection_open();
-        game_storage_character_from_index(db, character);
+        game_storage_character_from_index(db, character, index);
 	game_storage_connection_close(db);
 }
 

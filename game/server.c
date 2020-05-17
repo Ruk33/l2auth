@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <game/action/hot_code_reload_entry_point/handler.h>
+#include <game/request/hot_code_reload_entry_point/handler.h>
 #include <game/connection.h>
 #include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
@@ -189,5 +189,5 @@ void game_server_start_or_die(unsigned short port, size_t max_players)
                 exit(1);
         }
 
-        game_server_start(server, port, game_action_hot_code_reload_entry_point_handler);
+        game_server_start(server, port, game_request_hot_code_reload_entry_point_handler);
 }

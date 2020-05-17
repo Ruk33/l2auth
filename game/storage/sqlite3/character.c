@@ -207,6 +207,7 @@ int game_storage_character_list
                         active, \
                         level \
                 FROM characters \
+                ORDER BY name DESC \
                 LIMIT ?",
                 -1,
                 &stmt,
@@ -252,7 +253,8 @@ int game_storage_character_list
 void game_storage_character_from_index
 (
         game_storage_connection* db,
-        struct GameEntityCharacter* character
+        struct GameEntityCharacter* character,
+        int index
 )
 {
         sqlite3_stmt* stmt;
@@ -286,11 +288,15 @@ void game_storage_character_from_index
                         active, \
                         level \
                 FROM characters \
-                LIMIT 1",
+                ORDER BY name DESC \
+                LIMIT 1 \
+                OFFSET ?",
                 -1,
                 &stmt,
                 NULL
         );
+
+        sqlite3_bind_int(stmt, 1, index);
 
         sqlite3_step(stmt);
 

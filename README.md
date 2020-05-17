@@ -48,7 +48,7 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `os`: OS related code (sockets, threads, etc.)
 - `os/<implementation>`: For the time being only Linux implementation are being written down but more can be added by easily creating a new folder and implementing all the header files in the `os` folder. Make sure to update `game/Makefile` to use the new implementation instead of `os/linux` (replace `$(wildcard ../os/linux/*.c)` with new implementation, ie `$(wildcard ../os/windows/*.c)`).
 - `game`: Game server code
-- `game/action`: Handlers & responses for each client request
+- `game/request`: Handlers & responses for each client request
 - `game/entity`: All game server entities such as characters
 - `game/service`: -
 - `game/storage`: Logic to persist information in disk

@@ -1,19 +1,19 @@
 csrc = $(wildcard *.c) \
-	$(wildcard action/auth_login/*.c) \
-	$(wildcard action/character_info/*.c) \
-	$(wildcard action/create_character/*.c) \
-	$(wildcard action/d0/*.c) \
-	$(wildcard action/enter_world/*.c) \
-	$(wildcard action/entry_point/*.c) \
-	$(wildcard action/hot_code_reload_entry_point/*.c) \
-	$(wildcard action/move/*.c) \
-	$(wildcard action/new_character/*.c) \
-	$(wildcard action/protocol_version/*.c) \
-	$(wildcard action/request_quests/*.c) \
-	$(wildcard action/restart/*.c) \
-	$(wildcard action/say/*.c) \
-	$(wildcard action/select_character/*.c) \
-	$(wildcard action/validate_position/*.c) \
+	$(wildcard request/auth_login/*.c) \
+	$(wildcard request/character_info/*.c) \
+	$(wildcard request/create_character/*.c) \
+	$(wildcard request/d0/*.c) \
+	$(wildcard request/enter_world/*.c) \
+	$(wildcard request/entry_point/*.c) \
+	$(wildcard request/hot_code_reload_entry_point/*.c) \
+	$(wildcard request/move/*.c) \
+	$(wildcard request/new_character/*.c) \
+	$(wildcard request/protocol_version/*.c) \
+	$(wildcard request/request_quests/*.c) \
+	$(wildcard request/restart/*.c) \
+	$(wildcard request/say/*.c) \
+	$(wildcard request/select_character/*.c) \
+	$(wildcard request/validate_position/*.c) \
 	$(wildcard entity/*.c) \
 	$(wildcard service/character/*.c) \
 	$(wildcard service/crypt/*.c) \

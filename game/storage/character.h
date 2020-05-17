@@ -27,7 +27,8 @@ int game_storage_character_list
 void game_storage_character_from_index
 (
         game_storage_connection* db,
-        struct GameEntityCharacter* character
+        struct GameEntityCharacter* character,
+        int index
 );
 
 #endif
