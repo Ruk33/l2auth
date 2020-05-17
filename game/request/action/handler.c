@@ -18,7 +18,8 @@ void game_request_action_handler
         assert(client);
         assert(request);
         assert(encrypt_key);
-        unsigned char* request_content = l2_packet_content(request);
+
+        unsigned char* req_content = l2_packet_content(request);
 
         int object_id = 0;
         int origin_x = 0;
@@ -26,35 +27,11 @@ void game_request_action_handler
         int origin_z = 0;
         char action_id = 0;
 
-        request_content = byte_reader_copy_and_move(
-                request_content,
-                &object_id,
-                sizeof(object_id)
-        );
-
-        request_content = byte_reader_copy_and_move(
-                request_content,
-                &origin_x,
-                sizeof(origin_x)
-        );
-
-        request_content = byte_reader_copy_and_move(
-                request_content,
-                &origin_y,
-                sizeof(origin_y)
-        );
-
-        request_content = byte_reader_copy_and_move(
-                request_content,
-                &origin_z,
-                sizeof(origin_z)
-        );
-
-        request_content = byte_reader_copy_and_move(
-                request_content,
-                &action_id,
-                sizeof(action_id)
-        );
+        req_content = byte_reader_cpy_int_n_mv(req_content, &object_id);
+        req_content = byte_reader_cpy_int_n_mv(req_content, &origin_x);
+        req_content = byte_reader_cpy_int_n_mv(req_content, &origin_y);
+        req_content = byte_reader_cpy_int_n_mv(req_content, &origin_z);
+        req_content = byte_reader_cpy_int_n_mv(req_content, &action_id);
 
         log_info("Action request handler");
         log_info("Object id: %d", object_id);

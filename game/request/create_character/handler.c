@@ -40,73 +40,73 @@ void game_handler_create_character_and_persist_into_db
                 l2_string_calculate_space_from_char(strlen(character.name) + 1)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.race_id,
                 sizeof(character.race_id)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.sex,
                 sizeof(character.sex)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.class_id,
                 sizeof(character.class_id)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character._int,
                 sizeof(character._int)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.str,
                 sizeof(character.str)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.con,
                 sizeof(character.con)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.men,
                 sizeof(character.men)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.dex,
                 sizeof(character.dex)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.wit,
                 sizeof(character.wit)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.hair_style,
                 sizeof(character.hair_style)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.hair_color,
                 sizeof(character.hair_color)
         );
 
-        request = byte_reader_copy_and_move(
+        request = byte_reader_cpy_n_mv(
                 request,
                 &character.face,
                 sizeof(character.face)

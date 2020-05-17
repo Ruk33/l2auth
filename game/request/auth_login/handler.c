@@ -48,25 +48,25 @@ void game_request_auth_login_handler
 
         request_content += login_name_as_string_len;
 
-        request_content = byte_reader_copy_and_move(
+        request_content = byte_reader_cpy_n_mv(
                 request_content,
                 &session->playOK2,
                 sizeof(int)
         );
 
-        request_content = byte_reader_copy_and_move(
+        request_content = byte_reader_cpy_n_mv(
                 request_content,
                 &session->playOK1,
                 sizeof(int)
         );
 
-        request_content = byte_reader_copy_and_move(
+        request_content = byte_reader_cpy_n_mv(
                 request_content,
                 &session->loginOK1,
                 sizeof(int)
         );
 
-        request_content = byte_reader_copy_and_move(
+        request_content = byte_reader_cpy_n_mv(
                 request_content,
                 &session->loginOK2,
                 sizeof(int)

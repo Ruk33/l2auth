@@ -3,7 +3,7 @@
 #include <string.h>
 #include <core/byte_reader.h>
 
-void* byte_reader_copy_and_move
+void* byte_reader_cpy_n_mv
 (
         void* src,
         void* dest, 
@@ -14,4 +14,19 @@ void* byte_reader_copy_and_move
         assert(dest);
         memcpy(dest, src, to_copy);
         return src + to_copy;
+}
+
+void* byte_reader_cpy_int_n_mv(void* src, void* dest)
+{
+        return byte_reader_cpy_n_mv(src, dest, sizeof(int));
+}
+
+void* byte_reader_cpy_short_n_mv(void* src, void* dest)
+{
+        return byte_reader_cpy_n_mv(src, dest, sizeof(short));
+}
+
+void* byte_reader_cpy_char_n_mv(void* src, void* dest)
+{
+        return byte_reader_cpy_n_mv(src, dest, sizeof(char));
 }
