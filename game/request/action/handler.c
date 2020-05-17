@@ -2,24 +2,16 @@
 #include <log/log.h>
 #include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
+#include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
 #include "handler.h"
 
-void game_request_action_handler
-(
-        struct GameServer* server,
-        struct GameClient* client,
-        l2_raw_packet* request,
-        unsigned char* encrypt_key
-)
+void game_request_action_handler(struct GameRequest* request)
 {
-        assert(server);
-        assert(client);
         assert(request);
-        assert(encrypt_key);
 
-        unsigned char* req_content = l2_packet_content(request);
+        unsigned char* req_content = l2_packet_content(request->packet);
 
         int object_id = 0;
         int origin_x = 0;

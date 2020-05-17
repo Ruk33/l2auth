@@ -25,6 +25,6 @@ void* byte_reader_cpy_int_n_mv(void* src, void* dest);
 
 void* byte_reader_cpy_short_n_mv(void* src, void* dest);
 
-void* byte_reader_cpy_char_n_mv(void* src, void* dest)
+void* byte_reader_cpy_char_n_mv(void* src, void* dest);
 
 #endif

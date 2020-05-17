@@ -1,76 +1,41 @@
 #include <assert.h>
-#include <string.h>
 #include <log/log.h>
 #include <core/byte_reader.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
 #include <core/session_key.h>
+#include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include "response.h"
 #include "handler.h"
 
-void game_request_auth_login_handler
-(
-        struct GameServer* server,
-        struct GameClient* client,
-        l2_raw_packet* request,
-        unsigned char* encrypt_key
-)
+void game_request_auth_login_handler(struct GameRequest* request)
 {
-        assert(server);
-        assert(client);
         assert(request);
 
+        struct GameClient* server = request->conn->server;
+        struct GameClient* client = request->conn->client;
+        unsigned char* encrypt_key = request->conn->encrypt_key;
         struct L2SessionKey* session = game_client_session(client);
-        unsigned char* request_content = l2_packet_content(request);
+        unsigned char* content = l2_packet_content(request->packet);
 
-        size_t login_len = l2_string_len((l2_string *) request_content) + 1;
-        size_t login_name_as_string_len =
-                l2_string_calculate_space_from_char(login_len);
-        l2_string* login_name_as_string =
-                game_client_alloc_temp_mem(client, login_name_as_string_len);
+        size_t login_len = l2_string_len((l2_string *) content) + 1;
+        size_t login_name_str_len = l2_string_calculate_space_from_char(login_len);
+        l2_string* login_name_str = game_client_alloc_temp_mem(client, login_name_str_len);
 
-        l2_string_from_l2(
-                login_name_as_string,
-                request_content,
-                login_name_as_string_len
-        );
-
-        l2_string_to_char(
-                login_name_as_string,
-                session->login_name,
-                login_len
-        );
+        l2_string_from_l2(login_name_str, content, login_name_str_len);
+        l2_string_to_char(login_name_str, session->login_name, login_len);
 
         log_info("Login name %s", session->login_name);
 
-        request_content += login_name_as_string_len;
+        content += login_name_str_len;
 
-        request_content = byte_reader_cpy_n_mv(
-                request_content,
-                &session->playOK2,
-                sizeof(int)
-        );
-
-        request_content = byte_reader_cpy_n_mv(
-                request_content,
-                &session->playOK1,
-                sizeof(int)
-        );
-
-        request_content = byte_reader_cpy_n_mv(
-                request_content,
-                &session->loginOK1,
-                sizeof(int)
-        );
-
-        request_content = byte_reader_cpy_n_mv(
-                request_content,
-                &session->loginOK2,
-                sizeof(int)
-        );
+        content = byte_reader_cpy_int_n_mv(content, &session->playOK2);
+        content = byte_reader_cpy_int_n_mv(content, &session->playOK1);
+        content = byte_reader_cpy_int_n_mv(content, &session->loginOK1);
+        content = byte_reader_cpy_int_n_mv(content, &session->loginOK2);
 
         log_info("Session key - Play OK 1 %d", session->playOK1);
         log_info("Session key - Play OK 2 %d", session->playOK2);

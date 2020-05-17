@@ -1,8 +1,8 @@
 #include <assert.h>
-#include <string.h>
 #include <log/log.h>
-#include <core/l2_raw_packet.h>
+#include <core/byte_reader.h>
 #include <core/l2_packet.h>
+#include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/character/load.h>
@@ -10,24 +10,18 @@
 #include "response.h"
 #include "handler.h"
 
-void game_request_select_character_handler
-(
-        struct GameServer* server,
-        struct GameClient* client,
-        l2_raw_packet* request,
-        unsigned char* encrypt_key
-)
+void game_request_select_character_handler(struct GameRequest* request)
 {
-        assert(server);
-        assert(client);
         assert(request);
-        assert(encrypt_key);
 
-        int selected_index = 0;
+        unsigned char* encrypt_key = request->conn->encrypt_key;
+        struct GameClient* client = request->conn->client;
         struct GameEntityCharacter* character = game_client_get_char(client);
+        unsigned char* content = l2_packet_content(request->packet);
+        int selected_index = 0;
         l2_packet* response;
 
-        memcpy(&selected_index, request + 3, sizeof(selected_index));
+        byte_reader_cpy_int_n_mv(content, &selected_index);
         log_info("Selected char index %d", selected_index);
 
         game_service_character_load(selected_index, character);

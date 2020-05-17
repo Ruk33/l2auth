@@ -1,9 +1,10 @@
 #include <assert.h>
-#include <string.h>
 #include <log/log.h>
+#include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <game/entity/location.h>
+#include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/character/movement.h>
@@ -11,18 +12,14 @@
 #include "response.h"
 #include "handler.h"
 
-void game_request_move_handler
-(
-        struct GameServer* server,
-        struct GameClient* client,
-        l2_raw_packet* request,
-        unsigned char* encrypt_key
-)
+void game_request_move_handler(struct GameRequest* request)
 {
-        assert(server);
-        assert(client);
         assert(request);
-        assert(encrypt_key);
+
+        struct GameServer* server = request->conn->server;
+        struct GameClient* client = request->conn->client;
+
+        unsigned char* content = l2_packet_content(request->packet);
 
         struct GameEntityLocation* prev_location;
         struct GameEntityLocation new_location;
@@ -31,9 +28,9 @@ void game_request_move_handler
 
         prev_location = &game_client_get_char(client)->current_location;
 
-        memcpy(&new_location.x, request + 3, sizeof(new_location.x));
-        memcpy(&new_location.y, request + 3 + sizeof(new_location.x), sizeof(new_location.y));
-        memcpy(&new_location.z, request + 3 + sizeof(new_location.x) + sizeof(new_location.y), sizeof(new_location.z));
+        content = byte_reader_cpy_int_n_mv(content, &new_location.x);
+        content = byte_reader_cpy_int_n_mv(content, &new_location.y);
+        content = byte_reader_cpy_int_n_mv(content, &new_location.z);
 
         log_info(
                 "Trying to move character from x: %d, y: %d, z: %d to x: %d, y: %d, z: %d",

@@ -1,7 +1,8 @@
 #include <assert.h>
-#include <string.h>
 #include <log/log.h>
+#include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
+#include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
 #include <game/entity/location.h>
@@ -11,27 +12,21 @@
 #include "response.h"
 #include "handler.h"
 
-void game_request_validate_position_handler
-(
-        struct GameServer* server,
-        struct GameClient* client,
-        l2_raw_packet* request,
-        unsigned char* encrypt_key
-)
+void game_request_validate_position_handler(struct GameRequest* request)
 {
-        assert(server);
-        assert(client);
         assert(request);
-        assert(encrypt_key);
 
-        struct GameEntityLocation location;
+        struct GameClient* server = request->conn->server;
+        struct GameClient* client = request->conn->client;
+        unsigned char* content = l2_packet_content(request->packet);
         int heading = 0;
+        struct GameEntityLocation location;
         l2_packet* response;
 
-        memcpy(&location.x, request + 3, sizeof(location.x));
-        memcpy(&location.y, request + 3 + sizeof(location.x), sizeof(location.y));
-        memcpy(&location.z, request + 3 + sizeof(location.x) + sizeof(location.y), sizeof(location.z));
-        memcpy(&heading, request + 3 + sizeof(location.x) + sizeof(location.y) + sizeof(location.z), sizeof(heading));
+        content = byte_reader_cpy_int_n_mv(content, &location.x);
+        content = byte_reader_cpy_int_n_mv(content, &location.y);
+        content = byte_reader_cpy_int_n_mv(content, &location.z);
+        content = byte_reader_cpy_int_n_mv(content, &heading);
 
         log_info(
                 "Validating position - x: %d, y: %d, z: %d",
