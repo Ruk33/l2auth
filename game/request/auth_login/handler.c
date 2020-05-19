@@ -8,6 +8,7 @@
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -48,4 +49,6 @@ void game_request_auth_login_handler(struct GameRequest* request)
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)
         );
+
+        request->conn->handler = game_request_auth_login_next_handler;
 }

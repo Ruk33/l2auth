@@ -5,6 +5,7 @@
 #include <game/server.h>
 #include <game/client.h>
 #include <game/request.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -25,4 +26,7 @@ void game_request_protocol_version_handler(struct GameRequest* request)
         log_info("Returning crypt init");
 
         game_client_send_packet(client, response);
+
+        request->conn->is_encrypted = 1;
+        request->conn->handler = game_request_protocol_version_next_handler;
 }

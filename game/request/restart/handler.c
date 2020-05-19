@@ -7,6 +7,7 @@
 #include <game/service/character/save.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include <game/request/auth_login/handler.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -27,4 +28,6 @@ void game_request_restart_handler(struct GameRequest* request)
         );
 
         game_request_auth_login_handler(request);
+
+        request->conn->handler = game_request_restart_next_handler;
 }

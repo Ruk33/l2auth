@@ -5,6 +5,7 @@
 #include <game/connection.h>
 #include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include <game/request/protocol_version/handler.h>
 #include "server.h"
 
 struct GameServer
@@ -137,6 +138,7 @@ struct GameConnection* game_server_get_client
         assert(server);
         struct GameConnection* conn = calloc(1, sizeof(struct GameConnection));
         conn->client = calloc(1, game_client_struct_size());
+        conn->handler = game_request_protocol_version_handler;
         server->clients[index] = conn;
         return conn;
 }

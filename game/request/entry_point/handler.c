@@ -8,19 +8,6 @@
 #include <game/service/crypt/decrypt.h>
 #include <game/request.h>
 #include <game/request/type.h>
-#include <game/request/protocol_version/handler.h>
-#include <game/request/auth_login/handler.h>
-#include <game/request/new_character/handler.h>
-#include <game/request/create_character/handler.h>
-#include <game/request/select_character/handler.h>
-#include <game/request/d0/handler.h>
-#include <game/request/quest_list/handler.h>
-#include <game/request/enter_world/handler.h>
-#include <game/request/restart/handler.h>
-#include <game/request/move/handler.h>
-#include <game/request/validate_position/handler.h>
-#include <game/request/say/handler.h>
-#include <game/request/action/handler.h>
 #include "handler.h"
 
 int game_request_entry_point_handler(struct GameConnection* conn)
@@ -36,7 +23,6 @@ int game_request_entry_point_handler(struct GameConnection* conn)
 
         unsigned short packet_size = 0;
         l2_packet_type packet_type;
-
 
         if (game_client_connection_ended(client)) return 1;
 
@@ -64,54 +50,7 @@ int game_request_entry_point_handler(struct GameConnection* conn)
         request.conn = conn;
         request.packet = client_packet;
 
-        switch (packet_type) {
-        case  GAME_REQUEST_TYPE_PROTOCOL_VERSION:
-                conn->is_encrypted = 1;
-                game_request_protocol_version_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_MOVE_BACKWARDS_TO_LOCATION:
-                game_request_move_handler(&request);
-                break;
-        case GAME_REQUEST_TYPE_ACTION:
-                game_request_action_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_VALIDATE_POS:
-                game_request_validate_position_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_AUTH_REQUEST:
-                game_request_auth_login_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_NEW_CHAR:
-                game_request_new_character_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_CREATE_CHAR:
-                game_request_create_character_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_SELECTED_CHAR:
-                game_request_select_character_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_REQUEST_AUTO_SS_BSPS:
-                game_request_d0_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_REQUEST_QUEST_LIST:
-                game_request_quest_list_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_ENTER_WORLD:
-                game_request_enter_world_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_RESTART:
-                game_request_restart_handler(&request);
-                break;
-        case  GAME_REQUEST_TYPE_SAY:
-                game_request_say_handler(&request);
-                break;
-        default:
-                log_error(
-                        "Oops, packet %02X not implemented yet",
-                        packet_type
-                );
-                break;
-        }
+        conn->handler(&request);
 
         return 0;
 }

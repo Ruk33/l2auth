@@ -11,6 +11,7 @@
 #include <game/entity/character.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include <game/request/auth_login/handler.h>
+#include "next_handler.h"
 #include "response_ok.h"
 #include "handler.h"
 
@@ -72,4 +73,6 @@ void game_request_create_character_handler(struct GameRequest* request)
         );
 
         game_request_auth_login_handler(request);
+
+        request->conn->handler = game_request_create_character_next_handler;
 }

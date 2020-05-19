@@ -5,6 +5,7 @@
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -21,4 +22,6 @@ void game_request_quest_list_handler(struct GameRequest* request)
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)
         );
+
+        request->conn->handler = game_request_quest_list_next_handler;
 }

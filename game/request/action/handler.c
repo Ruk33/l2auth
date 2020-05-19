@@ -5,13 +5,19 @@
 #include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
+#include <game/service/crypt/packet/encrypt.h>
+#include "next_handler.h"
+#include "response_fail.h"
 #include "handler.h"
 
 void game_request_action_handler(struct GameRequest* request)
 {
         assert(request);
 
+        unsigned char* encrypt_key = request->conn->encrypt_key;
+        struct GameClient* client = request->conn->client;
         unsigned char* req_content = l2_packet_content(request->packet);
+        l2_packet* response = game_request_action_fail_response(client);
 
         int object_id = 0;
         int origin_x = 0;
@@ -31,4 +37,13 @@ void game_request_action_handler(struct GameRequest* request)
         log_info("Origin y: %d", origin_y);
         log_info("Origin z: %d", origin_z);
         log_info("Action id: %d", action_id);
+
+        log_info("Simply fail action");
+
+        game_client_send_packet(
+                client, 
+                game_service_crypt_packet_encrypt(response, encrypt_key)
+        );
+
+        request->conn->handler = game_request_action_next_handler;
 }

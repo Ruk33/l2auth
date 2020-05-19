@@ -3,11 +3,12 @@
 
 #include <stdlib.h>
 #include <core/l2_packet.h>
+#include <game/connection.h>
 #include <game/client.h>
 
 struct GameServer;
 
-typedef void (* game_server_request_handler)(struct GameConnection* conn);
+typedef void (* game_server_request_handler)(struct GameConnection*);
 
 void game_server_broadcast_packet_to_clients
 (

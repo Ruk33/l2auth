@@ -9,6 +9,7 @@
 #include <game/client.h>
 #include <game/service/character/movement.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -54,4 +55,6 @@ void game_request_move_handler(struct GameRequest* request)
         );
 
        game_server_broadcast_packet_to_clients(server, response);
+
+       request->conn->handler = game_request_move_next_handler;
 }

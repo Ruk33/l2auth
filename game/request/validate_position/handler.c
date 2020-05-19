@@ -9,6 +9,7 @@
 #include <game/request/character_info/response.h>
 #include <game/service/character/movement.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -52,4 +53,6 @@ void game_request_validate_position_handler(struct GameRequest* request)
         // managing this response
         response = game_request_character_info_response(client);
         game_server_broadcast_packet(server, client, response);
+
+        request->conn->handler = game_request_validate_position_next_handler;
 }

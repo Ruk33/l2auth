@@ -3,6 +3,7 @@
 #include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
+#include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
@@ -19,4 +20,6 @@ void game_request_say_handler(struct GameRequest* request)
                 server,
                 response
         );
+
+        request->conn->handler = game_request_say_next_handler;
 }

@@ -2,6 +2,7 @@
 #include <log/log.h>
 #include <core/byte_reader.h>
 #include <game/request.h>
+#include "next_handler.h"
 #include "handler.h"
 
 void game_request_d0_handler(struct GameRequest* request)
@@ -15,11 +16,12 @@ void game_request_d0_handler(struct GameRequest* request)
         log_info("D0 ID: %d", id);
 
         switch (id) {
-                case 8:
-                        log_info("Requesting Manor List, ignoring");
-                        break;
-                default:
-                        log_fatal("Unknown id to handle from packet D0");
-                        break;
+        case 8:
+                log_info("Requesting Manor List, ignoring");
+                request->conn->handler = game_request_d0_next_handler;
+                break;
+        default:
+                log_fatal("Unknown id to handle from packet D0");
+                break;
         }
 }
