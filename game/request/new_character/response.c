@@ -51,6 +51,7 @@ void append_char
 l2_packet* game_request_new_character_response(struct GameClient* client)
 {
         assert(client);
+
         l2_packet_type type = 0x17;
         byte_builder* buffer = game_client_byte_builder(client, 1000);
         unsigned int chars = 10;

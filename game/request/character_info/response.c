@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <core/l2_string.h>
 #include <core/l2_packet.h>
@@ -9,6 +10,8 @@
 
 l2_packet* game_request_character_info_response(struct GameClient* client)
 {
+        assert(client);
+
         l2_packet_type type = 0x03;
         struct GameEntityCharacter* character = game_client_get_char(client);
         size_t name_as_string_length = l2_string_calculate_space_from_char(strlen(character->name) + 1);
@@ -17,7 +20,7 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
         int empty = 0;
         int pvp_flag = 0;
         int karma = 0;
-        int run_speed = 115;
+        int run_speed = 120;
         int walk_speed = 100;
         int swim_run_speed = 10;
         int swim_walk_speed = 10;
@@ -54,6 +57,7 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
         int p_attack_speed = 1;
         
         byte_builder* buffer = game_client_byte_builder(client, 1000);
+        assert(buffer);
 
         memset(name_as_string, 0, name_as_string_length);
         l2_string_from_char(name_as_string, character->name, strlen(character->name));
@@ -155,6 +159,6 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
                 client,
                 type,
                 buffer,
-                byte_builder_length(buffer)
+                (unsigned short) byte_builder_length(buffer)
         );
 }

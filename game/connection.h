@@ -13,7 +13,7 @@ struct GameConnection
         int is_encrypted;
         unsigned char encrypt_key[8];
         unsigned char decrypt_key[8];
-        void (*handler)(struct GameRequest*);
+        void* (*handler)(void*);
 };
 
 #endif

@@ -9,6 +9,7 @@
 #include <game/request/character_info/response.h>
 #include <game/service/character/movement.h>
 #include <game/service/crypt/packet/encrypt.h>
+#include <game/request/npc_info/response.h>
 #include "next_handler.h"
 #include "response.h"
 #include "handler.h"
@@ -16,9 +17,15 @@
 void game_request_validate_position_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->conn);
+        assert(request->packet);
+        assert(request->conn->server);
+        assert(request->conn->client);
+        assert(request->conn->encrypt_key);
 
-        struct GameClient* server = request->conn->server;
+        struct GameServer* server = request->conn->server;
         struct GameClient* client = request->conn->client;
+        unsigned char* encrypt_key = request->conn->encrypt_key;
         unsigned char* content = l2_packet_content(request->packet);
         int heading = 0;
         struct GameEntityLocation location;
@@ -53,6 +60,12 @@ void game_request_validate_position_handler(struct GameRequest* request)
         // managing this response
         response = game_request_character_info_response(client);
         game_server_broadcast_packet(server, client, response);
+
+        response = game_request_npc_info_response(client);
+        game_client_send_packet(
+                client,
+                game_service_crypt_packet_encrypt(response, encrypt_key)
+        );
 
         request->conn->handler = game_request_validate_position_next_handler;
 }

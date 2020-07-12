@@ -1,9 +1,12 @@
+#include <assert.h>
 #include <core/l2_packet.h>
 #include <game/client.h>
 #include "response.h"
 
 l2_packet* game_request_protocol_version_response(struct GameClient* client)
 {
+        assert(client);
+
         l2_packet_type type = 0x00;
         unsigned char content[] = {
                 0x01,

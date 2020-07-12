@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <core/l2_packet.h>
 #include <core/l2_string.h>
@@ -13,6 +14,9 @@ l2_packet* game_request_say_response
         l2_string* message
 )
 {
+        assert(client);
+        assert(message);
+
         l2_packet_type type = 0x4a;
         int text_type = 0;
         struct GameEntityCharacter *character = game_client_get_char(client);
@@ -26,6 +30,7 @@ l2_packet* game_request_say_response
                 l2_string_calculate_space_from_char(name_len);
         l2_string* name_as_string =
                 game_client_alloc_temp_mem(client, name_as_string_len);
+        assert(name_as_string);
 
         byte_builder* buffer = game_client_byte_builder(
                 client,
@@ -36,6 +41,7 @@ l2_packet* game_request_say_response
                         message_as_string_length
                 )
         );
+        assert(buffer);
 
         l2_string_from_char(
                 name_as_string,

@@ -16,6 +16,10 @@
 void game_request_move_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->conn);
+        assert(request->packet);
+        assert(request->conn->server);
+        assert(request->conn->client);
 
         struct GameServer* server = request->conn->server;
         struct GameClient* client = request->conn->client;

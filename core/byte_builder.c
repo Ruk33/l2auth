@@ -61,7 +61,7 @@ size_t byte_builder_length(byte_builder* builder)
 void byte_builder_append
 (
         byte_builder* builder,
-        unsigned char* content,
+        void* content,
         size_t content_size
 )
 {

@@ -2,6 +2,8 @@
 #define L2AUTH_GAME_CLIENT_H
 
 #include <stdlib.h>
+#include <core/memory.h>
+#include <core/circular_memory_alloc.h>
 #include <core/byte_builder.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -9,7 +11,23 @@
 #include <os/socket.h>
 #include <game/entity/character.h>
 
-struct GameClient;
+#define MAX_DATA_FROM_PACKET 65536
+#define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
+#define MEMORY_PER_CLIENT_IN_BYTES 131072
+
+struct GameClient
+{
+        os_socket_handler* socket_handler;
+        struct L2SessionKey session;
+
+        size_t received_data_size;
+        unsigned char received_data[MAX_DATA_FROM_PACKET];
+
+        circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
+        memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
+
+        struct GameEntityCharacter character;
+};
 
 size_t game_client_struct_size();
 

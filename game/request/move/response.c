@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
@@ -13,8 +14,12 @@ l2_packet* game_request_move_response
         struct GameEntityLocation new_location
 )
 {
+        assert(client);
+
         l2_packet_type type = 0x01;
         struct GameEntityCharacter* character = game_client_get_char(client);
+        assert(character);
+
         int obj_id = character->char_id;
 
         log_fatal("char move to loc -> obj id %d", obj_id);
@@ -27,6 +32,7 @@ l2_packet* game_request_move_response
                 sizeof(new_location) +
                 sizeof(prev_location)
         );
+        assert(buffer);
 
         byte_builder_append(buffer, (unsigned char *) &obj_id, sizeof(obj_id));
 

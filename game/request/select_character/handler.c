@@ -14,6 +14,10 @@
 void game_request_select_character_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->conn);
+        assert(request->packet);
+        assert(request->conn->encrypt_key);
+        assert(request->conn->client);
 
         unsigned char* encrypt_key = request->conn->encrypt_key;
         struct GameClient* client = request->conn->client;
@@ -51,7 +55,7 @@ void game_request_select_character_handler(struct GameRequest* request)
         log_info("Face ID %d", character->face);
 
         response = game_request_select_character_response(client, character);
-        
+
         game_client_send_packet(
                 client,
                 game_service_crypt_packet_encrypt(response, encrypt_key)

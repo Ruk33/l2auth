@@ -15,12 +15,16 @@
 void game_request_auth_login_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->packet);
+        assert(request->conn);
+        assert(request->conn->client);
+        assert(request->conn->encrypt_key);
 
-        struct GameClient* server = request->conn->server;
+        // struct GameServer* server = request->conn->server;
         struct GameClient* client = request->conn->client;
         unsigned char* encrypt_key = request->conn->encrypt_key;
         struct L2SessionKey* session = game_client_session(client);
-        unsigned char* content = l2_packet_content(request->packet);
+        l2_string* content = (l2_string*) l2_packet_content(request->packet);
 
         size_t login_len = l2_string_len((l2_string *) content) + 1;
         size_t login_name_str_len = l2_string_calculate_space_from_char(login_len);

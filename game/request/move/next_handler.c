@@ -7,8 +7,13 @@
 #include <game/request/enter_world/next_handler.h>
 #include "next_handler.h"
 
-void game_request_move_next_handler(struct GameRequest* request)
+void* game_request_move_next_handler(void* raw_request)
 {
+        assert(raw_request);
+
+        struct GameRequest* request = (struct GameRequest*) raw_request;
+        assert(request->packet);
+
         l2_packet* packet = request->packet;
         l2_packet_type packet_type = (l2_packet_type) (packet[2] & 0xff);
 
@@ -21,4 +26,6 @@ void game_request_move_next_handler(struct GameRequest* request)
                 game_request_enter_world_next_handler(request);
                 break;
         }
+
+        return NULL;
 }

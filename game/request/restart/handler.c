@@ -14,6 +14,9 @@
 void game_request_restart_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->conn);
+        assert(request->conn->encrypt_key);
+        assert(request->conn->client);
 
         unsigned char* encrypt_key = request->conn->encrypt_key;
         struct GameClient* client = request->conn->client;

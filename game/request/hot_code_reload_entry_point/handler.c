@@ -4,8 +4,10 @@
 #include <game/connection.h>
 #include "handler.h"
 
-void game_request_hot_code_reload_entry_point_handler(struct GameConnection* conn)
+void* game_request_hot_code_reload_entry_point_handler(void* raw_conn)
 {
+        struct GameConnection* conn = (struct GameConnection*) raw_conn;
+
         unsigned char encrypt_key[] = {
                 0x94,
                 0x35,
@@ -65,4 +67,6 @@ void game_request_hot_code_reload_entry_point_handler(struct GameConnection* con
         }
 
         log_info("Gameserver client connection closed");
+
+        return NULL;
 }

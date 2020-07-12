@@ -8,13 +8,6 @@
 #include <game/request/protocol_version/handler.h>
 #include "server.h"
 
-struct GameServer
-{
-        os_socket_handler* socket_handler;
-        size_t accepted_clients;
-        struct GameConnection** clients;
-};
-
 void game_server_broadcast_packet_to_clients
 (
         struct GameServer* server,
@@ -28,7 +21,7 @@ void game_server_broadcast_packet_to_clients
         struct GameClient* client;
         l2_raw_packet* encrypted_packet;
         size_t packet_size = l2_raw_packet_get_size(packet);
-        size_t full_packet_size = l2_raw_packet_calculate_size(packet_size);
+        size_t full_packet_size = l2_raw_packet_calculate_size((unsigned short) packet_size);
 
         log_info("Broadcasting packet to all clients");
         log_info("Clients count: %ld", server->accepted_clients);
@@ -68,7 +61,7 @@ void game_server_broadcast_packet
         struct GameClient* client;
         l2_raw_packet* encrypted_packet;
         size_t packet_size = l2_raw_packet_get_size(packet);
-        size_t full_packet_size = l2_raw_packet_calculate_size(packet_size);
+        size_t full_packet_size = l2_raw_packet_calculate_size((unsigned short) packet_size);
 
         log_info("Broadcasting packet to the rest of the clients");
         log_info("Clients count (ignoring myself): %ld", server->accepted_clients - 1);
@@ -146,7 +139,7 @@ struct GameConnection* game_server_get_client
 void game_server_accept_client
 (
         struct GameServer* server,
-        game_server_request_handler* handler
+        game_server_request_handler handler
 )
 {
         assert(server);
@@ -171,7 +164,7 @@ void game_server_start
 (
         struct GameServer* server,
         unsigned short port,
-        game_server_request_handler* handler
+        game_server_request_handler handler
 )
 {
         assert(server);
@@ -184,7 +177,7 @@ void game_server_start_or_die(unsigned short port, size_t max_players)
 {
         struct GameServer* server = game_server_create(max_players);
 
-        log_info("Starting gameserver");
+        log_info("Starting gameserver!");
 
         if (server == NULL) {
                 log_fatal("Not able to allocate memory for gameserver");

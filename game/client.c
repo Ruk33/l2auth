@@ -12,24 +12,6 @@
 #include <game/entity/character.h>
 #include "client.h"
 
-#define MAX_DATA_FROM_PACKET 65536
-#define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
-#define MEMORY_PER_CLIENT_IN_BYTES 131072
-
-struct GameClient
-{
-        os_socket_handler* socket_handler;
-        struct L2SessionKey session;
-
-        size_t received_data_size;
-        unsigned char received_data[MAX_DATA_FROM_PACKET];
-
-        circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
-        memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
-
-        struct GameEntityCharacter character;
-};
-
 size_t game_client_struct_size()
 {
         return sizeof(struct GameClient);
@@ -64,10 +46,10 @@ void game_client_init(struct GameClient* client)
                 TEMP_MEMORY_PER_CLIENT_IN_BYTES
         );
 
-        client->socket_handler = game_client_alloc(
-                client,
-                os_socket_handler_size()
-        );
+        // client->socket_handler = game_client_alloc(
+        //         client,
+        //         os_socket_handler_size()
+        // );
 }
 
 byte_builder* game_client_byte_builder

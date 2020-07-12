@@ -21,7 +21,7 @@ int game_service_crypt_checksum(unsigned char* data, size_t len)
         ecx  = (long) (data[i] &0xff);
         ecx |= (long) (data[i+1] << 8 &0xff00);
         ecx |= (long) (data[i+2] << 0x10 &0xff0000);
-        ecx |= (long) (data[i+3] << 0x18 &0xff000000);
+        ecx |= (long) (data[i+3] << 0x18 & (int) 0xff000000);
 
         data[i] = (unsigned char) (chksum &0xff);
         data[i+1] = (unsigned char) (chksum >>0x08 &0xff);

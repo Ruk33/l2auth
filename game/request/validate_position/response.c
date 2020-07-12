@@ -25,6 +25,7 @@ l2_packet* game_request_validate_position_response
                 sizeof(struct GameEntityLocation) +
                 sizeof(heading)
         );
+        assert(buffer);
 
         byte_builder_append(buffer, (unsigned char *) &char_id, sizeof(char_id));
 

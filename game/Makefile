@@ -1,4 +1,14 @@
-csrc = $(wildcard *.c) \
+main = $(wildcard main.c) \
+	$(wildcard code.c) \
+	$(wildcard handle_client.c) \
+	$(wildcard ../core/memory.c) \
+	$(wildcard ../os/*.c) \
+	$(wildcard ../os/linux/*.c)
+objmain = $(main:.c=.o)
+
+gameserverlib = $(wildcard client.c) \
+	$(wildcard server.c) \
+	$(wildcard client/*.c) \
 	$(wildcard request/action/*.c) \
 	$(wildcard request/auth_login/*.c) \
 	$(wildcard request/character_info/*.c) \
@@ -9,6 +19,7 @@ csrc = $(wildcard *.c) \
 	$(wildcard request/hot_code_reload_entry_point/*.c) \
 	$(wildcard request/move/*.c) \
 	$(wildcard request/new_character/*.c) \
+	$(wildcard request/npc_info/*.c) \
 	$(wildcard request/protocol_version/*.c) \
 	$(wildcard request/quest_list/*.c) \
 	$(wildcard request/restart/*.c) \
@@ -23,18 +34,18 @@ csrc = $(wildcard *.c) \
 	$(wildcard ../core/*.c) \
 	$(wildcard ../os/*.c) \
 	$(wildcard ../os/linux/*.c)
-obj = $(csrc:.c=.o)
+objgameserverlib = $(gameserverlib:.c=.o)
 
-CC = gcc
+CC = clang
 CLIBS = -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
 CFLAGS = $(CLIBS) -fPIC -I.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
-gameserver: $(obj)
-	$(CC) -o build/$@ $^ $(CLIBS)
+gameserver: $(objmain)
+	$(CC) -o build/$@ $^ -ldl -llog -Wl,-rpath,build
 
-lib: $(obj)
-	$(CC) -o build/libgameserver.so -shared -fPIC $^
+lib: $(objgameserverlib)
+	$(CC) -o build/libgameserver.so -shared -fPIC $^ $(CLIBS)
 
 .PHONY: clean
 clean:
-	rm -f $(obj) gameserver
+	rm -f $(objmain) gameserver && rm -f $(objgameserverlib) lib

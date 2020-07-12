@@ -22,7 +22,7 @@ typedef unsigned char memory;
  * 
  * size_t mem_to_be_reserved = 1024;
  * memory* mem = calloc(mem_to_be_reserved, 1);
- * memory_alloc_init(mem, mem_to_be_reserved);
+ * memory_init(mem, mem_to_be_reserved);
  */
 void memory_init(memory* mem, size_t reserved);
 

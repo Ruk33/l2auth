@@ -9,9 +9,14 @@
 #include "response.h"
 #include "handler.h"
 
-void game_request_protocol_version_handler(struct GameRequest* request)
+void* game_request_protocol_version_handler(void* raw_request)
 {
-        assert(request);
+        assert(raw_request);
+
+        struct GameRequest* request = (struct GameRequest*) raw_request;
+        assert(request->packet);
+        assert(request->conn);
+        assert(request->conn->client);
 
         struct GameClient* client = request->conn->client;
         unsigned char* content = l2_packet_content(request->packet);
@@ -21,7 +26,7 @@ void game_request_protocol_version_handler(struct GameRequest* request)
         log_info("Handling protocol version packet");
 
         byte_reader_cpy_int_n_mv(content, &protocol);
-        
+
         log_info("Protocol version %d", protocol);
         log_info("Returning crypt init");
 
@@ -29,4 +34,6 @@ void game_request_protocol_version_handler(struct GameRequest* request)
 
         request->conn->is_encrypted = 1;
         request->conn->handler = game_request_protocol_version_next_handler;
+
+        return NULL;
 }

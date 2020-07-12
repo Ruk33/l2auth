@@ -17,9 +17,11 @@ l2_packet* game_request_select_character_response
 )
 {
         assert(client);
+        assert(character);
 
         l2_packet_type type = 0x15;
         byte_builder* buffer = game_client_byte_builder(client, 1000);
+        assert(buffer);
 
         struct L2SessionKey* session = game_client_session(client);
         int playOK1 = session->playOK1;

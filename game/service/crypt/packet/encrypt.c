@@ -11,12 +11,16 @@ l2_packet* game_service_crypt_packet_encrypt
 )
 {
         unsigned int packet_size = l2_raw_packet_get_size(request);
+
         if (packet_size > 1) packet_size -= 2;
+
+        log_info("Encrypting packet");
         game_service_crypt_encrypt(
                 request + 2,
                 packet_size,
                 encrypt_key
         );
         log_info("Packet encrypted");
+
         return request;
 }

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 #include <log/log.h>
 #include <core/l2_string.h>
 #include <core/l2_raw_packet.h>
@@ -56,9 +57,13 @@ void game_handler_create_character_and_persist_into_db
 void game_request_create_character_handler(struct GameRequest* request)
 {
         assert(request);
+        assert(request->conn);
+        assert(request->packet);
+        assert(request->conn->encrypt_key);
+        assert(request->conn->client);
 
         unsigned char* encrypt_key = request->conn->encrypt_key;
-        struct GameClient* server = request->conn->server;
+        // struct GameServer* server = request->conn->server;
         struct GameClient* client = request->conn->client;
         l2_packet* response = game_request_character_create_response_ok(client);
         

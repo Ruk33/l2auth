@@ -14,6 +14,7 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
 
         l2_packet_type type = 0x04;
         byte_builder* buffer = game_client_byte_builder(client, 1000);
+        assert(buffer);
 
         int heading = 0;
         int exp = 10;
@@ -48,7 +49,7 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
         unsigned int m_def = 20;
         unsigned int pvp = 0;
         unsigned int karma = 0;
-        unsigned int run_speed = 115;
+        unsigned int run_speed = 120;
         unsigned int walk_speed = 100;
         unsigned int swim_run_speed = 10;
         unsigned int swim_walk_speed = 10;

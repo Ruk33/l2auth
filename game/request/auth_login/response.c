@@ -267,12 +267,17 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
         l2_packet_type type = 0x13;
 
         struct L2SessionKey* key = game_client_session(client);
+
         int play_ok_1 = key->playOK1;
+        assert(play_ok_1);
+
         size_t max_chars = 5;
         struct GameEntityCharacter** chars = game_client_alloc_temp_mem(
                 client,
                 sizeof(struct GameEntityCharacter *) * max_chars
         );
+        assert(chars);
+
         int char_count = 0;
         byte_builder* buffer;
 
@@ -281,6 +286,7 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
                         client,
                         sizeof(struct GameEntityCharacter)
                 );
+                assert(chars[i]);
         }
 
         char_count = game_service_character_list(chars, max_chars);
@@ -288,6 +294,7 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
                 client,
                 (size_t) (300 * (char_count + 1))
         );
+        assert(buffer);
 
         byte_builder_append(
                 buffer,

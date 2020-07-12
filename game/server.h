@@ -6,9 +6,14 @@
 #include <game/connection.h>
 #include <game/client.h>
 
-struct GameServer;
+struct GameServer
+{
+        os_socket_handler* socket_handler;
+        size_t accepted_clients;
+        struct GameConnection** clients;
+};
 
-typedef void (* game_server_request_handler)(struct GameConnection*);
+typedef void *(* game_server_request_handler)(void*);
 
 void game_server_broadcast_packet_to_clients
 (
