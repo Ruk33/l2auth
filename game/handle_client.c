@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <log/log.h>
 #include <os/socket.h>
-#include <core/memory.h>
+#include <os/memory.h>
 #include <game/state.h>
 #include <game/code.h>
 #include <game/client_connection.h>
@@ -32,7 +32,7 @@ void game_handle_client_request
 void game_handle_client_new(struct GameState* game_state, struct GameCode* game_code)
 {
         struct GameClientConnection* client;
-        os_socket_handler* socket = memory_alloc(game_state->memory, sizeof(os_socket_handler));
+        os_socket_handler* socket = memory_alloc(game_state->memory, os_socket_handler_size());
 
         os_socket_accept(game_state->server_socket, socket);
 
@@ -47,14 +47,9 @@ void game_handle_client_new(struct GameState* game_state, struct GameCode* game_
 
         client->socket = socket;
         client->memory = memory_alloc(game_state->memory, 1024 * 1024);
-        assert(client->memory);
         memory_init(client->memory, 1024 * 1024);
 
         log_info("Client memory initialized");
-
-        // Usually all the memory for each client should be requested
-        // from client->memory
-        // client->socket = memory_alloc(client->memory, sizeof(os_socket_handler));
 
         game_code_load(game_code);
         game_code->on_new_client(game_state, client);
@@ -71,7 +66,7 @@ void game_handle_client_listen
         size_t max_clients
 )
 {
-        game_state->server_socket = memory_alloc(game_state->memory, sizeof(os_socket_handler));
+        game_state->server_socket = memory_alloc(game_state->memory, os_socket_handler_size());
 
         os_socket_connect(game_state->server_socket);
         os_socket_bind(game_state->server_socket, port);

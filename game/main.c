@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <time.h>
-#include <core/memory.h>
+#include <os/memory.h>
 #include <game/state.h>
 #include <game/code.h>
 #include <game/handle_client.h>

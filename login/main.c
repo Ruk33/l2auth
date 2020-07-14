@@ -3,7 +3,6 @@
 #include <time.h>
 #include <log/log.h>
 #include <login/server.h>
-#include <core/memory.h>
 
 int main()
 {

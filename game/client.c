@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <log/log.h>
-#include <core/memory.h>
+#include <os/memory.h>
 #include <core/circular_memory_alloc.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>

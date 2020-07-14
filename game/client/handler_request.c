@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/memory.h>
+#include <os/memory.h>
 #include <core/l2_packet.h>
 #include <core/l2_raw_packet.h>
 #include <game/state.h>
@@ -30,7 +30,6 @@ void game_client_handler_request
                 client->memory,
                 sizeof(struct GameRequest)
         );
-        assert(game_request);
 
         unsigned short packet_size = 0;
         l2_packet_type packet_type;
@@ -41,7 +40,6 @@ void game_client_handler_request
                 client->memory,
                 l2_raw_packet_calculate_size(content_without_size_header_size)
         );
-        assert(packet);
 
         l2_raw_packet_init(
                 packet,

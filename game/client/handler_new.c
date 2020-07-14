@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <log/log.h>
-#include <core/memory.h>
+#include <os/memory.h>
 #include <game/state.h>
 #include <game/client_connection.h>
 #include <game/request/protocol_version/handler.h>
@@ -50,7 +50,6 @@ void game_client_handler_new
                 client->memory,
                 sizeof(struct GameConnection)
         );
-        assert(game_connection);
 
         log_info("Game connection initialized");
         log_info("Initializing dummy game server");
@@ -59,22 +58,18 @@ void game_client_handler_new
                 client->memory,
                 sizeof(struct GameServer)
         );
-        assert(game_connection->server);
 
         game_connection->server->accepted_clients = 1;
         game_connection->server->socket_handler = game_state->server_socket;
-
         game_connection->server->clients = memory_alloc(
                 client->memory,
                 sizeof(struct GameConnection *)
         );
-        assert(game_connection->server->clients);
 
         game_connection->client = memory_alloc(
                 client->memory,
                 sizeof(struct GameClient)
         );
-        assert(game_connection->client);
 
         game_connection->client->socket_handler = client->socket;
         game_client_init(game_connection->client);

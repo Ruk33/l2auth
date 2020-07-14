@@ -2,7 +2,7 @@
 #define L2AUTH_GAME_CLIENT_CONNECTION_H
 
 #include <os/socket.h>
-#include <core/memory.h>
+#include <os/memory.h>
 
 struct GameClientConnection {
         os_socket_handler* socket;

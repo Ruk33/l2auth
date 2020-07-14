@@ -1,7 +1,6 @@
 main = $(wildcard main.c) \
 	$(wildcard code.c) \
 	$(wildcard handle_client.c) \
-	$(wildcard ../core/memory.c) \
 	$(wildcard ../os/*.c) \
 	$(wildcard ../os/linux/*.c)
 objmain = $(main:.c=.o)

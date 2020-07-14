@@ -269,7 +269,6 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
         struct L2SessionKey* key = game_client_session(client);
 
         int play_ok_1 = key->playOK1;
-        assert(play_ok_1);
 
         size_t max_chars = 5;
         struct GameEntityCharacter** chars = game_client_alloc_temp_mem(
