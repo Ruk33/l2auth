@@ -12,6 +12,9 @@ l2_packet* game_request_quest_list_response(struct GameClient* client)
                 0,
                 0,
                 0,
+                0,
+                0,
+                0,
                 0
         };
 

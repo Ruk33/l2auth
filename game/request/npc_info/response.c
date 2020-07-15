@@ -51,8 +51,8 @@ l2_packet* game_request_npc_info_response(struct GameClient* client)
         size_t title_as_string_length;
         l2_string* title_as_string;
 
-        strcat(title, "Del barrio");
-        strcat(name, "La Roxxy");
+        strcat(title, "Gatekeeper");
+        strcat(name, "Roxxy");
 
         name_as_string_length = l2_string_calculate_space_from_char(strlen(name) + 1);
         name_as_string = game_client_alloc_temp_mem(client, name_as_string_length);

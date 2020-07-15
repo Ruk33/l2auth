@@ -9,7 +9,7 @@
 #include <core/session_key.h>
 #include <os/memory.h>
 #include <os/socket.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 
 #define MAX_DATA_FROM_PACKET 65536
 #define TEMP_MEMORY_PER_CLIENT_IN_BYTES 131072
@@ -26,14 +26,14 @@ struct GameClient
         circular_memory_space temp_memory[TEMP_MEMORY_PER_CLIENT_IN_BYTES];
         memory preallocated_memory[MEMORY_PER_CLIENT_IN_BYTES];
 
-        struct GameEntityCharacter character;
+        struct Player player;
 };
 
 size_t game_client_struct_size();
 
 struct L2SessionKey* game_client_session(struct GameClient* client);
 
-struct GameEntityCharacter* game_client_get_char(struct GameClient* client);
+struct Player* game_client_get_char(struct GameClient* client);
 
 void game_client_init(struct GameClient* client);
 
