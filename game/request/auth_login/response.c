@@ -7,14 +7,14 @@
 #include <core/session_key.h>
 #include <game/client.h>
 #include <game/service/character/list.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 #include "response.h"
 
 void game_packet_char_list_add_char_to_buffer
 (
         byte_builder* buffer,
         int play_ok_1,
-        struct GameEntityCharacter* character
+        struct Player* player
 )
 {
         char login[] = { 'r', 0, 'u', 0, 'k', 0, 'e', 0, 0, 0 };
@@ -69,18 +69,18 @@ void game_packet_char_list_add_char_to_buffer
         l2_string name[28];
 
         memset(name, 0, 28);
-        l2_string_from_char(name, character->name, strlen(character->name));
+        l2_string_from_char(name, player->character.name, strlen(player->character.name));
         
         byte_builder_append(
                 buffer,
                 (unsigned char *) name,
-                l2_string_calculate_space_from_char(strlen(character->name) + 1)
+                l2_string_calculate_space_from_char(strlen(player->character.name) + 1)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->char_id,
-                sizeof(character->char_id)
+                (unsigned char *) &player->character.id,
+                sizeof(player->character.id)
         );
 
         byte_builder_append(buffer, (unsigned char *) login, sizeof(login));
@@ -105,26 +105,26 @@ void game_packet_char_list_add_char_to_buffer
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->sex,
-                sizeof(character->sex)
+                (unsigned char *) &player->character.sex,
+                sizeof(player->character.sex)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->race_id,
-                sizeof(character->race_id)
+                (unsigned char *) &player->race_id,
+                sizeof(player->race_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->class_id,
-                sizeof(character->class_id)
+                (unsigned char *) &player->class_id,
+                sizeof(player->class_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->active,
-                sizeof(character->active)
+                (unsigned char *) &player->active,
+                sizeof(player->active)
         );
 
         byte_builder_append(
@@ -153,14 +153,14 @@ void game_packet_char_list_add_char_to_buffer
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_hp,
-                sizeof(character->current_hp)
+                (unsigned char *) &player->character.current_hp,
+                sizeof(player->character.current_hp)
         );
         
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_mp,
-                sizeof(character->current_mp)
+                (unsigned char *) &player->character.current_mp,
+                sizeof(player->character.current_mp)
         );
 
         byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
@@ -168,8 +168,8 @@ void game_packet_char_list_add_char_to_buffer
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->level,
-                sizeof(character->level)
+                (unsigned char *) &player->character.level,
+                sizeof(player->character.level)
         );
 
         byte_builder_append(buffer, (unsigned char *) &karma, sizeof(karma));
@@ -220,40 +220,40 @@ void game_packet_char_list_add_char_to_buffer
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->hair_style,
-                sizeof(character->hair_style)
+                (unsigned char *) &player->hair_style_id,
+                sizeof(player->hair_style_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->hair_color,
-                sizeof(character->hair_color)
+                (unsigned char *) &player->hair_color_id,
+                sizeof(player->hair_color_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->face,
-                sizeof(character->face)
+                (unsigned char *) &player->face,
+                sizeof(player->face)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->max_hp,
-                sizeof(character->max_hp)
+                (unsigned char *) &player->character.hp,
+                sizeof(player->character.hp)
         );
 
         byte_builder_append(
                 buffer, 
-                (unsigned char *) &character->max_mp,
-                sizeof(character->max_mp)
+                (unsigned char *) &player->character.mp,
+                sizeof(&player->character.mp)
         );
 
         byte_builder_append(buffer, (unsigned char *) &delete_days, sizeof(delete_days));
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->class_id,
-                sizeof(character->class_id)
+                (unsigned char *) &player->class_id,
+                sizeof(player->class_id)
         );
 
         byte_builder_append(buffer, (unsigned char *) &auto_select, sizeof(auto_select));
@@ -271,9 +271,9 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
         int play_ok_1 = key->playOK1;
 
         size_t max_chars = 5;
-        struct GameEntityCharacter** chars = game_client_alloc_temp_mem(
+        struct Player** chars = game_client_alloc_temp_mem(
                 client,
-                sizeof(struct GameEntityCharacter *) * max_chars
+                sizeof(struct Player *) * max_chars
         );
         assert(chars);
 
@@ -283,7 +283,7 @@ l2_packet* game_request_auth_login_response(struct GameClient* client)
         for (size_t i = 0; i < max_chars; i++) {
                 chars[i] = game_client_alloc_temp_mem(
                         client,
-                        sizeof(struct GameEntityCharacter)
+                        sizeof(struct Player)
                 );
                 assert(chars[i]);
         }

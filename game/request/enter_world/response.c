@@ -90,54 +90,54 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
         unsigned int fish_y = 0;
         unsigned int fish_z = 0;
         unsigned int name_color = 4294967295;
-        struct GameEntityCharacter* character = game_client_get_char(client);
+        struct Player* player = game_client_get_char(client);
         l2_string name[28];
-        int int_hp = (int) character->current_hp;
-        int int_mp = (int) character->current_mp;
-        int int_max_hp = (int) character->max_hp;
-        int int_max_mp = (int) character->max_mp;
+        int int_hp = (int) player->character.current_hp;
+        int int_mp = (int) player->character.current_mp;
+        int int_max_hp = (int) player->character.hp;
+        int int_max_mp = (int) player->character.mp;
 
-        log_info("Enter world, character information", character->name);
-        log_info("Name %s", character->name);
-        log_info("Char id %d", character->char_id);
-        log_info("Race id %d", character->race_id);
-        log_info("Class id %d", character->class_id);
-        log_info("Sex %d", character->sex);
-        log_info("Int %d", character->_int);
-        log_info("Str %d", character->str);
-        log_info("Con %d", character->con);
-        log_info("Men %d", character->men);
-        log_info("Dex %d", character->dex);
-        log_info("Wit %d", character->wit);
-        log_info("X %d", character->current_location.x);
-        log_info("Y %d", character->current_location.y);
-        log_info("Z %d", character->current_location.z);
-        log_info("Current hp %f", character->current_hp);
-        log_info("Current mp %f", character->current_mp);
-        log_info("Max hp %f", character->max_hp);
-        log_info("Max mp %f", character->max_mp);
-        log_info("Level %d", character->level);
-        log_info("Hair style %d", character->hair_style);
-        log_info("Hair color %d", character->hair_color);
-        log_info("Face ID %d", character->face);
+        log_info("Enter world, character information", player->character.name);
+        log_info("Name %s", player->character.name);
+        log_info("Char id %d", player->character.id);
+        log_info("Race id %d", player->race_id);
+        log_info("Class id %d", player->class_id);
+        log_info("Sex %d", player->character.sex);
+        log_info("Int %d", player->character._int);
+        log_info("Str %d", player->character.str);
+        log_info("Con %d", player->character.con);
+        log_info("Men %d", player->character.men);
+        log_info("Dex %d", player->character.dex);
+        log_info("Wit %d", player->character.wit);
+        log_info("X %d", player->character.x);
+        log_info("Y %d", player->character.y);
+        log_info("Z %d", player->character.z);
+        log_info("Current hp %f", player->character.current_hp);
+        log_info("Current mp %f", player->character.current_mp);
+        log_info("Max hp %f", player->character.hp);
+        log_info("Max mp %f", player->character.mp);
+        log_info("Level %d", player->character.level);
+        log_info("Hair style %d", player->hair_style_id);
+        log_info("Hair color %d", player->hair_color_id);
+        log_info("Face ID %d", player->face);
 
         memset(name, 0, 28);
-        l2_string_from_char(name, character->name, strlen(character->name));
+        l2_string_from_char(name, player->character.name, strlen(player->character.name));
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.x,
-                sizeof(character->current_location.x)
+                (unsigned char *) &player->character.x,
+                sizeof(player->character.x)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.y,
-                sizeof(character->current_location.y)
+                (unsigned char *) &player->character.y,
+                sizeof(player->character.y)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.z,
-                sizeof(character->current_location.z)
+                (unsigned char *) &player->character.z,
+                sizeof(player->character.z)
         );
         byte_builder_append(
                 buffer,
@@ -147,66 +147,66 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->char_id,
-                sizeof(character->char_id)
+                (unsigned char *) &player->character.id,
+                sizeof(player->character.id)
         );
 
         byte_builder_append(
                 buffer,
                 (unsigned char *) name,
-                l2_string_calculate_space_from_char(strlen(character->name) + 1)
+                l2_string_calculate_space_from_char(strlen(player->character.name) + 1)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->race_id,
-                sizeof(character->race_id)
+                (unsigned char *) &player->race_id,
+                sizeof(player->race_id)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->sex,
-                sizeof(character->sex)
+                (unsigned char *) &player->character.sex,
+                sizeof(player->character.sex)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->class_id,
-                sizeof(character->class_id)
+                (unsigned char *) &player->class_id,
+                sizeof(player->class_id)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->level,
-                sizeof(character->level)
+                (unsigned char *) &player->character.level,
+                sizeof(player->character.level)
         );
         byte_builder_append(buffer, (unsigned char *) &exp, sizeof(exp));
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->str,
-                sizeof(character->str)
+                (unsigned char *) &player->character.str,
+                sizeof(player->character.str)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->dex,
-                sizeof(character->dex)
+                (unsigned char *) &player->character.dex,
+                sizeof(player->character.dex)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->con,
-                sizeof(character->con)
+                (unsigned char *) &player->character.con,
+                sizeof(player->character.con)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->_int,
-                sizeof(character->_int)
+                (unsigned char *) &player->character._int,
+                sizeof(player->character._int)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->wit,
-                sizeof(character->wit)
+                (unsigned char *) &player->character.wit,
+                sizeof(player->character.wit)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->men,
-                sizeof(character->men)
+                (unsigned char *) &player->character.men,
+                sizeof(player->character.men)
         );
         byte_builder_append(
                 buffer,
@@ -300,18 +300,18 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->hair_style,
-                sizeof(character->hair_style)
+                (unsigned char *) &player->hair_style_id,
+                sizeof(player->hair_style_id)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->hair_color,
-                sizeof(character->hair_color)
+                (unsigned char *) &player->hair_color_id,
+                sizeof(player->hair_color_id)
         );
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->face,
-                sizeof(character->face)
+                (unsigned char *) &player->face,
+                sizeof(player->face)
         );
         byte_builder_append(buffer, (unsigned char *) &access_level, sizeof(access_level));
 
@@ -350,8 +350,8 @@ l2_packet* game_request_enter_world_response(struct GameClient* client)
         
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->class_id,
-                sizeof(character->class_id)
+                (unsigned char *) &player->class_id,
+                sizeof(player->class_id)
         );
 
         byte_builder_append(buffer, (unsigned char *) &empty_int, sizeof(empty_int));

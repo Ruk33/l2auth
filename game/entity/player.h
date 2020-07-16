@@ -1,7 +1,6 @@
 #ifndef L2AUTH_GAME_ENTITY_PLAYER_H
 #define L2AUTH_GAME_ENTITY_PLAYER_H
 
-#include <game/client.h>
 #include "character.h"
 #include "npc.h"
 
@@ -39,9 +38,10 @@ struct Player {
         int in_7signs_dungeon;
         int in_jail;
         int jail_timer;
+        int active;
 };
 
-void player_select_npc(struct GameClient *client, struct Npc *target);
+// void player_select_npc(struct GameClient *client, struct Npc *target);
 // void player_attack_player(struct Player *player, struct Player *target);
 // void player_attack_npc(struct Player *player, struct Npc *npc);
 

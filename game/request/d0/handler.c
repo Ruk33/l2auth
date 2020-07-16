@@ -17,7 +17,7 @@ void game_request_d0_handler(struct GameRequest* request)
         // struct GameClient* client = request->conn->client;
         // l2_packet* response = game_request_d0_response(client);
         unsigned char* content = l2_packet_content(request->packet);
-        unsigned short id = 0;
+        int id = 0;
 
         byte_reader_cpy_int_n_mv(content, &id);
         log_info("D0 ID: %d", id);

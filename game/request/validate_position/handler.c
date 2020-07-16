@@ -5,7 +5,7 @@
 #include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
-#include <game/entity/location.h>
+#include <game/entity/vec3.h>
 #include <game/request/character_info/response.h>
 #include <game/service/character/movement.h>
 #include <game/service/crypt/packet/encrypt.h>
@@ -28,8 +28,13 @@ void game_request_validate_position_handler(struct GameRequest* request)
         unsigned char* encrypt_key = request->conn->encrypt_key;
         unsigned char* content = l2_packet_content(request->packet);
         int heading = 0;
-        struct GameEntityLocation location;
+        struct Vec3 location;
+        struct Vec3 current_location;
         l2_packet* response;
+
+        current_location.x = game_client_get_char(client)->character.x;
+        current_location.y = game_client_get_char(client)->character.y;
+        current_location.z = game_client_get_char(client)->character.z;
 
         content = byte_reader_cpy_int_n_mv(content, &location.x);
         content = byte_reader_cpy_int_n_mv(content, &location.y);
@@ -50,7 +55,7 @@ void game_request_validate_position_handler(struct GameRequest* request)
 
         response = game_request_validate_position_response(
                 client,
-                game_client_get_char(client)->current_location,
+                current_location,
                 heading
         );
         game_server_broadcast_packet_to_clients(server, response);

@@ -15,8 +15,8 @@ void game_handle_client_request
         struct GameClientConnection* client
 )
 {
-        unsigned char buffer[65535];
-        size_t request_size = os_socket_receive(client->socket, buffer, sizeof(buffer));
+        unsigned char* buffer = memory_alloc(client->memory, 65535);
+        size_t request_size = os_socket_receive(client->socket, buffer, 65535);
         int closed_connection = request_size <= 0;
 
         game_code_load(game_code);
@@ -27,6 +27,8 @@ void game_handle_client_request
         }
 
         game_code->on_client_request(game_state, client, buffer, request_size);
+
+        memory_free(buffer);
 }
 
 void game_handle_client_new(struct GameState* game_state, struct GameCode* game_code)

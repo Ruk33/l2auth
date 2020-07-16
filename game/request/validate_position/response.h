@@ -3,12 +3,12 @@
 
 #include <core/l2_packet.h>
 #include <game/client.h>
-#include <game/entity/location.h>
+#include <game/entity/vec3.h>
 
 l2_packet* game_request_validate_position_response
 (
         struct GameClient* client,
-        struct GameEntityLocation location,
+        struct Vec3 location,
         int heading
 );
 

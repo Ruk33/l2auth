@@ -2,13 +2,13 @@
 #define L2AUTH_GAME_CLIENT_H
 
 #include <stdlib.h>
+#include <os/memory.h>
+#include <os/socket.h>
 #include <core/circular_memory_alloc.h>
 #include <core/byte_builder.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/session_key.h>
-#include <os/memory.h>
-#include <os/socket.h>
 #include <game/entity/player.h>
 
 #define MAX_DATA_FROM_PACKET 65536

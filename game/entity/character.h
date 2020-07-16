@@ -25,10 +25,10 @@ struct Character {
         int m_attack_speed;
         int walk_speed;
         int run_speed;
-        int hp;
-        int current_hp;
-        int mp;
-        int current_mp;
+        double hp;
+        double current_hp;
+        double mp;
+        double current_mp;
         int heading;
         int x;
         int y;

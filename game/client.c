@@ -23,9 +23,9 @@ struct L2SessionKey* game_client_session(struct GameClient* client)
         return &client->session;
 }
 
-struct GameEntityCharacter* game_client_get_char(struct GameClient* client)
+struct Player* game_client_get_char(struct GameClient* client)
 {
-        return &client->character;
+        return &client->player;
 }
 
 void game_client_init(struct GameClient* client)

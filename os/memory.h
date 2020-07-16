@@ -28,6 +28,6 @@ void memory_init(memory* mem, size_t reserved);
 
 void* memory_alloc(memory* from, size_t how_much);
 
-void memory_free(memory* block);
+void memory_free(void* block);
 
 #endif

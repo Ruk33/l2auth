@@ -2,27 +2,27 @@
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
 #include <game/client.h>
-#include <game/entity/character.h>
-#include <game/entity/location.h>
+#include <game/entity/player.h>
+#include <game/entity/vec3.h>
 #include "response.h"
 
 l2_packet* game_request_validate_position_response
 (
         struct GameClient* client,
-        struct GameEntityLocation location,
+        struct Vec3 location,
         int heading
 )
 {
         assert(client);
 
         l2_packet_type type = 0x61;
-        struct GameEntityCharacter* character = game_client_get_char(client);
-        int char_id = character->char_id;
+        struct Player* player = game_client_get_char(client);
+        int char_id = player->character.id;
 
         byte_builder* buffer = game_client_byte_builder(
                 client,
                 sizeof(char_id) +
-                sizeof(struct GameEntityLocation) +
+                sizeof(struct Vec3) +
                 sizeof(heading)
         );
         assert(buffer);

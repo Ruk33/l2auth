@@ -7,17 +7,17 @@
 #include <core/byte_builder.h>
 #include <core/session_key.h>
 #include <game/client.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 #include "response.h"
 
 l2_packet* game_request_select_character_response
 (
         struct GameClient* client,
-        struct GameEntityCharacter* character
+        struct Player* player
 )
 {
         assert(client);
-        assert(character);
+        assert(player);
 
         l2_packet_type type = 0x15;
         byte_builder* buffer = game_client_byte_builder(client, 1000);
@@ -36,18 +36,18 @@ l2_packet* game_request_select_character_response
         l2_string name[28];
 
         memset(name, 0, 28);
-        l2_string_from_char(name, character->name, strlen(character->name));
+        l2_string_from_char(name, player->character.name, strlen(player->character.name));
         
         byte_builder_append(
                 buffer,
                 (unsigned char *) name,
-                l2_string_calculate_space_from_char(strlen(character->name) + 1)
+                l2_string_calculate_space_from_char(strlen(player->character.name) + 1)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->char_id,
-                sizeof(character->char_id)
+                (unsigned char *) &player->character.id,
+                sizeof(player->character.id)
         );
         byte_builder_append(buffer, title, sizeof(title));
         byte_builder_append(buffer, (unsigned char *) &playOK1, sizeof(playOK1));
@@ -56,56 +56,56 @@ l2_packet* game_request_select_character_response
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->sex,
-                sizeof(character->sex)
+                (unsigned char *) &player->character.sex,
+                sizeof(player->character.sex)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->race_id,
-                sizeof(character->race_id)
+                (unsigned char *) &player->race_id,
+                sizeof(player->race_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->class_id,
-                sizeof(character->class_id)
+                (unsigned char *) &player->class_id,
+                sizeof(player->class_id)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->active,
-                sizeof(character->active)
+                (unsigned char *) &player->active,
+                sizeof(player->active)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.x,
-                sizeof(character->current_location.x)
+                (unsigned char *) &player->character.x,
+                sizeof(player->character.x)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.y,
-                sizeof(character->current_location.y)
+                (unsigned char *) &player->character.y,
+                sizeof(player->character.y)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_location.z,
-                sizeof(character->current_location.z)
+                (unsigned char *) &player->character.z,
+                sizeof(player->character.z)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_hp,
-                sizeof(character->current_hp)
+                (unsigned char *) &player->character.current_hp,
+                sizeof(player->character.current_hp)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->current_mp,
-                sizeof(character->current_mp)
+                (unsigned char *) &player->character.current_mp,
+                sizeof(player->character.current_mp)
         );
         
         byte_builder_append(buffer, (unsigned char *) &sp, sizeof(sp));
@@ -113,8 +113,8 @@ l2_packet* game_request_select_character_response
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->level,
-                sizeof(character->level)
+                (unsigned char *) &player->character.level,
+                sizeof(player->character.level)
         );
 
         byte_builder_append(buffer, (unsigned char *) &empty, sizeof(empty));
@@ -122,38 +122,38 @@ l2_packet* game_request_select_character_response
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->_int,
-                sizeof(character->_int)
+                (unsigned char *) &player->character._int,
+                sizeof(player->character._int)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->str,
-                sizeof(character->str)
+                (unsigned char *) &player->character.str,
+                sizeof(player->character.str)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->con,
-                sizeof(character->con)
+                (unsigned char *) &player->character.con,
+                sizeof(player->character.con)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->men,
-                sizeof(character->men)
+                (unsigned char *) &player->character.men,
+                sizeof(player->character.men)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->dex,
-                sizeof(character->dex)
+                (unsigned char *) &player->character.dex,
+                sizeof(player->character.dex)
         );
 
         byte_builder_append(
                 buffer,
-                (unsigned char *) &character->wit,
-                sizeof(character->wit)
+                (unsigned char *) &player->character.wit,
+                sizeof(player->character.wit)
         );
 
         for (int i = 0; i < 30; i++) {

@@ -9,6 +9,7 @@
 #include <game/server.h>
 #include <game/client.h>
 #include <game/service/character/create.h>
+#include <game/entity/player.h>
 #include <game/entity/character.h>
 #include <game/service/crypt/packet/encrypt.h>
 #include <game/request/auth_login/handler.h>
@@ -25,33 +26,33 @@ void game_handler_create_character_and_persist_into_db
         assert(client);
         assert(request);
 
-        struct GameEntityCharacter character;
-        size_t max_name_len = sizeof(character.name);
+        struct Player player;
+        size_t max_name_len = sizeof(player.character.name);
         l2_string* l2_name = game_client_alloc_temp_mem(
                 client,
                 l2_string_calculate_space_from_char(max_name_len)
         );
         unsigned char* content = l2_packet_content(request);
 
-        l2_string_from_l2(l2_name, (l2_string *) request, max_name_len);
-        l2_string_to_char(l2_name, character.name, max_name_len);
+        l2_string_from_l2(l2_name, (l2_string *) content, max_name_len);
+        l2_string_to_char(l2_name, player.character.name, max_name_len);
 
-        content += l2_string_calculate_space_from_char(strlen(character.name) + 1);
+        content += l2_string_calculate_space_from_char(strlen(player.character.name) + 1);
 
-        content = byte_reader_cpy_int_n_mv(content, &character.race_id);
-        content = byte_reader_cpy_int_n_mv(content, &character.sex);
-        content = byte_reader_cpy_int_n_mv(content, &character.class_id);
-        content = byte_reader_cpy_int_n_mv(content, &character._int);
-        content = byte_reader_cpy_int_n_mv(content, &character.str);
-        content = byte_reader_cpy_int_n_mv(content, &character.con);
-        content = byte_reader_cpy_int_n_mv(content, &character.men);
-        content = byte_reader_cpy_int_n_mv(content, &character.dex);
-        content = byte_reader_cpy_int_n_mv(content, &character.wit);
-        content = byte_reader_cpy_int_n_mv(content, &character.hair_style);
-        content = byte_reader_cpy_int_n_mv(content, &character.hair_color);
-        content = byte_reader_cpy_int_n_mv(content, &character.face);
+        content = byte_reader_cpy_int_n_mv(content, &player.race_id);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.sex);
+        content = byte_reader_cpy_int_n_mv(content, &player.class_id);
+        content = byte_reader_cpy_int_n_mv(content, &player.character._int);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.str);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.con);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.men);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.dex);
+        content = byte_reader_cpy_int_n_mv(content, &player.character.wit);
+        content = byte_reader_cpy_int_n_mv(content, &player.hair_style_id);
+        content = byte_reader_cpy_int_n_mv(content, &player.hair_color_id);
+        content = byte_reader_cpy_int_n_mv(content, &player.face);
 
-        game_service_character_create(&character);
+        game_service_character_create(&player);
 }
 
 void game_request_create_character_handler(struct GameRequest* request)

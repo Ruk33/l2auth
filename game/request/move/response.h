@@ -3,13 +3,13 @@
 
 #include <core/l2_packet.h>
 #include <game/client.h>
-#include <game/entity/location.h>
+#include <game/entity/vec3.h>
 
 l2_packet* game_request_move_response
 (
         struct GameClient* client,
-        struct GameEntityLocation prev_location,
-        struct GameEntityLocation new_location
+        struct Vec3 prev_location,
+        struct Vec3 new_location
 );
 
 #endif

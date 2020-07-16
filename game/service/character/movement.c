@@ -1,30 +1,30 @@
 #include <assert.h>
 #include <math.h>
-#include <game/entity/character.h>
-#include <game/entity/location.h>
+#include <game/entity/player.h>
+#include <game/entity/vec3.h>
 #include "movement.h"
 
 void game_service_character_movement_new_target
 (
-        struct GameEntityCharacter* character,
-        struct GameEntityLocation* target
+        struct Player* player,
+        struct Vec3* target
 )
 {
-        assert(character);
+        assert(player);
         assert(target);
 
-        character->target_location.x = target->x;
-        character->target_location.y = target->y;
-        character->target_location.z = target->z;
+        // player->character.target_location.x = target->x;
+        // player->character.target_location.y = target->y;
+        // player->character.target_location.z = target->z;
 }
 
 void game_service_character_movement_validate_and_update
 (
-        struct GameEntityCharacter* character,
-        struct GameEntityLocation* location
+        struct Player* player,
+        struct Vec3* location
 )
 {
-        assert(character);
+        assert(player);
         assert(location);
 
         /*double dx = character->target_location.x - location->x;
@@ -42,7 +42,7 @@ void game_service_character_movement_validate_and_update
                 new_y = location->y;// + 0.6 * sin(a);
         }*/
 
-        character->current_location.x = location->x;//new_x;
-        character->current_location.y = location->y;//new_y;
-        character->current_location.z = location->z;
+        player->character.x = location->x;//new_x;
+        player->character.y = location->y;//new_y;
+        player->character.z = location->z;
 }

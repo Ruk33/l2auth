@@ -3,12 +3,12 @@
 
 #include <core/l2_packet.h>
 #include <game/client.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 
 l2_packet* game_request_select_character_response
 (
         struct GameClient* client,
-        struct GameEntityCharacter* character
+        struct Player* player
 );
 
 #endif

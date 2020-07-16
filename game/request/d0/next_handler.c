@@ -16,6 +16,8 @@ void* game_request_d0_next_handler(void* raw_request)
         l2_packet* packet = request->packet;
         l2_packet_type packet_type = (l2_packet_type) (packet[2] & 0xff);
 
+        log_info("Handling d0 next handler");
+
         switch(packet_type) {
         case  GAME_REQUEST_TYPE_REQUEST_QUEST_LIST:
                 game_request_quest_list_handler(request);

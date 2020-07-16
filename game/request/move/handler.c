@@ -3,7 +3,7 @@
 #include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
-#include <game/entity/location.h>
+#include <game/entity/vec3.h>
 #include <game/request.h>
 #include <game/server.h>
 #include <game/client.h>
@@ -26,12 +26,14 @@ void game_request_move_handler(struct GameRequest* request)
 
         unsigned char* content = l2_packet_content(request->packet);
 
-        struct GameEntityLocation* prev_location;
-        struct GameEntityLocation new_location;
+        struct Vec3 prev_location;
+        struct Vec3 new_location;
 
         l2_packet* response;
 
-        prev_location = &game_client_get_char(client)->current_location;
+        prev_location.x = game_client_get_char(client)->character.x;
+        prev_location.y = game_client_get_char(client)->character.y;
+        prev_location.z = game_client_get_char(client)->character.z;
 
         content = byte_reader_cpy_int_n_mv(content, &new_location.x);
         content = byte_reader_cpy_int_n_mv(content, &new_location.y);
@@ -39,9 +41,9 @@ void game_request_move_handler(struct GameRequest* request)
 
         log_info(
                 "Trying to move character from x: %d, y: %d, z: %d to x: %d, y: %d, z: %d",
-                prev_location->x,
-                prev_location->y,
-                prev_location->z,
+                prev_location.x,
+                prev_location.y,
+                prev_location.z,
                 new_location.x,
                 new_location.y,
                 new_location.z
@@ -54,7 +56,7 @@ void game_request_move_handler(struct GameRequest* request)
 
         response = game_request_move_response(
                 client,
-                *prev_location,
+                prev_location,
                 new_location
         );
 

@@ -5,7 +5,7 @@
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
 #include <game/client.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 #include "response.h"
 
 l2_packet* game_request_character_info_response(struct GameClient* client)
@@ -13,8 +13,8 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
         assert(client);
 
         l2_packet_type type = 0x03;
-        struct GameEntityCharacter* character = game_client_get_char(client);
-        size_t name_as_string_length = l2_string_calculate_space_from_char(strlen(character->name) + 1);
+        struct Player* player = game_client_get_char(client);
+        size_t name_as_string_length = l2_string_calculate_space_from_char(strlen(player->character.name) + 1);
         l2_string* name_as_string = game_client_alloc_temp_mem(client, name_as_string_length);
         int heading = 0;
         int empty = 0;
@@ -60,17 +60,17 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
         assert(buffer);
 
         memset(name_as_string, 0, name_as_string_length);
-        l2_string_from_char(name_as_string, character->name, strlen(character->name));
+        l2_string_from_char(name_as_string, player->character.name, strlen(player->character.name));
 
-        byte_builder_append(buffer, &character->current_location.x, sizeof(character->current_location.x));
-        byte_builder_append(buffer, &character->current_location.y, sizeof(character->current_location.y));
-        byte_builder_append(buffer, &character->current_location.z, sizeof(character->current_location.z));
+        byte_builder_append(buffer, &player->character.x, sizeof(player->character.x));
+        byte_builder_append(buffer, &player->character.y, sizeof(player->character.y));
+        byte_builder_append(buffer, &player->character.z, sizeof(player->character.z));
         byte_builder_append(buffer, &heading, sizeof(heading));
-        byte_builder_append(buffer, &character->char_id, sizeof(character->char_id));
+        byte_builder_append(buffer, &player->character.id, sizeof(player->character.id));
         byte_builder_append(buffer, name_as_string, name_as_string_length);
-        byte_builder_append(buffer, &character->race_id, sizeof(character->race_id));
-        byte_builder_append(buffer, &character->sex, sizeof(character->sex));
-        byte_builder_append(buffer, &character->class_id, sizeof(character->class_id));
+        byte_builder_append(buffer, &player->race_id, sizeof(player->race_id));
+        byte_builder_append(buffer, &player->character.sex, sizeof(player->character.sex));
+        byte_builder_append(buffer, &player->class_id, sizeof(player->class_id));
         byte_builder_append(buffer, &empty, sizeof(empty));
 
         // paperdoll
@@ -108,9 +108,9 @@ l2_packet* game_request_character_info_response(struct GameClient* client)
         byte_builder_append(buffer, &collision_radius, sizeof(collision_radius));
         byte_builder_append(buffer, &collision_height, sizeof(collision_height));
 
-        byte_builder_append(buffer, &character->hair, sizeof(character->hair));
-        byte_builder_append(buffer, &character->hair_color, sizeof(character->hair_color));
-        byte_builder_append(buffer, &character->face, sizeof(character->face));
+        byte_builder_append(buffer, &player->hair_style_id, sizeof(player->hair_style_id));
+        byte_builder_append(buffer, &player->hair_color_id, sizeof(player->hair_color_id));
+        byte_builder_append(buffer, &player->face, sizeof(player->face));
 
         byte_builder_append(buffer, title, sizeof(title));
         byte_builder_append(buffer, &clan_id, sizeof(clan_id));

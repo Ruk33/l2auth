@@ -17,7 +17,7 @@ void memory_init(memory* mem, size_t reserved)
         memset(mem, 0, reserved);
 
         // First byte tell us how many blocks are available
-        *(mem) = memory_blocks_for_mem(reserved);
+        *((unsigned char *) mem) = memory_blocks_for_mem(reserved);
 }
 
 void* memory_alloc(memory* from, size_t how_much)
@@ -39,14 +39,15 @@ void* memory_alloc(memory* from, size_t how_much)
         assert(max_blocks >= required_blocks);
 
         // First byte stores how many blocks were used for this alloc 
-        *block = required_blocks;
+        *((unsigned char *) block) = required_blocks;
         return block + sizeof(unsigned char);
 }
 
-void memory_free(memory* block)
+void memory_free(void* block)
 {
         assert(block);
 
         // This chunk of alloc memory no longer uses any blocks
-        *(block - sizeof(unsigned char)) = 0;
+        memory* block_as_mem = (memory *) block;
+        *(block_as_mem - sizeof(unsigned char)) = 0;
 }

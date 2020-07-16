@@ -5,7 +5,7 @@
 #include <core/l2_string.h>
 #include <core/byte_builder.h>
 #include <game/client.h>
-#include <game/entity/character.h>
+#include <game/entity/player.h>
 #include "response.h"
 
 l2_packet* game_request_say_response
@@ -19,13 +19,13 @@ l2_packet* game_request_say_response
 
         l2_packet_type type = 0x4a;
         int text_type = 0;
-        struct GameEntityCharacter *character = game_client_get_char(client);
+        struct Player *player = game_client_get_char(client);
 
         size_t message_length = l2_string_len(message) + 1;
         size_t message_as_string_length =
                 l2_string_calculate_space_from_char(message_length);
 
-        size_t name_len = strlen(character->name) + 1;
+        size_t name_len = strlen(player->character.name) + 1;
         size_t name_as_string_len =
                 l2_string_calculate_space_from_char(name_len);
         l2_string* name_as_string =
@@ -35,7 +35,7 @@ l2_packet* game_request_say_response
         byte_builder* buffer = game_client_byte_builder(
                 client,
                 (
-                        sizeof(character->char_id) +
+                        sizeof(player->character.id) +
                         sizeof(text_type) +
                         name_as_string_len +
                         message_as_string_length
@@ -45,14 +45,14 @@ l2_packet* game_request_say_response
 
         l2_string_from_char(
                 name_as_string,
-                character->name,
+                player->character.name,
                 name_len
         );
 
         byte_builder_append(
                 buffer,
-                &character->char_id,
-                sizeof(character->char_id)
+                &player->character.id,
+                sizeof(player->character.id)
         );
         byte_builder_append(buffer, &text_type, sizeof(text_type));
         byte_builder_append(buffer, name_as_string, name_as_string_len);

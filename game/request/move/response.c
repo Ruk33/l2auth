@@ -3,24 +3,24 @@
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
 #include <game/client.h>
-#include <game/entity/character.h>
-#include <game/entity/location.h>
+#include <game/entity/player.h>
+#include <game/entity/vec3.h>
 #include "response.h"
 
 l2_packet* game_request_move_response
 (
         struct GameClient* client,
-        struct GameEntityLocation prev_location,
-        struct GameEntityLocation new_location
+        struct Vec3 prev_location,
+        struct Vec3 new_location
 )
 {
         assert(client);
 
         l2_packet_type type = 0x01;
-        struct GameEntityCharacter* character = game_client_get_char(client);
-        assert(character);
+        struct Player* player = game_client_get_char(client);
+        assert(player);
 
-        int obj_id = character->char_id;
+        int obj_id = player->character.id;
 
         log_fatal("char move to loc -> obj id %d", obj_id);
         log_fatal("new x: %d, new y: %d, new z: %d", new_location.x, new_location.y, new_location.z);
