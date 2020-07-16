@@ -21,10 +21,10 @@ void* byte_reader_cpy_n_mv
         size_t to_copy
 );
 
-void* byte_reader_cpy_int_n_mv(void* src, void* dest);
+void* byte_reader_cpy_int_n_mv(void* src, int* dest);
 
-void* byte_reader_cpy_short_n_mv(void* src, void* dest);
+void* byte_reader_cpy_short_n_mv(void* src, short* dest);
 
-void* byte_reader_cpy_char_n_mv(void* src, void* dest);
+void* byte_reader_cpy_char_n_mv(void* src, char* dest);
 
 #endif

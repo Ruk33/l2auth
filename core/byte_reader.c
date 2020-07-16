@@ -16,17 +16,17 @@ void* byte_reader_cpy_n_mv
         return src + to_copy;
 }
 
-void* byte_reader_cpy_int_n_mv(void* src, void* dest)
+void* byte_reader_cpy_int_n_mv(void* src, int* dest)
 {
         return byte_reader_cpy_n_mv(src, dest, sizeof(int));
 }
 
-void* byte_reader_cpy_short_n_mv(void* src, void* dest)
+void* byte_reader_cpy_short_n_mv(void* src, short* dest)
 {
         return byte_reader_cpy_n_mv(src, dest, sizeof(short));
 }
 
-void* byte_reader_cpy_char_n_mv(void* src, void* dest)
+void* byte_reader_cpy_char_n_mv(void* src, char* dest)
 {
         return byte_reader_cpy_n_mv(src, dest, sizeof(char));
 }
