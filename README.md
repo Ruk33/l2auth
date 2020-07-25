@@ -31,8 +31,8 @@ For the time being, the server is capable of:
 - Receive Lineage 2 packets
 - Log in
 - Enter world
-- Restart
-- Very early multiple connection support
+- Restart -> Broken because of refactor
+- Very early multiple connection support -> Broken because of refactor
 
 ## Lineage 2 Protocol
 Lineage 2 uses TCP in order to send packets.
@@ -48,10 +48,10 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `os`: OS related code (sockets, threads, etc.)
 - `os/<implementation>`: For the time being only Linux implementation are being written down but more can be added by easily creating a new folder and implementing all the header files in the `os` folder. Make sure to update `game/Makefile` to use the new implementation instead of `os/linux` (replace `$(wildcard ../os/linux/*.c)` with new implementation, ie `$(wildcard ../os/windows/*.c)`).
 - `game`: Game server code
-- `game/request`: Handlers & responses for each client request
-- `game/entity`: All game server entities such as characters
-- `game/service`: -
-- `game/storage`: Logic to persist information in disk
+- `game/lib`: Server implementation. All of this gets loaded dynamically as a library
+- `game/lib/entity`: Entities (player, character, etc.)
+- `game/lib/request_handler`: Handlers for requests (move, protocol version, etc.)
+- `game/lib/storage`: Code related to storage (saving chars, etc.)
 - `login`: Login server code
 - `login/dto`: Data transfer objects
 - `login/handler`: Handlers for each client request
