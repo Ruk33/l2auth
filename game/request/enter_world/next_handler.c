@@ -19,6 +19,8 @@ void* game_request_enter_world_next_handler(void* raw_request)
         l2_packet* packet = request->packet;
         l2_packet_type packet_type = (l2_packet_type) (packet[2] & 0xff);
 
+        log_info("Handling from enter world next handler!");
+
         switch(packet_type) {
         case  GAME_REQUEST_TYPE_MOVE_BACKWARDS_TO_LOCATION:
                 game_request_move_handler(request);

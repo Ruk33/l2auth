@@ -26,10 +26,7 @@ void game_client_handler_request
         assert(request);
 
         struct GameConnection* game_connection = (struct GameConnection*) client->conn;
-        struct GameRequest* game_request = memory_alloc(
-                client->memory,
-                sizeof(struct GameRequest)
-        );
+        struct GameRequest game_request;
 
         unsigned short packet_size = 0;
         l2_packet_type packet_type;
@@ -62,12 +59,9 @@ void game_client_handler_request
 
         log_info("Packet type %02X", packet_type);
 
-        game_request->conn = game_connection;
-        game_request->packet = packet;
+        game_request.conn = game_connection;
+        game_request.packet = packet;
 
         assert(game_connection->handler);
-        game_connection->handler(game_request);
-
-        memory_free(packet);
-        memory_free(game_request);
+        game_connection->handler(&game_request);
 }

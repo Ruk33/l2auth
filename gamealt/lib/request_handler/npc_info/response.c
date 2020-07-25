@@ -1,17 +1,16 @@
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
-#include <core/l2_string.h>
-#include <core/l2_packet.h>
 #include <core/byte_builder.h>
-#include <game/client.h>
-#include "response.h"
+#include <core/l2_packet.h>
+#include <core/l2_string.h>
+#include "../../client.h"
+#include "../../packet_builder.h"
+#include "handler.h"
 
-l2_packet* game_request_npc_info_response(struct GameClient* client)
+l2_packet *npc_info_response(struct Client *client)
 {
-        assert(client);
-
         l2_packet_type type = 0x16;
+        l2_packet *response;
 
         int obj_id = 1;
         int template_id = 7006 + 1000000;
@@ -19,7 +18,7 @@ l2_packet* game_request_npc_info_response(struct GameClient* client)
 
         /// Validating position - x: -84760, y: 242436, z: -3730
         // -84594, y: 242387, z: -3730
-        // roxxy -84108,244604,-3654, 40960
+        // Roxxy -84108,244604,-3654, 40960
         int x = -84108;
         int y = 244604;
         int z = -3654;
@@ -39,11 +38,8 @@ l2_packet* game_request_npc_info_response(struct GameClient* client)
         double col_radius = 8.0;
         double col_height = 25.0;
 
-        char* name = game_client_alloc_temp_mem(client, 20);
-        assert(name);
-
-        char* title = game_client_alloc_temp_mem(client, 20);
-        assert(title);
+        char* name = client_alloc_mem(client, 20);
+        char* title = client_alloc_mem(client, 20);
 
         size_t name_as_string_length;
         l2_string* name_as_string;
@@ -51,22 +47,21 @@ l2_packet* game_request_npc_info_response(struct GameClient* client)
         size_t title_as_string_length;
         l2_string* title_as_string;
 
+        size_t buf_size = 1000;
+        byte_builder *buf = client_alloc_mem(client, buf_size);
+        byte_builder* buffer = byte_builder_init(buf, buf_size);
+
         strcat(title, "Gatekeeper");
         strcat(name, "Nro");
 
         name_as_string_length = l2_string_calculate_space_from_char(strlen(name) + 1);
-        name_as_string = game_client_alloc_temp_mem(client, name_as_string_length);
-        assert(name_as_string);
+        name_as_string = client_alloc_mem(client, name_as_string_length);
 
         title_as_string_length = l2_string_calculate_space_from_char(strlen(title) + 1);
-        title_as_string = game_client_alloc_temp_mem(client, title_as_string_length);
-        assert(title_as_string);
+        title_as_string = client_alloc_mem(client, title_as_string_length);
 
         l2_string_from_char(name_as_string, name, strlen(name));
         l2_string_from_char(title_as_string, title, strlen(title));
-
-        byte_builder* buffer = game_client_byte_builder(client, 1000);
-        assert(buffer);
 
         byte_builder_append(buffer, &obj_id, sizeof(obj_id));
         byte_builder_append(buffer, &template_id, sizeof(template_id));
@@ -127,10 +122,18 @@ l2_packet* game_request_npc_info_response(struct GameClient* client)
         byte_builder_append(buffer, &empty_d, sizeof(empty_d));
         byte_builder_append(buffer, &empty, sizeof(empty));
 
-        return game_client_create_packet(
+        response = packet_builder_new(
                 client,
                 type,
                 buffer,
                 (unsigned short) byte_builder_length(buffer)
         );
+
+        client_free_mem(client, name);
+        client_free_mem(client, title);
+        client_free_mem(client, name_as_string);
+        client_free_mem(client, title_as_string);
+        client_free_mem(client, buf);
+
+        return response;
 }
