@@ -1,6 +1,0 @@
-#ifndef L2AUTH_GAME_REQUEST_PROTOCOL_VERSION_NEXT_HANDLER_H
-#define L2AUTH_GAME_REQUEST_PROTOCOL_VERSION_NEXT_HANDLER_H
-
-void* game_request_protocol_version_next_handler(void* raw_request);
-
-#endif

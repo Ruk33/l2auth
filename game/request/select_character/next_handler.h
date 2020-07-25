@@ -1,6 +1,0 @@
-#ifndef L2AUTH_GAME_REQUEST_SELECT_CHARACTER_NEXT_HANDLER_H
-#define L2AUTH_GAME_REQUEST_SELECT_CHARACTER_NEXT_HANDLER_H
-
-void* game_request_select_character_next_handler(void* raw_request);
-
-#endif

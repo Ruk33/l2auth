@@ -1,6 +1,0 @@
-#ifndef L2AUTH_GAME_REQUEST_HOT_CODE_RELOAD_ENTRY_POINT_HANDLER
-#define L2AUTH_GAME_REQUEST_HOT_CODE_RELOAD_ENTRY_POINT_HANDLER
-
-void* game_request_hot_code_reload_entry_point_handler(void* raw_conn);
-
-#endif
