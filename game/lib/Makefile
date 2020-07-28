@@ -1,4 +1,6 @@
 gameserverlib = $(wildcard ./*.c) \
+	$(wildcard cache/memory/*.c) \
+	$(wildcard entity/*.c) \
 	$(wildcard request_handler/action/*.c) \
 	$(wildcard request_handler/auth_login/*.c) \
 	$(wildcard request_handler/d0/*.c) \
@@ -12,7 +14,6 @@ gameserverlib = $(wildcard ./*.c) \
 	$(wildcard request_handler/select_character/*.c) \
 	$(wildcard request_handler/validate_position/*.c) \
 	$(wildcard storage/sqlite3/*.c) \
-	$(wildcard entity/*.c) \
 	$(wildcard ../shared/*.c) \
 	$(wildcard ../../core/*.c) \
 	$(wildcard ../../os/linux/*.c)

@@ -40,6 +40,12 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
 
         response = move_response(client, prev_location, new_location);
 
+        player->character.x = new_location.x;
+        player->character.y = new_location.y;
+        player->character.z = new_location.z;
+
+        client_update_character(client, player);
+
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
 

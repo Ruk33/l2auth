@@ -9,11 +9,13 @@
 #include "encrypt.h"
 #include "request_handler/protocol_version/handler.h"
 #include "entity/pc.h"
+#include "cache/world.h"
 #include "client.h"
 
 struct Client {
         client_id id;
         struct L2Server *l2_server;
+        struct World *world;
         int conn_encrypted;
         unsigned char decrypt_key[8];
         unsigned char encrypt_key[8];
@@ -29,6 +31,9 @@ struct Client *client_new(struct L2Server *l2_server, client_id id)
 
         client->id = id;
         client->l2_server = l2_server;
+
+        // (franco.montenegro) Fix, we won't create a new world for each client
+        client->world = world_new(l2_server);
 
         client->conn_encrypted = 0;
         memcpy(client->encrypt_key, key, sizeof(key));
@@ -132,14 +137,16 @@ void client_decrypt_packet(struct Client *client, l2_raw_packet *packet)
 
 void client_update_character(struct Client *client, struct Pc *character)
 {
-        memcpy(&client->character, character, sizeof(struct Pc));
+        // memcpy(&client->character, character, sizeof(struct Pc));
+        world_update_player(client->world, client->id, character);
 }
 
 struct Pc *client_character(struct Client *client)
 {
-        struct Pc *character = client_alloc_mem(client, sizeof(struct Pc));
-        memcpy(character, &client->character, sizeof(struct Pc));
-        return character;
+        // struct Pc *character = client_alloc_mem(client, sizeof(struct Pc));
+        // memcpy(character, &client->character, sizeof(struct Pc));
+        // return character;
+        return world_get_player(client->world, client->id);
 }
 
 void client_handle_disconnect(struct Client *client)
