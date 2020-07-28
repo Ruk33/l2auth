@@ -46,7 +46,9 @@ struct Client *client_new(struct L2Server *l2_server, client_id id)
 
 void *client_alloc_mem(struct Client *client, size_t how_much)
 {
-        return client->l2_server->alloc(how_much);
+        void *mem = client->l2_server->alloc(how_much);
+        memset(mem, 0, how_much);
+        return mem;
 }
 
 void client_free_mem(struct Client *client, void *mem)
@@ -65,15 +67,12 @@ void client_handle_request(struct Client *client, char *request, size_t request_
                 client,
                 l2_raw_packet_calculate_size((unsigned short) request_size)
         );
-        l2_packet_type packet_type;
 
         l2_raw_packet_init(packet, packet_content, packet_size);
 
         if (client->conn_encrypted) client_decrypt_packet(client, packet);
         client->conn_encrypted = 1;
 
-        packet_type = (l2_packet_type) (packet[2] & 0xff);
-        log_info("Packet type %02X", packet_type);
         log_info("Packet type %02X", l2_packet_get_type(packet));
 
         client->handle_request(client, packet);
@@ -120,7 +119,7 @@ void client_encrypt_packet(struct Client *client, l2_raw_packet *packet)
         assert(client);
         assert(packet);
         unsigned char *packet_content = l2_raw_packet_content(packet);
-        unsigned int packet_size = l2_raw_packet_get_size(packet);
+        l2_raw_packet_size packet_size = l2_raw_packet_get_size(packet);
         if (packet_size > 1) packet_size = (unsigned short) (packet_size - 2);
         encrypt(packet_content, packet_size, client->encrypt_key);
 }
@@ -130,7 +129,7 @@ void client_decrypt_packet(struct Client *client, l2_raw_packet *packet)
         assert(client);
         assert(packet);
         unsigned char *packet_content = l2_raw_packet_content(packet);
-        unsigned int packet_size = l2_raw_packet_get_size(packet);
+        l2_raw_packet_size packet_size = l2_raw_packet_get_size(packet);
         if (packet_size > 1) packet_size = (unsigned short) (packet_size - 2);
         decrypt(packet_content, packet_size, client->decrypt_key);
 }

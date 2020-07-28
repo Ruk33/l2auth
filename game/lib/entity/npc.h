@@ -8,8 +8,8 @@ struct Npc {
         int template_id;
         int server_side_name;
         char _class[200];
-        int collision_radiuos;
-        int collision_height;
+        double collision_radius;
+        double collision_height;
         char type[20];
         int attack_range;
         int aggro;

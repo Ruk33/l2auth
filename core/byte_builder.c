@@ -86,3 +86,18 @@ void byte_builder_append
         memcpy(builder + len, content, content_size);
         memcpy(builder - allocated_metadata, &new_len, sizeof(new_len));
 }
+
+void byte_builder_append_char(byte_builder* builder, char *content)
+{
+        byte_builder_append(builder, content, sizeof(char));
+}
+
+void byte_builder_append_int(byte_builder* builder, int* content)
+{
+        byte_builder_append(builder, content, sizeof(int));
+}
+
+void byte_builder_append_double(byte_builder* builder, double* content)
+{
+        byte_builder_append(builder, content, sizeof(double));
+}

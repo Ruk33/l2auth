@@ -15,15 +15,16 @@ size_t byte_builder_calculate_size(size_t to_be_allocated);
 /**
  * Before using the byte builder make sure to initialize it first
  */
-byte_builder* byte_builder_init(byte_builder* builder, size_t allocated);
+byte_builder* byte_builder_init(byte_builder *builder, size_t allocated);
 
-size_t byte_builder_length(byte_builder* builder);
+size_t byte_builder_length(byte_builder *builder);
 
-void byte_builder_append
-(
-        byte_builder* builder,
-        void* content,
-        size_t content_size
-);
+void byte_builder_append(byte_builder* builder, void* content, size_t content_size);
+
+void byte_builder_append_char(byte_builder* builder, char *content);
+
+void byte_builder_append_int(byte_builder* builder, int *content);
+
+void byte_builder_append_double(byte_builder* builder, double *content);
 
 #endif

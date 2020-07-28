@@ -14,7 +14,7 @@ l2_packet *enter_world_response(struct Client *client)
 
         size_t buf_size = byte_builder_calculate_size(1024);
         byte_builder *buf = client_alloc_mem(client, buf_size);
-        byte_builder* buffer = byte_builder_init(buf, buf_size);
+        byte_builder *buffer = byte_builder_init(buf, buf_size);
 
         int heading = 0;
         int exp = 10;

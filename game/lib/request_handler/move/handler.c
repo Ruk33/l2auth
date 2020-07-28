@@ -5,18 +5,19 @@
 #include "../../client.h"
 #include "../../entity/pc.h"
 #include "../../entity/vec3.h"
+#include "../npc_info/handler.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
 
 void move_handler(struct Client *client, l2_raw_packet *packet)
 {
-        unsigned char* content = l2_packet_content(packet);
+        unsigned char *content = l2_packet_content(packet);
 
         struct Vec3 prev_location;
         struct Vec3 new_location;
 
-        l2_packet* response;
+        l2_packet *response;
 
         struct Pc *player = client_character(client);
 
@@ -48,6 +49,8 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
 
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
+
+        npc_info_handler(client, NULL);
 
         client_update_request_handler(client, move_next_handler);
 

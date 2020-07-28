@@ -19,15 +19,15 @@ struct World *world_new(struct L2Server *l2_server)
 
 void world_update_player(struct World *world, int id, struct Pc *player)
 {
-        log_info("Updating playing stored with id %d", id);
+        log_info("Updating player stored with id %d", id);
         memcpy(&world->player, player, sizeof(struct Pc));
 }
 
-struct Player *world_get_player(struct World *world, int id)
+struct Pc *world_get_player(struct World *world, int id)
 {
         struct Pc *player = world->l2_server->alloc(sizeof(struct Pc));
 
-        log_info("Getting playing stored with id %d", id);
+        log_info("Getting player stored with id %d", id);
         memcpy(player, &world->player, sizeof(struct Pc));
 
         return player;
