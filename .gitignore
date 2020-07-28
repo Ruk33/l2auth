@@ -41,6 +41,29 @@
 *.su
 *.idb
 *.pdb
+*.expand
+*.vregs
+*.into_cfglayout
+*.jump
+*.reginfo
+*.outof_cfglayout
+*.split1
+*.dfinit
+*.asmcons
+*.ira
+*.reload
+*.split2
+*.pro_and_epilogue
+*.jump2
+*.stack
+*.alignments
+*.mach
+*.barriers
+*.shorten
+*.nothrow
+*.dwarf2
+*.final
+*.dfinish
 
 # Kernel Module Compile Results
 *.mod*

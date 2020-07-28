@@ -46,9 +46,7 @@ struct Client *client_new(struct L2Server *l2_server, client_id id)
 
 void *client_alloc_mem(struct Client *client, size_t how_much)
 {
-        void *mem = client->l2_server->alloc(how_much);
-        memset(mem, 0, how_much);
-        return mem;
+        return client->l2_server->alloc(how_much);
 }
 
 void client_free_mem(struct Client *client, void *mem)
