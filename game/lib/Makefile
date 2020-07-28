@@ -24,7 +24,7 @@ CLIBS = -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
 CFLAGS = $(CLIBS) -v -da -Q -g -O0 -fPIC -I../.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 lib: $(objgameserverlib)
-	$(CC) -o ../build/libgameserver.so -v -da -Q -g -O0 -shared -fPIC $^ $(CLIBS)
+	mkdir -p ../build && $(CC) -o ../build/libgameserver.so -v -da -Q -g -O0 -shared -fPIC $^ $(CLIBS)
 
 .PHONY: clean
 clean:
