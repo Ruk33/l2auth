@@ -12,7 +12,7 @@ CLIBS = -lpthread -llog -lcrypto -lssl
 CFLAGS = $(CLIBS) -I.. -fPIC -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 loginserver: $(obj)
-	$(CC) -o build/$@ $^ $(CLIBS)
+	mkdir -p build && $(CC) -o build/$@ $^ $(CLIBS)
 
 .PHONY: clean
 clean:
