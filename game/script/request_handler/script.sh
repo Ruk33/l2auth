@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Packet handler and response generator"
+echo "Request handler"
 
 echo ""
 
@@ -8,6 +8,7 @@ echo "Example:"
 
 echo ""
 
+echo "Packet name:"
 echo "  protocol_version"
 
 echo ""
@@ -29,14 +30,14 @@ echo "Generating packet handler and response for $packet_name_lowercase"
 
 mkdir -p lib/request_handler/$packet_name_lowercase
 
-cp script/packet_builder/template/handler.h lib/request_handler/$packet_name_lowercase
-cp script/packet_builder/template/handler.c lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/handler.h lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/handler.c lib/request_handler/$packet_name_lowercase
 
-cp script/packet_builder/template/response.h lib/request_handler/$packet_name_lowercase
-cp script/packet_builder/template/response.c lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/response.h lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/response.c lib/request_handler/$packet_name_lowercase
 
-cp script/packet_builder/template/next_handler.h lib/request_handler/$packet_name_lowercase
-cp script/packet_builder/template/next_handler.c lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/next_handler.h lib/request_handler/$packet_name_lowercase
+cp script/request_handler/template/next_handler.c lib/request_handler/$packet_name_lowercase
 
 sed -i "s/PACKET_NAME/$packet_name_uppercase/g" lib/request_handler/$packet_name_lowercase/handler.h
 sed -i "s/PACKET_LOWERCASE_NAME/$packet_name_lowercase/g" lib/request_handler/$packet_name_lowercase/handler.h
