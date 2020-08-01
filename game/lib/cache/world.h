@@ -10,7 +10,7 @@ struct World;
 
 struct World *world_new(struct L2Server *server);
 
-void world_update_player(struct World *world, int id, struct Pc *player);
+void world_update_player(struct World *world, struct Pc *player);
 
 struct Character *world_get_character(struct World *world, int id);
 

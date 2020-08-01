@@ -21,11 +21,11 @@ gameserverlib = $(wildcard ./*.c) \
 objgameserverlib = $(gameserverlib:.c=.o)
 
 CC = gcc
-CLIBS = -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
-CFLAGS = $(CLIBS) -fPIC -I../.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
+CLIBS = -I../.. `pkg-config --cflags --libs glib-2.0` -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
+CFLAGS = $(CLIBS) -shared -fPIC -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 lib: $(objgameserverlib)
-	mkdir -p ../build && $(CC) -o ../build/libgameserver.so -shared -fPIC $^ $(CLIBS)
+	mkdir -p ../build && $(CC) -o ../build/libgameserver.so -shared -fPIC $(CFLAGS) $^
 
 .PHONY: clean
 clean:

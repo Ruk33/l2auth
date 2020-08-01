@@ -136,8 +136,8 @@ void client_decrypt_packet(struct Client *client, l2_raw_packet *packet)
 
 void client_update_character(struct Client *client, struct Pc *character)
 {
-        // memcpy(&client->character, character, sizeof(struct Pc));
-        world_update_player(client->world, client->id, character);
+        memcpy(&client->character, character, sizeof(struct Pc));
+        world_update_player(client->world, character);
 }
 
 struct Character *client_character(struct Client *client, int obj_id)
@@ -150,7 +150,8 @@ struct Pc *client_player(struct Client *client)
         // struct Pc *character = client_alloc_mem(client, sizeof(struct Pc));
         // memcpy(character, &client->character, sizeof(struct Pc));
         // return character;
-        return world_get_player(client->world, client->id);
+        struct Pc player = client->character;
+        return world_get_player(client->world, player.character.id);
 }
 
 void client_spawn_npc(struct Client *client, struct Npc *npc)
