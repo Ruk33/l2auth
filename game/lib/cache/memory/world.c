@@ -1,7 +1,8 @@
 #include <string.h>
 #include <log/log.h>
-#include "../../entity/character.h"
-#include "../../entity/pc.h"
+#include "../../dto/character.h"
+#include "../../dto/npc.h"
+#include "../../dto/pc.h"
 #include "../world.h"
 
 struct World {
@@ -43,4 +44,10 @@ struct Pc *world_get_player(struct World *world, int id)
         memcpy(player, &world->player, sizeof(struct Pc));
 
         return player;
+}
+
+void world_spawn_npc(struct World *world, struct Npc *npc)
+{
+        log_info("Spawning npc with id %d", npc->character.id);
+        memcpy(&world->npc, &npc->character, sizeof(struct Character));
 }

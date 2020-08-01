@@ -9,6 +9,7 @@
 #include "encrypt.h"
 #include "request_handler/protocol_version/handler.h"
 #include "dto/character.h"
+#include "dto/npc.h"
 #include "dto/pc.h"
 #include "cache/world.h"
 #include "client.h"
@@ -150,6 +151,11 @@ struct Pc *client_player(struct Client *client)
         // memcpy(character, &client->character, sizeof(struct Pc));
         // return character;
         return world_get_player(client->world, client->id);
+}
+
+void client_spawn_npc(struct Client *client, struct Npc *npc)
+{
+        world_spawn_npc(client->world, npc);
 }
 
 void client_handle_disconnect(struct Client *client)

@@ -2,8 +2,9 @@
 #define WORLD_H
 
 #include "../../shared/l2_server.h"
-#include "../entity/character.h"
-#include "../entity/pc.h"
+#include "../dto/character.h"
+#include "../dto/npc.h"
+#include "../dto/pc.h"
 
 struct World;
 
@@ -14,5 +15,7 @@ void world_update_player(struct World *world, int id, struct Pc *player);
 struct Character *world_get_character(struct World *world, int id);
 
 struct Pc *world_get_player(struct World *world, int id);
+
+void world_spawn_npc(struct World *world, struct Npc *npc);
 
 #endif

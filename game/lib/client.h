@@ -7,6 +7,7 @@
 #include "../shared/l2_server.h"
 #include "../shared/client_id.h"
 #include "dto/character.h"
+#include "dto/npc.h"
 #include "dto/pc.h"
 
 struct Client;
@@ -30,6 +31,8 @@ void client_decrypt_packet(struct Client *client, l2_raw_packet *packet);
 void client_update_character(struct Client *client, struct Pc *character);
 struct Character *client_character(struct Client *client, int obj_id);
 struct Pc *client_player(struct Client *client);
+
+void client_spawn_npc(struct Client *client, struct Npc *npc);
 
 void client_handle_disconnect(struct Client *client);
 

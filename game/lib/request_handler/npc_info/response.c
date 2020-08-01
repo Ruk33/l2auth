@@ -126,6 +126,8 @@ l2_packet *npc_info_response(struct Client *client)
         byte_builder_append_double(buffer, &empty_d);
         byte_builder_append_int(buffer, &empty);
 
+        client_spawn_npc(client, &npc);
+
         response = packet_builder_new(
                 client,
                 type,
