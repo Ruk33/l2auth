@@ -1,10 +1,11 @@
 #include <math.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
-#include "character.h"
+#include "../dto/character.h"
 #include "../request_handler/action/my_target_selected_response.h"
 #include "../request_handler/action/action_fail_response.h"
-#include "pc.h"
+#include "../client.h"
+#include "../dto/pc.h"
 
 static void player_send_fail_action_response(struct Client *client)
 {
@@ -42,7 +43,7 @@ static void player_send_select_target_response(struct Client *client, struct Cha
         client_free_mem(client, response);
 }
 
-void player_action(struct Client *client, struct Character *target)
+void player_entity_action(struct Client *client, struct Character *target)
 {
         if (!target) {
                 player_send_fail_action_response(client);

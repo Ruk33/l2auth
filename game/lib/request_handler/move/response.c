@@ -3,8 +3,8 @@
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
 #include "../../client.h"
-#include "../../entity/pc.h"
-#include "../../entity/vec3.h"
+#include "../../dto/pc.h"
+#include "../../dto/vec3.h"
 #include "../../packet_builder.h"
 #include "response.h"
 

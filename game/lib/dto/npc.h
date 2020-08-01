@@ -22,8 +22,4 @@ struct Npc {
         int absorb_level;
 };
 
-// void npc_attack_npc(struct Npc *npc, struct Npc *target);
-// void npc_attack_player(struct Npc *npc, struct Player *target);
-
-
 #endif

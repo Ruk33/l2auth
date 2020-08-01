@@ -8,7 +8,8 @@
 #include "decrypt.h"
 #include "encrypt.h"
 #include "request_handler/protocol_version/handler.h"
-#include "entity/pc.h"
+#include "dto/character.h"
+#include "dto/pc.h"
 #include "cache/world.h"
 #include "client.h"
 

@@ -3,7 +3,7 @@
 #include <core/byte_builder.h>
 #include <core/l2_packet.h>
 #include <core/l2_string.h>
-#include "../../entity/npc.h"
+#include "../../dto/npc.h"
 #include "../../client.h"
 #include "../../packet_builder.h"
 #include "handler.h"

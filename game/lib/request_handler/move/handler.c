@@ -3,8 +3,8 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include "../../client.h"
-#include "../../entity/pc.h"
-#include "../../entity/vec3.h"
+#include "../../dto/pc.h"
+#include "../../dto/vec3.h"
 #include "../npc_info/handler.h"
 #include "response.h"
 #include "next_handler.h"

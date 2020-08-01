@@ -1,5 +1,6 @@
 gameserverlib = $(wildcard ./*.c) \
 	$(wildcard cache/memory/*.c) \
+	$(wildcard dto/*.c) \
 	$(wildcard entity/*.c) \
 	$(wildcard request_handler/action/*.c) \
 	$(wildcard request_handler/auth_login/*.c) \

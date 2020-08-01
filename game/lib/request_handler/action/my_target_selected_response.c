@@ -3,7 +3,7 @@
 #include <core/byte_builder.h>
 #include "../../client.h"
 #include "../../packet_builder.h"
-#include "response.h"
+#include "my_target_selected_response.h"
 
 l2_packet *my_target_selected_response(struct Client *client, int object_id, short color)
 {

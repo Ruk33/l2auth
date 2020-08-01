@@ -6,8 +6,8 @@
 #include <core/session_key.h>
 #include "../shared/l2_server.h"
 #include "../shared/client_id.h"
-#include "entity/character.h"
-#include "entity/pc.h"
+#include "dto/character.h"
+#include "dto/pc.h"
 
 struct Client;
 typedef void (* request_handler)(struct Client *client, l2_raw_packet *packet);

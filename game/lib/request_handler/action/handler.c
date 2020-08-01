@@ -7,7 +7,6 @@
 #include "my_target_selected_response.h"
 #include "../../entity/character.h"
 #include "../../entity/pc.h"
-#include "response.h"
 #include "handler.h"
 
 void action_handler(struct Client *client, l2_raw_packet *packet)
@@ -39,7 +38,7 @@ void action_handler(struct Client *client, l2_raw_packet *packet)
         log_info("Action id: %d", action_id);
 
         target = client_character(client, object_id);
-        player_action(client, target);
+        player_entity_action(client, target);
 
         // response = my_target_selected_response(client, object_id, 2);
 
