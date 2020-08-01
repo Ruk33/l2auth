@@ -6,6 +6,7 @@
 #include <core/session_key.h>
 #include "../shared/l2_server.h"
 #include "../shared/client_id.h"
+#include "entity/character.h"
 #include "entity/pc.h"
 
 struct Client;
@@ -27,7 +28,8 @@ void client_encrypt_packet(struct Client *client, l2_raw_packet *packet);
 void client_decrypt_packet(struct Client *client, l2_raw_packet *packet);
 
 void client_update_character(struct Client *client, struct Pc *character);
-struct Pc *client_character(struct Client *client);
+struct Character *client_character(struct Client *client, int obj_id);
+struct Pc *client_player(struct Client *client);
 
 void client_handle_disconnect(struct Client *client);
 

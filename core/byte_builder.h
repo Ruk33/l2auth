@@ -25,6 +25,8 @@ void byte_builder_append_char(byte_builder* builder, char *content);
 
 void byte_builder_append_int(byte_builder* builder, int *content);
 
+void byte_builder_append_short(byte_builder* builder, short *content);
+
 void byte_builder_append_double(byte_builder* builder, double *content);
 
 #endif

@@ -44,5 +44,6 @@ struct Pc {
 // void player_select_npc(struct GameClient *client, struct Npc *target);
 // void player_attack_player(struct Player *player, struct Player *target);
 // void player_attack_npc(struct Player *player, struct Npc *npc);
+void player_action(struct Client *client, struct Character *target);
 
 #endif

@@ -13,7 +13,7 @@ l2_packet *move_response(struct Client *client, struct Vec3 prev_location, struc
         l2_packet_type type = 0x01;
         l2_packet *response;
         
-        struct Pc* player = client_character(client);
+        struct Pc* player = client_player(client);
         int obj_id = player->character.id;
 
         size_t buf_size = byte_builder_calculate_size(

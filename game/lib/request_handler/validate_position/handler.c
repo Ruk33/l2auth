@@ -12,7 +12,7 @@ void validate_position_handler(struct Client *client, l2_raw_packet *packet)
         l2_packet *response;
         unsigned char* content = l2_packet_content(packet);
 
-        struct Pc *player = client_character(client);
+        struct Pc *player = client_player(client);
 
         int heading = 0;
         struct Vec3 location;

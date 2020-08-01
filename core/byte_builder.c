@@ -97,6 +97,11 @@ void byte_builder_append_int(byte_builder* builder, int* content)
         byte_builder_append(builder, content, sizeof(int));
 }
 
+void byte_builder_append_short(byte_builder* builder, short *content)
+{
+        byte_builder_append(builder, content, sizeof(short));
+}
+
 void byte_builder_append_double(byte_builder* builder, double* content)
 {
         byte_builder_append(builder, content, sizeof(double));

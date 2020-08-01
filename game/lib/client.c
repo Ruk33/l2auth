@@ -138,7 +138,12 @@ void client_update_character(struct Client *client, struct Pc *character)
         world_update_player(client->world, client->id, character);
 }
 
-struct Pc *client_character(struct Client *client)
+struct Character *client_character(struct Client *client, int obj_id)
+{
+        return world_get_character(client->world, obj_id);
+}
+
+struct Pc *client_player(struct Client *client)
 {
         // struct Pc *character = client_alloc_mem(client, sizeof(struct Pc));
         // memcpy(character, &client->character, sizeof(struct Pc));

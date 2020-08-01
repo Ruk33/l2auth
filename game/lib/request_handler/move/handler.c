@@ -19,7 +19,7 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
 
         l2_packet *response;
 
-        struct Pc *player = client_character(client);
+        struct Pc *player = client_player(client);
 
         prev_location.x = player->character.x;
         prev_location.y = player->character.y;

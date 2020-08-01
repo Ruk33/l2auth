@@ -91,7 +91,7 @@ l2_packet *enter_world_response(struct Client *client)
         unsigned int fish_z = 0;
         unsigned int name_color = 4294967295;
 
-        struct Pc* player = client_character(client);
+        struct Pc* player = client_player(client);
 
         l2_string name[28];
         int int_hp = (int) player->character.current_hp;

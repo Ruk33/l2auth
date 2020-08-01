@@ -12,7 +12,7 @@ l2_packet *validate_position_response(struct Client *client, struct Vec3 locatio
         l2_packet_type type = 0x61;
         l2_packet *response;
 
-        struct Pc *player = client_character(client);
+        struct Pc *player = client_player(client);
         int char_id = player->character.id;
 
         size_t buf_size = byte_builder_calculate_size(

@@ -13,7 +13,7 @@ l2_packet *say_response(struct Client *client, l2_string* message)
         l2_packet_type type = 0x4a;
         l2_packet *response;
 
-        struct Pc *player = client_character(client);
+        struct Pc *player = client_player(client);
         int text_type = 0;
 
         size_t message_length = l2_string_len(message) + 1;

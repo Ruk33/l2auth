@@ -14,7 +14,7 @@ l2_packet *select_character_response(struct Client *client)
         l2_packet *response;
 
         struct L2SessionKey* session = client_session(client);
-        struct Pc *player = client_character(client);
+        struct Pc *player = client_player(client);
 
         size_t buf_size = byte_builder_calculate_size(1024);
         byte_builder* buf = client_alloc_mem(client, buf_size);
