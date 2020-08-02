@@ -1,24 +1,20 @@
-gameserverlib = $(wildcard ./*.c) \
-	$(wildcard cache/memory/*.c) \
-	$(wildcard dto/*.c) \
-	$(wildcard entity/*.c) \
-	$(wildcard request_handler/action/*.c) \
-	$(wildcard request_handler/auth_login/*.c) \
-	$(wildcard request_handler/d0/*.c) \
-	$(wildcard request_handler/enter_world/*.c) \
-	$(wildcard request_handler/move/*.c) \
-	$(wildcard request_handler/npc_info/*.c) \
-	$(wildcard request_handler/protocol_version/*.c) \
-	$(wildcard request_handler/quest_list/*.c) \
-	$(wildcard request_handler/restart/*.c) \
-	$(wildcard request_handler/say/*.c) \
-	$(wildcard request_handler/select_character/*.c) \
-	$(wildcard request_handler/validate_position/*.c) \
-	$(wildcard storage/sqlite3/*.c) \
-	$(wildcard ../shared/*.c) \
-	$(wildcard ../../core/*.c) \
-	$(wildcard ../../os/linux/*.c)
+# Recursive wildcard
+#
+# Example:
+#	$(call rwildcard,src,*.c *.h)
+#	Finds all the .c and .h files in src
+#
+# Credits to https://stackoverflow.com/a/18258352
+rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+gameserverlib = $(call rwildcard,.,*.c) \
+	$(call rwildcard,../shared,*.c) \
+	$(call rwildcard,../../core,*.c) \
+	$(call rwildcard,../../os/linux,*.c)
+
 objgameserverlib = $(gameserverlib:.c=.o)
+
+debuggameserver = $(call rwildcard,.,*.expand *.vregs *.into_cfglayout *.jump *.reginfo *.outof_cfglayout *.split1 *.dfinit *.asmcons *.ira *.reload *.split2 *.pro_and_epilogue *.jump2 *.stack *.alignments *.mach *.barriers *.shorten *.nothrow *.dwarf2 *.final *.dfinish *.mode_sw)
 
 CC = gcc
 CLIBS = -I../.. `pkg-config --cflags --libs glib-2.0` -lsqlite3 -lm -ldl -lpthread -llog -lcrypto -lssl -Wl,-rpath,build
@@ -29,4 +25,4 @@ lib: $(objgameserverlib)
 
 .PHONY: clean
 clean:
-	rm -f $(objgameserverlib) lib
+	rm -f $(objgameserverlib) $(debuggameserver) lib
