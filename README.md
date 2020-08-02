@@ -1,6 +1,9 @@
 ## L2 Auth
 Simple Lineage 2 C4 server written as a learning exercise.
 
+## Discord
+Join our discord channel at https://discord.gg/9kDbhR
+
 ![L2Auth Demo](doc/screenshot/demo.gif)
 
 ## Running the server with Docker
