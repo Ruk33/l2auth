@@ -17,7 +17,11 @@ static void player_send_fail_action_response(struct Client *client)
         client_free_mem(client, response);
 }
 
-static void player_send_select_target_response(struct Client *client, struct Character *target)
+static void player_send_select_target_response
+(
+        struct Client *client,
+        struct Character *target
+)
 {
         struct Pc *player = client_player(client);
         struct Character player_character = player->character;

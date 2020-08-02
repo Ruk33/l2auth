@@ -34,7 +34,8 @@ struct Client *client_new(struct L2Server *l2_server, client_id id)
         client->id = id;
         client->l2_server = l2_server;
 
-        // (franco.montenegro) Fix, we won't create a new world for each client
+        // (franco.montenegro) Fix, we won't create a new world 
+        // for each client
         client->world = world_new(l2_server);
 
         client->conn_encrypted = 0;
@@ -56,7 +57,12 @@ void client_free_mem(struct Client *client, void *mem)
         client->l2_server->free(mem);
 }
 
-void client_handle_request(struct Client *client, char *request, size_t request_size)
+void client_handle_request
+(
+        struct Client *client,
+        char *request,
+        size_t request_size
+)
 {
         assert(client);
 
@@ -91,7 +97,11 @@ void client_queue_response(struct Client *client, l2_raw_packet *packet)
         client->l2_server->queue_response(&response);
 }
 
-void client_update_request_handler(struct Client *client, request_handler handler)
+void client_update_request_handler
+(
+        struct Client *client,
+        request_handler handler
+)
 {
         client->handle_request = handler;
 }
@@ -109,7 +119,10 @@ void client_update_session(struct Client *client, struct L2SessionKey *session)
 
 struct L2SessionKey *client_session(struct Client *client)
 {
-        struct L2SessionKey *session = client_alloc_mem(client, sizeof(struct L2SessionKey));
+        struct L2SessionKey *session = client_alloc_mem(
+                client,
+                sizeof(struct L2SessionKey)
+        );
         memcpy(session, &client->session, sizeof(struct L2SessionKey));
         return session;
 }

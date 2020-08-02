@@ -2,14 +2,14 @@ version: '3'
 
 services:
   loginserver:
-    build: ./login
-    volumes:
-      - .:/usr/src/loginserver
+    build: .
+    command: bash -c "cd login && make && build/loginserver"
     ports:
       - "2106:2106"
   gameserver:
-    build: ./game
+    build: .
+    command: bash -c "cd game/src && make && cd ../lib && make && cd .. && build/gameserver"
     volumes:
-      - .:/usr/src/gameserver
+      - ".:/usr/src/l2auth"
     ports:
       - "7777:7777"

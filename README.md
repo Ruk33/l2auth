@@ -1,38 +1,20 @@
 ## L2 Auth
 Simple Lineage 2 C4 server written as a learning exercise.
-Currently working in WINDOWS & LINUX (thanks to Docker).
 
 ![L2Auth Demo](doc/screenshot/demo.gif)
 
 ## Running the server with Docker
-- Install docker & docker-compose
+- Install docker
+- Install docker-compose
 - `docker-compose up`
-- Server will start listening to address 127.0.0.1 (local) and port 2106.
+- Server will start listening for connections on localhost (`127.0.0.1`) ports `2106` (loginserver) and `7777` (gameserver)
+- Use any user and password (all are valid) and you should be able to log in
 
-## Setting up DEV environment
-- Follow instructions to build log dependency from Dockerfile
-- `sudo apt install libssl-dev`
-
-## Hot code reload
-Hot code reload is a WIP feature, implemented for gameserver development.
-Just start the server up and execute `cd l2auth/gameserver && make lib`, this 
-will rebuild part  of the code and it will automatically get 
-injected in the running server without having to stop it, recompile and start 
-again. The code related to this feature is located on `l2auth/game/handler/dynamic_client.c`.
-
-## What to expect
-Right now, the server will listen for up to two connections.
-For the time being, the server is capable of:
-- Create socket/connection
-- Listen for connections
-- Accept connections
-- Encrypt connection with RSA & Blowfish
-- Send Lineage 2 packets
-- Receive Lineage 2 packets
-- Log in
-- Enter world
-- Restart -> Broken because of refactor
-- Very early multiple connection support -> Broken because of refactor
+## Gameserver hot-code reload
+- Run the gameserver
+- Make a change in the code
+- `cd game/lib && make` or `docker-compose exec gameserver bash -c "cd game/lib && make"` if using docker
+- Check the Lineage 2 client, the change should be reflected live
 
 ## Lineage 2 Protocol
 Lineage 2 uses TCP in order to send packets.
@@ -49,6 +31,8 @@ Other than the first packet, all packets are encrypted with blowfish using the f
 - `os/<implementation>`: For the time being only Linux implementation are being written down but more can be added by easily creating a new folder and implementing all the header files in the `os` folder. Make sure to update `game/Makefile` to use the new implementation instead of `os/linux` (replace `$(wildcard ../os/linux/*.c)` with new implementation, ie `$(wildcard ../os/windows/*.c)`).
 - `game`: Game server code
 - `game/lib`: Server implementation. All of this gets loaded dynamically as a library
+- `game/lib/cache`: Code related to cache, saving the state of the world and players
+- `game/lib/dto`: Data transfer objects (raw structures)
 - `game/lib/entity`: Entities (player, character, etc.)
 - `game/lib/request_handler`: Handlers for requests (move, protocol version, etc.)
 - `game/lib/storage`: Code related to storage (saving chars, etc.)
