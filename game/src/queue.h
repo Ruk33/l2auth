@@ -3,8 +3,13 @@
 
 struct Queue;
 
-struct Queue *queue_new();
-void queue_add(struct Queue *queue, void *elem);
-void *queue_pop(struct Queue *queue);
+struct Queue *queue_new
+(void);
+
+void queue_enqueue
+(struct Queue *queue, void *element);
+
+void *queue_dequeue
+(struct Queue *queue);
 
 #endif

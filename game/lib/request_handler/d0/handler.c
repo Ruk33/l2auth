@@ -14,7 +14,7 @@ void d0_handler(struct Client *client, l2_raw_packet *packet)
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
 
-        client_update_request_handler(client, d0_next_handler);
+        client_update_request_handler(client, &d0_next_handler);
 
         client_free_mem(client, response);
 }

@@ -2,12 +2,17 @@
 #define ENTRY_H
 
 #include <stdlib.h>
-#include "../shared/l2_server.h"
-#include "../shared/client_id.h"
-#include "../shared/request.h"
+#include "host.h"
 
-void *entry_new_conn(struct L2Server *l2_server, client_id id);
-void entry_handle_request(struct Request *request);
-void entry_handle_disconnect(struct Request *request);
+void *entry_initialize_server
+(host_malloc_cb m, host_mfree_cb f, host_send_response_cb s);
+
+void entry_new_conn
+(void *server_data, int client_id);
+
+void entry_handle_request
+(void *server_data, int client_id, unsigned char *buf, size_t buf_size);
+
+// void entry_handle_disconnect(struct Request *request);
 
 #endif

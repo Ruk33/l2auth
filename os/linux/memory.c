@@ -22,6 +22,10 @@ void memory_init(memory* mem, size_t reserved)
 
 void* memory_alloc(memory* from, size_t how_much)
 {
+        // assert(from);
+        // assert(how_much > 0);
+        // return calloc(1, how_much);
+
         assert(from);
         assert(how_much);
 
@@ -38,6 +42,8 @@ void* memory_alloc(memory* from, size_t how_much)
 
         assert(max_blocks >= required_blocks);
 
+        memset(block, 0, required_blocks * 16384);
+
         // First byte stores how many blocks were used for this alloc 
         *((unsigned char *) block) = required_blocks;
         return block + sizeof(unsigned char);
@@ -45,6 +51,9 @@ void* memory_alloc(memory* from, size_t how_much)
 
 void memory_free(void* block)
 {
+        // assert(block);
+        // free(block);
+
         assert(block);
 
         // This chunk of alloc memory no longer uses any blocks

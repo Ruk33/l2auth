@@ -1,6 +1,8 @@
+#include <assert.h>
 #include <string.h>
 #include <glib.h>
 #include <log/log.h>
+#include "../../host.h"
 #include "../../dto/character.h"
 #include "../../dto/npc.h"
 #include "../../dto/pc.h"
@@ -9,39 +11,39 @@
 struct World {
         GHashTable *players;
         GHashTable *npcs;
-        struct L2Server *l2_server;
+        host_malloc_cb memory_alloc;
+        host_mfree_cb memory_free;
 };
 
-static guint int_hash(gconstpointer v)
+struct World *world_new
+(host_malloc_cb m, host_mfree_cb f)
 {
-        return (guint) *(const int*) v;
-}
+        struct World *world = NULL;
 
-static gboolean int_equal(gconstpointer v1, gconstpointer v2)
-{
-        return *((const int*) v1) == *((const int*) v2);
-}
-
-struct World *world_new(struct L2Server *l2_server)
-{
-        struct World *world = l2_server->alloc(sizeof(struct World));
-
-        world->l2_server = l2_server;
-        world->players = g_hash_table_new(int_hash, int_equal);
-        world->npcs = g_hash_table_new(int_hash, int_equal);
+        world = m(sizeof(*world));
+        world->memory_alloc = m;
+        world->memory_free = f;
+        world->players = g_hash_table_new(g_int_hash, g_int_equal);
+        world->npcs = g_hash_table_new(g_int_hash, g_int_equal);
 
         return world;
 }
 
 void world_update_player(struct World *world, struct Pc *player)
 {
-        int id = player->character.id;
-        struct Pc *prev_player = g_hash_table_lookup(world->players, &id);
-        struct Pc *new_player = world->l2_server->alloc(sizeof(struct Pc));
+        assert(world);
+        assert(player);
 
-        log_info("Updating player stored with id %d", id);
+        int id = 0;
+        struct Pc *prev_player = NULL;
+        struct Pc *new_player = NULL;
 
-        memcpy(new_player, player, sizeof(struct Pc));
+        id = player->character.id;
+        prev_player = g_hash_table_lookup(world->players, &id);
+        new_player = world->memory_alloc(sizeof(*new_player));
+
+        memcpy(new_player, player, sizeof(*new_player));
+        log_info("Updating player stored with id %d", new_player->character.id);
 
         g_hash_table_replace(
                 world->players,
@@ -49,47 +51,56 @@ void world_update_player(struct World *world, struct Pc *player)
                 new_player
         );
 
-        if (prev_player) world->l2_server->free(prev_player);
+        if (prev_player) world->memory_free(prev_player);
 }
 
 struct Character *world_get_character(struct World *world, int id)
 {
-        struct Character *character = g_hash_table_lookup(world->npcs, &id);
-        struct Character *character_copy = world->l2_server->alloc(
-                sizeof(struct Character)
-        );
+        assert(world);
+
+        struct Character *character = NULL;
+        struct Character *character_copy = NULL;
+
+        character = g_hash_table_lookup(world->npcs, &id);
+        character_copy = world->memory_alloc(sizeof(*character_copy));
 
         log_info("Getting character stored with id %d", id);
-        memcpy(character_copy, character, sizeof(struct Character));
+        memcpy(character_copy, character, sizeof(*character_copy));
 
         return character_copy;
 }
 
 struct Pc *world_get_player(struct World *world, int id)
 {
-        struct Pc *player = g_hash_table_lookup(world->players, &id);
-        struct Pc *player_copy = world->l2_server->alloc(sizeof(struct Pc));
+        assert(world);
 
-        log_info("Getting player stored with id %d", id);
-        memcpy(player_copy, player, sizeof(struct Pc));
+        struct Pc *player = NULL;
+        struct Pc *player_copy = NULL;
+
+        player = g_hash_table_lookup(world->players, &id);
+        player_copy = world->memory_alloc(sizeof(*player_copy));
+
+        memcpy(player_copy, player, sizeof(*player_copy));
+        log_info("Getting player stored with id %d", player_copy->character.id);
 
         return player_copy;
 }
 
 void world_spawn_npc(struct World *world, struct Npc *npc)
 {
-        struct Character *prev_character = g_hash_table_lookup(
-                world->npcs,
-                &npc->character.id
-        );
-        struct Character *new_character = world->l2_server->alloc(
-                sizeof(struct Character)
-        );
+        assert(world);
+        assert(npc);
+
+        struct Character *prev_character = NULL;
+        struct Character *new_character = NULL;
+
+        prev_character = g_hash_table_lookup(world->npcs, &npc->character.id);
+        new_character = world->memory_alloc(sizeof(*new_character));
 
         log_info("Spawning npc with id %d", npc->character.id);
 
-        memcpy(new_character, &npc->character, sizeof(struct Character));
+        memcpy(new_character, &npc->character, sizeof(*new_character));
         g_hash_table_replace(world->npcs, &new_character->id, new_character);
 
-        if (prev_character) world->l2_server->free(prev_character);
+        if (prev_character) world->memory_free(prev_character);
 }

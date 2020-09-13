@@ -19,7 +19,7 @@ void protocol_version_handler(struct Client *client, l2_raw_packet *packet)
 
         response = protocol_version_response(client);
         client_queue_response(client, response);
-        client_update_request_handler(client, protocol_version_next_handler);
+        client_update_request_handler(client, &protocol_version_next_handler);
 
         client_free_mem(client, response);
 }

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
@@ -12,14 +13,19 @@
 
 void move_handler(struct Client *client, l2_raw_packet *packet)
 {
+        assert(client);
+        assert(packet);
+
         unsigned char *content = l2_packet_content(packet);
+        assert(content);
 
         struct Vec3 prev_location;
         struct Vec3 new_location;
 
-        l2_packet *response;
+        l2_packet *response = NULL;
 
         struct Pc *player = client_player(client);
+        assert(player);
 
         prev_location.x = player->character.x;
         prev_location.y = player->character.y;
@@ -40,6 +46,7 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
         );
 
         response = move_response(client, prev_location, new_location);
+        assert(response);
 
         player->character.x = new_location.x;
         player->character.y = new_location.y;
@@ -52,7 +59,7 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
 
         npc_info_handler(client, NULL);
 
-        client_update_request_handler(client, move_next_handler);
+        client_update_request_handler(client, &move_next_handler);
 
         client_free_mem(client, player);
         client_free_mem(client, response);

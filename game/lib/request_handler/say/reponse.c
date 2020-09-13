@@ -8,13 +8,21 @@
 #include "../../packet_builder.h"
 #include "response.h"
 
-l2_packet *say_response(struct Client *client, l2_string* message)
+l2_packet *say_response(struct Client *client, l2_string* message_old)
 {
         l2_packet_type type = 0x4a;
         l2_packet *response;
 
         struct Pc *player = client_player(client);
         int text_type = 0;
+
+        char new_char_message[] = "You wanna?";
+        l2_string *message = client_alloc_mem(
+                client,
+                l2_string_calculate_space_from_char(sizeof(new_char_message))
+        );
+
+        l2_string_from_char(message, new_char_message, sizeof(new_char_message));
 
         size_t message_length = l2_string_len(message) + 1;
         size_t message_as_string_length = l2_string_calculate_space_from_char(message_length);

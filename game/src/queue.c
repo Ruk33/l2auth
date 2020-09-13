@@ -1,42 +1,63 @@
 #include <assert.h>
-#include "mem.h"
+#include "code.h"
 #include "queue.h"
 
-struct Queue {
-        void *elem;
-        struct Queue *next;
+struct QueueItem {
+        void *data;
+        struct QueueItem *next;
 };
 
-struct Queue *queue_new()
+struct Queue {
+        struct QueueItem *head;
+};
+
+struct Queue *queue_new
+(void)
 {
-        struct Queue *queue = mem_alloc(sizeof(struct Queue));
-        queue->elem = NULL;
-        queue->next = NULL;
+        struct QueueItem *head = NULL;
+        struct Queue *queue = NULL;
+
+        head = code_malloc(sizeof(*head));
+        head->next = NULL;
+
+        queue = code_malloc(sizeof(*queue));
+        queue->head = head;
+
         return queue;
 }
 
-void queue_add(struct Queue *queue, void *elem)
+void queue_enqueue
+(struct Queue *queue, void *element)
 {
         assert(queue);
+        assert(element);
 
-        struct Queue *last = queue;
-        struct Queue *new = queue->elem ? queue_new() : queue;
-        new->elem = elem;
+        struct QueueItem *new_entry = NULL;
+        struct QueueItem *last = NULL;
+
+        new_entry = code_malloc(sizeof(*new_entry));
+        new_entry->data = element;
+        new_entry->next = NULL;
+
+        last = queue->head;
         while (last->next) last = last->next;
-        last->next = new;
+        last->next = new_entry;
 }
 
-void *queue_pop(struct Queue *queue)
+void *queue_dequeue(struct Queue *queue)
 {
         assert(queue);
-        
-        void *elem = queue->elem;
-        struct Queue *next = queue->next ? queue->next : queue;
 
-        queue->elem = next->elem;
-        queue->next = next->next;
+        struct QueueItem *previous_head = NULL;
+        void *data = NULL;
 
-        if (next && queue != next) mem_free(next);
+        previous_head = queue->head->next;
+        if (!previous_head) return NULL;
 
-        return elem;
+        data = previous_head->data;
+        queue->head->next = previous_head->next;
+
+        code_mfree(previous_head);
+
+        return data;
 }

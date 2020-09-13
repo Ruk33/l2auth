@@ -47,7 +47,7 @@ void action_handler(struct Client *client, l2_raw_packet *packet)
         // client_encrypt_packet(client, response);
         // client_queue_response(client, response);
 
-        client_update_request_handler(client, enter_world_next_handler);
+        client_update_request_handler(client, &enter_world_next_handler);
 
         client_free_mem(client, target);
         // client_free_mem(client, response);

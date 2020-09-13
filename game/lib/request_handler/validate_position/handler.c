@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <core/l2_raw_packet.h>
 #include <core/byte_reader.h>
 #include "../../client.h"
@@ -9,31 +10,37 @@
 
 void validate_position_handler(struct Client *client, l2_raw_packet *packet)
 {
-        l2_packet *response;
-        unsigned char* content = l2_packet_content(packet);
+        // assert(client);
+        // assert(packet);
 
-        struct Pc *player = client_player(client);
+        // l2_packet *response = NULL;
+        // unsigned char* content = l2_packet_content(packet);
+        // assert(content);
 
-        int heading = 0;
-        struct Vec3 location;
-        struct Vec3 current_location;
+        // struct Pc *player = client_player(client);
+        // assert(player);
 
-        current_location.x = player->character.x;
-        current_location.y = player->character.y;
-        current_location.z = player->character.z;
+        // int heading = 0;
+        // struct Vec3 location;
+        // struct Vec3 current_location;
 
-        content = byte_reader_cpy_int_n_mv(content, &location.x);
-        content = byte_reader_cpy_int_n_mv(content, &location.y);
-        content = byte_reader_cpy_int_n_mv(content, &location.z);
-        content = byte_reader_cpy_int_n_mv(content, &heading);
+        // current_location.x = player->character.x;
+        // current_location.y = player->character.y;
+        // current_location.z = player->character.z;
 
-        response = validate_position_response(client, location, heading);
+        // content = byte_reader_cpy_int_n_mv(content, &location.x);
+        // content = byte_reader_cpy_int_n_mv(content, &location.y);
+        // content = byte_reader_cpy_int_n_mv(content, &location.z);
+        // content = byte_reader_cpy_int_n_mv(content, &heading);
 
-        client_encrypt_packet(client, response);
-        client_queue_response(client, response);
+        // response = validate_position_response(client, location, heading);
+        // assert(response);
 
-        client_update_request_handler(client, validate_position_next_handler);
+        // client_encrypt_packet(client, response);
+        // client_queue_response(client, response);
 
-        client_free_mem(client, response);
-        client_free_mem(client, player);
+        client_update_request_handler(client, &validate_position_next_handler);
+
+        // client_free_mem(client, response);
+        // client_free_mem(client, player);
 }

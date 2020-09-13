@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
@@ -9,10 +10,14 @@
 
 l2_packet *validate_position_response(struct Client *client, struct Vec3 location, int heading)
 {
+        assert(client);
+
         l2_packet_type type = 0x61;
-        l2_packet *response;
+        l2_packet *response = NULL;
 
         struct Pc *player = client_player(client);
+        assert(player);
+
         int char_id = player->character.id;
 
         size_t buf_size = byte_builder_calculate_size(

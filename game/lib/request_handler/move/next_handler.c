@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/l2_packet.h>
 #include <core/l2_raw_packet.h>
@@ -9,7 +10,11 @@
 
 void move_next_handler(struct Client *client, l2_raw_packet *packet)
 {
+        assert(client);
+        assert(packet);
+
         l2_packet_type type = l2_packet_get_type(packet);
+        assert(type);
 
         log_info("Move next handler");
         log_info("Packet type %02X", type);

@@ -1,7 +1,12 @@
+#include <assert.h>
 #include "encrypt.h"
 
 void encrypt(unsigned char *data, unsigned int len, unsigned char *key)
 {
+        assert(data);
+        assert(len > 0);
+        assert(key);
+
         int temp = 0;
         int temp2 = 0;
         unsigned int old = 0;
