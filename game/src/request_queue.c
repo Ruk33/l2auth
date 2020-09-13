@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <string.h>
 #include <log/log.h>
 #include "code.h"
@@ -18,6 +19,8 @@ struct RequestQueue {
 };
 
 static struct RequestQueue *requests = NULL;
+static pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t thread_condition = PTHREAD_COND_INITIALIZER;
 
 void request_queue_init
 (void)
@@ -34,6 +37,8 @@ void request_queue_enqueue
         assert(buf);
         assert(buf_size > 0);
 
+        // code_request_handle(server_data, client_id, buf, buf_size);
+
         struct Request *request = NULL;
 
         request = code_malloc(sizeof(*request));
@@ -43,7 +48,11 @@ void request_queue_enqueue
         request->buf_size = buf_size;
 
         memcpy(request->buf, buf, buf_size);
+
+        pthread_mutex_lock(&thread_mutex);
         queue_enqueue(requests->queue, request);
+        pthread_cond_signal(&thread_condition);
+        pthread_mutex_unlock(&thread_mutex);
 }
 
 static struct Request *request_queue_dequeue
@@ -64,9 +73,16 @@ void *request_queue_start_handling_requests
         log_info("Starting to handle requests");
 
         while (1) {
+                pthread_mutex_lock(&thread_mutex);
+
                 request = request_queue_dequeue();
 
-                if (!request) continue;
+                if (!request) {
+                        pthread_cond_wait(&thread_condition, &thread_mutex);
+                        request = request_queue_dequeue();
+                }
+
+                pthread_mutex_unlock(&thread_mutex);
 
                 code_request_handle(
                         request->server_data,

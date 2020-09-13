@@ -16,7 +16,7 @@ l2_packet *say_response(struct Client *client, l2_string* message_old)
         struct Pc *player = client_player(client);
         int text_type = 0;
 
-        char new_char_message[] = "You wanna?";
+        char new_char_message[] = "Like do you even bro?";
         l2_string *message = client_alloc_mem(
                 client,
                 l2_string_calculate_space_from_char(sizeof(new_char_message))

@@ -10,6 +10,7 @@
 #include "dto/character.h"
 #include "dto/npc.h"
 #include "dto/pc.h"
+#include "cache/world.h"
 #include "client.h"
 
 struct Client {
@@ -26,6 +27,7 @@ struct Client {
 
         struct L2SessionKey session;
         struct Pc character;
+        struct World *world;
 };
 
 struct Client *client_new
@@ -42,8 +44,12 @@ struct Client *client_new
         client->conn_encrypted = 0;
         client->handle_request = &protocol_version_handler;
 
-        memcpy(client->encrypt_key, key, sizeof(key));
-        memcpy(client->decrypt_key, key, sizeof(key));
+        // Temporary
+        // Fix me, this shouldn't be handled by client
+        client->world = world_new(m, f);
+
+        memcpy(client->encrypt_key, key, sizeof(client->encrypt_key));
+        memcpy(client->decrypt_key, key, sizeof(client->decrypt_key));
 
         return client;
 }
@@ -75,11 +81,9 @@ void client_handle_request
         unsigned short packet_size = 0;
         l2_raw_packet *packet = NULL;
 
-        if (request_size <= 2) return;
-
         raw_packet = (l2_raw_packet *) request;
         packet_content = l2_raw_packet_content(raw_packet);
-        packet_size = (unsigned short) (request_size - 2);
+        packet_size = request_size - 2;
         packet = client_alloc_mem(
                 client,
                 l2_raw_packet_calculate_size((unsigned short) request_size)
@@ -125,7 +129,7 @@ void client_update_session
         assert(client);
         assert(session);
 
-        memcpy(&client->session, session, sizeof(*session));
+        memcpy(&client->session, session, sizeof(client->session));
 
         log_info("Updated client session");
         log_info("Play OK 1: %d", client->session.playOK1);
@@ -184,32 +188,35 @@ void client_decrypt_packet
 void client_update_character
 (struct Client *client, struct Pc *character)
 {
-        // memcpy(&client->character, character, sizeof(struct Pc));
-        // world_update_player(client->world, character);
+        assert(client);
+        assert(character);
+
+        memcpy(&client->character, character, sizeof(client->character));
+        world_update_player(client->world, character);
 }
 
 struct Character *client_character
 (struct Client *client, int obj_id)
 {
-        // return world_get_character(client->world, obj_id);
-        return NULL;
+        assert(client);
+        return world_get_character(client->world, obj_id);
 }
 
 struct Pc *client_player
 (struct Client *client)
 {
-        // struct Pc *character = client_alloc_mem(client, sizeof(struct Pc));
-        // memcpy(character, &client->character, sizeof(struct Pc));
-        // return character;
-        // struct Pc player = client->character;
-        // return world_get_player(client->world, player.character.id);
-        return NULL;
+        assert(client);
+
+        struct Pc player = client->character;
+        return world_get_player(client->world, player.character.id);
 }
 
 void client_spawn_npc
 (struct Client *client, struct Npc *npc)
 {
-        // world_spawn_npc(client->world, npc);
+        assert(client);
+        assert(npc);
+        world_spawn_npc(client->world, npc);
 }
 
 void client_handle_disconnect

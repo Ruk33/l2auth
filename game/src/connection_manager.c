@@ -35,6 +35,7 @@ static void connection_manager_handle_request
 
         struct Connection *conn = NULL;
         size_t buf_size = 0;
+        size_t request_size = 0;
         unsigned char *buf = NULL;
 
         conn = connection_manager->connections[conn_id];
@@ -43,9 +44,8 @@ static void connection_manager_handle_request
 
         buf_size = 65535;
         buf = code_malloc(buf_size);
-
-        os_socket_receive(client_socket, buf, buf_size);
-        request_queue_enqueue(conn->server_data, conn_id, buf, buf_size);
+        request_size = os_socket_receive(client_socket, buf, buf_size);
+        request_queue_enqueue(conn->server_data, conn_id, buf, request_size);
 
         code_mfree(buf);
 
@@ -77,7 +77,7 @@ void connection_manager_send_response
 (int conn_id, unsigned char *buf, size_t buf_size)
 {
         assert(buf);
-        assert(buf_size);
+        assert(buf_size > 0);
 
         struct Connection *conn = NULL;
 

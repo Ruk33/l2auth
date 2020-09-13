@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <pthread.h>
 #include <log/log.h>
 #include "code.h"
 #include "connection_manager.h"
@@ -17,6 +18,8 @@ struct ResponseQueue {
 };
 
 static struct ResponseQueue *responses = NULL;
+static pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t thread_condition = PTHREAD_COND_INITIALIZER;
 
 void response_queue_init
 (void)
@@ -33,6 +36,8 @@ void response_queue_enqueue
         assert(buf);
         assert(buf_size > 0);
 
+        // connection_manager_send_response(client_id, buf, buf_size);
+
         struct Response *response = NULL;
 
         response = code_malloc(sizeof(*response));
@@ -41,7 +46,11 @@ void response_queue_enqueue
         response->buf_size = buf_size;
 
         memcpy(response->buf, buf, buf_size);
+
+        pthread_mutex_lock(&thread_mutex);
         queue_enqueue(responses->queue, response);
+        pthread_cond_signal(&thread_condition);
+        pthread_mutex_unlock(&thread_mutex);
 }
 
 static struct Response *response_queue_dequeue
@@ -62,9 +71,16 @@ void *response_queue_start_handling_responses
         log_info("Starting to handle responses");
 
         while (1) {
+                pthread_mutex_lock(&thread_mutex);
+
                 response = response_queue_dequeue();
 
-                if (!response) continue;
+                if (!response) {
+                        pthread_cond_wait(&thread_condition, &thread_mutex);
+                        response = response_queue_dequeue();
+                }
+
+                pthread_mutex_unlock(&thread_mutex);
 
                 connection_manager_send_response(
                         response->client_id,

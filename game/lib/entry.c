@@ -60,7 +60,13 @@ void entry_handle_request
         entry = entry_p;
         client = entry->clients[client_id];
 
-        if (!client) return;
+        if (!client) {
+                log_fatal(
+                        "Client with id %d not found, ignoring request",
+                        client_id
+                );
+                return;
+        }
 
         client_handle_request(client, buf, buf_size);
 }
