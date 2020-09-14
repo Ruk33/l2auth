@@ -36,6 +36,9 @@ struct Code {
 
         void (* handle_request)
         (void *server_data, int client_id, unsigned char *buf, size_t buf_size);
+
+        void (* disconnect)
+        (void *server_data, int client_id);
 };
 
 // Code is a shit name, I know, needs to be updated
@@ -129,6 +132,13 @@ static void code_load_if_required
                         "entry_handle_request"
                 )
         );
+
+        DLEXPR_OR_ERR(
+                code->disconnect = dlsym(
+                        code->library,
+                        "entry_handle_disconnect"
+                )
+        );
 }
 
 void *code_initialize_server
@@ -156,6 +166,14 @@ void code_new_conn
         code->new_conn(server_data, client_id);
 }
 
+void code_handle_disconnect
+(void *server_data, int client_id)
+{
+        assert(code);
+        code_load_if_required();
+        code->disconnect(server_data, client_id);
+}
+
 void code_init
 (memory *mem)
 {
@@ -168,6 +186,7 @@ void code_init
         code->server_init = NULL;
         code->new_conn = NULL;
         code->handle_request = NULL;
+        code->disconnect = NULL;
 
         code_load_if_required();
 }

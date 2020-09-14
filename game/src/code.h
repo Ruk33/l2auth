@@ -28,4 +28,7 @@ void *code_initialize_server
 void code_request_handle
 (void *server_data, int client_id, unsigned char *buf, size_t buf_size);
 
+void code_handle_disconnect
+(void *server_data, int client_id);
+
 #endif

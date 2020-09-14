@@ -71,9 +71,24 @@ void entry_handle_request
         client_handle_request(client, buf, buf_size);
 }
 
-// void entry_handle_disconnect(struct Request *request)
-// {
-//         assert(request);
-//         assert(request->client);
-//         client_handle_disconnect(request->client);
-// }
+void entry_handle_disconnect
+(void *entry_p, int client_id)
+{
+        struct Entry *entry = NULL;
+        struct Client *client = NULL;
+
+        entry = entry_p;
+        client = entry->clients[client_id];
+
+        if (!client) {
+                log_fatal(
+                        "Client with id %d not found, ignoring disconnect",
+                        client_id
+                );
+                return;
+        }
+
+        client_handle_disconnect(client);
+
+        entry->clients[client_id] = NULL;
+}

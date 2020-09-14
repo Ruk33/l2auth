@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <log/log.h>
 #include "code.h"
 #include "request_queue.h"
@@ -40,16 +41,32 @@ static void connection_manager_handle_request
 
         conn = connection_manager->connections[conn_id];
 
-        if (!conn) return;
+        if (!conn) {
+                log_fatal("Connection %d not found, ignoring", conn_id);
+                return;
+        }
 
         buf_size = 65535;
         buf = code_malloc(buf_size);
-        request_size = os_socket_receive(client_socket, buf, buf_size);
-        request_queue_enqueue(conn->server_data, conn_id, buf, request_size);
 
+        while (1) {
+                memset(buf, 0, buf_size);
+                request_size = os_socket_receive(client_socket, buf, buf_size);
+
+                if (request_size <= 0) break;
+
+                request_queue_enqueue(
+                        conn->server_data,
+                        conn_id,
+                        buf,
+                        request_size
+                );
+        }
+
+        code_handle_disconnect(conn->server_data, conn_id);
         code_mfree(buf);
 
-        connection_manager_handle_request(client_socket, conn_id);
+        connection_manager->connections[conn_id] = NULL;
 }
 
 void connection_manager_new_conn

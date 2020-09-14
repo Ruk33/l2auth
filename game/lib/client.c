@@ -222,5 +222,6 @@ void client_spawn_npc
 void client_handle_disconnect
 (struct Client *client)
 {
-        // client->l2_server->free(client);
+        assert(client);
+        client->memory_free(client);
 }

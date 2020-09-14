@@ -13,6 +13,7 @@ void entry_new_conn
 void entry_handle_request
 (void *server_data, int client_id, unsigned char *buf, size_t buf_size);
 
-// void entry_handle_disconnect(struct Request *request);
+void entry_handle_disconnect
+(void *server_data, int client_id);
 
 #endif
