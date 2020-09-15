@@ -5,7 +5,7 @@
 #include <log/log.h>
 #include "code.h"
 #include "queue.h"
-#include "request_queue.h"
+#include "request_manager.h"
 
 struct Request {
         void *server_data;
@@ -22,22 +22,20 @@ static struct RequestQueue *requests = NULL;
 static pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t thread_condition = PTHREAD_COND_INITIALIZER;
 
-void request_queue_init
+void request_manager_init
 (void)
 {
         requests = code_malloc(sizeof(*requests));
         requests->queue = queue_new();
 }
 
-void request_queue_enqueue
+void request_manager_enqueue
 (void *server_data, int client_id, unsigned char *buf, size_t buf_size)
 {
         assert(requests);
         assert(requests->queue);
         assert(buf);
         assert(buf_size > 0);
-
-        // code_request_handle(server_data, client_id, buf, buf_size);
 
         struct Request *request = NULL;
 
@@ -55,7 +53,7 @@ void request_queue_enqueue
         pthread_mutex_unlock(&thread_mutex);
 }
 
-static struct Request *request_queue_dequeue
+static struct Request *request_manager_dequeue
 (void)
 {
         assert(requests);
@@ -63,7 +61,7 @@ static struct Request *request_queue_dequeue
         return queue_dequeue(requests->queue);
 }
 
-void *request_queue_start_handling_requests
+void *request_manager_start_handling_requests
 (void *p)
 {
         assert(requests);
@@ -75,11 +73,11 @@ void *request_queue_start_handling_requests
         while (1) {
                 pthread_mutex_lock(&thread_mutex);
 
-                request = request_queue_dequeue();
+                request = request_manager_dequeue();
 
                 if (!request) {
                         pthread_cond_wait(&thread_condition, &thread_mutex);
-                        request = request_queue_dequeue();
+                        request = request_manager_dequeue();
                 }
 
                 pthread_mutex_unlock(&thread_mutex);

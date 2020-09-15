@@ -3,10 +3,10 @@
 #include <log/log.h>
 #include <os/memory.h>
 #include "code.h"
-#include "request_queue.h"
-#include "response_queue.h"
+#include "request_manager.h"
+#include "response_manager.h"
 #include "connection_manager.h"
-#include "server.h"
+#include "server_manager.h"
 
 int main
 (int argc, char **argv)
@@ -33,27 +33,27 @@ int main
         memory_init(mem, reserved_memory);
         code_init(mem);
 
-        request_queue_init();
-        response_queue_init();
+        request_manager_init();
+        response_manager_init();
 
         connection_manager_init(max_players);
-        server_init(port, max_players);
+        server_manager_init(port, max_players);
 
         pthread_create(
                 &requests_thread,
                 NULL,
-                &request_queue_start_handling_requests,
+                &request_manager_start_handling_requests,
                 NULL
         );
         
         pthread_create(
                 &responses_thread,
                 NULL,
-                &response_queue_start_handling_responses,
+                &response_manager_start_handling_responses,
                 NULL
         );
 
-        server_start(NULL);
+        server_manager_start(NULL);
 
         return EXIT_SUCCESS;
 }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <log/log.h>
 #include "code.h"
-#include "request_queue.h"
+#include "request_manager.h"
 #include "connection_manager.h"
 
 struct Connection {
@@ -55,7 +55,7 @@ static void connection_manager_handle_request
 
                 if (request_size <= 0) break;
 
-                request_queue_enqueue(
+                request_manager_enqueue(
                         conn->server_data,
                         conn_id,
                         buf,
