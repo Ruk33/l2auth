@@ -11,21 +11,21 @@
 #include "next_handler.h"
 #include "handler.h"
 
-void move_handler(struct Client *client, l2_raw_packet *packet)
+void move_handler
+(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
 
-        unsigned char *content = l2_packet_content(packet);
-        assert(content);
+        unsigned char *content = NULL;
+        l2_packet *response = NULL;
+        struct Pc *player = NULL;
 
         struct Vec3 prev_location;
         struct Vec3 new_location;
 
-        l2_packet *response = NULL;
-
-        struct Pc *player = client_player(client);
-        assert(player);
+        content = l2_packet_content(packet);
+        player = client_player(client);
 
         prev_location.x = player->character.x;
         prev_location.y = player->character.y;
@@ -46,7 +46,6 @@ void move_handler(struct Client *client, l2_raw_packet *packet)
         );
 
         response = move_response(client, prev_location, new_location);
-        assert(response);
 
         player->character.x = new_location.x;
         player->character.y = new_location.y;

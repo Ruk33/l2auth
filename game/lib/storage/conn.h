@@ -5,8 +5,13 @@
 
 typedef void conn_handler;
 
-size_t conn_handler_size();
-void conn_open(conn_handler *conn);
-void conn_close(conn_handler *conn);
+size_t conn_handler_size
+(void);
+
+void conn_open
+(conn_handler *conn);
+
+void conn_close
+(conn_handler *conn);
 
 #endif

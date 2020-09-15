@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <core/byte_builder.h>
@@ -8,10 +9,13 @@
 #include "../../packet_builder.h"
 #include "handler.h"
 
-l2_packet *npc_info_response(struct Client *client)
+l2_packet *npc_info_response
+(struct Client *client)
 {
+        assert(client);
+
         l2_packet_type type = 0x16;
-        l2_packet *response;
+        l2_packet *response = NULL;
 
         struct Npc npc;
 
@@ -28,13 +32,13 @@ l2_packet *npc_info_response(struct Client *client)
         char summonned = 0;
         double f_1 = 1.1;
 
-        size_t name_len;
-        size_t name_as_string_length;
-        l2_string *name_as_string;
+        size_t name_len = 0;
+        size_t name_as_string_length = 0;
+        l2_string *name_as_string = NULL;
 
-        size_t title_len;
-        size_t title_as_string_length;
-        l2_string *title_as_string;
+        size_t title_len = 0;
+        size_t title_as_string_length = 0;
+        l2_string *title_as_string = NULL;
 
         size_t buf_size = byte_builder_calculate_size(1024);
         byte_builder *buf = client_alloc_mem(client, buf_size);

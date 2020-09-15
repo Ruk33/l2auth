@@ -8,31 +8,37 @@
 #include "../../packet_builder.h"
 #include "response.h"
 
-l2_packet *validate_position_response(struct Client *client, struct Vec3 location, int heading)
+l2_packet *validate_position_response
+(struct Client *client, struct Vec3 location, int heading)
 {
         assert(client);
 
         l2_packet_type type = 0x61;
         l2_packet *response = NULL;
 
-        struct Pc *player = client_player(client);
-        assert(player);
+        struct Pc *player = NULL;
+        int char_id = 0;
 
-        int char_id = player->character.id;
+        size_t buf_size = 0;
+        byte_builder *buf = NULL;
+        byte_builder *buffer = NULL;
 
-        size_t buf_size = byte_builder_calculate_size(
+        player = client_player(client);
+        char_id = player->character.id;
+
+        buf_size = byte_builder_calculate_size(
                 sizeof(char_id) +
                 sizeof(struct Vec3) +
                 sizeof(heading)
         );
-        byte_builder *buf = client_alloc_mem(client, buf_size);
-        byte_builder *buffer = byte_builder_init(buf, buf_size);
+        buf = client_alloc_mem(client, buf_size);
+        buffer = byte_builder_init(buf, buf_size);
 
-        byte_builder_append(buffer, &char_id, sizeof(char_id));
-        byte_builder_append(buffer, &location.x, sizeof(location.x));
-        byte_builder_append(buffer, &location.y, sizeof(location.y));
-        byte_builder_append(buffer, &location.z, sizeof(location.z));
-        byte_builder_append(buffer, &heading, sizeof(heading));
+        byte_builder_append_int(buffer, &char_id);
+        byte_builder_append_int(buffer, &location.x);
+        byte_builder_append_int(buffer, &location.y);
+        byte_builder_append_int(buffer, &location.z);
+        byte_builder_append_int(buffer, &heading);
 
         response = packet_builder_new(
                 client,

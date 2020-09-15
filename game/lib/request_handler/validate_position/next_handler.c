@@ -6,7 +6,8 @@
 #include "../move/next_handler.h"
 #include "next_handler.h"
 
-void validate_position_next_handler(struct Client *client, l2_raw_packet *packet)
+void validate_position_next_handler
+(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);

@@ -4,6 +4,7 @@
 #include <core/l2_packet.h>
 #include "../../client.h"
 
-l2_packet *my_target_selected_response(struct Client *client, int object_id, short color);
+l2_packet *my_target_selected_response
+(struct Client *client, int object_id, short color);
 
 #endif

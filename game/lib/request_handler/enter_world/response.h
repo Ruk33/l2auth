@@ -4,6 +4,7 @@
 #include <core/l2_packet.h>
 #include "../../client.h"
 
-l2_packet *enter_world_response(struct Client *client);
+l2_packet *enter_world_response
+(struct Client *client);
 
 #endif

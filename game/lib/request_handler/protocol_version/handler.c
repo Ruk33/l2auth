@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -8,16 +9,23 @@
 #include "next_handler.h"
 #include "handler.h"
 
-void protocol_version_handler(struct Client *client, l2_raw_packet *packet)
+void protocol_version_handler
+(struct Client *client, l2_raw_packet *packet)
 {
-        unsigned char* content = l2_packet_content(packet);
+        assert(client);
+        assert(packet);
+
+        unsigned char* content = NULL;
         int protocol_version = 0;
-        l2_packet *response;
+        l2_packet *response = NULL;
+
+        content = l2_packet_content(packet);
 
         byte_reader_cpy_int_n_mv(content, &protocol_version);
         log_info("Protocol version %d", protocol_version);
 
         response = protocol_version_response(client);
+
         client_queue_response(client, response);
         client_update_request_handler(client, &protocol_version_next_handler);
 

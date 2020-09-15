@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -10,16 +11,22 @@
 #include "response.h"
 #include "handler.h"
 
-void auth_login_handler(struct Client *client, l2_raw_packet *packet)
+void auth_login_handler
+(struct Client *client, l2_raw_packet *packet)
 {
-        unsigned char* content = l2_packet_content(packet);
+        assert(client);
+        assert(packet);
+
+        unsigned char* content = NULL;
         struct L2SessionKey session;
 
-        size_t login_name_len;
-        size_t login_name_size;
-        l2_string *login_name;
+        size_t login_name_len = 0;
+        size_t login_name_size = 0;
+        l2_string *login_name = NULL;
 
-        l2_packet *response;
+        l2_packet *response = NULL;
+
+        content = l2_packet_content(packet);
 
         login_name_len = l2_string_len((l2_string *) content) + 1;
         login_name_size = l2_string_calculate_space_from_char(login_name_len);

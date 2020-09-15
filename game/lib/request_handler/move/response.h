@@ -5,6 +5,7 @@
 #include "../../client.h"
 #include "../../dto/vec3.h"
 
-l2_packet *move_response(struct Client *client, struct Vec3 prev_location, struct Vec3 new_location);
+l2_packet *move_response
+(struct Client *client, struct Vec3 prev_location, struct Vec3 new_location);
 
 #endif

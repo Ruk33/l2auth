@@ -4,6 +4,7 @@
 #include <core/l2_raw_packet.h>
 #include "../../client.h"
 
-void restart_handler(struct Client *client, l2_raw_packet *packet);
+void restart_handler
+(struct Client *client, l2_raw_packet *packet);
 
 #endif

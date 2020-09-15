@@ -8,10 +8,11 @@
 #include "next_handler.h"
 #include "handler.h"
 
-void validate_position_handler(struct Client *client, l2_raw_packet *packet)
+void validate_position_handler
+(struct Client *client, l2_raw_packet *packet)
 {
-        // assert(client);
-        // assert(packet);
+        assert(client);
+        assert(packet);
 
         // l2_packet *response = NULL;
         // unsigned char* content = l2_packet_content(packet);

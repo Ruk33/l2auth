@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -8,9 +9,15 @@
 #include "response.h"
 #include "handler.h"
 
-void restart_handler(struct Client *client, l2_raw_packet *packet)
+void restart_handler
+(struct Client *client, l2_raw_packet *packet)
 {
-        l2_packet *response = restart_response(client);
+        assert(client);
+        assert(packet);
+
+        l2_packet *response = NULL;
+
+        response = restart_response(client);
 
         log_info("Restarting");
         client_encrypt_packet(client, response);

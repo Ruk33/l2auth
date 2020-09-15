@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <log/log.h>
 #include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
@@ -9,13 +10,19 @@
 #include "response.h"
 #include "handler.h"
 
-void select_character_handler(struct Client *client, l2_raw_packet *packet)
+void select_character_handler
+(struct Client *client, l2_raw_packet *packet)
 {
-        unsigned char* content = l2_packet_content(packet);
+        assert(client);
+        assert(packet);
 
-        int index = -1;
-        struct Pc *character;
-        l2_packet *response;
+        unsigned char* content = NULL;
+
+        int index = 0;
+        struct Pc *character = NULL;
+        l2_packet *response = NULL;
+
+        content = l2_packet_content(packet);
 
         byte_reader_cpy_int_n_mv(content, &index);
         log_info("Selected char with index %d", index);

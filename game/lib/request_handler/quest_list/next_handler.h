@@ -4,6 +4,7 @@
 #include <core/l2_raw_packet.h>
 #include "../../client.h"
 
-void quest_list_next_handler(struct Client *client, l2_raw_packet *packet);
+void quest_list_next_handler
+(struct Client *client, l2_raw_packet *packet);
 
 #endif

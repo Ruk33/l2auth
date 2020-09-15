@@ -1,9 +1,13 @@
+#include <assert.h>
 #include <core/l2_packet.h>
 #include "../../client.h"
 #include "../../packet_builder.h"
 
-l2_packet *protocol_version_response(struct Client *client)
+l2_packet *protocol_version_response
+(struct Client *client)
 {
+        assert(client);
+
         l2_packet_type type = 0x00;
 
         unsigned char content[] = {

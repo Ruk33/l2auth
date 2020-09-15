@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <core/byte_builder.h>
@@ -8,24 +9,29 @@
 #include "../../packet_builder.h"
 #include "response.h"
 
-l2_packet *say_response(struct Client *client, l2_string* message_old)
+l2_packet *say_response
+(struct Client *client, l2_string* message)
 {
+        assert(client);
+        assert(message);
+
         l2_packet_type type = 0x4a;
-        l2_packet *response;
+        l2_packet *response = NULL;
 
         struct Pc *player = client_player(client);
         int text_type = 0;
 
-        char new_char_message[] = "Like do you even bro?";
-        l2_string *message = client_alloc_mem(
-                client,
-                l2_string_calculate_space_from_char(sizeof(new_char_message))
-        );
-
-        l2_string_from_char(message, new_char_message, sizeof(new_char_message));
+        // char new_char_message[] = "Like do you even bro?";
+        // l2_string *message = client_alloc_mem(
+        //         client,
+        //         l2_string_calculate_space_from_char(sizeof(new_char_message))
+        // );
+        // l2_string_from_char(message, new_char_message, sizeof(new_char_message));
 
         size_t message_length = l2_string_len(message) + 1;
-        size_t message_as_string_length = l2_string_calculate_space_from_char(message_length);
+        size_t message_as_string_length = l2_string_calculate_space_from_char(
+                message_length
+        );
 
         size_t name_len = strlen(player->character.name) + 1;
         size_t name_as_string_len = l2_string_calculate_space_from_char(name_len);
@@ -42,8 +48,8 @@ l2_packet *say_response(struct Client *client, l2_string* message_old)
 
         l2_string_from_char(name_as_string, player->character.name, name_len);
 
-        byte_builder_append(buffer, &player->character.id, sizeof(player->character.id));
-        byte_builder_append(buffer, &text_type, sizeof(text_type));
+        byte_builder_append_int(buffer, &player->character.id);
+        byte_builder_append_int(buffer, &text_type);
         byte_builder_append(buffer, name_as_string, name_as_string_len);
         byte_builder_append(buffer, message, message_as_string_length);
 

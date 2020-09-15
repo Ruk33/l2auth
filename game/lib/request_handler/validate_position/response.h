@@ -5,6 +5,7 @@
 #include "../../client.h"
 #include "../../dto/vec3.h"
 
-l2_packet *validate_position_response(struct Client *client, struct Vec3 location, int heading);
+l2_packet *validate_position_response
+(struct Client *client, struct Vec3 location, int heading);
 
 #endif

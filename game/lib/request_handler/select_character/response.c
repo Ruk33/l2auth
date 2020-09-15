@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
@@ -8,10 +9,13 @@
 #include "../../packet_builder.h"
 #include "response.h"
 
-l2_packet *select_character_response(struct Client *client)
+l2_packet *select_character_response
+(struct Client *client)
 {
+        assert(client);
+
         l2_packet_type type = 0x15;
-        l2_packet *response;
+        l2_packet *response = NULL;
 
         struct L2SessionKey* session = client_session(client);
         struct Pc *player = client_player(client);
