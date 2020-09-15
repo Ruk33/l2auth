@@ -3,8 +3,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <log/log.h>
+#include <data_structure/queue.h>
 #include "code.h"
-#include "queue.h"
 #include "request_manager.h"
 
 struct Request {
@@ -26,7 +26,7 @@ void request_manager_init
 (void)
 {
         requests = code_malloc(sizeof(*requests));
-        requests->queue = queue_new();
+        requests->queue = queue_new(&code_malloc, &code_mfree);
 }
 
 void request_manager_enqueue

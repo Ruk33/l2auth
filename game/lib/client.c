@@ -83,7 +83,7 @@ void client_handle_request
 
         raw_packet = (l2_raw_packet *) request;
         packet_content = l2_raw_packet_content(raw_packet);
-        packet_size = request_size - 2;
+        packet_size = (unsigned short) (request_size - 2);
         packet = client_alloc_mem(
                 client,
                 l2_raw_packet_calculate_size((unsigned short) request_size)

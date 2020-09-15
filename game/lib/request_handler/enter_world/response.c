@@ -93,7 +93,7 @@ l2_packet *enter_world_response
         int fish_x = 0;
         int fish_y = 0;
         int fish_z = 0;
-        int name_color = 4294967295;
+        int name_color = 0xFFFFFF;
 
         struct Pc* player = client_player(client);
         size_t player_name_len = strlen(player->character.name) + 1;

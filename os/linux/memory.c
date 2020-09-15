@@ -42,7 +42,7 @@ void* memory_alloc(memory* from, size_t how_much)
 
         assert(max_blocks >= required_blocks);
 
-        memset(block, 0, required_blocks * 16384);
+        memset(block, 0, (size_t) (required_blocks * 16384));
 
         // First byte stores how many blocks were used for this alloc 
         *((unsigned char *) block) = required_blocks;

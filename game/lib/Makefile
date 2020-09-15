@@ -16,11 +16,8 @@ objgameserverlib = $(gameserverlib:.c=.o)
 debuggameserver = $(call rwildcard,.,*.expand *.vregs *.into_cfglayout *.jump *.reginfo *.outof_cfglayout *.split1 *.dfinit *.asmcons *.ira *.reload *.split2 *.pro_and_epilogue *.jump2 *.stack *.alignments *.mach *.barriers *.shorten *.nothrow *.dwarf2 *.final *.dfinish *.mode_sw)
 
 CC = gcc
-# CLIBS = `pkg-config --libs glib-2.0` -lsqlite3 -lm -ldl -llog -lcrypto -lssl
-# CFLAGS = -std=c99 -Wall -g -I../.. `pkg-config --cflags glib-2.0` -shared -fPIC
 CLIBS = `pkg-config --libs glib-2.0` -lm -lsqlite3 -llog -lcrypto -lssl
-# CFLAGS = `pkg-config --cflags glib-2.0` -I../.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
-CFLAGS = `pkg-config --cflags glib-2.0` -std=c99 -Wall -g -O0 -I../.. -fPIC
+CFLAGS = `pkg-config --cflags glib-2.0` -std=c99 -Wall -g -O0 -I../.. -fPIC -Wextra -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 lib: $(objgameserverlib)
 	mkdir -p ../build && $(CC) $(CLIBS) $(CFLAGS) -shared -o ../build/libgameserver.so $^

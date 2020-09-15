@@ -2,9 +2,9 @@
 #include <string.h>
 #include <pthread.h>
 #include <log/log.h>
+#include <data_structure/queue.h>
 #include "code.h"
 #include "connection_manager.h"
-#include "queue.h"
 #include "response_manager.h"
 
 struct Response {
@@ -25,7 +25,7 @@ void response_manager_init
 (void)
 {
         responses = code_malloc(sizeof(*responses));
-        responses->queue = queue_new();
+        responses->queue = queue_new(&code_malloc, &code_mfree);
 }
 
 void response_manager_enqueue
