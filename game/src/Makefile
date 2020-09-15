@@ -15,7 +15,7 @@ objmain = $(main:.c=.o)
 debuggameserver = $(call rwildcard,.,*.expand *.vregs *.into_cfglayout *.jump *.reginfo *.outof_cfglayout *.split1 *.dfinit *.asmcons *.ira *.reload *.split2 *.pro_and_epilogue *.jump2 *.stack *.alignments *.mach *.barriers *.shorten *.nothrow *.dwarf2 *.final *.dfinish *.mode_sw)
 
 CC = gcc
-CFLAGS = -std=c99 -Wall -g -I../..
+CFLAGS = -std=c99 -Wall -g -O0 -I../..
 CLIBS = -ldl -lpthread -llog
 
 gameserver: $(objmain)

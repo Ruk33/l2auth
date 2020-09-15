@@ -20,7 +20,7 @@ CC = gcc
 # CFLAGS = -std=c99 -Wall -g -I../.. `pkg-config --cflags glib-2.0` -shared -fPIC
 CLIBS = `pkg-config --libs glib-2.0` -lm -lsqlite3 -llog -lcrypto -lssl
 # CFLAGS = `pkg-config --cflags glib-2.0` -I../.. -std=c99 -Wextra -Wall -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
-CFLAGS = `pkg-config --cflags glib-2.0` -std=c99 -Wall -I../.. -fPIC
+CFLAGS = `pkg-config --cflags glib-2.0` -std=c99 -Wall -g -O0 -I../.. -fPIC
 
 lib: $(objgameserverlib)
 	mkdir -p ../build && $(CC) $(CLIBS) $(CFLAGS) -shared -o ../build/libgameserver.so $^
