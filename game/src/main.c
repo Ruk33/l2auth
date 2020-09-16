@@ -8,6 +8,9 @@
 #include "connection_manager.h"
 #include "server_manager.h"
 
+#define KB(amount) ((amount) * 1024)
+#define MB(amount) ((KB(amount)) * 1024)
+
 int main
 (int argc, char **argv)
 {
@@ -22,7 +25,7 @@ int main
 
         port = 7777;
         max_players = 10;
-        reserved_memory = 1024 * 1024 * 10;
+        reserved_memory = MB(10);
         mem = calloc(1, reserved_memory);
 
         if (!mem) {

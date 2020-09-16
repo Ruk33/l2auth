@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 #include <log/log.h>
 #include "host.h"
 #include "client.h"
@@ -24,7 +25,7 @@ void *entry_initialize_server
         entry->memory_free = f;
         entry->send_response = s;
 
-        entry->clients = m(sizeof(*entry->clients) * max_players);
+        entry->clients = m((size_t) (sizeof(*entry->clients) * max_players));
         entry->client_count = 0;
 
         return entry;

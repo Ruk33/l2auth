@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <string.h>
 #include <log/log.h>
 #include "code.h"
@@ -8,6 +9,8 @@
 
 struct Connection {
         void *server_data;
+        int id;
+        pthread_t thread;
         os_socket_handler *socket;
 };
 
@@ -28,23 +31,21 @@ void connection_manager_init
         connection_manager->connection_count = 0;
 }
 
-static void connection_manager_handle_request
-(os_socket_handler *client_socket, int conn_id)
+static void *connection_manager_handle_request
+(void *conn_p)
 {
-        assert(connection_manager);
-        assert(client_socket);
+        assert(conn_p);
 
         struct Connection *conn = NULL;
+        int conn_id = 0;
+        os_socket_handler *client_socket = NULL;
         size_t buf_size = 0;
         size_t request_size = 0;
         unsigned char *buf = NULL;
 
-        conn = connection_manager->connections[conn_id];
-
-        if (!conn) {
-                log_fatal("Connection %d not found, ignoring", conn_id);
-                return;
-        }
+        conn = (struct Connection *) conn_p;
+        conn_id = conn->id;
+        client_socket = conn->socket;
 
         buf_size = 65535;
         buf = code_malloc(buf_size);
@@ -67,6 +68,8 @@ static void connection_manager_handle_request
         code_mfree(buf);
 
         connection_manager->connections[conn_id] = NULL;
+
+        return NULL;
 }
 
 void connection_manager_new_conn
@@ -87,7 +90,13 @@ void connection_manager_new_conn
         connection_manager->connection_count++;
 
         code_new_conn(server_data, conn_id);
-        connection_manager_handle_request(conn_socket, conn_id);
+
+        pthread_create(
+                &conn->thread,
+                NULL,
+                &connection_manager_handle_request,
+                conn
+        );
 }
 
 void connection_manager_send_response
