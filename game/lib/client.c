@@ -7,6 +7,17 @@
 #include "decrypt.h"
 #include "encrypt.h"
 #include "request_handler/protocol_version/handler.h"
+#include "request_handler/move/handler.h"
+#include "request_handler/type.h"
+#include "request_handler/action/handler.h"
+#include "request_handler/auth_login/handler.h"
+#include "request_handler/select_character/handler.h"
+#include "request_handler/d0/handler.h"
+#include "request_handler/quest_list/handler.h"
+#include "request_handler/enter_world/handler.h"
+#include "request_handler/restart/handler.h"
+#include "request_handler/validate_position/handler.h"
+#include "request_handler/say/handler.h"
 #include "dto/character.h"
 #include "dto/npc.h"
 #include "dto/pc.h"
@@ -95,7 +106,48 @@ void client_handle_request
         client->conn_encrypted = 1;
 
         log_info("Packet type %02X", l2_packet_get_type(packet));
-        client->handle_request(client, packet);
+
+        switch (l2_packet_get_type(packet)) {
+        case REQUEST_TYPE_PROTOCOL_VERSION:
+                protocol_version_handler(client, packet);
+                break;
+        case REQUEST_TYPE_MOVE_BACKWARDS_TO_LOCATION:
+                move_handler(client, packet);
+                break;
+        case REQUEST_TYPE_ACTION:
+                action_handler(client, packet);
+                break;
+        case REQUEST_TYPE_AUTH_REQUEST:
+                auth_login_handler(client, packet);
+                break;
+        case REQUEST_TYPE_NEW_CHAR:
+                break;
+        case REQUEST_TYPE_CREATE_CHAR:
+                break;
+        case REQUEST_TYPE_SELECTED_CHAR:
+                select_character_handler(client, packet);
+                break;
+        case REQUEST_TYPE_REQUEST_AUTO_SS_BSPS:
+                d0_handler(client, packet);
+                break;
+        case REQUEST_TYPE_REQUEST_QUEST_LIST:
+                quest_list_handler(client, packet);
+                break;
+        case REQUEST_TYPE_ENTER_WORLD:
+                enter_world_handler(client, packet);
+                break;
+        case REQUEST_TYPE_RESTART:
+                restart_handler(client, packet);
+                break;
+        case REQUEST_TYPE_VALIDATE_POS:
+                validate_position_handler(client, packet);
+                break;
+        case REQUEST_TYPE_SAY:
+                say_handler(client, packet);
+                break;
+        default:
+                break;
+        }
 
         client_free_mem(client, packet);
 }

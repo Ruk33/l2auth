@@ -28,7 +28,9 @@ void action_handler
         content = byte_reader_cpy_int_n_mv(content, &origin_x);
         content = byte_reader_cpy_int_n_mv(content, &origin_y);
         content = byte_reader_cpy_int_n_mv(content, &origin_z);
-        content = byte_reader_cpy_int_n_mv(content, &action_id);
+        // TODO For some reason, the following line gets marked
+        // as an error by Valgrind
+        // content = byte_reader_cpy_int_n_mv(content, &action_id);
 
         log_info("Action request handler");
         log_info("Object id: %d", object_id);
