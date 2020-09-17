@@ -9,6 +9,7 @@ rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(
 
 gameserverlib = \
 	$(call rwildcard,.,*.c) \
+	$(call rwildcard,../../data_structure,*.c) \
 	$(call rwildcard,../../core,*.c)
 
 objgameserverlib = $(gameserverlib:.c=.o)
@@ -16,8 +17,8 @@ objgameserverlib = $(gameserverlib:.c=.o)
 debuggameserver = $(call rwildcard,.,*.expand *.vregs *.into_cfglayout *.jump *.reginfo *.outof_cfglayout *.split1 *.dfinit *.asmcons *.ira *.reload *.split2 *.pro_and_epilogue *.jump2 *.stack *.alignments *.mach *.barriers *.shorten *.nothrow *.dwarf2 *.final *.dfinish *.mode_sw)
 
 CC = gcc
-CLIBS = `pkg-config --libs glib-2.0` -lsqlite3 -llog
-CFLAGS = `pkg-config --cflags glib-2.0` -std=c99 -Wall -g -O0 -I../.. -fPIC -Wextra -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
+CLIBS = -lsqlite3 -llog
+CFLAGS = -std=c99 -Wall -g -O0 -I../.. -fPIC -Wextra -Wfloat-equal -Wshadow -Wcast-align -Wwrite-strings -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code
 
 lib: $(objgameserverlib)
 	mkdir -p ../build && $(CC) $(CLIBS) $(CFLAGS) -shared -o ../build/libgameserver.so $^
