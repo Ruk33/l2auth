@@ -159,3 +159,12 @@ void game_server_lib_init
 
         game_server_lib_load_if_required();
 }
+
+void game_server_lib_finish
+(void)
+{
+        assert(game_server_lib);
+
+        memory_manager_free(game_server_lib);
+        game_server_lib = NULL;
+}

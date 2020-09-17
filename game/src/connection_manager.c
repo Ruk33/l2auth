@@ -18,6 +18,7 @@ struct Connection {
 struct ConnectionManager {
         struct Connection **connections;
         int connection_count;
+        int max_players;
 };
 
 static struct ConnectionManager *connection_manager = NULL;
@@ -32,6 +33,7 @@ void connection_manager_init
         connection_manager = memory_manager_alloc(sizeof(*connection_manager));
         connection_manager->connections = connections;
         connection_manager->connection_count = 0;
+        connection_manager->max_players = max_players;
 }
 
 static void *connection_manager_handle_request
@@ -118,4 +120,19 @@ void connection_manager_send_response
         }
 
         os_socket_send(conn->socket, buf, buf_size);
+}
+
+void connection_manager_finish
+(void)
+{
+        assert(connection_manager);
+
+        for (int i = 0; i < connection_manager->max_players; i++) {
+                memory_manager_free(connection_manager->connections[i]);
+        }
+
+        memory_manager_free(connection_manager->connections);
+        memory_manager_free(connection_manager);
+
+        connection_manager = NULL;
 }

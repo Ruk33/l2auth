@@ -22,4 +22,10 @@ void *memory_manager_alloc
 void memory_manager_free
 (void *mem);
 
+/**
+ * Releases any memory initalized by the manager
+ */
+void memory_manager_finish
+(void);
+
 #endif

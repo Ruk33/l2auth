@@ -50,3 +50,10 @@ void memory_manager_free
         memory_free(mem);
         pthread_mutex_unlock(&thread_mutex);
 }
+
+void memory_manager_finish
+(void)
+{
+        free(memory_instance);
+        memory_instance = NULL;
+}

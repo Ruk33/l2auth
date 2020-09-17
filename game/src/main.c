@@ -45,5 +45,9 @@ int main
 
         server_manager_start(NULL);
 
+        game_server_lib_finish();
+        connection_manager_finish();
+        memory_manager_finish();
+
         return EXIT_SUCCESS;
 }

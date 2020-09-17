@@ -16,4 +16,10 @@ void connection_manager_new_conn
 void connection_manager_send_response
 (int conn_id, unsigned char *buf, size_t buf_size);
 
+/**
+ * Releases any memory allocated by the manager
+ */
+void connection_manager_finish
+(void);
+
 #endif

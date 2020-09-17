@@ -53,4 +53,10 @@ void game_server_lib_request
 void game_server_lib_disconnect
 (void *server_data, int client_id);
 
+/**
+ * Release any memory allocated by the manager
+ */
+void game_server_lib_finish
+(void);
+
 #endif

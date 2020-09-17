@@ -56,6 +56,9 @@ l2_packet *npc_info_response
         npc.collision_radius = 8.0;
         npc.collision_height = 25.0;
 
+        memset(npc.character.title, 0, sizeof(npc.character.title));
+        memset(npc.character.name, 0, sizeof(npc.character.name));
+
         strcat(npc.character.title, "Gatekeeper");
         strcat(npc.character.name, "Roxxy");
 
