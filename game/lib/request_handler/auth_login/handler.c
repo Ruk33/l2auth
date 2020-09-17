@@ -32,8 +32,8 @@ void auth_login_handler
         login_name_size = l2_string_calculate_space_from_char(login_name_len);
         login_name = client_alloc_mem(client, login_name_size);
 
-        l2_string_from_l2(login_name, (l2_string *) content, login_name_size);
-        l2_string_to_char(login_name, (char *) session.login_name, login_name_len);
+        l2_string_from_l2(login_name, (l2_string *) content, login_name_len);
+        l2_string_to_char(login_name, session.login_name, login_name_len);
         log_info("Login name %s", session.login_name);
 
         content += login_name_size;
