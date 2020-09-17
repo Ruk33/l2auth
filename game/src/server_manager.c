@@ -4,7 +4,8 @@
 #include <os/socket.h>
 #include "response_manager.h"
 #include "connection_manager.h"
-#include "code.h"
+#include "memory_manager.h"
+#include "game_server_lib.h"
 #include "server_manager.h"
 
 struct Server {
@@ -14,8 +15,6 @@ struct Server {
         void *data;
 };
 
-// Not sure about using a global variable, but since
-// we only intend to have one server running it may be fine...
 static struct Server *server = NULL;
 
 static void server_manager_accept_connection
@@ -26,7 +25,7 @@ static void server_manager_accept_connection
 
         os_socket_handler *client_socket = NULL;
 
-        client_socket = code_malloc(os_socket_handler_size());
+        client_socket = memory_manager_alloc(os_socket_handler_size());
 
         os_socket_accept(server->socket, client_socket);
         connection_manager_new_conn(server->data, client_socket);
@@ -59,11 +58,11 @@ static void server_manager_listen_for_connections
 void server_manager_init
 (unsigned short port, size_t max_players)
 {
-        server = code_malloc(sizeof(*server));
+        server = memory_manager_alloc(sizeof(*server));
         server->port = port;
         server->max_players = max_players;
-        server->socket = code_malloc(os_socket_handler_size());
-        server->data = code_initialize_server(&response_manager_enqueue);
+        server->socket = memory_manager_alloc(os_socket_handler_size());
+        server->data = game_server_lib_init_server(&response_manager_enqueue);
 }
 
 void *server_manager_start
@@ -73,8 +72,8 @@ void *server_manager_start
 
         server_manager_listen_for_connections();
 
-        code_mfree(server->socket);
-        code_mfree(server);
+        memory_manager_free(server->socket);
+        memory_manager_free(server);
 
         return NULL;
 }

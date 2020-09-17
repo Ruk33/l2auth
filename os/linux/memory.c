@@ -3,16 +3,23 @@
 #include <string.h>
 #include <os/memory.h>
 
-static unsigned char memory_blocks_for_mem(size_t how_much)
+static unsigned char memory_blocks_for_mem
+(size_t how_much)
 {
-        unsigned char blocks = (unsigned char) (((how_much + 1) / 4096) >> 2);
+        assert(how_much > 0);
+
+        unsigned char blocks = 0;
+
+        blocks = (unsigned char) (((how_much + 1) / 4096) >> 2);
+
         return blocks == 0 ? 1 : blocks;
 }
 
-void memory_init(memory* mem, size_t reserved)
+void memory_init
+(memory* mem, size_t reserved)
 {
         assert(mem);
-        assert(reserved);
+        assert(reserved > 0);
 
         memset(mem, 0, reserved);
 
@@ -20,14 +27,11 @@ void memory_init(memory* mem, size_t reserved)
         *((unsigned char *) mem) = memory_blocks_for_mem(reserved);
 }
 
-void* memory_alloc(memory* from, size_t how_much)
+void* memory_alloc
+(memory* from, size_t how_much)
 {
-        // assert(from);
-        // assert(how_much > 0);
-        // return calloc(1, how_much);
-
         assert(from);
-        assert(how_much);
+        assert(how_much > 0);
 
         memory* head = from + sizeof(unsigned char);
         memory* block = head;
@@ -49,11 +53,9 @@ void* memory_alloc(memory* from, size_t how_much)
         return block + sizeof(unsigned char);
 }
 
-void memory_free(void* block)
+void memory_free
+(void* block)
 {
-        // assert(block);
-        // free(block);
-
         assert(block);
 
         // This chunk of alloc memory no longer uses any blocks

@@ -3,7 +3,8 @@
 #include <pthread.h>
 #include <log/log.h>
 #include <data_structure/queue.h>
-#include "code.h"
+#include "memory_manager.h"
+#include "game_server_lib.h"
 #include "connection_manager.h"
 #include "response_manager.h"
 
@@ -24,8 +25,11 @@ static pthread_cond_t thread_condition = PTHREAD_COND_INITIALIZER;
 void response_manager_init
 (void)
 {
-        responses = code_malloc(sizeof(*responses));
-        responses->queue = queue_new(&code_malloc, &code_mfree);
+        responses = memory_manager_alloc(sizeof(*responses));
+        responses->queue = queue_new(
+                &memory_manager_alloc,
+                &memory_manager_free
+        );
 }
 
 void response_manager_enqueue
@@ -38,9 +42,9 @@ void response_manager_enqueue
 
         struct Response *response = NULL;
 
-        response = code_malloc(sizeof(*response));
+        response = memory_manager_alloc(sizeof(*response));
         response->client_id = client_id;
-        response->buf = code_malloc(buf_size);
+        response->buf = memory_manager_alloc(buf_size);
         response->buf_size = buf_size;
 
         memcpy(response->buf, buf, buf_size);
@@ -86,8 +90,8 @@ void *response_manager_start_handling_responses
                         response->buf_size
                 );
 
-                code_mfree(response->buf);
-                code_mfree(response);
+                memory_manager_free(response->buf);
+                memory_manager_free(response);
         }
 
         return NULL;

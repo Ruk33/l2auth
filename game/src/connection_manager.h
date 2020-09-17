@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <os/socket.h>
 
+/**
+ * NOTE, make sure to call it before using this manager
+ */
 void connection_manager_init
 (size_t max_players);
 

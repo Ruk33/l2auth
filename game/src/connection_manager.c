@@ -3,7 +3,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <log/log.h>
-#include "code.h"
+#include "memory_manager.h"
+#include "game_server_lib.h"
 #include "request_manager.h"
 #include "connection_manager.h"
 
@@ -24,10 +25,12 @@ static struct ConnectionManager *connection_manager = NULL;
 void connection_manager_init
 (size_t max_players)
 {
-        connection_manager = code_malloc(sizeof(*connection_manager));
-        connection_manager->connections = code_malloc(
-                sizeof(*connection_manager->connections) * max_players
-        );
+        struct Connection **connections = NULL;
+
+        connections = memory_manager_alloc(sizeof(*connections) * max_players);
+
+        connection_manager = memory_manager_alloc(sizeof(*connection_manager));
+        connection_manager->connections = connections;
         connection_manager->connection_count = 0;
 }
 
@@ -48,7 +51,7 @@ static void *connection_manager_handle_request
         client_socket = conn->socket;
 
         buf_size = 65535;
-        buf = code_malloc(buf_size);
+        buf = memory_manager_alloc(buf_size);
 
         while (1) {
                 memset(buf, 0, buf_size);
@@ -64,8 +67,8 @@ static void *connection_manager_handle_request
                 );
         }
 
-        code_handle_disconnect(conn->server_data, conn_id);
-        code_mfree(buf);
+        game_server_lib_disconnect(conn->server_data, conn_id);
+        memory_manager_free(buf);
 
         connection_manager->connections[conn_id] = NULL;
 
@@ -81,7 +84,7 @@ void connection_manager_new_conn
         struct Connection *conn = NULL;
         int conn_id = 0;
 
-        conn = code_malloc(sizeof(*conn));
+        conn = memory_manager_alloc(sizeof(*conn));
         conn->server_data = server_data;
         conn->socket = conn_socket;
 
@@ -89,7 +92,7 @@ void connection_manager_new_conn
         connection_manager->connections[conn_id] = conn;
         connection_manager->connection_count++;
 
-        code_new_conn(server_data, conn_id);
+        game_server_lib_new_conn(server_data, conn_id);
 
         pthread_create(
                 &conn->thread,

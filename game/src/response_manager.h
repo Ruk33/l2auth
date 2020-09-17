@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+/**
+ * NOTE, make sure to call this function before using the manager
+ */
 void response_manager_init
 (void);
 

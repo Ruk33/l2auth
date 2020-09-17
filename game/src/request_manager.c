@@ -4,7 +4,8 @@
 #include <string.h>
 #include <log/log.h>
 #include <data_structure/queue.h>
-#include "code.h"
+#include "memory_manager.h"
+#include "game_server_lib.h"
 #include "request_manager.h"
 
 struct Request {
@@ -25,8 +26,11 @@ static pthread_cond_t thread_condition = PTHREAD_COND_INITIALIZER;
 void request_manager_init
 (void)
 {
-        requests = code_malloc(sizeof(*requests));
-        requests->queue = queue_new(&code_malloc, &code_mfree);
+        requests = memory_manager_alloc(sizeof(*requests));
+        requests->queue = queue_new(
+                &memory_manager_alloc,
+                &memory_manager_free
+        );
 }
 
 void request_manager_enqueue
@@ -39,10 +43,10 @@ void request_manager_enqueue
 
         struct Request *request = NULL;
 
-        request = code_malloc(sizeof(*request));
+        request = memory_manager_alloc(sizeof(*request));
         request->server_data = server_data;
         request->client_id = client_id;
-        request->buf = code_malloc(buf_size);
+        request->buf = memory_manager_alloc(buf_size);
         request->buf_size = buf_size;
 
         memcpy(request->buf, buf, buf_size);
@@ -82,15 +86,15 @@ void *request_manager_start_handling_requests
 
                 pthread_mutex_unlock(&thread_mutex);
 
-                code_request_handle(
+                game_server_lib_request(
                         request->server_data,
                         request->client_id,
                         request->buf,
                         request->buf_size
                 );
 
-                code_mfree(request->buf);
-                code_mfree(request);
+                memory_manager_free(request->buf);
+                memory_manager_free(request);
         }
 
         return NULL;

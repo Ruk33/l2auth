@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+/**
+ * NOTE, make sure to call this function before using the manager
+ */
 void server_manager_init
 (unsigned short port, size_t max_players);
 
