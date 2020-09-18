@@ -18,6 +18,7 @@
 #include "request_handler/restart/handler.h"
 #include "request_handler/validate_position/handler.h"
 #include "request_handler/say/handler.h"
+#include "request_handler/logout/handler.h"
 #include "dto/character.h"
 #include "dto/npc.h"
 #include "dto/pc.h"
@@ -144,6 +145,9 @@ void client_handle_request
                 break;
         case REQUEST_TYPE_SAY:
                 say_handler(client, packet);
+                break;
+        case REQUEST_TYPE_LOGOUT:
+                logout_handler(client, packet);
                 break;
         default:
                 break;

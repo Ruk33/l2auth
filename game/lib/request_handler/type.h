@@ -15,7 +15,8 @@ enum request_type
         REQUEST_TYPE_ENTER_WORLD = 0x03,
         REQUEST_TYPE_RESTART = 0x46,
         REQUEST_TYPE_VALIDATE_POS = 0x48,
-        REQUEST_TYPE_SAY = 0x38
+        REQUEST_TYPE_SAY = 0x38,
+        REQUEST_TYPE_LOGOUT = 0x09
 };
 
 #endif
