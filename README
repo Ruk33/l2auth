@@ -2,6 +2,12 @@ L2 Auth
 -------
 Simple Lineage 2 C4 server written as a learning exercise.
 
+Why does this project exist?
+----------------------------
+Because it's fun; because I like Lineage 2 (at least until C4 and Interlude 
+chronicles) and because I like the C programming language and I thought this 
+is an excellent project to work with it.
+
 Discord
 -------
 Join our discord channel at https://discord.gg/9kDbhR
@@ -11,16 +17,20 @@ Running the server with Docker
 - Install docker
 - Install docker-compose
 - Run docker-compose up
-- Server will start listening for connections on localhost (127.0.0.1) ports 2106 (loginserver) and 7777 (gameserver)
+- Server will start listening for connections on localhost (127.0.0.1) 
+  ports 2106 (loginserver) and 7777 (gameserver)
 - Use any user and password (all are valid) and you should be able to log in
 
 Gameserver hot-code reload
 --------------------------
 - Run the gameserver
 - Make a change in the code
-- Run cd game/lib && make or docker-compose exec gameserver bash -c "cd game/lib && make" if using docker
+- Run cd game/lib && make if not using docker, or
+- Run docker-compose exec gameserver bash -c "cd game/lib && make" for docker
 - Check the Lineage 2 client, the change should be reflected live
-- Don't be surprised if you get a segmentation fault or the change just breaks the server, you will have to restart
+- Don't be surprised if you get a segmentation fault or the change just 
+  breaks the server, you will have to restart (this should be working better
+  with latest changes though)
 
 Lineage 2 Protocol
 ------------------
@@ -28,21 +38,31 @@ Lineage 2 uses TCP in order to send packets.
 
 All integers are little endian.
 
-The first two bytes of the packet contain the packet size and the third one, usually the packet type.
+The first two bytes of the packet contain the packet size and the third one, 
+usually the packet type.
 
-Other than the first packet, all packets are encrypted with blowfish using the following hardcoded key: ;5.]94-31==-%xT!^[$\000.
+Other than the first packet, all packets are encrypted with blowfish using 
+the following hardcoded key: ;5.]94-31==-%xT!^[$\000.
 
 Folder structure
 ----------------
 - core: Core modules, used by both login server and game server
 - os: OS related code (sockets, threads, etc.)
-- os/<implementation>: For the time being only Linux implementation are being written down but more can be added by easily creating a new folder and implementing all the header files in the os folder. Make sure to update game/src/Makefile to use the new implementation instead of os/linux (replace $(wildcard ../os/linux/*.c) with the new implementation, ie $(wildcard ../os/windows/*.c)).
+- os/<implementation>: For the time being only Linux implementation are 
+  being written down but more can be added by easily creating a new folder 
+  and implementing all the header files in the os folder. Make sure to 
+  update game/src/Makefile to use the new implementation instead of os/linux 
+  (replace $(wildcard ../os/linux/*.c) with the new implementation, 
+  ie $(wildcard ../os/windows/*.c))
 - game: Game server code
-- game/lib: Server implementation. All of this gets loaded dynamically as a library
-- game/lib/cache: Code related to cache, saving the state of the world and players. I may use redis for this one, but only time will tell
+- game/lib: Server implementation. All of this gets loaded dynamically 
+  as a library
+- game/lib/cache: Code related to cache, saving the state of the world 
+  and players. I may use redis for this one, but only time will tell
 - game/lib/dto: Data transfer objects (raw structures)
 - game/lib/entity: Entities (player, character, etc.)
-- game/lib/request_handler: Handlers for requests made by clients (move, protocol version, etc.)
+- game/lib/request_handler: Handlers for requests made by clients 
+  (move, protocol version, etc.)
 - game/lib/storage: Code related to file storage (saving chars, etc.)
 - login: Login server code
 - login/dto: Data transfer objects
@@ -67,6 +87,11 @@ To do
 Screenshots/demos
 -----------------
 Please see doc/screenshot.
+
+Want to contribute?
+-------------------
+Awesome! Just open up an issue detailing what you will be working on, this way
+we can be more organized with the work. After that, just have fun working on it!
 
 Credits
 -------
