@@ -66,6 +66,8 @@ static struct HashtableEntry *hashtable_get_entry
 void *hashtable_get
 (struct Hashtable *ht, int key)
 {
+        assert(ht);
+
         struct HashtableEntry *entry = NULL;
 
         entry = hashtable_get_entry(ht, key);
@@ -78,11 +80,13 @@ void *hashtable_get
 void hashtable_remove
 (struct Hashtable *ht, int key)
 {
+        assert(ht);
+
         struct HashtableEntry *entry = NULL;
 
         entry = hashtable_get_entry(ht, key);
 
-        if (!entry) return NULL;
+        if (!entry) return;
 
         list_remove(ht->entries, entry);
         ht->free(entry);
