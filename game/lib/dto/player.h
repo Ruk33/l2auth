@@ -1,9 +1,9 @@
-#ifndef PC_H
-#define PC_H
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include "character.h"
 
-struct Pc {
+struct Player {
         struct Character character;
         char account_name[45];
         int max_cp;

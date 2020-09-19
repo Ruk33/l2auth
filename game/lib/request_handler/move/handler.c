@@ -4,7 +4,7 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include "../../client.h"
-#include "../../dto/pc.h"
+#include "../../dto/player.h"
 #include "../../dto/vec3.h"
 #include "../npc_info/handler.h"
 #include "response.h"
@@ -19,7 +19,7 @@ void move_handler
 
         unsigned char *content = NULL;
         l2_packet *response = NULL;
-        struct Pc *player = NULL;
+        struct Player *player = NULL;
 
         struct Vec3 prev_location;
         struct Vec3 new_location;

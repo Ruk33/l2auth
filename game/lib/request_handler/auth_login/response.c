@@ -7,12 +7,12 @@
 #include "../../storage/conn.h"
 #include "../../storage/character.h"
 #include "../../client.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../../packet_builder.h"
 #include "response.h"
 
 static void char_to_buffer
-(byte_builder *buffer, int play_ok_1, struct Pc *player)
+(byte_builder *buffer, int play_ok_1, struct Player *player)
 {
         assert(buffer);
         assert(player);
@@ -189,8 +189,7 @@ l2_packet *auth_login_response
 
         struct L2SessionKey *key = NULL;
 
-        conn_handler *conn = NULL;
-        struct Pc **characters = NULL;
+        struct Player **characters = NULL;
         int characters_count = 0;
 
         size_t buf_size = 0;
@@ -198,26 +197,22 @@ l2_packet *auth_login_response
         byte_builder *builder = NULL;
 
         key = client_session(client);
-        conn = client_alloc_mem(client, conn_handler_size());
-        characters_count = 1;
 
         buf_size = byte_builder_calculate_size(1024);
         buf = client_alloc_mem(client, buf_size);
         builder = byte_builder_init(buf, buf_size);
 
-        // conn_open(conn);
-        characters = storage_characters_all(conn, client);
-        // conn_close(conn);
+        characters = storage_characters_all(client);
 
-        log_info(
-                "Found %d characters for %s",
-                characters_count,
-                key->login_name
-        );
+        // I know, totally barbaric and I should be
+        // crucified because of it, but it's temporary
+        while (characters[characters_count]) {
+                characters_count++;
+        }
 
         byte_builder_append_int(builder, &characters_count);
 
-        for (int i = 0; i < characters_count; i++) {
+        for (int i = 0; characters[i]; i++) {
                 char_to_buffer(builder, key->playOK1, characters[i]);
                 client_free_mem(client, characters[i]);
         }
@@ -229,7 +224,6 @@ l2_packet *auth_login_response
                 byte_builder_length(builder)
         );
 
-        client_free_mem(client, conn);
         client_free_mem(client, buf);
         client_free_mem(client, characters);
         client_free_mem(client, key);

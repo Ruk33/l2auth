@@ -2,7 +2,7 @@
 #include <core/l2_raw_packet.h>
 #include <core/byte_reader.h>
 #include "../../client.h"
-#include "../../dto/pc.h"
+#include "../../dto/player.h"
 #include "../../dto/vec3.h"
 #include "response.h"
 #include "next_handler.h"

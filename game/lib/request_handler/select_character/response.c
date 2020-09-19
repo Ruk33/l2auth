@@ -4,7 +4,7 @@
 #include <core/byte_builder.h>
 #include <core/session_key.h>
 #include <core/l2_string.h>
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../../client.h"
 #include "../../packet_builder.h"
 #include "response.h"
@@ -18,7 +18,7 @@ l2_packet *select_character_response
         l2_packet *response = NULL;
 
         struct L2SessionKey* session = client_session(client);
-        struct Pc *player = client_player(client);
+        struct Player *player = client_player(client);
 
         size_t buf_size = byte_builder_calculate_size(1024);
         byte_builder* buf = client_alloc_mem(client, buf_size);
@@ -103,7 +103,12 @@ l2_packet *select_character_response
         byte_builder_append(builder, &empty, sizeof(empty));
         byte_builder_append(builder, &empty, sizeof(empty));
 
-        response = packet_builder_new(client, type, builder, byte_builder_length(builder));
+        response = packet_builder_new(
+                client,
+                type,
+                builder,
+                byte_builder_length(builder)
+        );
 
         client_free_mem(client, player);
         client_free_mem(client, session);

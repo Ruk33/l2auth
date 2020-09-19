@@ -1,52 +1,106 @@
+#include <assert.h>
 #include <string.h>
 #include <sqlite3.h>
 #include <log/log.h>
 #include "../../client.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../conn.h"
 
-static void query_to_char(sqlite3_stmt *stmt, struct Pc *player)
+/*
+ * NOTE, keep CHARACTER_TABLE_COLUMNS & CHARACTER_TABLE_COLUMN_KEYS in order
+ * to make sqlite queries easier to write
+ */
+
+#define CHARACTER_TABLE_COLUMNS                         \
+        "                                               \
+        id, name, race_id, sex, class_id, _int,         \
+        str, con, men, dex, wit, hair_style_id,         \
+        hair_color_id, face_id, x, y, z, max_hp,        \
+        max_mp, hp, mp, active, level                   \
+        "   
+
+static enum CHARACTER_TABLE_COLUMN_KEYS {
+        CHARACTER_ID,
+        CHARACTER_NAME,
+        CHARACTER_RACE_ID,
+        CHARACTER_SEX,
+        CHARACTER_CLASS_ID,
+        CHARACTER_INT,
+        CHARACTER_STR,
+        CHARACTER_CON,
+        CHARACTER_MEN,
+        CHARACTER_DEX,
+        CHARACTER_WIT,
+        CHARACTER_HAIR_STYLE_ID,
+        CHARACTER_HAIR_COLOR_ID,
+        CHARACTER_FACE_ID,
+        CHARACTER_X,
+        CHARACTER_Y,
+        CHARACTER_Z,
+        CHARACTER_MAX_HP,
+        CHARACTER_MAX_MP,
+        CHARACTER_HP,
+        CHARACTER_MP,
+        CHARACTER_ACTIVE,
+        CHARACTER_LEVEL
+};
+
+static void query_to_char
+(sqlite3_stmt *stmt, struct Player *player)
 {
-        player->character.id = sqlite3_column_int(stmt, 0);
-        strcat(player->character.name, (const char *) sqlite3_column_text(stmt, 1));
-        player->race_id = sqlite3_column_int(stmt, 2);
-        player->character.sex = sqlite3_column_int(stmt, 3);
-        player->class_id = sqlite3_column_int(stmt, 4);
-        player->character._int = sqlite3_column_int(stmt, 5);
-        player->character.str = sqlite3_column_int(stmt, 6);
-        player->character.con = sqlite3_column_int(stmt, 7);
-        player->character.men = sqlite3_column_int(stmt, 8);
-        player->character.dex = sqlite3_column_int(stmt, 9);
-        player->character.wit = sqlite3_column_int(stmt, 10);
-        player->hair_style_id = sqlite3_column_int(stmt, 11);
-        player->hair_color_id = sqlite3_column_int(stmt, 12);
-        player->face = sqlite3_column_int(stmt, 13);
-        player->character.x = sqlite3_column_int(stmt, 14);
-        player->character.y = sqlite3_column_int(stmt, 15);
-        player->character.z = sqlite3_column_int(stmt, 16);
-        player->character.hp = sqlite3_column_double(stmt, 17);
-        player->character.mp = sqlite3_column_double(stmt, 18);
-        player->character.current_hp = sqlite3_column_double(stmt, 19);
-        player->character.current_mp = sqlite3_column_double(stmt, 20);
-        player->active = sqlite3_column_int(stmt, 21);
-        player->character.level = sqlite3_column_int(stmt, 22);
+        assert(stmt);
+        assert(player);
+
+        int col_key = 0;
+
+        player->character.id = sqlite3_column_int(stmt, CHARACTER_ID);
+
+        memset(player->character.name, 0, sizeof(player->character.name));
+        strcat(
+                player->character.name,
+                (const char *) sqlite3_column_text(stmt, CHARACTER_NAME)
+        );
+
+        player->race_id = sqlite3_column_int(stmt, CHARACTER_RACE_ID);
+        player->character.sex = sqlite3_column_int(stmt, CHARACTER_SEX);
+        player->class_id = sqlite3_column_int(stmt, CHARACTER_CLASS_ID);
+        player->character._int = sqlite3_column_int(stmt, CHARACTER_INT);
+        player->character.str = sqlite3_column_int(stmt, CHARACTER_STR);
+        player->character.con = sqlite3_column_int(stmt, CHARACTER_CON);
+        player->character.men = sqlite3_column_int(stmt, CHARACTER_MEN);
+        player->character.dex = sqlite3_column_int(stmt, CHARACTER_DEX);
+        player->character.wit = sqlite3_column_int(stmt, CHARACTER_WIT);
+        player->hair_style_id = sqlite3_column_int(stmt, CHARACTER_HAIR_STYLE_ID);
+        player->hair_color_id = sqlite3_column_int(stmt, CHARACTER_HAIR_COLOR_ID);
+        player->face = sqlite3_column_int(stmt, CHARACTER_FACE_ID);
+        player->character.x = sqlite3_column_int(stmt, CHARACTER_X);
+        player->character.y = sqlite3_column_int(stmt, CHARACTER_Y);
+        player->character.z = sqlite3_column_int(stmt, CHARACTER_Z);
+        player->character.hp = sqlite3_column_double(stmt, CHARACTER_MAX_HP);
+        player->character.mp = sqlite3_column_double(stmt, CHARACTER_MAX_MP);
+        player->character.current_hp = sqlite3_column_double(stmt, CHARACTER_HP);
+        player->character.current_mp = sqlite3_column_double(stmt, CHARACTER_MP);
+        player->active = sqlite3_column_int(stmt, CHARACTER_ACTIVE);
+        player->character.level = sqlite3_column_int(stmt, CHARACTER_LEVEL);
 }
 
-struct Pc **storage_characters_all(conn_handler *conn, struct Client *client)
+struct Player **storage_characters_all
+(struct Client *client)
 {
+        assert(client);
+
         size_t max_chars = 5;
-        struct Pc **characters = client_alloc_mem(client, sizeof(struct Pc *) * max_chars);
+        struct Player **characters = NULL;
 
-        sqlite3 *sqlite;
-        sqlite3_stmt *stmt;
+        conn_handler *conn = NULL;
+        sqlite3_stmt *stmt = NULL;
 
-        sqlite3_open("gameserver.db", &sqlite);
-
-        // conn_open(conn);
+        characters = client_alloc_mem(client, sizeof(*characters) * max_chars);
+        conn = conn_open();
 
         sqlite3_prepare_v2(
-                sqlite,
-                "SELECT id, name, race_id, sex, class_id, _int, str, con, men, dex, wit, hair_style_id, hair_color_id, face_id, x, y, z, max_hp, max_mp, hp, mp, active, level \
+                (sqlite3 *) conn,
+                "SELECT " CHARACTER_TABLE_COLUMNS "\
                 FROM characters \
                 ORDER BY name DESC \
                 LIMIT ?",
@@ -58,30 +112,31 @@ struct Pc **storage_characters_all(conn_handler *conn, struct Client *client)
         sqlite3_bind_int(stmt, 1, (int) max_chars);
 
         for (int i = 0; sqlite3_step(stmt) == SQLITE_ROW; i++) {
-                characters[i] = client_alloc_mem(client, sizeof(struct Pc));
+                characters[i] = client_alloc_mem(client, sizeof(struct Player));
                 query_to_char(stmt, characters[i]);
         }
 
         sqlite3_finalize(stmt);
-        sqlite3_close(sqlite);
-
-        // conn_close(sqlite);
+        conn_close(conn);
 
         return characters;
 }
 
-struct Pc *storage_character_get(conn_handler *conn, struct Client *client, int index)
+struct Player *storage_character_get
+(struct Client *client, int index)
 {
-        struct Pc *player = client_alloc_mem(client, sizeof(struct Pc));
+        assert(client);
 
-        sqlite3 *sqlite;
-        sqlite3_stmt *stmt;
+        struct Player *player = NULL;
+        conn_handler *conn = NULL;
+        sqlite3_stmt *stmt = NULL;
 
-        sqlite3_open("gameserver.db", &sqlite);
+        player = client_alloc_mem(client, sizeof(*player));
+        conn = conn_open();
 
         sqlite3_prepare_v2(
-                sqlite,
-                "SELECT id, name, race_id, sex, class_id, _int, str, con, men, dex, wit, hair_style_id, hair_color_id, face_id, x, y, z, max_hp, max_mp, hp, mp, active, level \
+                (sqlite3 *) conn,
+                "SELECT " CHARACTER_TABLE_COLUMNS "\
                 FROM characters \
                 ORDER BY name DESC \
                 LIMIT 1 \
@@ -95,9 +150,86 @@ struct Pc *storage_character_get(conn_handler *conn, struct Client *client, int 
 
         sqlite3_step(stmt);
         query_to_char(stmt, player);
-
         sqlite3_finalize(stmt);
-        sqlite3_close(sqlite);
+
+        conn_close(conn);
 
         return player;
+}
+
+void storage_character_save
+(struct Client *client, struct Player *player)
+{
+        assert(client);
+        assert(player);
+
+        conn_handler *conn = NULL;
+        sqlite3_stmt *stmt = NULL;
+        int col_key = 0;
+
+        conn = conn_open();
+
+        sqlite3_prepare_v2(
+                (sqlite3 *) conn,
+                "INSERT OR REPLACE INTO characters \
+                (" CHARACTER_TABLE_COLUMNS ") \
+                VALUES \
+                ( \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ?, \
+                        ? \
+                )",
+                -1,
+                &stmt,
+                NULL
+        );
+
+        sqlite3_bind_int(stmt, CHARACTER_ID + 1, player->character.id);
+        sqlite3_bind_text(stmt, CHARACTER_NAME + 1, player->character.name, -1, NULL);
+        sqlite3_bind_int(stmt, CHARACTER_RACE_ID + 1, player->race_id);
+        sqlite3_bind_int(stmt, CHARACTER_SEX + 1, player->character.sex);
+        sqlite3_bind_int(stmt, CHARACTER_CLASS_ID + 1, player->class_id);
+        sqlite3_bind_int(stmt, CHARACTER_INT + 1, player->character._int);
+        sqlite3_bind_int(stmt, CHARACTER_STR + 1, player->character.str);
+        sqlite3_bind_int(stmt, CHARACTER_CON + 1, player->character.con);
+        sqlite3_bind_int(stmt, CHARACTER_MEN + 1, player->character.men);
+        sqlite3_bind_int(stmt, CHARACTER_DEX + 1, player->character.dex);
+        sqlite3_bind_int(stmt, CHARACTER_WIT + 1, player->character.wit);
+        sqlite3_bind_int(stmt, CHARACTER_HAIR_STYLE_ID + 1, player->hair_style_id);
+        sqlite3_bind_int(stmt, CHARACTER_HAIR_COLOR_ID + 1, player->hair_color_id);
+        sqlite3_bind_int(stmt, CHARACTER_FACE_ID + 1, player->face);
+        sqlite3_bind_int(stmt, CHARACTER_X + 1, player->character.x);
+        sqlite3_bind_int(stmt, CHARACTER_Y + 1, player->character.y);
+        sqlite3_bind_int(stmt, CHARACTER_Z + 1, player->character.z);
+        sqlite3_bind_double(stmt, CHARACTER_MAX_HP + 1, player->character.hp);
+        sqlite3_bind_double(stmt, CHARACTER_MAX_MP + 1, player->character.mp);
+        sqlite3_bind_double(stmt, CHARACTER_HP + 1, player->character.current_hp);
+        sqlite3_bind_double(stmt, CHARACTER_MP + 1, player->character.current_mp);
+        sqlite3_bind_int(stmt, CHARACTER_ACTIVE + 1, player->active);
+        sqlite3_bind_int(stmt, CHARACTER_LEVEL + 1, player->character.level);
+
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        conn_close(conn);
 }

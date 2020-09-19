@@ -19,9 +19,11 @@
 #include "request_handler/validate_position/handler.h"
 #include "request_handler/say/handler.h"
 #include "request_handler/logout/handler.h"
+#include "request_handler/create_char/handler.h"
+#include "request_handler/new_char/handler.h"
 #include "dto/character.h"
 #include "dto/npc.h"
-#include "dto/pc.h"
+#include "dto/player.h"
 #include "cache/world.h"
 #include "client.h"
 
@@ -38,7 +40,7 @@ struct Client {
         request_handler handle_request;
 
         struct L2SessionKey session;
-        struct Pc character;
+        struct Player character;
         struct World *world;
 };
 
@@ -122,8 +124,10 @@ void client_handle_request
                 auth_login_handler(client, packet);
                 break;
         case REQUEST_TYPE_NEW_CHAR:
+                new_char_handler(client, packet);
                 break;
         case REQUEST_TYPE_CREATE_CHAR:
+                create_char_handler(client, packet);
                 break;
         case REQUEST_TYPE_SELECTED_CHAR:
                 select_character_handler(client, packet);
@@ -242,7 +246,7 @@ void client_decrypt_packet
 }
 
 void client_update_character
-(struct Client *client, struct Pc *character)
+(struct Client *client, struct Player *character)
 {
         assert(client);
         assert(character);
@@ -258,12 +262,12 @@ struct Character *client_character
         return world_get_character(client->world, obj_id);
 }
 
-struct Pc *client_player
+struct Player *client_player
 (struct Client *client)
 {
         assert(client);
 
-        struct Pc player = client->character;
+        struct Player player = client->character;
         return world_get_player(client->world, player.character.id);
 }
 

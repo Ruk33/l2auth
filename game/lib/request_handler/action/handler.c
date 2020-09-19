@@ -6,7 +6,7 @@
 #include "../../client.h"
 #include "../enter_world/next_handler.h"
 #include "../../entity/character.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "handler.h"
 
 void action_handler

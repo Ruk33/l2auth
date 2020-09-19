@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <core/l2_packet.h>
 #include <core/byte_builder.h>
-#include "../../dto/pc.h"
+#include "../../dto/player.h"
 #include "../../dto/vec3.h"
 #include "../../client.h"
 #include "../../packet_builder.h"
@@ -16,7 +16,7 @@ l2_packet *validate_position_response
         l2_packet_type type = 0x61;
         l2_packet *response = NULL;
 
-        struct Pc *player = NULL;
+        struct Player *player = NULL;
         int char_id = 0;
 
         size_t buf_size = 0;

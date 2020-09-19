@@ -7,7 +7,7 @@
 #include "host.h"
 #include "dto/character.h"
 #include "dto/npc.h"
-#include "dto/pc.h"
+#include "dto/player.h"
 
 struct Client;
 
@@ -45,12 +45,12 @@ void client_decrypt_packet
 (struct Client *client, l2_raw_packet *packet);
 
 void client_update_character
-(struct Client *client, struct Pc *character);
+(struct Client *client, struct Player *character);
 
 struct Character *client_character
 (struct Client *client, int obj_id);
 
-struct Pc *client_player
+struct Player *client_player
 (struct Client *client);
 
 void client_spawn_npc

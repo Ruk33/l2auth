@@ -1,15 +1,12 @@
 #ifndef STORAGE_CONN_H
 #define STORAGE_CONN_H
 
-#include <stdlib.h>
+#include <data_structure/list.h>
 
 typedef void conn_handler;
 
-size_t conn_handler_size
+conn_handler *conn_open
 (void);
-
-void conn_open
-(conn_handler *conn);
 
 void conn_close
 (conn_handler *conn);

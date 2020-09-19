@@ -4,7 +4,7 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include "../../storage/character.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../type.h"
 #include "next_handler.h"
 #include "response.h"
@@ -19,7 +19,7 @@ void select_character_handler
         unsigned char* content = NULL;
 
         int index = 0;
-        struct Pc *character = NULL;
+        struct Player *character = NULL;
         l2_packet *response = NULL;
 
         content = l2_packet_content(packet);
@@ -27,7 +27,7 @@ void select_character_handler
         byte_reader_cpy_int_n_mv(content, &index);
         log_info("Selected char with index %d", index);
         
-        character = storage_character_get(NULL, client, index);
+        character = storage_character_get(client, index);
         client_update_character(client, character);
 
         response = select_character_response(client);

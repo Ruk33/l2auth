@@ -5,7 +5,7 @@
 #include "../../host.h"
 #include "../../dto/character.h"
 #include "../../dto/npc.h"
-#include "../../dto/pc.h"
+#include "../../dto/player.h"
 #include "../world.h"
 
 struct World {
@@ -29,14 +29,15 @@ struct World *world_new
         return world;
 }
 
-void world_update_player(struct World *world, struct Pc *player)
+void world_update_player
+(struct World *world, struct Player *player)
 {
         assert(world);
         assert(player);
 
         int id = 0;
-        struct Pc *prev_player = NULL;
-        struct Pc *new_player = NULL;
+        struct Player *prev_player = NULL;
+        struct Player *new_player = NULL;
 
         id = player->character.id;
         prev_player = hashtable_get(world->players, id);
@@ -51,7 +52,8 @@ void world_update_player(struct World *world, struct Pc *player)
         if (prev_player) world->memory_free(prev_player);
 }
 
-struct Character *world_get_character(struct World *world, int id)
+struct Character *world_get_character
+(struct World *world, int id)
 {
         assert(world);
 
@@ -67,12 +69,13 @@ struct Character *world_get_character(struct World *world, int id)
         return character_copy;
 }
 
-struct Pc *world_get_player(struct World *world, int id)
+struct Player *world_get_player
+(struct World *world, int id)
 {
         assert(world);
 
-        struct Pc *player = NULL;
-        struct Pc *player_copy = NULL;
+        struct Player *player = NULL;
+        struct Player *player_copy = NULL;
 
         player = hashtable_get(world->players, id);
         player_copy = world->memory_alloc(sizeof(*player_copy));
@@ -83,7 +86,8 @@ struct Pc *world_get_player(struct World *world, int id)
         return player_copy;
 }
 
-void world_spawn_npc(struct World *world, struct Npc *npc)
+void world_spawn_npc
+(struct World *world, struct Npc *npc)
 {
         assert(world);
         assert(npc);

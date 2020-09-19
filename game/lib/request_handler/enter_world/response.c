@@ -4,7 +4,7 @@
 #include <core/byte_builder.h>
 #include <core/l2_string.h>
 #include "../../client.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../../packet_builder.h"
 #include "response.h"
 
@@ -95,7 +95,7 @@ l2_packet *enter_world_response
         int fish_z = 0;
         int name_color = 0xFFFFFF;
 
-        struct Pc* player = client_player(client);
+        struct Player* player = client_player(client);
         size_t player_name_len = strlen(player->character.name) + 1;
 
         l2_string name[28];

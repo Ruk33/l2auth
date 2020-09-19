@@ -3,15 +3,15 @@
 
 #include "conn.h"
 #include "../client.h"
-#include "../entity/pc.h"
+#include "../entity/player.h"
 
-struct Pc **storage_characters_all
-(conn_handler *conn, struct Client *client);
+struct Player **storage_characters_all
+(struct Client *client);
 
-struct Pc *storage_character_get
-(conn_handler *conn, struct Client *client, int index);
+struct Player *storage_character_get
+(struct Client *client, int index);
 
 void storage_character_save
-(conn_handler *conn, struct Client *client, struct Pc *character);
+(struct Client *client, struct Player *character);
 
 #endif

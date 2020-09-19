@@ -5,7 +5,7 @@
 #include <core/l2_packet.h>
 #include <core/l2_string.h>
 #include "../../client.h"
-#include "../../entity/pc.h"
+#include "../../entity/player.h"
 #include "../../packet_builder.h"
 #include "response.h"
 
@@ -18,7 +18,7 @@ l2_packet *say_response
         l2_packet_type type = 0x4a;
         l2_packet *response = NULL;
 
-        struct Pc *player = client_player(client);
+        struct Player *player = client_player(client);
         int text_type = 0;
 
         // char new_char_message[] = "Like do you even bro?";
