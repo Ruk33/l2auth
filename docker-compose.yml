@@ -8,7 +8,7 @@ services:
       - "2106:2106"
   gameserver:
     build: .
-    command: bash -c "cd game/src && make && cd ../lib && make && cd .. && build/gameserver"
+    command: bash -c "cd game/src && make && cd ../lib && make clean && make && cd .. && build/gameserver"
     volumes:
       - ".:/usr/src/l2auth"
     ports:
