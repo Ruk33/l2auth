@@ -45,6 +45,44 @@ static enum CHARACTER_TABLE_COLUMN_KEYS {
         CHARACTER_LEVEL
 };
 
+static void create_table_if_required
+(conn_handler *conn)
+{
+        assert(conn);
+
+        sqlite3_exec(
+                (sqlite3 *) conn,
+                "CREATE TABLE IF NOT EXISTS characters ( \
+                        id INT PRIMARY KEY, \
+                        name TEXT, \
+                        race_id INT, \
+                        sex INT, \
+                        class_id INT, \
+                        _int INT, \
+                        str INT, \
+                        con INT, \
+                        men INT, \
+                        dex INT, \
+                        wit INT, \
+                        hair_style_id INT, \
+                        hair_color_id INT, \
+                        face_id INT, \
+                        x INT, \
+                        y INT, \
+                        z INT, \
+                        max_hp DOUBLE, \
+                        max_mp DOUBLE, \
+                        hp DOUBLE, \
+                        mp DOUBLE, \
+                        active INT, \
+                        level INT \
+                )",
+                NULL,
+                NULL,
+                NULL
+        );
+}
+
 static void query_to_char
 (sqlite3_stmt *stmt, struct Player *player)
 {
@@ -98,6 +136,8 @@ struct Player **storage_characters_all
         characters = client_alloc_mem(client, sizeof(*characters) * max_chars);
         conn = conn_open();
 
+        create_table_if_required(conn);
+
         sqlite3_prepare_v2(
                 (sqlite3 *) conn,
                 "SELECT " CHARACTER_TABLE_COLUMNS "\
@@ -134,6 +174,8 @@ struct Player *storage_character_get
         player = client_alloc_mem(client, sizeof(*player));
         conn = conn_open();
 
+        create_table_if_required(conn);
+
         sqlite3_prepare_v2(
                 (sqlite3 *) conn,
                 "SELECT " CHARACTER_TABLE_COLUMNS "\
@@ -168,6 +210,8 @@ void storage_character_save
         int col_key = 0;
 
         conn = conn_open();
+
+        create_table_if_required(conn);
 
         sqlite3_prepare_v2(
                 (sqlite3 *) conn,
