@@ -9,6 +9,7 @@
 #include "../request_handler/action/action_fail_response.h"
 #include "../request_handler/say/response.h"
 #include "../request_handler/create_char/response.h"
+#include "../request_handler/auth_login/response.h"
 #include "../client.h"
 #include "../dto/character.h"
 #include "../dto/player.h"
