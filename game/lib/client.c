@@ -21,13 +21,15 @@
 #include "request_handler/logout/handler.h"
 #include "request_handler/create_char/handler.h"
 #include "request_handler/new_char/handler.h"
+#include "request_handler/show_map/handler.h"
 #include "dto/character.h"
 #include "dto/npc.h"
 #include "dto/player.h"
 #include "cache/world.h"
 #include "client.h"
 
-struct Client {
+struct Client
+{
         host_malloc_cb memory_alloc;
         host_mfree_cb memory_free;
         host_send_response_cb send_response;
@@ -44,11 +46,10 @@ struct Client {
         struct World *world;
 };
 
-struct Client *client_new
-(int id, host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
+struct Client *client_new(int id, host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
 {
         struct Client *client = NULL;
-        unsigned char key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
+        unsigned char key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
 
         client = m(sizeof(*client));
         client->id = id;
@@ -68,24 +69,21 @@ struct Client *client_new
         return client;
 }
 
-void *client_alloc_mem
-(struct Client *client, size_t how_much)
+void *client_alloc_mem(struct Client *client, size_t how_much)
 {
         assert(client);
         assert(how_much > 0);
         return client->memory_alloc(how_much);
 }
 
-void client_free_mem
-(struct Client *client, void *mem)
+void client_free_mem(struct Client *client, void *mem)
 {
         assert(client);
         assert(mem);
         client->memory_free(mem);
 }
 
-void client_handle_request
-(struct Client *client, unsigned char *request, size_t request_size)
+void client_handle_request(struct Client *client, unsigned char *request, size_t request_size)
 {
         assert(client);
         assert(request);
@@ -95,22 +93,23 @@ void client_handle_request
         unsigned short packet_size = 0;
         l2_raw_packet *packet = NULL;
 
-        raw_packet = (l2_raw_packet *) request;
+        raw_packet = (l2_raw_packet *)request;
         packet_content = l2_raw_packet_content(raw_packet);
-        packet_size = (unsigned short) (request_size - 2);
+        packet_size = (unsigned short)(request_size - 2);
         packet = client_alloc_mem(
-                client,
-                l2_raw_packet_calculate_size((unsigned short) request_size)
-        );
+            client,
+            l2_raw_packet_calculate_size((unsigned short)request_size));
 
         l2_raw_packet_init(packet, packet_content, packet_size);
 
-        if (client->conn_encrypted) client_decrypt_packet(client, packet);
+        if (client->conn_encrypted)
+                client_decrypt_packet(client, packet);
         client->conn_encrypted = 1;
 
         log_info("Packet type %02X", l2_packet_get_type(packet));
 
-        switch (l2_packet_get_type(packet)) {
+        switch (l2_packet_get_type(packet))
+        {
         case REQUEST_TYPE_PROTOCOL_VERSION:
                 protocol_version_handler(client, packet);
                 break;
@@ -153,6 +152,9 @@ void client_handle_request
         case REQUEST_TYPE_LOGOUT:
                 logout_handler(client, packet);
                 break;
+        case REQUEST_TYPE_SHOW_MAP:
+                show_map_handler(client, packet);
+                break;
         default:
                 break;
         }
@@ -160,8 +162,7 @@ void client_handle_request
         client_free_mem(client, packet);
 }
 
-void client_queue_response
-(struct Client *client, l2_raw_packet *packet)
+void client_queue_response(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
@@ -169,22 +170,20 @@ void client_queue_response
         unsigned char *buf = NULL;
         size_t buf_size = 0;
 
-        buf = (unsigned char *) packet;
-        buf_size = (size_t) l2_raw_packet_get_size(packet);
+        buf = (unsigned char *)packet;
+        buf_size = (size_t)l2_raw_packet_get_size(packet);
 
         client->send_response(client->id, buf, buf_size);
 }
 
-void client_update_request_handler
-(struct Client *client, request_handler handler)
+void client_update_request_handler(struct Client *client, request_handler handler)
 {
         assert(client);
         assert(handler);
         client->handle_request = handler;
 }
 
-void client_update_session
-(struct Client *client, struct L2SessionKey *session)
+void client_update_session(struct Client *client, struct L2SessionKey *session)
 {
         assert(client);
         assert(session);
@@ -198,8 +197,7 @@ void client_update_session
         log_info("Login OK 2: %d", client->session.loginOK2);
 }
 
-struct L2SessionKey *client_session
-(struct Client *client)
+struct L2SessionKey *client_session(struct Client *client)
 {
         assert(client);
 
@@ -211,8 +209,7 @@ struct L2SessionKey *client_session
         return session;
 }
 
-void client_encrypt_packet
-(struct Client *client, l2_raw_packet *packet)
+void client_encrypt_packet(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
@@ -223,13 +220,13 @@ void client_encrypt_packet
         packet_content = l2_raw_packet_content(packet);
         packet_size = l2_raw_packet_get_size(packet);
 
-        if (packet_size > 1) packet_size = (unsigned short) (packet_size - 2);
+        if (packet_size > 1)
+                packet_size = (unsigned short)(packet_size - 2);
 
         encrypt(packet_content, packet_size, client->encrypt_key);
 }
 
-void client_decrypt_packet
-(struct Client *client, l2_raw_packet *packet)
+void client_decrypt_packet(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
@@ -240,13 +237,13 @@ void client_decrypt_packet
         packet_content = l2_raw_packet_content(packet);
         packet_size = l2_raw_packet_get_size(packet);
 
-        if (packet_size > 1) packet_size = (unsigned short) (packet_size - 2);
+        if (packet_size > 1)
+                packet_size = (unsigned short)(packet_size - 2);
 
         decrypt(packet_content, packet_size, client->decrypt_key);
 }
 
-void client_update_character
-(struct Client *client, struct Player *character)
+void client_update_character(struct Client *client, struct Player *character)
 {
         assert(client);
         assert(character);
@@ -255,15 +252,13 @@ void client_update_character
         world_update_player(client->world, character);
 }
 
-struct Character *client_character
-(struct Client *client, int obj_id)
+struct Character *client_character(struct Client *client, int obj_id)
 {
         assert(client);
         return world_get_character(client->world, obj_id);
 }
 
-struct Player *client_player
-(struct Client *client)
+struct Player *client_player(struct Client *client)
 {
         assert(client);
 
@@ -271,16 +266,14 @@ struct Player *client_player
         return world_get_player(client->world, player.character.id);
 }
 
-void client_spawn_npc
-(struct Client *client, struct Npc *npc)
+void client_spawn_npc(struct Client *client, struct Npc *npc)
 {
         assert(client);
         assert(npc);
         world_spawn_npc(client->world, npc);
 }
 
-void client_handle_disconnect
-(struct Client *client)
+void client_handle_disconnect(struct Client *client)
 {
         assert(client);
         client->memory_free(client);
