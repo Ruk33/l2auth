@@ -1,21 +1,22 @@
 #include <assert.h>
 #include <core/l2_raw_packet.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../../entity/player.h"
 #include "request.h"
 #include "handler.h"
 
-void create_char_handler
-(struct Client *client, l2_raw_packet *packet)
+void create_char_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
 
-        struct CreateCharRequest *request = NULL;
+        struct Client *client = request->client;
+        l2_raw_packet *packet = request->packet;
+        struct CreateCharRequest *char_create_request = NULL;
 
-        request = create_char_request(client, packet);
+        char_create_request = create_char_request(client, packet);
 
-        player_create(client, request);
+        player_create(client, char_create_request);
 
-        client_free_mem(client, request);
+        client_free_mem(client, char_create_request);
 }

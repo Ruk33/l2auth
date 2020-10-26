@@ -11,13 +11,13 @@
  * to make sqlite queries easier to write
  */
 
-#define CHARACTER_TABLE_COLUMNS                         \
+#define CHARACTER_TABLE_COLUMNS \
         "                                               \
         id, name, race_id, sex, class_id, _int,         \
         str, con, men, dex, wit, hair_style_id,         \
         hair_color_id, face_id, x, y, z, max_hp,        \
         max_mp, hp, mp, active, level                   \
-        "   
+        "
 
 static enum CHARACTER_TABLE_COLUMN_KEYS {
         CHARACTER_ID,
@@ -45,14 +45,13 @@ static enum CHARACTER_TABLE_COLUMN_KEYS {
         CHARACTER_LEVEL
 };
 
-static void create_table_if_required
-(conn_handler *conn)
+static void create_table_if_required(conn_handler *conn)
 {
         assert(conn);
 
         sqlite3_exec(
-                (sqlite3 *) conn,
-                "CREATE TABLE IF NOT EXISTS characters ( \
+            (sqlite3 *)conn,
+            "CREATE TABLE IF NOT EXISTS characters ( \
                         id INT PRIMARY KEY, \
                         name TEXT, \
                         race_id INT, \
@@ -77,27 +76,22 @@ static void create_table_if_required
                         active INT, \
                         level INT \
                 )",
-                NULL,
-                NULL,
-                NULL
-        );
+            NULL,
+            NULL,
+            NULL);
 }
 
-static void query_to_char
-(sqlite3_stmt *stmt, struct Player *player)
+static void query_to_char(sqlite3_stmt *stmt, struct Player *player)
 {
         assert(stmt);
         assert(player);
-
-        int col_key = 0;
 
         player->character.id = sqlite3_column_int(stmt, CHARACTER_ID);
 
         memset(player->character.name, 0, sizeof(player->character.name));
         strcat(
-                player->character.name,
-                (const char *) sqlite3_column_text(stmt, CHARACTER_NAME)
-        );
+            player->character.name,
+            (const char *)sqlite3_column_text(stmt, CHARACTER_NAME));
 
         player->race_id = sqlite3_column_int(stmt, CHARACTER_RACE_ID);
         player->character.sex = sqlite3_column_int(stmt, CHARACTER_SEX);
@@ -122,8 +116,7 @@ static void query_to_char
         player->character.level = sqlite3_column_int(stmt, CHARACTER_LEVEL);
 }
 
-struct Player **storage_characters_all
-(struct Client *client)
+struct Player **storage_characters_all(struct Client *client)
 {
         assert(client);
 
@@ -139,19 +132,19 @@ struct Player **storage_characters_all
         create_table_if_required(conn);
 
         sqlite3_prepare_v2(
-                (sqlite3 *) conn,
-                "SELECT " CHARACTER_TABLE_COLUMNS "\
+            (sqlite3 *)conn,
+            "SELECT " CHARACTER_TABLE_COLUMNS "\
                 FROM characters \
                 ORDER BY name DESC \
                 LIMIT ?",
-                -1,
-                &stmt,
-                NULL
-        );
+            -1,
+            &stmt,
+            NULL);
 
-        sqlite3_bind_int(stmt, 1, (int) max_chars);
+        sqlite3_bind_int(stmt, 1, (int)max_chars);
 
-        for (int i = 0; sqlite3_step(stmt) == SQLITE_ROW; i++) {
+        for (int i = 0; sqlite3_step(stmt) == SQLITE_ROW; i++)
+        {
                 characters[i] = client_alloc_mem(client, sizeof(struct Player));
                 query_to_char(stmt, characters[i]);
         }
@@ -162,8 +155,7 @@ struct Player **storage_characters_all
         return characters;
 }
 
-struct Player *storage_character_get
-(struct Client *client, int index)
+struct Player *storage_character_get(struct Client *client, int index)
 {
         assert(client);
 
@@ -177,16 +169,15 @@ struct Player *storage_character_get
         create_table_if_required(conn);
 
         sqlite3_prepare_v2(
-                (sqlite3 *) conn,
-                "SELECT " CHARACTER_TABLE_COLUMNS "\
+            (sqlite3 *)conn,
+            "SELECT " CHARACTER_TABLE_COLUMNS "\
                 FROM characters \
                 ORDER BY name DESC \
                 LIMIT 1 \
                 OFFSET ?",
-                -1,
-                &stmt,
-                NULL
-        );
+            -1,
+            &stmt,
+            NULL);
 
         sqlite3_bind_int(stmt, 1, index);
 
@@ -199,23 +190,22 @@ struct Player *storage_character_get
         return player;
 }
 
-void storage_character_save
-(struct Client *client, struct Player *player)
+void storage_character_save(struct Client *client, struct Player *player)
 {
         assert(client);
         assert(player);
 
         conn_handler *conn = NULL;
         sqlite3_stmt *stmt = NULL;
-        int col_key = 0;
+        int result = 0;
 
         conn = conn_open();
 
         create_table_if_required(conn);
 
-        sqlite3_prepare_v2(
-                (sqlite3 *) conn,
-                "INSERT OR REPLACE INTO characters \
+        result = sqlite3_prepare_v2(
+            (sqlite3 *)conn,
+            "INSERT OR REPLACE INTO characters \
                 (" CHARACTER_TABLE_COLUMNS ") \
                 VALUES \
                 ( \
@@ -243,10 +233,9 @@ void storage_character_save
                         ?, \
                         ? \
                 )",
-                -1,
-                &stmt,
-                NULL
-        );
+            -1,
+            &stmt,
+            NULL);
 
         sqlite3_bind_int(stmt, CHARACTER_ID + 1, player->character.id);
         sqlite3_bind_text(stmt, CHARACTER_NAME + 1, player->character.name, -1, NULL);
@@ -272,8 +261,19 @@ void storage_character_save
         sqlite3_bind_int(stmt, CHARACTER_ACTIVE + 1, player->active);
         sqlite3_bind_int(stmt, CHARACTER_LEVEL + 1, player->character.level);
 
-        sqlite3_step(stmt);
-        sqlite3_finalize(stmt);
+        result = sqlite3_step(stmt);
+
+        if (result != SQLITE_OK)
+        {
+                log_fatal(sqlite3_errmsg((sqlite3 *)conn));
+        }
+
+        result = sqlite3_finalize(stmt);
+
+        if (result != SQLITE_OK)
+        {
+                log_fatal(sqlite3_errmsg((sqlite3 *)conn));
+        }
 
         conn_close(conn);
 }

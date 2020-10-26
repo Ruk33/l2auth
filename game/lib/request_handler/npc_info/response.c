@@ -9,8 +9,7 @@
 #include "../../packet_builder.h"
 #include "handler.h"
 
-l2_packet *npc_info_response
-(struct Client *client)
+l2_packet *npc_info_response(struct Client *client)
 {
         assert(client);
 
@@ -98,7 +97,7 @@ l2_packet *npc_info_response
 
         byte_builder_append_double(buffer, &f_1);
 
-        byte_builder_append_double(buffer, &empty_d); // p atk speed
+        byte_builder_append_double(buffer, &empty_d);              // p atk speed
         byte_builder_append_double(buffer, &npc.collision_radius); // col radius
         byte_builder_append_double(buffer, &npc.collision_height); // col height
 
@@ -133,14 +132,13 @@ l2_packet *npc_info_response
         byte_builder_append_double(buffer, &empty_d);
         byte_builder_append_int(buffer, &empty);
 
-        client_spawn_npc(client, &npc);
+        // client_spawn_npc(client, &npc);
 
         response = packet_builder_new(
-                client,
-                type,
-                buffer,
-                (unsigned short) byte_builder_length(buffer)
-        );
+            client,
+            type,
+            buffer,
+            (unsigned short)byte_builder_length(buffer));
 
         client_free_mem(client, name_as_string);
         client_free_mem(client, title_as_string);

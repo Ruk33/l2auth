@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <core/l2_raw_packet.h>
 #include <core/byte_reader.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../../dto/player.h"
 #include "../../dto/vec3.h"
@@ -8,11 +9,11 @@
 #include "next_handler.h"
 #include "handler.h"
 
-void validate_position_handler
-(struct Client *client, l2_raw_packet *packet)
+void validate_position_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
+
+        struct Client *client = request->client;
 
         // l2_packet *response = NULL;
         // unsigned char* content = l2_packet_content(packet);

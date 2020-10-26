@@ -1,13 +1,15 @@
 #include <assert.h>
 #include <core/l2_raw_packet.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "response.h"
 #include "handler.h"
 
-void npc_info_handler(struct Client *client, l2_raw_packet *packet)
+void npc_info_handler(struct Request *request)
 {
-        assert(client);
-        // assert(packet);
+        assert(request);
+
+        struct Client *client = request->client;
 
         l2_packet *response = NULL;
 

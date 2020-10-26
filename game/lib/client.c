@@ -6,26 +6,9 @@
 #include "host.h"
 #include "decrypt.h"
 #include "encrypt.h"
-#include "request_handler/protocol_version/handler.h"
-#include "request_handler/move/handler.h"
-#include "request_handler/type.h"
-#include "request_handler/action/handler.h"
-#include "request_handler/auth_login/handler.h"
-#include "request_handler/select_character/handler.h"
-#include "request_handler/d0/handler.h"
-#include "request_handler/quest_list/handler.h"
-#include "request_handler/enter_world/handler.h"
-#include "request_handler/restart/handler.h"
-#include "request_handler/validate_position/handler.h"
-#include "request_handler/say/handler.h"
-#include "request_handler/logout/handler.h"
-#include "request_handler/create_char/handler.h"
-#include "request_handler/new_char/handler.h"
-#include "request_handler/show_map/handler.h"
 #include "dto/character.h"
 #include "dto/npc.h"
 #include "dto/player.h"
-#include "cache/world.h"
 #include "client.h"
 
 struct Client
@@ -43,7 +26,6 @@ struct Client
 
         struct L2SessionKey session;
         struct Player character;
-        struct World *world;
 };
 
 struct Client *client_new(int id, host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
@@ -57,11 +39,6 @@ struct Client *client_new(int id, host_malloc_cb m, host_mfree_cb f, host_send_r
         client->memory_free = f;
         client->send_response = s;
         client->conn_encrypted = 0;
-        client->handle_request = &protocol_version_handler;
-
-        // Temporary
-        // Fix me, this shouldn't be handled by client
-        client->world = world_new(m, f);
 
         memcpy(client->encrypt_key, key, sizeof(client->encrypt_key));
         memcpy(client->decrypt_key, key, sizeof(client->decrypt_key));
@@ -81,85 +58,6 @@ void client_free_mem(struct Client *client, void *mem)
         assert(client);
         assert(mem);
         client->memory_free(mem);
-}
-
-void client_handle_request(struct Client *client, unsigned char *request, size_t request_size)
-{
-        assert(client);
-        assert(request);
-
-        l2_raw_packet *raw_packet = NULL;
-        unsigned char *packet_content = NULL;
-        unsigned short packet_size = 0;
-        l2_raw_packet *packet = NULL;
-
-        raw_packet = (l2_raw_packet *)request;
-        packet_content = l2_raw_packet_content(raw_packet);
-        packet_size = (unsigned short)(request_size - 2);
-        packet = client_alloc_mem(
-            client,
-            l2_raw_packet_calculate_size((unsigned short)request_size));
-
-        l2_raw_packet_init(packet, packet_content, packet_size);
-
-        if (client->conn_encrypted)
-                client_decrypt_packet(client, packet);
-        client->conn_encrypted = 1;
-
-        log_info("Packet type %02X", l2_packet_get_type(packet));
-
-        switch (l2_packet_get_type(packet))
-        {
-        case REQUEST_TYPE_PROTOCOL_VERSION:
-                protocol_version_handler(client, packet);
-                break;
-        case REQUEST_TYPE_MOVE_BACKWARDS_TO_LOCATION:
-                move_handler(client, packet);
-                break;
-        case REQUEST_TYPE_ACTION:
-                action_handler(client, packet);
-                break;
-        case REQUEST_TYPE_AUTH_REQUEST:
-                auth_login_handler(client, packet);
-                break;
-        case REQUEST_TYPE_NEW_CHAR:
-                new_char_handler(client, packet);
-                break;
-        case REQUEST_TYPE_CREATE_CHAR:
-                create_char_handler(client, packet);
-                break;
-        case REQUEST_TYPE_SELECTED_CHAR:
-                select_character_handler(client, packet);
-                break;
-        case REQUEST_TYPE_REQUEST_AUTO_SS_BSPS:
-                d0_handler(client, packet);
-                break;
-        case REQUEST_TYPE_REQUEST_QUEST_LIST:
-                quest_list_handler(client, packet);
-                break;
-        case REQUEST_TYPE_ENTER_WORLD:
-                enter_world_handler(client, packet);
-                break;
-        case REQUEST_TYPE_RESTART:
-                restart_handler(client, packet);
-                break;
-        case REQUEST_TYPE_VALIDATE_POS:
-                validate_position_handler(client, packet);
-                break;
-        case REQUEST_TYPE_SAY:
-                say_handler(client, packet);
-                break;
-        case REQUEST_TYPE_LOGOUT:
-                logout_handler(client, packet);
-                break;
-        case REQUEST_TYPE_SHOW_MAP:
-                show_map_handler(client, packet);
-                break;
-        default:
-                break;
-        }
-
-        client_free_mem(client, packet);
 }
 
 void client_queue_response(struct Client *client, l2_raw_packet *packet)
@@ -249,13 +147,6 @@ void client_update_character(struct Client *client, struct Player *character)
         assert(character);
 
         memcpy(&client->character, character, sizeof(client->character));
-        world_update_player(client->world, character);
-}
-
-struct Character *client_character(struct Client *client, int obj_id)
-{
-        assert(client);
-        return world_get_character(client->world, obj_id);
 }
 
 struct Player *client_player(struct Client *client)
@@ -263,18 +154,34 @@ struct Player *client_player(struct Client *client)
         assert(client);
 
         struct Player player = client->character;
-        return world_get_player(client->world, player.character.id);
-}
+        struct Player *player_copy = NULL;
 
-void client_spawn_npc(struct Client *client, struct Npc *npc)
-{
-        assert(client);
-        assert(npc);
-        world_spawn_npc(client->world, npc);
+        player_copy = client_alloc_mem(client, sizeof(*player_copy));
+        memcpy(player_copy, &player, sizeof(*player_copy));
+
+        return player_copy;
 }
 
 void client_handle_disconnect(struct Client *client)
 {
         assert(client);
         client->memory_free(client);
+}
+
+int client_is_conn_encrypted(struct Client *client)
+{
+        assert(client);
+        return client->conn_encrypted;
+}
+
+void client_encrypt_conn(struct Client *client)
+{
+        assert(client);
+        client->conn_encrypted = 1;
+}
+
+int client_id(struct Client *client)
+{
+        assert(client);
+        return client->id;
 }

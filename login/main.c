@@ -7,7 +7,7 @@
 int main()
 {
         unsigned short port = 2106;
-        size_t max_players = 2;
+        size_t max_players = 10;
 
         srand((unsigned int) time(NULL));
         login_server_start_or_die(port, max_players);

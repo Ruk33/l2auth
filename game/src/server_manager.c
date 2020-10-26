@@ -50,7 +50,11 @@ static void server_manager_listen_for_connections
         os_socket_bind(server->socket, server->port);
         os_socket_listen(server->socket, server->max_players);
 
-        while (1) server_manager_accept_connection();
+        while (1) {
+                log_info("Waiting for connections...");
+                server_manager_accept_connection();
+                log_info("Connection accepted!");
+        }
 
         os_socket_close(server->socket);
 }

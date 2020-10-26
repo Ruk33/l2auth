@@ -8,21 +8,21 @@
 #include "../enter_world/next_handler.h"
 #include "next_handler.h"
 
-void move_next_handler
-(struct Client *client, l2_raw_packet *packet)
+void move_next_handler(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
 
         l2_packet_type type = l2_packet_get_type(packet);
 
-        switch (type) {
+        switch (type)
+        {
         case REQUEST_TYPE_VALIDATE_POS:
-                validate_position_handler(client, packet);
+                // validate_position_handler(client, packet);
                 break;
         default:
                 log_info("Delegating to enter_world_next_handler");
-                enter_world_next_handler(client, packet);
+                // enter_world_next_handler(client, packet);
                 break;
         }
 }

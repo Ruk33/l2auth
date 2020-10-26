@@ -2,17 +2,18 @@
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../type.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
 
-void quest_list_handler
-(struct Client *client, l2_raw_packet *packet)
+void quest_list_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
+
+        struct Client *client = request->client;
 
         l2_packet *response = NULL;
 

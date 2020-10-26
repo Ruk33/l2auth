@@ -6,8 +6,7 @@
 #include "../../packet_builder.h"
 #include "response.h"
 
-l2_packet *create_char_response
-(struct Client *client)
+l2_packet *create_char_response(struct Client *client)
 {
         assert(client);
 
@@ -17,11 +16,10 @@ l2_packet *create_char_response
         int content = 0x01;
 
         response = packet_builder_new(
-                client,
-                type,
-                &content,
-                (unsigned short) sizeof(content)
-        );
+            client,
+            type,
+            (unsigned char *)&content,
+            (unsigned short)sizeof(content));
 
         return response;
 }

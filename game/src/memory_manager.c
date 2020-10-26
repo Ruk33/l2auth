@@ -34,7 +34,8 @@ void *memory_manager_alloc
         void *mem = NULL;
 
         pthread_mutex_lock(&thread_mutex);
-        mem = memory_alloc(memory_instance, how_much);
+        // mem = memory_alloc(memory_instance, how_much);
+        mem = calloc(1, how_much);
         pthread_mutex_unlock(&thread_mutex);
 
         return mem;
@@ -47,7 +48,8 @@ void memory_manager_free
         assert(mem);
 
         pthread_mutex_lock(&thread_mutex);
-        memory_free(mem);
+        // memory_free(mem);
+        free(mem);
         pthread_mutex_unlock(&thread_mutex);
 }
 

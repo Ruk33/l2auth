@@ -2,6 +2,7 @@
 #include <log/log.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../type.h"
 #include "../auth_login/response.h"
@@ -9,11 +10,11 @@
 #include "response.h"
 #include "handler.h"
 
-void restart_handler
-(struct Client *client, l2_raw_packet *packet)
+void restart_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
+
+        struct Client *client = request->client;
 
         l2_packet *response = NULL;
 
@@ -31,7 +32,7 @@ void restart_handler
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
 
-        client_update_request_handler(client, &auth_login_handler);
+        // client_update_request_handler(client, &auth_login_handler);
 
         client_free_mem(client, response);
 }

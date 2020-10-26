@@ -6,8 +6,7 @@
 #include "../move/next_handler.h"
 #include "next_handler.h"
 
-void validate_position_next_handler
-(struct Client *client, l2_raw_packet *packet)
+void validate_position_next_handler(struct Client *client, l2_raw_packet *packet)
 {
         assert(client);
         assert(packet);
@@ -16,10 +15,11 @@ void validate_position_next_handler
 
         type = l2_packet_get_type(packet);
 
-        switch (type) {
+        switch (type)
+        {
         default:
                 log_info("Delegating to move_next_handler");
-                move_next_handler(client, packet);
+                // move_next_handler(client, packet);
                 break;
         }
 }

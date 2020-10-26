@@ -3,20 +3,21 @@
 #include <core/byte_reader.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../enter_world/next_handler.h"
 #include "../../entity/character.h"
 #include "../../entity/player.h"
 #include "handler.h"
 
-void action_handler
-(struct Client *client, l2_raw_packet *packet)
+void action_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
 
+        struct Client *client = request->client;
+        l2_raw_packet *packet = request->packet;
         unsigned char *content = l2_packet_content(packet);
-        struct Character *target = NULL;
+        // struct Character *target = NULL;
 
         int object_id = 0;
         int origin_x = 0;
@@ -39,10 +40,10 @@ void action_handler
         log_info("Origin z: %d", origin_z);
         log_info("Action id: %d", action_id);
 
-        target = client_character(client, object_id);
+        // target = client_character(client, object_id);
 
-        player_entity_action(client, target);
+        // player_entity_action(client, target);
         client_update_request_handler(client, &enter_world_next_handler);
 
-        client_free_mem(client, target);
+        // client_free_mem(client, target);
 }

@@ -5,19 +5,20 @@
 #include <core/session_key.h>
 #include <core/l2_string.h>
 #include <core/byte_reader.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../type.h"
 #include "next_handler.h"
 #include "response.h"
 #include "handler.h"
 
-void auth_login_handler
-(struct Client *client, l2_raw_packet *packet)
+void auth_login_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
 
-        unsigned char* content = NULL;
+        struct Client *client = request->client;
+        l2_raw_packet *packet = request->packet;
+        unsigned char *content = NULL;
         struct L2SessionKey session;
 
         size_t login_name_len = 0;
@@ -28,11 +29,11 @@ void auth_login_handler
 
         content = l2_packet_content(packet);
 
-        login_name_len = l2_string_len((l2_string *) content) + 1;
+        login_name_len = l2_string_len((l2_string *)content) + 1;
         login_name_size = l2_string_calculate_space_from_char(login_name_len);
         login_name = client_alloc_mem(client, login_name_size);
 
-        l2_string_from_l2(login_name, (l2_string *) content, login_name_len);
+        l2_string_from_l2(login_name, (l2_string *)content, login_name_len);
         l2_string_to_char(login_name, session.login_name, login_name_len);
         log_info("Login name %s", session.login_name);
 

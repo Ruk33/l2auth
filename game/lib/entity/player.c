@@ -16,8 +16,7 @@
 #include "../storage/character.h"
 #include "player.h"
 
-void player_create
-(struct Client *client, struct CreateCharRequest *request)
+void player_create(struct Client *client, struct CreateCharRequest *request)
 {
         assert(client);
         assert(request);
@@ -33,10 +32,9 @@ void player_create
 
         memset(player->character.name, 0, sizeof(player->character.name));
         l2_string_to_char(
-                request->name,
-                player->character.name,
-                l2_string_len(request->name)
-        );
+            request->name,
+            player->character.name,
+            l2_string_len(request->name));
 
         player->race_id = request->race;
         player->character.sex = request->sex;
@@ -50,15 +48,33 @@ void player_create
         player->hair_style_id = request->hair_style;
         player->hair_color_id = request->hair_color;
         player->face = request->face;
-        player->character.x = -83968;                   // To be defined
-        player->character.y = 244634;                   // To be defined
-        player->character.z = -3730;                    // To be defined
-        player->character.hp = 500;                     // To be defined
-        player->character.mp = 500;                     // To be defined
-        player->character.current_hp = 500;             // To be defined
-        player->character.current_mp = 500;             // To be defined
+        player->character.x = -83968;       // To be defined
+        player->character.y = 244634;       // To be defined
+        player->character.z = -3730;        // To be defined
+        player->character.hp = 500;         // To be defined
+        player->character.mp = 500;         // To be defined
+        player->character.current_hp = 500; // To be defined
+        player->character.current_mp = 500; // To be defined
         player->active = 1;
         player->character.level = 1;
+
+        log_info("Player name: %s", player->character.name);
+        log_info("Player race: %d", player->race_id);
+        log_info("Player sex: %d", player->character.sex);
+        log_info("Player class id: %d", player->class_id);
+        log_info("Player int: %d", player->character._int);
+        log_info("Player str: %d", player->character.str);
+        log_info("Player con: %d", player->character.con);
+        log_info("Player men: %d", player->character.men);
+        log_info("Player dex: %d", player->character.dex);
+        log_info("Player wit: %d", player->character.wit);
+        log_info("Player hair style: %d", player->hair_style_id);
+        log_info("Player face: %d", player->face);
+        log_info("Player x: %d", player->character.x);
+        log_info("Player y: %d", player->character.y);
+        log_info("Player z: %d", player->character.z);
+        log_info("Player hp: %d", player->character.hp);
+        log_info("Player mp: %d", player->character.mp);
 
         storage_character_save(client, player);
 
@@ -77,10 +93,10 @@ void player_create
         client_free_mem(client, player);
 }
 
-void player_say
-(struct Client *client, char *msg, size_t msg_len)
+void player_say(struct Client *from, struct Client *to, char *msg, size_t msg_len)
 {
-        assert(client);
+        assert(from);
+        assert(to);
         assert(msg);
         assert(msg_len > 0);
 
@@ -90,29 +106,27 @@ void player_say
         l2_packet *response = NULL;
 
         l2_message_size = l2_string_calculate_space_from_char(msg_len + 1);
-        l2_message = client_alloc_mem(client, l2_message_size);
+        l2_message = client_alloc_mem(to, l2_message_size);
 
         l2_string_from_char(l2_message, msg, msg_len);
 
-        response = say_response(client, l2_message);
-        
-        client_encrypt_packet(client, response);
-        client_queue_response(client, response);
+        response = say_response(from, l2_message);
 
-        client_free_mem(client, l2_message);
-        client_free_mem(client, response);
+        client_encrypt_packet(to, response);
+        client_queue_response(to, response);
+
+        client_free_mem(to, l2_message);
+        client_free_mem(to, response);
 }
 
-void player_unsafe_say
-(struct Client *client, char *msg)
+void player_unsafe_say(struct Client *client, const char *msg)
 {
         assert(client);
         assert(msg);
-        player_say(client, msg, strlen(msg));
+        player_say(client, client, (char *)msg, strlen(msg));
 }
 
-static void player_send_fail_action_response
-(struct Client *client)
+static void player_send_fail_action_response(struct Client *client)
 {
         assert(client);
 
@@ -126,8 +140,7 @@ static void player_send_fail_action_response
         client_free_mem(client, response);
 }
 
-static void player_send_select_target_response
-(struct Client *client, struct Character *target)
+static void player_send_select_target_response(struct Client *client, struct Character *target)
 {
         assert(client);
         assert(target);
@@ -148,8 +161,10 @@ static void player_send_select_target_response
         dy = target->y - player_character.y;
         d = sqrt(dx * dx + dy * dy);
 
-        if (d < 300) player_unsafe_say(client, "Selected unit is quite close");
-        else player_unsafe_say(client, "Selected unit is far away");
+        if (d < 300)
+                player_unsafe_say(client, "Selected unit is quite close");
+        else
+                player_unsafe_say(client, "Selected unit is far away");
 
         response = my_target_selected_response(client, target->id, 2);
 
@@ -160,12 +175,12 @@ static void player_send_select_target_response
         client_free_mem(client, response);
 }
 
-void player_entity_action
-(struct Client *client, struct Character *target)
+void player_entity_action(struct Client *client, struct Character *target)
 {
         assert(client);
 
-        if (target) {
+        if (target)
+        {
                 player_send_select_target_response(client, target);
                 return;
         }

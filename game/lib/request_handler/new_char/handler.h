@@ -2,9 +2,8 @@
 #define NEW_CHAR_HANDLER_H
 
 #include <core/l2_raw_packet.h>
-#include "../../client.h"
+#include "../../request.h"
 
-void new_char_handler
-(struct Client *client, l2_raw_packet *packet);
+void new_char_handler(struct Request *request);
 
 #endif

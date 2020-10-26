@@ -2,9 +2,8 @@
 #define D0_HANDLER_H
 
 #include <core/l2_raw_packet.h>
-#include "../../client.h"
+#include "../../request.h"
 
-void d0_handler
-(struct Client *client, l2_raw_packet *packet);
+void d0_handler(struct Request *request);
 
 #endif

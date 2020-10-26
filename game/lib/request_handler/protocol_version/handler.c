@@ -3,19 +3,21 @@
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
 #include <core/byte_reader.h>
+#include "../../request.h"
 #include "../../client.h"
 #include "../type.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
 
-void protocol_version_handler
-(struct Client *client, l2_raw_packet *packet)
+void protocol_version_handler(struct Request *request)
 {
-        assert(client);
-        assert(packet);
+        assert(request);
 
-        unsigned char* content = NULL;
+        struct Client *client = request->client;
+        l2_raw_packet *packet = request->packet;
+
+        unsigned char *content = NULL;
         int protocol_version = 0;
         l2_packet *response = NULL;
 

@@ -2,9 +2,8 @@
 #define AUTH_LOGIN_HANDLER_H
 
 #include <core/l2_raw_packet.h>
-#include "../../client.h"
+#include "../../request.h"
 
-void auth_login_handler
-(struct Client *client, l2_raw_packet *packet);
+void auth_login_handler(struct Request *request);
 
 #endif
