@@ -8,10 +8,6 @@ Because it's fun; because I like Lineage 2 (at least until C4 and Interlude
 chronicles) and because I like the C programming language and I thought this 
 is an excellent project to work with it.
 
-Discord
--------
-Join our discord channel at https://discord.gg/9kDbhR
-
 Running the server with Docker
 ------------------------------
 - Install docker
@@ -79,10 +75,8 @@ To do
 - [x] Enter world
 - [x] Walk
 - [ ] Lua integration? since we got hot reload I don't know if it makes sense
-- [?] Handle multiple connections
-- [?] See other players
-
-?: Was working but due to refactor it's now broken.
+- [x] Handle multiple connections
+- [x] See other players
 
 Screenshots/demos
 -----------------

@@ -45,6 +45,33 @@ void world_state_unspawn_client(struct WorldState *world, struct Client *client)
         world_client_state_unspawn_client(world->clients, client);
 }
 
+void world_state_client_info(struct WorldState *world, struct Client *client)
+{
+        assert(world);
+        assert(client);
+
+        world_client_state_info(world->clients, client);
+}
+
+void world_state_client_validate_location(struct WorldState *world, struct Client *client, struct Vec3 *location, int heading)
+{
+        assert(world);
+        assert(client);
+        assert(location);
+
+        world_client_state_validate_location(world->clients, client, location, heading);
+}
+
+void world_state_client_move(struct WorldState *world, struct Client *client, struct Vec3 *prev_location, struct Vec3 *new_location)
+{
+        assert(world);
+        assert(client);
+        assert(prev_location);
+        assert(new_location);
+
+        world_client_state_move(world->clients, client, prev_location, new_location);
+}
+
 void world_state_client_say(struct WorldState *world, struct Client *client, char *buf, size_t buf_size)
 {
         assert(world);

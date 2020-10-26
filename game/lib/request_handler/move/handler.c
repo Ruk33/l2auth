@@ -8,6 +8,7 @@
 #include "../../dto/player.h"
 #include "../../dto/vec3.h"
 #include "../npc_info/handler.h"
+#include "../../world_state.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
@@ -20,7 +21,6 @@ void move_handler(struct Request *request)
         l2_raw_packet *packet = request->packet;
 
         unsigned char *content = NULL;
-        l2_packet *response = NULL;
         struct Player *player = NULL;
 
         struct Vec3 prev_location;
@@ -46,21 +46,7 @@ void move_handler(struct Request *request)
             new_location.y,
             new_location.z);
 
-        response = move_response(client, prev_location, new_location);
-
-        player->character.x = new_location.x;
-        player->character.y = new_location.y;
-        player->character.z = new_location.z;
-
-        client_update_character(client, player);
-
-        client_encrypt_packet(client, response);
-        client_queue_response(client, response);
-
-        // npc_info_handler(client, NULL);
-
-        client_update_request_handler(client, &move_next_handler);
+        world_state_client_move(request->world_state, client, &prev_location, &new_location);
 
         client_free_mem(client, player);
-        client_free_mem(client, response);
 }

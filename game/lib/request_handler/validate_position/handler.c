@@ -5,6 +5,7 @@
 #include "../../client.h"
 #include "../../dto/player.h"
 #include "../../dto/vec3.h"
+#include "../../world_state.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
@@ -14,35 +15,14 @@ void validate_position_handler(struct Request *request)
         assert(request);
 
         struct Client *client = request->client;
+        unsigned char *content = l2_packet_content(request->packet);
+        int heading = 0;
+        struct Vec3 location;
 
-        // l2_packet *response = NULL;
-        // unsigned char* content = l2_packet_content(packet);
-        // assert(content);
+        content = byte_reader_cpy_int_n_mv(content, &location.x);
+        content = byte_reader_cpy_int_n_mv(content, &location.y);
+        content = byte_reader_cpy_int_n_mv(content, &location.z);
+        content = byte_reader_cpy_int_n_mv(content, &heading);
 
-        // struct Pc *player = client_player(client);
-        // assert(player);
-
-        // int heading = 0;
-        // struct Vec3 location;
-        // struct Vec3 current_location;
-
-        // current_location.x = player->character.x;
-        // current_location.y = player->character.y;
-        // current_location.z = player->character.z;
-
-        // content = byte_reader_cpy_int_n_mv(content, &location.x);
-        // content = byte_reader_cpy_int_n_mv(content, &location.y);
-        // content = byte_reader_cpy_int_n_mv(content, &location.z);
-        // content = byte_reader_cpy_int_n_mv(content, &heading);
-
-        // response = validate_position_response(client, location, heading);
-        // assert(response);
-
-        // client_encrypt_packet(client, response);
-        // client_queue_response(client, response);
-
-        client_update_request_handler(client, &validate_position_next_handler);
-
-        // client_free_mem(client, response);
-        // client_free_mem(client, player);
+        world_state_client_validate_location(request->world_state, client, &location, heading);
 }

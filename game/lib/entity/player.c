@@ -10,6 +10,9 @@
 #include "../request_handler/say/response.h"
 #include "../request_handler/create_char/response.h"
 #include "../request_handler/auth_login/response.h"
+#include "../request_handler/char_info/response.h"
+#include "../request_handler/validate_position/response.h"
+#include "../request_handler/move/response.h"
 #include "../client.h"
 #include "../dto/character.h"
 #include "../dto/player.h"
@@ -91,6 +94,58 @@ void player_create(struct Client *client, struct CreateCharRequest *request)
         client_free_mem(client, creation_response);
         client_free_mem(client, auth_response);
         client_free_mem(client, player);
+}
+
+void player_send_info(struct Client *from, struct Client *to)
+{
+        assert(from);
+        assert(to);
+
+        l2_packet *packet = char_info_response(from);
+
+        client_encrypt_packet(to, packet);
+        client_queue_response(to, packet);
+
+        client_free_mem(to, packet);
+}
+
+void player_validate_location_to(struct Client *from, struct Client *to, struct Vec3 *location, int heading)
+{
+        assert(from);
+        assert(to);
+        assert(location);
+
+        l2_packet *packet = validate_position_response(from, *location, heading);
+
+        client_encrypt_packet(to, packet);
+        client_queue_response(to, packet);
+
+        client_free_mem(from, packet);
+}
+
+void player_move_and_notify(struct Client *from, struct Client *to, struct Vec3 *prev_location, struct Vec3 *new_location)
+{
+        assert(from);
+        assert(to);
+        assert(prev_location);
+        assert(new_location);
+
+        struct Player *player = client_player(from);
+        l2_packet *response = NULL;
+
+        player->character.x = new_location->x;
+        player->character.y = new_location->y;
+        player->character.z = new_location->z;
+
+        client_update_character(from, player);
+
+        response = move_response(from, *prev_location, *new_location);
+
+        client_encrypt_packet(to, response);
+        client_queue_response(to, response);
+
+        client_free_mem(from, response);
+        client_free_mem(from, player);
 }
 
 void player_say(struct Client *from, struct Client *to, char *msg, size_t msg_len)

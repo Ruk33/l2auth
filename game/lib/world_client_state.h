@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <data_structure/list.h>
+#include "dto/vec3.h"
 #include "host.h"
 #include "client.h"
 
@@ -21,6 +22,24 @@ void world_client_state_spawn_client(struct WorldClientState *state, struct Clie
  * the rest of the world so all clients are in sync
  */
 void world_client_state_unspawn_client(struct WorldClientState *state, struct Client *client);
+
+/**
+ * Send current active player info from client to all
+ * users connected
+ */
+void world_client_state_info(struct WorldClientState *state, struct Client *client);
+
+/**
+ * Send validate location of current active player 
+ * from client to all users connected
+ */
+void world_client_state_validate_location(struct WorldClientState *state, struct Client *client, struct Vec3 *location, int heading);
+
+/**
+ * Move current active player from client
+ * and notify all connected users
+ */
+void world_client_state_move(struct WorldClientState *state, struct Client *client, struct Vec3 *prev_location, struct Vec3 *new_location);
 
 /**
  * Make a client talk!

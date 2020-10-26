@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <log/log.h>
 #include <data_structure/list.h>
 #include <core/l2_raw_packet.h>
 #include <core/l2_packet.h>
@@ -81,6 +82,70 @@ void world_client_state_unspawn_client(struct WorldClientState *state, struct Cl
         client_handle_disconnect(client);
 
         list_remove(state->clients, client);
+}
+
+void world_client_state_info(struct WorldClientState *state, struct Client *from)
+{
+        assert(state);
+        assert(from);
+
+        struct ListEntry *iterator = NULL;
+        struct Client *client = NULL;
+
+        iterator = list_first(state->clients);
+
+        while (iterator)
+        {
+                client = list_entry_value(iterator);
+
+                if (client_id(client) != client_id(from))
+                {
+                        player_send_info(from, client);
+                }
+
+                iterator = list_entry_next(iterator);
+        }
+}
+
+void world_client_state_validate_location(struct WorldClientState *state, struct Client *from, struct Vec3 *location, int heading)
+{
+        assert(state);
+        assert(from);
+        assert(location);
+
+        struct ListEntry *iterator = NULL;
+        struct Client *client = NULL;
+
+        iterator = list_first(state->clients);
+
+        while (iterator)
+        {
+                client = list_entry_value(iterator);
+                player_validate_location_to(from, client, location, heading);
+
+                iterator = list_entry_next(iterator);
+        }
+}
+
+void world_client_state_move(struct WorldClientState *state, struct Client *from, struct Vec3 *prev_location, struct Vec3 *new_location)
+{
+        assert(state);
+        assert(from);
+        assert(prev_location);
+        assert(new_location);
+
+        struct ListEntry *iterator = NULL;
+        struct Client *client = NULL;
+
+        iterator = list_first(state->clients);
+
+        while (iterator)
+        {
+                client = list_entry_value(iterator);
+                player_move_and_notify(from, client, prev_location, new_location);
+
+                iterator = list_entry_next(iterator);
+        }
 }
 
 void world_client_state_say(struct WorldClientState *state, struct Client *from, char *buf, size_t buf_size)

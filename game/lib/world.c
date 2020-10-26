@@ -39,7 +39,6 @@ struct World
 void *world_new(host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
 {
         struct World *world = NULL;
-        int max_players = 10; // Fix me, get it from server
 
         world = m(sizeof(*world));
         world->memory_alloc = m;
