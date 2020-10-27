@@ -23,8 +23,6 @@ struct Client
         unsigned char decrypt_key[8];
         unsigned char encrypt_key[8];
 
-        request_handler handle_request;
-
         struct L2SessionKey session;
         struct Player character;
 };
@@ -74,13 +72,6 @@ void client_queue_response(struct Client *client, l2_raw_packet *packet)
         buf_size = (size_t)l2_raw_packet_get_size(packet);
 
         client->send_response(client->id, buf, buf_size);
-}
-
-void client_update_request_handler(struct Client *client, request_handler handler)
-{
-        assert(client);
-        assert(handler);
-        client->handle_request = handler;
 }
 
 void client_update_session(struct Client *client, struct L2SessionKey *session)
@@ -198,4 +189,15 @@ int client_is_in_game(struct Client *client)
 {
         assert(client);
         return client->in_game;
+}
+
+struct Client *client_copy(struct Client *client)
+{
+        assert(client);
+        struct Client *copy = NULL;
+
+        copy = client_alloc_mem(client, sizeof(*copy));
+        memcpy(copy, client, sizeof(*copy));
+
+        return copy;
 }

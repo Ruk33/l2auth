@@ -56,8 +56,6 @@ void auth_login_handler(struct Request *request)
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
 
-        client_update_request_handler(client, &auth_login_next_handler);
-
         client_free_mem(client, response);
         client_free_mem(client, login_name);
 }

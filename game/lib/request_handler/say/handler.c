@@ -27,7 +27,5 @@ void say_handler(struct Request *request)
 
         world_manager_active_char_talk(request->world_state, client, message, message_size);
 
-        client_update_request_handler(client, &enter_world_next_handler);
-
         client_free_mem(client, message);
 }

@@ -9,11 +9,6 @@
 
 struct Client;
 
-/**
- * Deprecated
- */
-typedef void (*request_handler)(struct Client *client, l2_raw_packet *packet);
-
 struct Client *client_new(int id, host_malloc_cb m, host_mfree_cb f, host_send_response_cb s);
 
 /**
@@ -31,11 +26,6 @@ void client_free_mem(struct Client *client, void *mem);
  * Queue a new response/packet to be flushed
  */
 void client_queue_response(struct Client *client, l2_raw_packet *response);
-
-/**
- * Deprecated
- */
-void client_update_request_handler(struct Client *client, request_handler handler);
 
 void client_update_session(struct Client *client, struct L2SessionKey *session);
 
@@ -73,10 +63,26 @@ int client_is_conn_encrypted(struct Client *client);
  */
 void client_encrypt_conn(struct Client *client);
 
+/**
+ * Get unique client id
+ */
 int client_id(struct Client *client);
 
+/**
+ * Mark the client as inside of the game
+ * (meaning it has a char active in the world)
+ */
 void client_enter_game(struct Client *client);
 
+/**
+ * Check if the client has a char
+ * in the world
+ */
 int client_is_in_game(struct Client *client);
+
+/**
+ * Create a copy of client
+ */
+struct Client *client_copy(struct Client *client);
 
 #endif

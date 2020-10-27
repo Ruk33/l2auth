@@ -14,7 +14,6 @@ void action_handler(struct Request *request)
 {
         assert(request);
 
-        struct Client *client = request->client;
         l2_raw_packet *packet = request->packet;
         unsigned char *content = l2_packet_content(packet);
         // struct Character *target = NULL;
@@ -43,7 +42,6 @@ void action_handler(struct Request *request)
         // target = client_character(client, object_id);
 
         // player_entity_action(client, target);
-        client_update_request_handler(client, &enter_world_next_handler);
 
         // client_free_mem(client, target);
 }
