@@ -2,12 +2,12 @@
 #define REQUEST_H
 
 #include <core/l2_raw_packet.h>
-#include "world_state.h"
+#include "world_manager.h"
 #include "client.h"
 
 struct Request
 {
-        struct WorldState *world_state;
+        struct WorldManager *world_state;
         struct Client *client;
         l2_raw_packet *packet;
 };

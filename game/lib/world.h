@@ -14,6 +14,8 @@ struct World;
  */
 void *world_new(host_malloc_cb m, host_mfree_cb f, host_send_response_cb s);
 
+void world_tick(void *world_p);
+
 /**
  * Handle new client being connected
  */

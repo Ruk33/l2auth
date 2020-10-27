@@ -8,7 +8,8 @@
 #include "game_server_lib.h"
 #include "server_manager.h"
 
-struct Server {
+struct Server
+{
         unsigned short port;
         size_t max_players;
         os_socket_handler *socket;
@@ -17,8 +18,7 @@ struct Server {
 
 static struct Server *server = NULL;
 
-static void server_manager_accept_connection
-(void)
+static void server_manager_accept_connection(void)
 {
         assert(server);
         assert(server->socket);
@@ -31,8 +31,7 @@ static void server_manager_accept_connection
         connection_manager_new_conn(server->data, client_socket);
 }
 
-static void server_manager_listen_for_connections
-(void)
+static void server_manager_listen_for_connections(void)
 {
         assert(server);
         assert(server->socket);
@@ -41,16 +40,16 @@ static void server_manager_listen_for_connections
 
         log_info("Starting gameserver");
         log_info(
-                "Listening on port %d for a maximum of %d connections",
-                server->port,
-                server->max_players
-        );
+            "Listening on port %d for a maximum of %d connections",
+            server->port,
+            server->max_players);
 
         os_socket_connect(server->socket);
         os_socket_bind(server->socket, server->port);
         os_socket_listen(server->socket, server->max_players);
 
-        while (1) {
+        while (1)
+        {
                 log_info("Waiting for connections...");
                 server_manager_accept_connection();
                 log_info("Connection accepted!");
@@ -59,8 +58,7 @@ static void server_manager_listen_for_connections
         os_socket_close(server->socket);
 }
 
-void server_manager_init
-(unsigned short port, size_t max_players)
+void server_manager_init(unsigned short port, size_t max_players)
 {
         server = memory_manager_alloc(sizeof(*server));
         server->port = port;
@@ -69,8 +67,7 @@ void server_manager_init
         server->data = game_server_lib_init_server(&response_manager_enqueue);
 }
 
-void *server_manager_start
-(void *p)
+void *server_manager_start(void *p)
 {
         assert(server);
 
@@ -80,4 +77,10 @@ void *server_manager_start
         memory_manager_free(server);
 
         return NULL;
+}
+
+void *server_get_data(void)
+{
+        assert(server);
+        return server->data;
 }

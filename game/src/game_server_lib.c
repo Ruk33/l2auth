@@ -27,6 +27,8 @@ struct GameServerLib
 
         void *(*server_init)(malloc_cb m, free_cb f, send_reponse_cb s);
 
+        void (*server_tick)(void *server_data);
+
         void (*new_conn)(void *server_data, int client_id);
 
         void (*request)(void *server_data, int client_id, unsigned char *buf, size_t buf_size);
@@ -82,6 +84,11 @@ static void game_server_lib_load_if_required(void)
                 "world_new"));
 
         DLEXPR_OR_ERR(
+            game_server_lib->server_tick = dlsym(
+                game_server_lib->library,
+                "world_tick"));
+
+        DLEXPR_OR_ERR(
             game_server_lib->new_conn = dlsym(
                 game_server_lib->library,
                 "world_new_client"));
@@ -105,6 +112,14 @@ void *game_server_lib_init_server(send_reponse_cb s)
             &memory_manager_alloc,
             &memory_manager_free,
             s);
+}
+
+void game_server_lib_tick_server(void *server_data)
+{
+        assert(game_server_lib);
+
+        game_server_lib_load_if_required();
+        game_server_lib->server_tick(server_data);
 }
 
 void game_server_lib_new_conn(void *server_data, int client_id)
@@ -138,6 +153,7 @@ void game_server_lib_init(void)
         game_server_lib->last_changed = 0;
         game_server_lib->library = NULL;
         game_server_lib->server_init = NULL;
+        game_server_lib->server_tick = NULL;
         game_server_lib->new_conn = NULL;
         game_server_lib->request = NULL;
         game_server_lib->disconnect = NULL;

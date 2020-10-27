@@ -23,7 +23,7 @@
 #include "request_handler/new_char/handler.h"
 #include "request_handler/show_map/handler.h"
 #include "request_handler/type.h"
-#include "world_state.h"
+#include "world_manager.h"
 #include "request.h"
 #include "world.h"
 
@@ -33,7 +33,7 @@ struct World
         host_mfree_cb memory_free;
         host_send_response_cb send_response;
 
-        struct WorldState *state;
+        struct WorldManager *state;
 };
 
 void *world_new(host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
@@ -44,9 +44,18 @@ void *world_new(host_malloc_cb m, host_mfree_cb f, host_send_response_cb s)
         world->memory_alloc = m;
         world->memory_free = f;
         world->send_response = s;
-        world->state = world_state_new(m, f);
+        world->state = world_manager_new(m, f);
 
         return world;
+}
+
+void world_tick(void *world_p)
+{
+        struct World *world = NULL;
+
+        world = world_p;
+
+        world_manager_tick(world->state);
 }
 
 void world_new_client(void *world_p, int client_id)
@@ -61,7 +70,7 @@ void world_new_client(void *world_p, int client_id)
             world->memory_free,
             world->send_response);
 
-        world_state_spawn_client(world->state, client);
+        world_manager_client_connects(world->state, client);
 }
 
 static void world_handle_client_request(struct World *world, struct Client *client, l2_raw_packet *packet)
@@ -147,7 +156,7 @@ void world_client_request(void *world_p, int client_id, unsigned char *buf, size
         l2_raw_packet *packet = NULL;
 
         world = world_p;
-        client = world_state_find_client(world->state, client_id);
+        client = world_manager_find_client_by_id(world->state, client_id);
 
         if (!client)
         {
@@ -172,7 +181,7 @@ void world_client_disconnect(void *world_p, int client_id)
         struct Client *client = NULL;
 
         world = world_p;
-        client = world_state_find_client(world->state, client_id);
+        client = world_manager_find_client_by_id(world->state, client_id);
 
         if (!client)
         {
@@ -182,5 +191,5 @@ void world_client_disconnect(void *world_p, int client_id)
                 return;
         }
 
-        world_state_unspawn_client(world->state, client);
+        world_manager_disconnect_client(world->state, client);
 }

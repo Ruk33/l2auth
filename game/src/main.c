@@ -7,12 +7,13 @@
 #include "response_manager.h"
 #include "connection_manager.h"
 #include "server_manager.h"
+#include "timer_manager.h"
 
-int main
-(int argc, char **argv)
+int main(int argc, char **argv)
 {
         pthread_t requests_thread = 0;
         pthread_t responses_thread = 0;
+        pthread_t timer_thread = 0;
 
         unsigned short port = 0;
         size_t max_players = 0;
@@ -29,19 +30,25 @@ int main
         connection_manager_init(max_players);
         server_manager_init(port, max_players);
 
+        timer_manager_init();
+
         pthread_create(
-                &requests_thread,
-                NULL,
-                &request_manager_start_handling_requests,
-                NULL
-        );
-        
+            &requests_thread,
+            NULL,
+            &request_manager_start_handling_requests,
+            NULL);
+
         pthread_create(
-                &responses_thread,
-                NULL,
-                &response_manager_start_handling_responses,
-                NULL
-        );
+            &responses_thread,
+            NULL,
+            &response_manager_start_handling_responses,
+            NULL);
+
+        pthread_create(
+            &timer_thread,
+            NULL,
+            &timer_manager_start,
+            NULL);
 
         server_manager_start(NULL);
 

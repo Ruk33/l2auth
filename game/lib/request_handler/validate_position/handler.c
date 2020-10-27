@@ -5,7 +5,7 @@
 #include "../../client.h"
 #include "../../dto/player.h"
 #include "../../dto/vec3.h"
-#include "../../world_state.h"
+#include "../../entity/player.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
@@ -24,5 +24,5 @@ void validate_position_handler(struct Request *request)
         content = byte_reader_cpy_int_n_mv(content, &location.z);
         content = byte_reader_cpy_int_n_mv(content, &heading);
 
-        world_state_client_validate_location(request->world_state, client, &location, heading);
+        player_validate_location(client, &location, heading);
 }

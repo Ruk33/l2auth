@@ -116,27 +116,26 @@ void player_send_info(struct Client *from, struct Client *to)
         client_free_mem(from, packet);
 }
 
-void player_validate_location_to(struct Client *from, struct Client *to, struct Vec3 *location, int heading)
+void player_validate_location(struct Client *client, struct Vec3 *location, int heading)
 {
-        assert(from);
-        assert(to);
+        assert(client);
         assert(location);
 
-        struct Player *player = client_player(from);
-        l2_packet *packet = validate_position_response(from, *location, heading);
+        struct Player *player = client_player(client);
+        l2_packet *packet = validate_position_response(client, *location, heading);
 
         player->character.x = location->x;
         player->character.y = location->y;
         player->character.z = location->z;
         player->character.heading = heading;
 
-        client_update_character(from, player);
+        client_update_character(client, player);
 
-        client_encrypt_packet(to, packet);
-        client_queue_response(to, packet);
+        client_encrypt_packet(client, packet);
+        client_queue_response(client, packet);
 
-        client_free_mem(from, packet);
-        client_free_mem(from, player);
+        client_free_mem(client, packet);
+        client_free_mem(client, player);
 }
 
 void player_move_and_notify(struct Client *from, struct Client *to, struct Vec3 *prev_location, struct Vec3 *new_location)

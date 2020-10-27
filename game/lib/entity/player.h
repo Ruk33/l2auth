@@ -16,10 +16,10 @@ void player_create(struct Client *client, struct CreateCharRequest *request);
 void player_send_info(struct Client *from, struct Client *to);
 
 /**
- * Validate current active player from
- * client to another
+ * Validate and update current active player
+ * position in the game
  */
-void player_validate_location_to(struct Client *from, struct Client *to, struct Vec3 *location, int heading);
+void player_validate_location(struct Client *client, struct Vec3 *location, int heading);
 
 /**
  * Move current active player from client

@@ -8,7 +8,7 @@
 #include "../../dto/player.h"
 #include "../../dto/vec3.h"
 #include "../npc_info/handler.h"
-#include "../../world_state.h"
+#include "../../world_manager.h"
 #include "response.h"
 #include "next_handler.h"
 #include "handler.h"
@@ -46,7 +46,7 @@ void move_handler(struct Request *request)
             new_location.y,
             new_location.z);
 
-        world_state_client_move(request->world_state, client, &prev_location, &new_location);
+        world_manager_move_active_char(request->world_state, client, &prev_location, &new_location);
 
         client_free_mem(client, player);
 }
