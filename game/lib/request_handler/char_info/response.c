@@ -20,7 +20,6 @@ l2_packet *char_info_response(struct Client *client)
         struct Character *character = &player->character;
         size_t name_as_string_length = l2_string_calculate_space_from_char(strlen(character->name) + 1);
         l2_string *name_as_string = client_alloc_mem(client, name_as_string_length);
-        int heading = 0;
         int empty = 0;
         int pvp_flag = 0;
         int karma = 0;
@@ -33,7 +32,7 @@ l2_packet *char_info_response(struct Client *client)
         char title[] = {0, 0};
         int clan_crest_id = 0;
         int ally_crest_id = 0;
-        char sitting = 0;
+        char standing = 1;
         char running = 1;
         char in_combat = 0;
         char alike_dead = 0;
@@ -55,6 +54,9 @@ l2_packet *char_info_response(struct Client *client)
         size_t buf_size = 0;
         byte_builder *buf = NULL;
         byte_builder *buffer = NULL;
+        int run_speed = 120;
+        int walk_speed = 100;
+        double mov_mult = 1;
 
         buf_size = byte_builder_calculate_size(1024);
         buf = client_alloc_mem(client, buf_size);
@@ -66,7 +68,7 @@ l2_packet *char_info_response(struct Client *client)
         byte_builder_append_int(buffer, &character->x);
         byte_builder_append_int(buffer, &character->y);
         byte_builder_append_int(buffer, &character->z);
-        byte_builder_append_int(buffer, &heading);
+        byte_builder_append_int(buffer, &character->heading);
         byte_builder_append_int(buffer, &character->id);
 
         byte_builder_append(buffer, name_as_string, name_as_string_length);
@@ -98,8 +100,8 @@ l2_packet *char_info_response(struct Client *client)
         byte_builder_append_int(buffer, &pvp_flag);
         byte_builder_append_int(buffer, &karma);
 
-        byte_builder_append_int(buffer, &character->run_speed);
-        byte_builder_append_int(buffer, &character->walk_speed);
+        byte_builder_append_int(buffer, &run_speed);
+        byte_builder_append_int(buffer, &walk_speed);
         byte_builder_append_int(buffer, &swim_run_speed);
         byte_builder_append_int(buffer, &swim_walk_speed);
         byte_builder_append_int(buffer, &fly_run_speed);
@@ -107,7 +109,7 @@ l2_packet *char_info_response(struct Client *client)
         byte_builder_append_int(buffer, &fly_run_speed);
         byte_builder_append_int(buffer, &fly_walk_speed);
 
-        byte_builder_append_double(buffer, (double *)&player->movement_multiplier);
+        byte_builder_append_double(buffer, &mov_mult);
         byte_builder_append_double(buffer, (double *)&player->attack_speed_multiplier);
         byte_builder_append_double(buffer, &collision_radius);
         byte_builder_append_double(buffer, &collision_height);
@@ -124,7 +126,7 @@ l2_packet *char_info_response(struct Client *client)
         byte_builder_append_int(buffer, &ally_crest_id);
         byte_builder_append_int(buffer, &empty);
 
-        byte_builder_append_char(buffer, &sitting);
+        byte_builder_append_char(buffer, &standing);
         byte_builder_append_char(buffer, &running);
         byte_builder_append_char(buffer, &in_combat);
         byte_builder_append_char(buffer, &alike_dead);

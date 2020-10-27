@@ -75,4 +75,8 @@ void client_encrypt_conn(struct Client *client);
 
 int client_id(struct Client *client);
 
+void client_enter_game(struct Client *client);
+
+int client_is_in_game(struct Client *client);
+
 #endif

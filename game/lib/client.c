@@ -19,6 +19,7 @@ struct Client
 
         int id;
         int conn_encrypted;
+        int in_game;
         unsigned char decrypt_key[8];
         unsigned char encrypt_key[8];
 
@@ -39,6 +40,7 @@ struct Client *client_new(int id, host_malloc_cb m, host_mfree_cb f, host_send_r
         client->memory_free = f;
         client->send_response = s;
         client->conn_encrypted = 0;
+        client->in_game = 0;
 
         memcpy(client->encrypt_key, key, sizeof(client->encrypt_key));
         memcpy(client->decrypt_key, key, sizeof(client->decrypt_key));
@@ -184,4 +186,16 @@ int client_id(struct Client *client)
 {
         assert(client);
         return client->id;
+}
+
+void client_enter_game(struct Client *client)
+{
+        assert(client);
+        client->in_game = 1;
+}
+
+int client_is_in_game(struct Client *client)
+{
+        assert(client);
+        return client->in_game;
 }

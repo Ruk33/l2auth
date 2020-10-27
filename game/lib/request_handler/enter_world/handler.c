@@ -22,10 +22,11 @@ void enter_world_handler(struct Request *request)
 
         client_encrypt_packet(client, response);
         client_queue_response(client, response);
+        client_enter_game(client);
 
         world_state_client_info(request->world_state, client);
 
-        client_update_request_handler(client, &enter_world_next_handler);
+        // client_update_request_handler(client, &enter_world_next_handler);
 
         client_free_mem(client, response);
 }

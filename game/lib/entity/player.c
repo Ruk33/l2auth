@@ -101,12 +101,19 @@ void player_send_info(struct Client *from, struct Client *to)
         assert(from);
         assert(to);
 
-        l2_packet *packet = char_info_response(from);
+        l2_packet *packet = NULL;
+
+        if (!client_is_in_game(from))
+                return;
+        if (!client_is_in_game(to))
+                return;
+
+        packet = char_info_response(from);
 
         client_encrypt_packet(to, packet);
         client_queue_response(to, packet);
 
-        client_free_mem(to, packet);
+        client_free_mem(from, packet);
 }
 
 void player_validate_location_to(struct Client *from, struct Client *to, struct Vec3 *location, int heading)
@@ -115,12 +122,21 @@ void player_validate_location_to(struct Client *from, struct Client *to, struct 
         assert(to);
         assert(location);
 
+        struct Player *player = client_player(from);
         l2_packet *packet = validate_position_response(from, *location, heading);
+
+        player->character.x = location->x;
+        player->character.y = location->y;
+        player->character.z = location->z;
+        player->character.heading = heading;
+
+        client_update_character(from, player);
 
         client_encrypt_packet(to, packet);
         client_queue_response(to, packet);
 
         client_free_mem(from, packet);
+        client_free_mem(from, player);
 }
 
 void player_move_and_notify(struct Client *from, struct Client *to, struct Vec3 *prev_location, struct Vec3 *new_location)
@@ -130,14 +146,7 @@ void player_move_and_notify(struct Client *from, struct Client *to, struct Vec3 
         assert(prev_location);
         assert(new_location);
 
-        struct Player *player = client_player(from);
         l2_packet *response = NULL;
-
-        player->character.x = new_location->x;
-        player->character.y = new_location->y;
-        player->character.z = new_location->z;
-
-        client_update_character(from, player);
 
         response = move_response(from, *prev_location, *new_location);
 
@@ -145,7 +154,6 @@ void player_move_and_notify(struct Client *from, struct Client *to, struct Vec3 
         client_queue_response(to, response);
 
         client_free_mem(from, response);
-        client_free_mem(from, player);
 }
 
 void player_say(struct Client *from, struct Client *to, char *msg, size_t msg_len)
@@ -161,7 +169,7 @@ void player_say(struct Client *from, struct Client *to, char *msg, size_t msg_le
         l2_packet *response = NULL;
 
         l2_message_size = l2_string_calculate_space_from_char(msg_len + 1);
-        l2_message = client_alloc_mem(to, l2_message_size);
+        l2_message = client_alloc_mem(from, l2_message_size);
 
         l2_string_from_char(l2_message, msg, msg_len);
 
@@ -170,8 +178,8 @@ void player_say(struct Client *from, struct Client *to, char *msg, size_t msg_le
         client_encrypt_packet(to, response);
         client_queue_response(to, response);
 
-        client_free_mem(to, l2_message);
-        client_free_mem(to, response);
+        client_free_mem(from, l2_message);
+        client_free_mem(from, response);
 }
 
 void player_unsafe_say(struct Client *client, const char *msg)
