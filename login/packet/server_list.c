@@ -49,7 +49,8 @@ l2_packet* login_packet_server_list(struct LoginClient* client)
          * (franco.montenegro)
          * Check why inetaddr does not work here
          */
-        unsigned char ip[] = { 0, 0, 0, 0 };
+        // unsigned char ip[] = { 0, 0, 0, 0 };
+        unsigned char ip[] = { 127, 0, 0, 1 };
         byte_builder* buffer = login_client_byte_builder(
                 client,
                 sizeof(server_count) +

@@ -4,12 +4,14 @@ services:
   loginserver:
     build: .
     command: bash -c "cd login && make && build/loginserver"
+    volumes:
+      - ./login:/usr/src/l2auth/login
     ports:
-      - "2106:2106"
+      - 2106:2106
   gameserver:
     build: .
     command: bash -c "cd game/src && make && cd ../lib && make clean && make && cd .. && build/gameserver"
     volumes:
-      - ".:/usr/src/l2auth"
+      - ./game:/usr/src/l2auth/game
     ports:
-      - "7777:7777"
+      - 7777:7777
