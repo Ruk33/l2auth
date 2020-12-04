@@ -3,7 +3,7 @@ version: '3'
 services:
   loginserver:
     build: .
-    command: bash -c "cd login && make && build/loginserver"
+    command: bash -c "cd login && make && loginserver"
     volumes:
       - ./login:/usr/src/l2auth/login
     ports:
