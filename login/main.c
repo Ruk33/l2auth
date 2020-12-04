@@ -1,16 +1,9 @@
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <log/log.h>
-#include <login/server.h>
+#include "server.h"
 
-int main()
+int main(/* int argc, char **argv */)
 {
         unsigned short port = 2106;
-        size_t max_players = 10;
-
-        srand((unsigned int) time(NULL));
-        login_server_start_or_die(port, max_players);
-
-        return 0;
+        size_t max_connections = 10;
+        return server_start(port, max_connections);
 }

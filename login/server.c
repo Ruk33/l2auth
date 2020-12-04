@@ -1,105 +1,109 @@
 #include <assert.h>
 #include <stdlib.h>
-#include <log/log.h>
-#include <os/socket.h>
-#include <login/handler/client.h>
-#include <login/client.h>
-#include <login/connection.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include "socket.h"
+#include "handler/new_connection.h"
+#include "handler/new_request.h"
+#include "handler/disconnect.h"
+#include "storage/server_manager.h"
+#include "storage/game_server_manager.h"
+#include "storage/game_server.h"
 #include "server.h"
 
-struct LoginServer
+static int handle_new_connection(int server_socket, void *server_manager)
 {
-        os_socket_handler* socket_handler;
-        size_t accepted_clients;
-        size_t max_players;
-        struct LoginConnection** clients;
-};
-
-void login_server_free(struct LoginServer* server)
-{
-        assert(server);
-        if (server->clients) free(server->clients);
-        if (server->socket_handler) free(server->socket_handler);
-        free(server);
+        int client_socket = socket_accept(server_socket);
+        printf("New client with id %d was accepted.\n", client_socket);
+        handler_new_connection(server_manager, client_socket);
+        return client_socket;
 }
 
-struct LoginServer* login_server_create(size_t max_players)
+static void handle_new_request(int client_socket, void *server_manager, unsigned char *request, size_t request_size)
 {
-        struct LoginServer* server = calloc(1, sizeof(struct LoginServer));
+        printf("New request from client %d...\n", client_socket);
+        printf("Request size: %ld\n", request_size);
+        handler_new_request(server_manager, client_socket, request, request_size);
+}
 
-        if (!server) return NULL;
+static void handle_disconnect(int client_socket, void *server_manager)
+{
+        printf("Client with id %d was disconnected.\n", client_socket);
+        handler_disconnect(server_manager, client_socket);
+}
 
-        server->clients = malloc(sizeof(struct LoginConnection *) * max_players);
-        server->socket_handler = calloc(1, os_socket_handler_size());
+int server_start(unsigned short port, size_t max_connections)
+{
+        assert(port);
+        assert(max_connections);
 
-        if (!server->clients || !server->socket_handler) {
-                login_server_free(server);
-                return NULL;
+        int server_socket = socket_create(port, max_connections);
+        struct StorageServerManager server_manager = {0};
+        struct StorageGameServer bartz = {0};
+        struct StorageGameServer sieghardt = {0};
+        int server_result = 0;
+
+        if (server_socket == -1)
+        {
+                printf("Failed to create socket.\n");
+                printf("%s.\n", strerror(errno));
+                return EXIT_FAILURE;
         }
 
-        server->accepted_clients = 0;
-        server->max_players = max_players;
+        /*
+         * Add dummy servers
+         * 127.0.0.1 works well for Windows
+         * 0.0.0.0 works well for Linux
+         */
 
-        return server;
-}
+        bartz.id = 1;
+        inet_pton(AF_INET, "127.0.0.1", bartz.ip);
+        bartz.port = 7777;
+        bartz.age_limit = 0x0f;
+        bartz.pvp = 0x00;
+        bartz.players = 42;
+        bartz.max_players = 650;
+        bartz.status = 0x01;
+        bartz.extra = 0x00;
+        bartz.brackets = 0x00;
 
-void login_server_listen(struct LoginServer* server, unsigned short port)
-{
-        assert(server);
+        sieghardt.id = 2;
+        inet_pton(AF_INET, "0.0.0.0", sieghardt.ip);
+        sieghardt.port = 7778;
+        sieghardt.age_limit = 0x0f;
+        sieghardt.pvp = 0x00;
+        sieghardt.players = 42;
+        sieghardt.max_players = 650;
+        sieghardt.status = 0x01;
+        sieghardt.extra = 0x00;
+        sieghardt.brackets = 0x00;
 
-        os_socket_connect(server->socket_handler);
-        os_socket_bind(server->socket_handler, port);
-        os_socket_listen(server->socket_handler, server->max_players);
-}
+        storage_server_manager_init(&server_manager);
+        storage_game_server_manager_add(&server_manager.game_server_manager, &bartz);
+        storage_game_server_manager_add(&server_manager.game_server_manager, &sieghardt);
 
-struct LoginConnection* login_server_get_client
-(
-        struct LoginServer* server,
-        size_t index
-)
-{
-        assert(server);
-        struct LoginConnection* conn = calloc(1, sizeof(struct LoginConnection));
-        conn->client = calloc(1, login_client_struct_size());
-        server->clients[index] = conn;
-        return conn;
-}
+        printf("Waiting for requests...\n");
 
-void login_server_accept_client
-(
-        struct LoginServer* server,
-        void* handler
-)
-{
-        assert(server);
-        assert(handler);
-
-        struct LoginConnection* conn = login_server_get_client(
-                server,
-                server->accepted_clients
+        server_result = socket_handle_requests(
+                server_socket,
+                &server_manager,
+                &handle_new_connection,
+                &handle_new_request,
+                &handle_disconnect
         );
 
-        conn->server = server;
+        socket_close(server_socket);
 
-        login_client_init(conn->client);
-        login_client_accept(conn->client, server->socket_handler);
-        server->accepted_clients += 1;
-        pthread_create(&conn->thread, NULL, handler, conn);
-        //server->accepted_clients -= 1;
-        //l2_client_close(client);
-}
+        storage_server_manager_free(&server_manager);
 
-void login_server_start_or_die(unsigned short port, size_t max_players)
-{
-        struct LoginServer* server = login_server_create(max_players);
-
-        log_info("Starting loginserver");
-
-        if (!server) {
-                log_fatal("Not able to allocate memory for loginserver");
-                exit(1);
+        if (server_result == -1)
+        {
+                printf("Socket failed to handle requests.\n");
+                printf("%s.\n", strerror(errno));
+                return EXIT_FAILURE;
         }
 
-        login_server_listen(server, port);
-        while(1) login_server_accept_client(server, login_handler_client);
+        return EXIT_SUCCESS;
 }

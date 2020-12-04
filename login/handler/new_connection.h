@@ -1,13 +1,12 @@
-#ifndef L2AUTH_LOGIN_HANDLER_NEW_CONNECTION_H
-#define L2AUTH_LOGIN_HANDLER_NEW_CONNECTION_H
+#ifndef HANDLER_NEW_CONNECTION_H
+#define HANDLER_NEW_CONNECTION_H
 
-#include <login/server.h>
-#include <login/client.h>
+#include "../storage/server_manager.h"
 
-void login_handler_new_connection
-(
-        struct LoginServer* server,
-        struct LoginClient* client
-);
+/**
+ * Handle new client connecting
+ * to the server.
+ */
+void handler_new_connection(struct StorageServerManager *server_manager, int fd);
 
 #endif

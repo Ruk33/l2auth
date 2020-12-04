@@ -1,0 +1,22 @@
+Lineage 2 Login Server
+----------------------
+
+This folder contains the code used for the login server.
+Lineage 2 separates the login from the game itself.
+
+
+Requirements
+------------
+
+- GCC
+- Make
+- GDB (optional for debug)
+- OpenSSL library
+- Data structures library from https://github.com/Ruk33/data_structures
+
+
+Installation
+------------
+
+Simply run make on the root folder. A loginserver executable will be generated.
+When executed, the login server will listen for connections on port 2106.

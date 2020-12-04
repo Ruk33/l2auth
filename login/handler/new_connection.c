@@ -1,22 +1,24 @@
 #include <assert.h>
-#include <log/log.h>
-#include <core/l2_packet.h>
-#include <login/server.h>
-#include <login/client.h>
-#include <login/packet/init.h>
-#include <login/handler/new_connection.h>
+#include <stdlib.h>
+#include "../socket.h"
+#include "../server_packet/init.h"
+#include "../packet.h"
+#include "../storage/server_manager.h"
+#include "../storage/session_manager.h"
+#include "../storage/session.h"
+#include "new_connection.h"
 
-void login_handler_new_connection
-(
-        struct LoginServer* server,
-        struct LoginClient* client
-)
+void handler_new_connection(struct StorageServerManager *server_manager, int fd)
 {
-        assert(server);
-        assert(client);
+        assert(server_manager);
+        assert(fd > 0);
+        
+        unsigned char response[SERVER_PACKET_INIT_FULL_SIZE] = {0};
+        struct StorageSession *session = NULL;
 
-        l2_packet* server_packet = login_packet_init(client);
+        storage_session_manager_add(&server_manager->session_manager, fd);
+        session = storage_session_manager_get(&server_manager->session_manager, fd);
 
-        log_info("Handling new connection, sending init packet");
-        login_client_send_packet(client, server_packet);
+        server_packet_init(response, &session->rsa);
+        socket_send(fd, response, (size_t) packet_size(response));
 }
