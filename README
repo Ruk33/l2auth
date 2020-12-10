@@ -19,14 +19,11 @@ Running the server with Docker
 
 Gameserver hot-code reload
 --------------------------
-- Run the gameserver
+- Run the game server
 - Make a change in the code
 - Run cd game/lib && make if not using docker, or
 - Run docker-compose exec gameserver bash -c "cd game/lib && make" for docker
 - Check the Lineage 2 client, the change should be reflected live
-- Don't be surprised if you get a segmentation fault or the change just 
-  breaks the server, you will have to restart (this should be working better
-  with latest changes though)
 
 Lineage 2 Protocol
 ------------------
@@ -40,31 +37,6 @@ usually the packet type.
 Other than the first packet, all packets are encrypted with blowfish using 
 the following hardcoded key: ;5.]94-31==-%xT!^[$\000.
 
-Folder structure
-----------------
-- core: Core modules, used by both login server and game server
-- os: OS related code (sockets, threads, etc.)
-- os/<implementation>: For the time being only Linux implementation are 
-  being written down but more can be added by easily creating a new folder 
-  and implementing all the header files in the os folder. Make sure to 
-  update game/src/Makefile to use the new implementation instead of os/linux 
-  (replace $(wildcard ../os/linux/*.c) with the new implementation, 
-  ie $(wildcard ../os/windows/*.c))
-- game: Game server code
-- game/lib: Server implementation. All of this gets loaded dynamically 
-  as a library
-- game/lib/cache: Code related to cache, saving the state of the world 
-  and players. I may use redis for this one, but only time will tell
-- game/lib/dto: Data transfer objects (raw structures)
-- game/lib/entity: Entities (player, character, etc.)
-- game/lib/request_handler: Handlers for requests made by clients 
-  (move, protocol version, etc.)
-- game/lib/storage: Code related to file storage (saving chars, etc.)
-- login: Login server code
-- login/dto: Data transfer objects
-- login/handler: Handlers for each client request
-- login/packet: Packets sent by login server
-
 To do
 -----
 - [ ] Correctly handle big/little endian
@@ -74,9 +46,8 @@ To do
 - [x] Create character
 - [x] Enter world
 - [x] Walk
-- [ ] Lua integration? since we got hot reload I don't know if it makes sense
 - [x] Handle multiple connections
-- [x] See other players
+- [] See other players
 
 Screenshots/demos
 -----------------
