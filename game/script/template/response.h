@@ -1,0 +1,15 @@
+#ifndef LIB_SERVER_PACKET_REQUEST_UPPERCASE_NAME_H
+#define LIB_SERVER_PACKET_REQUEST_UPPERCASE_NAME_H
+
+#include "../headers.h"
+
+struct ServerPacketREQUEST_UPPERCAMELCASE_NAME {
+        int some_content;
+};
+
+#define SERVER_PACKET_REQUEST_UPPERCASE_NAME_SIZE sizeof(struct ServerPacketREQUEST_UPPERCAMELCASE_NAME)
+#define SERVER_PACKET_REQUEST_UPPERCASE_NAME_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_REQUEST_UPPERCASE_NAME_SIZE
+
+void server_packet_REQUEST_LOWERCASE_NAME(packet *dest);
+
+#endif

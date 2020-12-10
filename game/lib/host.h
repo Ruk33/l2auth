@@ -1,15 +1,37 @@
-#ifndef HOST_H
-#define HOST_H
+#ifndef LIB_CONNECTION_H
+#define LIB_CONNECTION_H
 
 #include <stdlib.h>
 
-typedef void *(* host_malloc_cb)
-(size_t how_much);
+/**
+ * Allocate heap memory.
+ */
+typedef void *(*host_alloc)(size_t how_much);
 
-typedef void (* host_mfree_cb)
-(void *memory);
+/**
+ * Deallocate heap memory.
+ */
+typedef void (*host_dealloc)(void *memory);
 
-typedef void (* host_send_response_cb)
-(int client_id, unsigned char *buf, size_t buf_size);
+/**
+ * Allows to send a response to client by id.
+ */
+typedef void (*host_send_response_cb)(
+        int client,
+        unsigned char *response,
+        size_t response_size
+);
+
+/**
+ * Allows to disconnect a client by id.
+ */
+typedef void (*host_disconnect_cb)(int client);
+
+struct Host {
+        host_alloc alloc_memory;
+        host_dealloc dealloc_memory;
+        host_send_response_cb send_response;
+        host_disconnect_cb disconnect_connection;
+};
 
 #endif
