@@ -1,4 +1,0 @@
-/*
- * (franco.montenegro)
- * Implement
- */

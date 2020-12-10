@@ -40,7 +40,7 @@ CLIBS=-lssl -lcrypto -ldatastructures
 %.o: %.c $(H_FILES)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-loginserver: $(O_FILES)
+login_server: $(O_FILES)
 	$(CC) -o $@ $^ $(CFLAGS) $(CLIBS)
 
 .PHONY: clean
