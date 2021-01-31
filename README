@@ -21,15 +21,15 @@ Gameserver hot-code reload
 --------------------------
 - Run the game server
 - Make a change in the code
-- Run cd game/lib && make if not using docker, or
-- Run docker-compose exec gameserver bash -c "cd game/lib && make" for docker
-- Check the Lineage 2 client, the change should be reflected live
+- Run cd game/lib && make if not using Docker, or
+- Run docker-compose exec gameserver bash -c "cd game/lib && make" for Docker
+- Check the Lineage 2 client, the change should be reflected live withouth having to shut down or restart the server
 
 Lineage 2 Protocol
 ------------------
-Lineage 2 uses TCP in order to send packets.
+Lineage 2 uses TCP to send packets.
 
-All integers are little endian.
+All integers are little-endian.
 
 The first two bytes of the packet contain the packet size and the third one, 
 usually the packet type.
@@ -39,7 +39,7 @@ the following hardcoded key: ;5.]94-31==-%xT!^[$\000.
 
 To do
 -----
-- [ ] Correctly handle big/little endian
+- [ ] Correctly handle big/little-endian
 - [x] Display terms of service view
 - [x] Display server list
 - [x] Allow to enter game server
@@ -47,7 +47,7 @@ To do
 - [x] Enter world
 - [x] Walk
 - [x] Handle multiple connections
-- [] See other players
+- [ ] See other players
 
 Screenshots/demos
 -----------------
@@ -64,6 +64,6 @@ Credits
 - http://fursoffers.narod.ru/Packets.htm
 - https://code.google.com/archive/p/l2adenalib/wikis/L2LoginServerProtocol.wiki
 
-Licence
+License
 -------
 GPL

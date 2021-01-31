@@ -69,10 +69,10 @@ CFLAGS=\
 CLIBS=-ldatastructures
 
 %.o: %.c $(H_FILES)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
 game_server: $(O_FILES)
-	$(CC) -shared -o $@.so $^ $(CFLAGS) $(CLIBS)
+	$(CC) $(CFLAGS) $(CLIBS) -fPIC -shared -o $@.so $^
 
 .PHONY: clean
 clean:

@@ -3,14 +3,14 @@ version: '3'
 services:
   loginserver:
     build: .
-    command: bash -c "cd login && make && login_server"
+    command: bash ./compile_and_run_ls.sh
     volumes:
       - ./login:/usr/src/l2auth/login
     ports:
       - 2106:2106
   gameserver:
     build: .
-    command: bash -c "cd game && make && cd lib && make clean && make && cd .. && ./game_server"
+    command: bash ./compile_and_run_gs.sh
     volumes:
       - ./game:/usr/src/l2auth/game
     ports:

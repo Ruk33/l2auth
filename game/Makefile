@@ -14,10 +14,10 @@ CFLAGS=-std=c99 -Wall -Werror -Wextra -g -pedantic
 CLIBS=-ldl -lpthread -ldatastructures
 
 %.o: %.c $(H_FILES)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 game_server: $(O_FILES)
-	$(CC) -o $@ $^ $(CFLAGS) $(CLIBS)
+	$(CC) $(CFLAGS) $(CLIBS) -o $@ $^
 
 .PHONY: clean
 clean:
