@@ -1,5 +1,5 @@
 #include "headers.h"
-#include "client_request/handle.h"
+#include "state_machine/handle.h"
 #include "storage/server.h"
 #include "storage/session.h"
 #include "session.h"
@@ -26,6 +26,7 @@ void game_server_new_connection(int client, storage_server_t *server_storage)
         session_t session = {0};
         unsigned char key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
 
+        session.socket = client;
         memcpy(session.encrypt_key, key, sizeof(session.encrypt_key));
         memcpy(session.decrypt_key, key, sizeof(session.decrypt_key));
 
@@ -64,7 +65,7 @@ void game_server_new_request(
         printf("New request from client %d.\n", client);
         printf("Request size: %ld.\n", request_size);
 
-        client_request_handle(client, request, request_size, &host, server_storage);
+        state_machine_handle(client, request, request_size, &host, server_storage);
 }
 
 void game_server_client_disconnected(int client, void *data)

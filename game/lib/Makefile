@@ -3,7 +3,6 @@ C_FILES=\
 	client_request/create_char.c \
 	client_request/d0.c \
 	client_request/enter_world.c \
-	client_request/handle.c \
 	client_request/logout.c \
 	client_request/move.c \
 	client_request/new_char.c \
@@ -28,6 +27,13 @@ C_FILES=\
 	server_packet/select_character.c \
 	server_packet/show_map.c \
 	server_packet/validate_position.c \
+	state_machine/auth_request.c \
+	state_machine/character_selection.c \
+	state_machine/creating_character.c \
+	state_machine/entering_world.c \
+	state_machine/handle.c \
+	state_machine/in_world.c \
+	state_machine/protocol_version.c \
 	storage/character.c \
 	storage/server.c \
 	storage/session.c \
@@ -37,6 +43,7 @@ C_FILES=\
 	game_server.c \
 	l2_string.c \
 	packet.c \
+	request.c \
 	session.c
 
 H_FILES=\

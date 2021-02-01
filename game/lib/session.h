@@ -3,7 +3,44 @@
 
 #include "headers.h"
 
+enum SessionState {
+        /*
+         * Initial state. When the user tries to
+         * connect to the game server the first
+         * packet sent is the protocol version.
+         */
+        PROTOCOL_VERSION,
+        /*
+         * Successfully authenticated.
+         */
+        AUTH_REQUEST,
+        /*
+         * The user is on the character selection screen.
+         */
+        CHARACTER_SELECTION,
+        /*
+         * The user is in the create character screen.
+         */
+        CREATING_CHARACTER,
+
+        /*
+         * All states below this line assume the
+         * user is already in the world with a character.
+         * Or, in other words, the player is just playing.
+         */
+
+        /*
+         * The user is loading and entering into the world.
+         */
+        ENTERING_WORLD,
+        /*
+         * The user enters the world with a character.
+         */
+        IN_WORLD,
+};
+
 struct Session {
+        int socket;
         byte encrypt_key[8];
         byte decrypt_key[8];
         int playOK1;
@@ -14,6 +51,7 @@ struct Session {
         int conn_encrypted;
         int selected_character_index;
         int in_world;
+        enum SessionState state;
 };
 
 typedef struct Session session_t;
@@ -49,6 +87,11 @@ void session_encrypt_packet(session_t *session, byte *dest, packet *src, size_t 
  * The key always gets updated.
  */
 void session_decrypt_packet(session_t *session, byte *dest, packet *src, size_t src_size);
+
+/**
+ * Update session's state.
+ */
+void session_update_state(session_t *session, enum SessionState new_state);
 
 /**
  * The user using this session

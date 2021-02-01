@@ -34,6 +34,12 @@ void session_decrypt_packet(session_t *session, byte *dest, packet *src, size_t 
         decrypt_packet(dest, src, src_size, session->decrypt_key);
 }
 
+void session_update_state(session_t *session, enum SessionState new_state)
+{
+        assert(session);
+        session->state = new_state;
+}
+
 void session_entered_world(session_t *session)
 {
         assert(session);

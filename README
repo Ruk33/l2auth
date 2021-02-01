@@ -1,6 +1,6 @@
 L2 Auth
 -------
-Simple Lineage 2 C4 server written as a learning exercise.
+Simple Lineage 2 C4 server emulator written in C as a learning exercise.
 
 Why does this project exist?
 ----------------------------
@@ -10,7 +10,7 @@ is an excellent project to work with it.
 
 Running the server with Docker
 ------------------------------
-- Install docker
+- Install Docker
 - Install docker-compose
 - Run docker-compose up
 - Server will start listening for connections on localhost (127.0.0.1) 
@@ -19,11 +19,17 @@ Running the server with Docker
 
 Gameserver hot-code reload
 --------------------------
+It is possible to make changes in the game server code and see those live
+without having to restart or shuting down the server. This is possible thanks
+to dlfcn.h (dlopen and dlsym).
+
 - Run the game server
 - Make a change in the code
-- Run cd game/lib && make if not using Docker, or
-- Run docker-compose exec gameserver bash -c "cd game/lib && make" for Docker
-- Check the Lineage 2 client, the change should be reflected live withouth having to shut down or restart the server
+- If using Docker run:
+        - docker-compose exec gameserver bash update_gs_code.sh
+- If not using Docker run:
+        - sh update_gs_code.sh
+- Check the Lineage 2 client, the change should be reflected live
 
 Lineage 2 Protocol
 ------------------

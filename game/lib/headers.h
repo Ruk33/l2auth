@@ -14,5 +14,6 @@
 #include "byte_write.h"
 #include "types.h"
 #include "vec3.h"
+#include "request.h"
 
 #endif

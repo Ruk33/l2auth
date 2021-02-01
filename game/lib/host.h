@@ -34,4 +34,6 @@ struct Host {
         host_disconnect_cb disconnect_connection;
 };
 
+typedef struct Host host_t;
+
 #endif
