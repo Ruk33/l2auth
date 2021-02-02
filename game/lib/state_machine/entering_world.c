@@ -2,6 +2,7 @@
 #include <client_request/quest_list.h>
 #include <client_request/enter_world.h>
 #include <client_packet/type.h>
+#include "in_world.h"
 #include "entering_world.h"
 
 void state_machine_entering_world(request_t *request)
@@ -24,6 +25,17 @@ void state_machine_entering_world(request_t *request)
         case CLIENT_PACKET_TYPE_ENTER_WORLD:
                 client_request_enter_world(request->session->socket, request->session, &request->storage->character_storage, request->host->send_response);
                 session_update_state(request->session, IN_WORLD);
+
+                /*
+                 * Not sure about this one, refactor?
+                 *
+                 * This is being executed so the first spawn
+                 * state is being handled (it notifies other players
+                 * of the presence of the character).
+                 *
+                 * After that, the caracter's state will be idle.
+                 */
+                state_machine_in_world(request);
                 break;
         default:
                 printf("Packet %02X can't be handled by state_machine_entering_world.\n", type);

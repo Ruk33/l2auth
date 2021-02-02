@@ -1,3 +1,5 @@
+#include <headers.h>
+#include "spawn.h"
 #include "idle.h"
 #include "handle.h"
 
@@ -15,6 +17,9 @@ void state_machine_character_handle(request_t *request)
         }
 
         switch (character->state) {
+        case SPAWN:
+                state_machine_character_spawn(request, character);
+                break;
         case IDLE:
                 state_machine_character_idle(request, character);
                 break;

@@ -10,6 +10,31 @@
 #include <client_request/say.h>
 #include "idle.h"
 
+static void move(request_t *request, character_t *character)
+{
+        assert_valid_request(request);
+        assert(character);
+
+        struct List *close_characters = NULL;
+        struct ListEntry *i_close_character = NULL;
+        character_t *close_character = NULL;
+
+        close_characters = list_create(request->host->alloc_memory, request->host->dealloc_memory);
+        storage_character_close_to(&request->storage->character_storage, &close_characters, character, 1200);
+
+        i_close_character = list_get_iterator(close_characters);
+
+        while (i_close_character) {
+                close_character = list_get_value(i_close_character);
+
+                client_request_move(close_character->session->socket, request->packet, close_character->session, character, request->host->send_response);
+
+                i_close_character = list_get_next(i_close_character);
+        }
+
+        list_free(close_characters);
+}
+
 /**
  * Send a message to all characters close enough
  * to the speaker.
@@ -67,7 +92,7 @@ void state_machine_character_idle(request_t *request, character_t *character)
 
         switch (type) {
         case CLIENT_PACKET_TYPE_MOVE_BACKWARDS_TO_LOCATION:
-                client_request_move(socket, request->packet, request->session, character, request->host->send_response);
+                move(request, character);
                 break;
         case CLIENT_PACKET_TYPE_VALIDATE_POS:
                 client_request_validate_position(socket, request->packet, request->session, character, request->host->send_response);
@@ -83,6 +108,7 @@ void state_machine_character_idle(request_t *request, character_t *character)
                 break;
         case CLIENT_PACKET_TYPE_RESTART:
                 client_request_restart(socket, request->session, &request->storage->character_storage, request->host->send_response);
+                character_update_state(character, SPAWN);
                 session_update_state(request->session, CHARACTER_SELECTION);
                 break;
         case CLIENT_PACKET_TYPE_LOGOUT:

@@ -64,6 +64,6 @@ struct ServerPacketCharInfo {
 #define SERVER_PACKET_CHAR_INFO_SIZE sizeof(struct ServerPacketCharInfo)
 #define SERVER_PACKET_CHAR_INFO_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_CHAR_INFO_SIZE
 
-void server_packet_char_info(packet *dest);
+void server_packet_char_info(packet *dest, character_t *character, int heading);
 
 #endif

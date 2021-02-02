@@ -5,6 +5,7 @@
 #include "vec3.h"
 
 enum CharacterState {
+        SPAWN,
         IDLE,
         RUNNING,
         WALKING,

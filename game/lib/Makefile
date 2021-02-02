@@ -14,6 +14,7 @@ C_FILES=\
 	client_request/show_map.c \
 	client_request/validate_position.c \
 	server_packet/auth_login.c \
+	server_packet/char_info.c \
 	server_packet/create_char.c \
 	server_packet/d0.c \
 	server_packet/enter_world.c \
@@ -29,6 +30,7 @@ C_FILES=\
 	server_packet/validate_position.c \
 	state_machine/character/handle.c \
 	state_machine/character/idle.c \
+	state_machine/character/spawn.c \
 	state_machine/auth_request.c \
 	state_machine/character_selection.c \
 	state_machine/creating_character.c \

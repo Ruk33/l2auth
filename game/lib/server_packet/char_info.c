@@ -9,8 +9,8 @@ void server_packet_char_info(packet *dest, character_t *character, int heading)
 
         packet_type type = 0x03;
 
-        unsigned char buf[SERVER_PACKET_CHAR_INFO_SIZE] = {0};
-        unsigned char *p = buf;
+        byte_t buf[SERVER_PACKET_CHAR_INFO_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketCharInfo char_info_packet = {0};
 
@@ -18,21 +18,51 @@ void server_packet_char_info(packet *dest, character_t *character, int heading)
         char_info_packet.y = character->y;
         char_info_packet.z = character->z;
         char_info_packet.heading = heading;
+        char_info_packet.char_id = character->id;
         char_info_packet.race_id = character->race_id;
         char_info_packet.sex = character->sex;
         char_info_packet.class_id = character->class_id;
+        char_info_packet.m_attack_speed = 1;
+        char_info_packet.p_attack_speed = 1;
+        char_info_packet.run_speed = 300;
+        char_info_packet.walk_speed = 200;
+        char_info_packet.swim_run_speed = 200;
+        char_info_packet.swim_walk_speed = 200;
+        char_info_packet.fly_run_speed = 200;
+        char_info_packet.fly_walk_speed = 200;
+        char_info_packet.fly_run_speed_copy = 200;
+        char_info_packet.fly_walk_speed_copy = 200;
+        char_info_packet.movement_multiplier = 1;
+        char_info_packet.attack_speed_multiplier = 1;
+        char_info_packet.collision_radius = 200;
+        char_info_packet.collision_height = 200;
+        char_info_packet.hair_style_id = 0;
+        char_info_packet.hair_color_id = 0;
+        char_info_packet.face = 0;
+        char_info_packet.clan_id = 0;
+        char_info_packet.clan_crest_id = 0;
+        char_info_packet.ally_id = 0;
+        char_info_packet.ally_crest_id = 0;
+        char_info_packet.standing = 1;
+        char_info_packet.running = 1;
+        char_info_packet.in_combat = 0;
+        char_info_packet.alike_dead = 0;
+        char_info_packet.invisible = 0;
+        char_info_packet.mount_type = 0;
+        char_info_packet.private_store_type = 0;
+        char_info_packet.cubics = 0;
+        char_info_packet.find_party_member = 0;
+        char_info_packet.abnormal_effect = 0;
+        char_info_packet.recommendations_left = 0;
+        char_info_packet.mounted = 0;
+        char_info_packet.clan_crest_large_id = 0;
+        char_info_packet.hero_symbol = 0;
+        char_info_packet.hero_aura = 0;
+        char_info_packet.fishing = 0;
+        char_info_packet.name_color = 0xFFFFFF;
 
-        l2_string_from_char(
-                char_info_packet.char_name,
-                character->name,
-                strlen(character->name) + 1
-        );
-
-        l2_string_from_char(
-                char_info_packet.title,
-                character->title,
-                strlen(character->title) + 1
-        );
+        l2_string_from_char(char_info_packet.char_name, character->name, strlen(character->name) + 1);
+        l2_string_from_char(char_info_packet.title, character->title, strlen(character->title) + 1);
 
         BYTE_WRITE_VAL(p, char_info_packet.x);
         BYTE_WRITE_VAL(p, char_info_packet.y);
