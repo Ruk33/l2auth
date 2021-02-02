@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/logout.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/logout.h>
 #include "logout.h"
 
 void client_request_logout(

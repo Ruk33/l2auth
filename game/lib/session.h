@@ -41,8 +41,8 @@ enum SessionState {
 
 struct Session {
         int socket;
-        byte encrypt_key[8];
-        byte decrypt_key[8];
+        byte_t encrypt_key[8];
+        byte_t decrypt_key[8];
         int playOK1;
         int playOK2;
         int loginOK1;
@@ -73,7 +73,7 @@ void session_encrypt_connection(session_t *session);
  * gets updated on every encrypt, the
  * result won't work.
  */
-void session_encrypt_packet(session_t *session, byte *dest, packet *src, size_t src_size);
+void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size);
 
 /**
  * Decrypt packet only if connection
@@ -86,7 +86,7 @@ void session_encrypt_packet(session_t *session, byte *dest, packet *src, size_t 
  * decrypted. It's the same as encryption.
  * The key always gets updated.
  */
-void session_decrypt_packet(session_t *session, byte *dest, packet *src, size_t src_size);
+void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size);
 
 /**
  * Update session's state.

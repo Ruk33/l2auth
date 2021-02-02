@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_CREATE_CHAR_H
 #define LIB_SERVER_PACKET_CREATE_CHAR_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketCreateChar {
         int response;

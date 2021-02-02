@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_RESTART_H
 #define LIB_SERVER_PACKET_RESTART_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketRestart {
         int response;

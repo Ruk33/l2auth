@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/show_map.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/show_map.h>
 #include "show_map.h"
 
 void client_request_show_map(

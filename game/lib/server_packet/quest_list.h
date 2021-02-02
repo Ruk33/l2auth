@@ -1,10 +1,10 @@
 #ifndef LIB_SERVER_PACKET_QUEST_LIST_H
 #define LIB_SERVER_PACKET_QUEST_LIST_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketQuestList {
-        byte empty[7];
+        byte_t empty[7];
 };
 
 #define SERVER_PACKET_QUEST_LIST_SIZE sizeof(struct ServerPacketQuestList)

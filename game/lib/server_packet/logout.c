@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "logout.h"
 
 void server_packet_logout(packet *dest)

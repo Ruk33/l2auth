@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "restart.h"
 
 void server_packet_restart(packet *dest)
@@ -7,8 +7,8 @@ void server_packet_restart(packet *dest)
 
         packet_type type = 0x5f;
 
-        byte buf[SERVER_PACKET_RESTART_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_RESTART_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketRestart restart_packet = {0};
 

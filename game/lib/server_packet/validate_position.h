@@ -1,8 +1,8 @@
 #ifndef LIB_SERVER_PACKET_VALIDATE_POSITION_H
 #define LIB_SERVER_PACKET_VALIDATE_POSITION_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 
 struct ServerPacketValidatePosition {
         int obj_id;

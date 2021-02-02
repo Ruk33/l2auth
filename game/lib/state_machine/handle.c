@@ -6,7 +6,7 @@
 #include "in_world.h"
 #include "handle.h"
 
-void state_machine_handle(int client, byte *request_packet, size_t request_size, host_t *host, storage_server_t *server_storage)
+void state_machine_handle(int client, byte_t *request_packet, size_t request_size, host_t *host, storage_server_t *server_storage)
 {
         assert(request_packet);
         assert(host);

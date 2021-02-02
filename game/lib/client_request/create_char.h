@@ -1,9 +1,9 @@
 #ifndef LIB_CLIENT_REQUEST_CREATE_CHAR_H
 #define LIB_CLIENT_REQUEST_CREATE_CHAR_H
 
-#include "../headers.h"
-#include "../storage/session.h"
-#include "../storage/character.h"
+#include <headers.h>
+#include <storage/session.h>
+#include <storage/character.h>
 
 struct ClientRequestCreateChar {
         // Hardcoded, not sure if this is right limit

@@ -9,6 +9,6 @@
  * CHANGE. This is required so further
  * packets can be properly encrypted.
  */
-void encrypt_packet(byte *dest, packet *src, size_t src_size, byte *key);
+void encrypt_packet(byte_t *dest, packet *src, size_t src_size, byte_t *key);
 
 #endif

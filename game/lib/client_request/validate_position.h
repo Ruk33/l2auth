@@ -1,9 +1,9 @@
 #ifndef LIB_CLIENT_REQUEST_VALIDATE_POSITION_H
 #define LIB_CLIENT_REQUEST_VALIDATE_POSITION_H
 
-#include "../headers.h"
-#include "../session.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <character.h>
 
 struct ClientRequestValidatePosition {
         vec3_t position;

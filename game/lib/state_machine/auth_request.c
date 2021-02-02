@@ -1,5 +1,5 @@
-#include "../client_request/auth_request.h"
-#include "../client_packet/type.h"
+#include <client_request/auth_request.h>
+#include <client_packet/type.h>
 #include "auth_request.h"
 
 void state_machine_auth_request(request_t *request)

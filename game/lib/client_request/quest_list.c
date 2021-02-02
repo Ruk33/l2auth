@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/quest_list.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/quest_list.h>
 #include "quest_list.h"
 
 void client_request_quest_list(

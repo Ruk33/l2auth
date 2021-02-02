@@ -1,9 +1,9 @@
-#include "../headers.h"
-#include "../storage/session.h"
-#include "../storage/character.h"
-#include "../server_packet/create_char.h"
-#include "../client_request/auth_request.h"
-#include "../character.h"
+#include <headers.h>
+#include <storage/session.h>
+#include <storage/character.h>
+#include <server_packet/create_char.h>
+#include <client_request/auth_request.h>
+#include <character.h>
 #include "create_char.h"
 
 static void store_new_char_info_from_packet(
@@ -14,7 +14,7 @@ static void store_new_char_info_from_packet(
         assert(dest);
         assert(src);
 
-        byte *p = packet_body(src);
+        byte_t *p = packet_body(src);
 
         l2_string_to_char(dest->name, p, sizeof(dest->name));
         p += l2_string_bytes(p);

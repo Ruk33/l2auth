@@ -1,8 +1,8 @@
 #ifndef LIB_CLIENT_REQUEST_SHOW_MAP_H
 #define LIB_CLIENT_REQUEST_SHOW_MAP_H
 
-#include "../headers.h"
-#include "../session.h"
+#include <headers.h>
+#include <session.h>
 
 void client_request_show_map(
         int client,

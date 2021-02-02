@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_CHAR_INFO_H
 #define LIB_SERVER_PACKET_CHAR_INFO_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketCharInfo {
         int x;

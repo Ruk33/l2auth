@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_SHOW_MAP_H
 #define LIB_SERVER_PACKET_SHOW_MAP_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketShowMap {
         int map_id;

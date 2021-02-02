@@ -1,9 +1,9 @@
 #ifndef LIB_CLIENT_REQUEST_SAY_H
 #define LIB_CLIENT_REQUEST_SAY_H
 
-#include "../headers.h"
-#include "../session.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <character.h>
 
 struct ClientRequestSay {
         l2_string_t *message;

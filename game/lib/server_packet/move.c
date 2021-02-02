@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "move.h"
 
 void server_packet_move(packet *dest, character_t *character, vec3_t *position)
@@ -10,8 +10,8 @@ void server_packet_move(packet *dest, character_t *character, vec3_t *position)
 
         packet_type type = 0x01;
 
-        byte buf[SERVER_PACKET_MOVE_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_MOVE_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketMove move_packet = {0};
 

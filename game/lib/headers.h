@@ -17,6 +17,6 @@
 #include "vec3.h"
 #include "position.h"
 #include "request.h"
-#include "string.h"
+#include "str.h"
 
 #endif

@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "validate_position.h"
 
 void server_packet_validate_position(packet *dest, character_t *character, int heading)
@@ -9,8 +9,8 @@ void server_packet_validate_position(packet *dest, character_t *character, int h
 
         packet_type type = 0x61;
 
-        byte buf[SERVER_PACKET_VALIDATE_POSITION_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_VALIDATE_POSITION_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketValidatePosition validate_position_packet = {0};
 

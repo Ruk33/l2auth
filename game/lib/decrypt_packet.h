@@ -11,6 +11,6 @@
  * The decrypted packet will be
  * stored in dest.
  */
-void decrypt_packet(byte *dest, packet *src, size_t src_size, byte *key);
+void decrypt_packet(byte_t *dest, packet *src, size_t src_size, byte_t *key);
 
 #endif

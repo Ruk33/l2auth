@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_D0_H
 #define LIB_SERVER_PACKET_D0_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketD0 {
         short unknown;

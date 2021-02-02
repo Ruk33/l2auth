@@ -1,10 +1,10 @@
 #ifndef LIB_SERVER_PACKET_LOGOUT_H
 #define LIB_SERVER_PACKET_LOGOUT_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketLogout {
-        byte empty[4];
+        byte_t empty[4];
 };
 
 #define SERVER_PACKET_LOGOUT_SIZE sizeof(struct ServerPacketLogout)

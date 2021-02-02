@@ -1,6 +1,6 @@
-#include "../client_request/new_char.h"
-#include "../client_request/select_character.h"
-#include "../client_packet/type.h"
+#include <client_request/new_char.h>
+#include <client_request/select_character.h>
+#include <client_packet/type.h>
 #include "character_selection.h"
 
 void state_machine_character_selection(request_t *request)

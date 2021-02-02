@@ -1,10 +1,10 @@
 #ifndef LIB_SERVER_PACKET_PROTOCOL_VERSION_H
 #define LIB_SERVER_PACKET_PROTOCOL_VERSION_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketProtocolVersion {
-        byte content[9];
+        byte_t content[9];
 };
 
 #define SERVER_PACKET_PROTOCOL_VERSION_SIZE sizeof(struct ServerPacketProtocolVersion)

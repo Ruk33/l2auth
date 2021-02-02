@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../session.h"
+#include <headers.h>
+#include <session.h>
 #include "session.h"
 
 void storage_session_init(storage_session_t *manager, host_alloc alloc_memory, host_dealloc dealloc_memory)

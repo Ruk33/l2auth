@@ -9,7 +9,7 @@ void session_encrypt_connection(session_t *session)
         session->conn_encrypted = 1;
 }
 
-void session_encrypt_packet(session_t *session, byte *dest, packet *src, size_t src_size)
+void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size)
 {
         assert(session);
         assert(dest);
@@ -18,7 +18,7 @@ void session_encrypt_packet(session_t *session, byte *dest, packet *src, size_t 
         encrypt_packet(dest, src, src_size, session->encrypt_key);
 }
 
-void session_decrypt_packet(session_t *session, byte *dest, packet *src, size_t src_size)
+void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size)
 {
         assert(session);
         assert(dest);

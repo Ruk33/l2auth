@@ -1,7 +1,7 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/move.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/move.h>
+#include <character.h>
 #include "move.h"
 
 void client_request_move(
@@ -18,7 +18,7 @@ void client_request_move(
         assert(character);
         assert(send_response);
 
-        byte *p = packet_body(request);
+        byte_t *p = packet_body(request);
         struct ClientRequestMove request_packet = {0};
 
         packet response[SERVER_PACKET_MOVE_FULL_SIZE] = {0};

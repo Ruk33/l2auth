@@ -1,8 +1,8 @@
 #ifndef LIB_SERVER_PACKET_SELECT_CHARACTER_H
 #define LIB_SERVER_PACKET_SELECT_CHARACTER_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 
 struct ServerPacketSelectCharacter {
         int empty[54];

@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "select_character.h"
 
 void server_packet_select_character(packet *dest, character_t *character, int playOK1)
@@ -8,8 +8,8 @@ void server_packet_select_character(packet *dest, character_t *character, int pl
 
         packet_type type = 0x15;
 
-        byte buf[SERVER_PACKET_SELECT_CHARACTER_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_SELECT_CHARACTER_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketSelectCharacter select_character_packet = {0};
 

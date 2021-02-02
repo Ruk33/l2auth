@@ -1,13 +1,13 @@
-#include "../../client_request/move.h"
-#include "../../client_request/validate_position.h"
-#include "../../client_request/say.h"
-#include "../../client_request/show_map.h"
-#include "../../client_request/restart.h"
-#include "../../client_request/logout.h"
-#include "../../client_packet/type.h"
-#include "../../storage/character.h"
-#include "../../server_packet/say.h"
-#include "../../client_request/say.h"
+#include <client_request/move.h>
+#include <client_request/validate_position.h>
+#include <client_request/say.h>
+#include <client_request/show_map.h>
+#include <client_request/restart.h>
+#include <client_request/logout.h>
+#include <client_packet/type.h>
+#include <storage/character.h>
+#include <server_packet/say.h>
+#include <client_request/say.h>
 #include "idle.h"
 
 /**

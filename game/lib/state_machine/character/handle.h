@@ -1,7 +1,7 @@
 #ifndef LIB_STATE_MACHINE_CHARACTER_HANDLE_H
 #define LIB_STATE_MACHINE_CHARACTER_HANDLE_H
 
-#include "../../headers.h"
+#include <headers.h>
 
 /**
  * Entry point to handle character using

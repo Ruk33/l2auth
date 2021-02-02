@@ -5,7 +5,7 @@
 #include "byte_write.h"
 #include "packet.h"
 
-void packet_build(packet *dest, packet_type type, byte *content, size_t content_size)
+void packet_build(packet *dest, packet_type type, byte_t *content, size_t content_size)
 {
         assert(dest);
         // Packet of type 0 is also valid
@@ -38,7 +38,7 @@ packet_type packet_get_type(packet *src)
         return src[2];
 }
 
-byte *packet_body(packet *src)
+byte_t *packet_body(packet *src)
 {
         assert(src);
         size_t size_header = sizeof(packet_size);

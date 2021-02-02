@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "create_char.h"
 
 void server_packet_create_char(packet *dest)
@@ -7,8 +7,8 @@ void server_packet_create_char(packet *dest)
 
         packet_type type = 0x19;
 
-        byte buf[SERVER_PACKET_CREATE_CHAR_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_CREATE_CHAR_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketCreateChar create_char_packet = {0};
 

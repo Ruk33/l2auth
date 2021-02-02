@@ -1,7 +1,7 @@
 #include "headers.h"
 #include "encrypt_packet.h"
 
-void encrypt_packet(byte *dest, packet *src, size_t src_size, byte *key)
+void encrypt_packet(byte_t *dest, packet *src, size_t src_size, byte_t *key)
 {
         assert(dest);
         assert(src);
@@ -10,8 +10,8 @@ void encrypt_packet(byte *dest, packet *src, size_t src_size, byte *key)
 
         size_t size_header = sizeof(short);
 
-        byte *packet_content = src + size_header;
-        byte *dest_content = dest + size_header;
+        byte_t *packet_content = src + size_header;
+        byte_t *dest_content = dest + size_header;
 
         int temp = 0;
         int temp2 = 0;
@@ -19,7 +19,7 @@ void encrypt_packet(byte *dest, packet *src, size_t src_size, byte *key)
 
         for (size_t i = 0; i < src_size - size_header; i++) {
                temp2 = packet_content[i] & 0xff;
-               dest_content[i] = (byte) (temp2 ^ key[i & 7] ^ temp);
+               dest_content[i] = (byte_t) (temp2 ^ key[i & 7] ^ temp);
                temp = dest_content[i];
         };
 
@@ -30,10 +30,10 @@ void encrypt_packet(byte *dest, packet *src, size_t src_size, byte *key)
 
         old += (unsigned short) (src_size - size_header);
 
-        key[0] = (byte) (old &0xff);
-        key[1] = (byte) (old >> 0x08 &0xff);
-        key[2] = (byte) (old >> 0x10 &0xff);
-        key[3] = (byte) (old >> 0x18 &0xff);
+        key[0] = (byte_t) (old &0xff);
+        key[1] = (byte_t) (old >> 0x08 &0xff);
+        key[2] = (byte_t) (old >> 0x10 &0xff);
+        key[3] = (byte_t) (old >> 0x18 &0xff);
 
         memcpy(dest, (unsigned short *) &src_size, size_header);
 }

@@ -29,7 +29,7 @@ typedef unsigned char packet_type;
  * dest must be long enough to hold the
  * entire information.
  */
-void packet_build(packet *dest, packet_type type, byte *content, size_t content_size);
+void packet_build(packet *dest, packet_type type, byte_t *content, size_t content_size);
 
 /**
  * Get the FULL size from a packet
@@ -48,6 +48,6 @@ packet_type packet_get_type(packet *src);
 /**
  * Get the content of the packet.
  */
-byte *packet_body(packet *src);
+byte_t *packet_body(packet *src);
 
 #endif

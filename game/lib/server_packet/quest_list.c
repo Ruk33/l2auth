@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "quest_list.h"
 
 void server_packet_quest_list(packet *dest)
@@ -7,8 +7,8 @@ void server_packet_quest_list(packet *dest)
 
         packet_type type = 0x80;
 
-        byte buf[SERVER_PACKET_QUEST_LIST_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_QUEST_LIST_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketQuestList quest_list_packet = {0};
 

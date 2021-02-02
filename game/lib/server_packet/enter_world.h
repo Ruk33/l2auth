@@ -1,8 +1,8 @@
 #ifndef LIB_SERVER_PACKET_ENTER_WORLD_H
 #define LIB_SERVER_PACKET_ENTER_WORLD_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 
 struct ServerPacketEnterWorld {
         int x;

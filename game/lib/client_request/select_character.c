@@ -1,8 +1,8 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../storage/character.h"
-#include "../server_packet/select_character.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <storage/character.h>
+#include <server_packet/select_character.h>
+#include <character.h>
 #include "select_character.h"
 
 static void update_selected_character_index_from_packet(
@@ -13,7 +13,7 @@ static void update_selected_character_index_from_packet(
         assert(session);
         assert(request);
 
-        byte *p = packet_body(request);
+        byte_t *p = packet_body(request);
         BYTE_READ_VAL(session->selected_character_index, p);
         printf("Selected characted updated to %d.\n", session->selected_character_index);
 }

@@ -1,8 +1,8 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../storage/character.h"
-#include "../server_packet/enter_world.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <storage/character.h>
+#include <server_packet/enter_world.h>
+#include <character.h>
 #include "enter_world.h"
 
 void client_request_enter_world(

@@ -1,8 +1,8 @@
 #ifndef LIB_STORAGE_SESSION_H
 #define LIB_STORAGE_SESSION_H
 
-#include "../headers.h"
-#include "../session.h"
+#include <headers.h>
+#include <session.h>
 
 struct StorageSession {
         struct HashMap *session_storage;

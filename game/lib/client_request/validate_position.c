@@ -1,7 +1,7 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/validate_position.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/validate_position.h>
+#include <character.h>
 #include "validate_position.h"
 
 void client_request_validate_position(
@@ -19,7 +19,7 @@ void client_request_validate_position(
         assert(send_response);
 
         struct ClientRequestValidatePosition request_packet = {0};
-        byte *p = packet_body(request);
+        byte_t *p = packet_body(request);
 
         packet response[SERVER_PACKET_VALIDATE_POSITION_FULL_SIZE] = {0};
 

@@ -1,8 +1,8 @@
 #ifndef LIB_SERVER_PACKET_MOVE_H
 #define LIB_SERVER_PACKET_MOVE_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 
 struct ServerPacketMove {
         int obj_id;

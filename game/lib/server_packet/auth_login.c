@@ -1,8 +1,8 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "auth_login.h"
 
-static byte *write_char_to_buf(byte *p, struct ServerPacketAuthLoginCharacter *character)
+static byte_t *write_char_to_buf(byte_t *p, struct ServerPacketAuthLoginCharacter *character)
 {
         assert(p);
         assert(character);
@@ -87,8 +87,8 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
         int character_count = 0;
 
         struct ServerPacketAuthLogin auth_login_packet = {0};
-        byte buf[SERVER_PACKET_AUTH_LOGIN_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_AUTH_LOGIN_SIZE] = {0};
+        byte_t *p = buf;
 
         if (characters)
         {

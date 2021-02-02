@@ -1,7 +1,7 @@
-#include "../client_request/d0.h"
-#include "../client_request/quest_list.h"
-#include "../client_request/enter_world.h"
-#include "../client_packet/type.h"
+#include <client_request/d0.h>
+#include <client_request/quest_list.h>
+#include <client_request/enter_world.h>
+#include <client_packet/type.h>
 #include "entering_world.h"
 
 void state_machine_entering_world(request_t *request)

@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "char_info.h"
 
 void server_packet_char_info(packet *dest, character_t *character, int heading)

@@ -1,8 +1,8 @@
 #ifndef LIB_CLIENT_REQUEST_NEW_CHAR_H
 #define LIB_CLIENT_REQUEST_NEW_CHAR_H
 
-#include "../headers.h"
-#include "../session.h"
+#include <headers.h>
+#include <session.h>
 
 /**
  * Client makes this request

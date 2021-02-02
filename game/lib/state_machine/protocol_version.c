@@ -1,5 +1,5 @@
-#include "../client_request/protocol_version.h"
-#include "../client_packet/type.h"
+#include <client_request/protocol_version.h>
+#include <client_packet/type.h>
 #include "protocol_version.h"
 
 void state_machine_protocol_version(request_t *request)

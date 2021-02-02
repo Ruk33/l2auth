@@ -1,9 +1,9 @@
 #ifndef LIB_CLIENT_REQUEST_MOVE_H
 #define LIB_CLIENT_REQUEST_MOVE_H
 
-#include "../headers.h"
-#include "../session.h"
-#include "../character.h"
+#include <headers.h>
+#include <session.h>
+#include <character.h>
 
 struct ClientRequestMove {
         vec3_t position;

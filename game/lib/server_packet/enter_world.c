@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "enter_world.h"
 
 void server_packet_enter_world(packet *dest, character_t *character)
@@ -9,8 +9,8 @@ void server_packet_enter_world(packet *dest, character_t *character)
 
         packet_type type = 0x04;
 
-        byte buf[SERVER_PACKET_ENTER_WORLD_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_ENTER_WORLD_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketEnterWorld enter_world_packet = {0};
 

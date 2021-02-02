@@ -1,7 +1,7 @@
 #ifndef LIB_CLIENT_REQUEST_PROTOCOL_VERSION_H
 #define LIB_CLIENT_REQUEST_PROTOCOL_VERSION_H
 
-#include "../headers.h"
+#include <headers.h>
 
 /**
  * First request made by client

@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "show_map.h"
 
 void server_packet_show_map(packet *dest, int map_id)

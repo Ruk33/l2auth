@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "say.h"
 
 void server_packet_say(packet *dest, character_t *character, l2_string_type_t msg_type, char *msg, size_t msg_size)

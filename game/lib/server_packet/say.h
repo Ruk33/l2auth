@@ -1,8 +1,8 @@
 #ifndef LIB_SERVER_PACKET_SAY_H
 #define LIB_SERVER_PACKET_SAY_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 
 struct ServerPacketSay {
         int sender_obj_id;

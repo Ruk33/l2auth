@@ -1,7 +1,7 @@
 #ifndef LIB_SERVER_PACKET_AUTH_LOGIN_H
 #define LIB_SERVER_PACKET_AUTH_LOGIN_H
 
-#include "../headers.h"
+#include <headers.h>
 
 struct ServerPacketAuthLoginCharacter {
         int empty[10];

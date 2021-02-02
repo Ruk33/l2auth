@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/say.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/say.h>
 #include "say.h"
 
 void client_request_say(client_request_say_t *dest, packet *request)

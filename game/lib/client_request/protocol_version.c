@@ -1,5 +1,5 @@
-#include "../headers.h"
-#include "../server_packet/protocol_version.h"
+#include <headers.h>
+#include <server_packet/protocol_version.h>
 #include "protocol_version.h"
 
 void client_request_protocol_version(

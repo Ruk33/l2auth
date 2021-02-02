@@ -1,8 +1,8 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../storage/character.h"
-#include "../server_packet/restart.h"
-#include "../client_request/auth_request.h"
+#include <headers.h>
+#include <session.h>
+#include <storage/character.h>
+#include <server_packet/restart.h>
+#include <client_request/auth_request.h>
 #include "restart.h"
 
 void client_request_restart(

@@ -1,8 +1,8 @@
 #ifndef STORAGE_CHARACTER_H
 #define STORAGE_CHARACTER_H
 
-#include "../headers.h"
-#include "../character.h"
+#include <headers.h>
+#include <character.h>
 #include "session.h"
 
 struct StorageCharacter {

@@ -56,6 +56,7 @@ H_FILES=\
 	byte_write.h \
 	headers.h \
 	host.h \
+	str.h \
 	types.h \
 	vec3.h
 
@@ -75,7 +76,8 @@ CFLAGS=\
 	-Wswitch-default \
 	-Wswitch-enum \
 	-Wconversion \
-	-Wunreachable-code
+	-Wunreachable-code \
+	-I.
 CLIBS=-ldatastructures -lm
 
 %.o: %.c $(H_FILES)

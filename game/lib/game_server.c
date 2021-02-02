@@ -34,7 +34,7 @@ void game_server_new_connection(int client, storage_server_t *server_storage)
         storage_session_add(&server_storage->session_storage, client, &session);
 }
 
-void game_server_new_request(int client, byte *request, size_t request_size, void *data, host_alloc alloc_memory, host_dealloc dealloc_memory, host_send_response_cb send_response, host_disconnect_cb disconnect_connection)
+void game_server_new_request(int client, byte_t *request, size_t request_size, void *data, host_alloc alloc_memory, host_dealloc dealloc_memory, host_send_response_cb send_response, host_disconnect_cb disconnect_connection)
 {
         assert(client > 0);
         assert(request);

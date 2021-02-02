@@ -1,4 +1,4 @@
-#include "../headers.h"
+#include <headers.h>
 #include "d0.h"
 
 void server_packet_d0(packet *dest)
@@ -7,8 +7,8 @@ void server_packet_d0(packet *dest)
 
         packet_type type = 0xFE;
 
-        byte buf[SERVER_PACKET_D0_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_D0_SIZE] = {0};
+        byte_t *p = buf;
 
         struct ServerPacketD0 d0_packet = {0};
 

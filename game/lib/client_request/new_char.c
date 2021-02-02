@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../server_packet/new_char.h"
-#include "../session.h"
+#include <headers.h>
+#include <server_packet/new_char.h>
+#include <session.h>
 #include "new_char.h"
 
 void client_request_new_char(

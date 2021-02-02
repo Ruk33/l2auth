@@ -1,7 +1,7 @@
-#include "../headers.h"
-#include "../storage/character.h"
-#include "../storage/session.h"
-#include "../server_packet/auth_login.h"
+#include <headers.h>
+#include <storage/character.h>
+#include <storage/session.h>
+#include <server_packet/auth_login.h>
 #include "auth_request.h"
 
 static void update_session_from_packet(session_t *session, packet *src)
@@ -9,7 +9,7 @@ static void update_session_from_packet(session_t *session, packet *src)
         assert(session);
         assert(src);
 
-        byte *p = packet_body(src);
+        byte_t *p = packet_body(src);
 
         char username[28] = {0};
         int playOK1 = 0;

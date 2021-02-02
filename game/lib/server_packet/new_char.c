@@ -1,7 +1,7 @@
-#include "../headers.h"
+#include <headers.h>
 #include "new_char.h"
 
-static byte *write_template_to_buffer(byte *buf, struct ServerPacketNewCharCharTemplate *template)
+static byte_t *write_template_to_buffer(byte_t *buf, struct ServerPacketNewCharCharTemplate *template)
 {
         assert(buf);
         assert(template);
@@ -44,8 +44,8 @@ void server_packet_new_char(packet *dest)
 
         struct ServerPacketNewChar new_char_packet = {0};
 
-        byte buf[SERVER_PACKET_NEW_CHAR_SIZE] = {0};
-        byte *p = buf;
+        byte_t buf[SERVER_PACKET_NEW_CHAR_SIZE] = {0};
+        byte_t *p = buf;
 
         size_t human_figher = 0;
         size_t human_figher_copy = 1;

@@ -1,6 +1,6 @@
-#include "../headers.h"
-#include "../session.h"
-#include "../server_packet/d0.h"
+#include <headers.h>
+#include <session.h>
+#include <server_packet/d0.h>
 #include "d0.h"
 
 void client_request_d0(

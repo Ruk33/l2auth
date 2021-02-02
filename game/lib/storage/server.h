@@ -1,7 +1,7 @@
 #ifndef LIB_STORAGE_SERVER_H
 #define LIB_STORAGE_SERVER_H
 
-#include "../headers.h"
+#include <headers.h>
 #include "session.h"
 #include "character.h"
 
