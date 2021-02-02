@@ -3,27 +3,45 @@
 #include <storage/session.h>
 #include <storage/character.h>
 
+struct StorageCharacterMemory {
+        struct HashMap *characters_by_account;
+        struct List *characters;
+};
+
+typedef struct StorageCharacterMemory storage_handler_h;
+
 void storage_character_init(storage_character_t *storage, host_alloc alloc, host_dealloc dealloc)
 {
         assert(storage);
         assert(alloc);
         assert(dealloc);
+
+        storage_handler_h *handler = NULL;
+
+        handler = alloc(sizeof(*handler));
+        handler->characters_by_account = hash_map_create(alloc, dealloc, 50);
+        handler->characters = list_create(alloc, dealloc);
+
         storage->alloc = alloc;
         storage->dealloc = dealloc;
-        storage->characters = hash_map_create(alloc, dealloc, 50);
-        storage->character_list = list_create(alloc, dealloc);
+        storage->handler = handler;
 }
 
 void storage_character_add(storage_character_t *storage, char *account, size_t account_size,character_t *character)
 {
         assert(storage);
-        assert(storage->characters);
+        assert(storage->handler);
         assert(account);
         assert(account_size);
         assert(character);
 
-        struct List *account_characters = hash_map_get(storage->characters, account, account_size);
-        character_t *character_copy = storage->alloc(sizeof(*character_copy));
+        storage_handler_h *handler = NULL;
+        struct List *account_characters = NULL;
+        character_t *character_copy = NULL;
+
+        handler = storage->handler;
+        account_characters = hash_map_get(handler->characters_by_account, account, account_size);
+        character_copy = storage->alloc(sizeof(*character_copy));
 
         memcpy(character_copy, character, sizeof(*character_copy));
         character_copy->level = 1;
@@ -48,20 +66,22 @@ void storage_character_add(storage_character_t *storage, char *account, size_t a
 
         if (!account_characters) {
                 account_characters = list_create(storage->alloc, storage->dealloc);
-                hash_map_set(storage->characters, account, account_size, account_characters);
+                hash_map_set(handler->characters_by_account, account, account_size, account_characters);
         }
 
         list_add_last(&account_characters, character_copy);
-        list_add_last(&storage->character_list, character_copy);
+        list_add_last(&handler->characters, character_copy);
 }
 
 struct List *storage_character_get(storage_character_t *storage, char *account, size_t account_size)
 {
         assert(storage);
-        assert(storage->characters);
+        assert(storage->handler);
         assert(account);
         assert(account_size);
-        return hash_map_get(storage->characters, account, account_size);
+        storage_handler_h *handler = NULL;
+        handler = storage->handler;
+        return hash_map_get(handler->characters_by_account, account, account_size);
 }
 
 struct List *storage_character_all_from_session(storage_character_t *storage, session_t *session)
@@ -103,12 +123,14 @@ void storage_character_close_to(storage_character_t *storage, struct List **dest
         assert(dest);
         assert(character);
 
+        storage_handler_h *handler = NULL;
         struct ListEntry *iterator = NULL;
         character_t *i_character = NULL;
         position_t position = {0};
         position_t i_position = {0};
 
-        iterator = list_get_iterator(storage->character_list);
+        handler = storage->handler;
+        iterator = list_get_iterator(handler->characters);
         position.x = character->x;
         position.y = character->y;
         position.z = character->z;

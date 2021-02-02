@@ -8,8 +8,7 @@
 struct StorageCharacter {
         host_alloc alloc;
         host_dealloc dealloc;
-        struct HashMap *characters;
-        struct List *character_list;
+        void *handler;
 };
 
 typedef struct StorageCharacter storage_character_t;

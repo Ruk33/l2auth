@@ -5,8 +5,7 @@
 #include <session.h>
 
 struct StorageSession {
-        struct HashMap *session_storage;
-        struct List *session_list;
+        void *handler;
         host_alloc alloc_memory;
         host_dealloc dealloc_memory;
 };
