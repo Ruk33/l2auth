@@ -18,5 +18,6 @@
 #include "position.h"
 #include "request.h"
 #include "str.h"
+#include "config.h"
 
 #endif

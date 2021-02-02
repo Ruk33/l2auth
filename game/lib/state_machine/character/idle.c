@@ -35,7 +35,7 @@ static void say(request_t *request, character_t *character)
         l2_string_to_char(raw_message, say_request.message, sizeof(raw_message));
         message_len = strlen(raw_message) + 1;
 
-        storage_character_close_to(&request->storage->character_storage, &close_characters, character, 200);
+        storage_character_close_to(&request->storage->character_storage, &close_characters, character, CONFIG_SHOUT_RANGE);
 
         i_close_character = list_get_iterator(close_characters);
 

@@ -56,6 +56,7 @@ H_FILES=\
 	storage/session.h \
 	byte_read.h \
 	byte_write.h \
+	config.h \
 	headers.h \
 	host.h \
 	str.h \
