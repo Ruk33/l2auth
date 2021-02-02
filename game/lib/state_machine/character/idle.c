@@ -50,6 +50,8 @@ static void say(request_t *request, character_t *character)
 
                 i_close_character = list_get_next(i_close_character);
         }
+
+        list_free(close_characters);
 }
 
 void state_machine_character_idle(request_t *request, character_t *character)
