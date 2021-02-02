@@ -81,3 +81,5 @@ build/
 infer-out
 log/
 game/gameserver.db
+game/game_server
+login/login_server
