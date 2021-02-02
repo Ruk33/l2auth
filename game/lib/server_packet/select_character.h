@@ -6,9 +6,9 @@
 
 struct ServerPacketSelectCharacter {
         int empty[54];
-        l2_string name[28];
+        l2_string_t name[28];
         int id;
-        l2_string title[28];
+        l2_string_t title[28];
         int playOK1;
         int clan_id;
         int sex;

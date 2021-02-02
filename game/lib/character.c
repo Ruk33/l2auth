@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "server_packet/say.h"
 #include "character.h"
 
 void character_move(character_t *character, vec3_t *target)
@@ -28,4 +29,10 @@ void character_validate_position(character_t *character, vec3_t *pos, int headin
         character->x = pos->x;
         character->y = pos->y;
         character->z = pos->z;
+}
+
+void character_update_state(character_t *character, enum CharacterState new_state)
+{
+        assert(character);
+        character->state = new_state;
 }

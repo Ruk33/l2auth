@@ -9,6 +9,7 @@ struct StorageCharacter {
         host_alloc alloc;
         host_dealloc dealloc;
         struct HashMap *characters;
+        struct List *character_list;
 };
 
 typedef struct StorageCharacter storage_character_t;
@@ -22,40 +23,31 @@ void storage_character_init(storage_character_t *storage, host_alloc alloc, host
 /**
  * Add a new character to an account.
  */
-void storage_character_add(
-        storage_character_t *storage,
-        char *account,
-        size_t account_size,
-        character_t *character
-);
+void storage_character_add(storage_character_t *storage, char *account, size_t account_size, character_t *character);
 
 /**
  * Get all the characters from
  * account. If no characters are found,
  * NULL will be returned.
  */
-struct List *storage_character_get(
-        storage_character_t *storage,
-        char *account,
-        size_t account_size
-);
+struct List *storage_character_get(storage_character_t *storage, char *account, size_t account_size);
 
 /**
  * Get all characters associated to session.
  */
-struct List *storage_character_all_from_session(
-        storage_character_t *storage,
-        session_t *session
-);
+struct List *storage_character_all_from_session(storage_character_t *storage, session_t *session);
 
 /**
  * Get active character from session.
  * Session's selected character index must be set.
  * NULL can be returned if no character is found.
  */
-character_t *storage_character_active_from_session(
-        storage_character_t *storage,
-        session_t *session
-);
+character_t *storage_character_active_from_session(storage_character_t *storage, session_t *session);
+
+/**
+ * Get all characters in range of a character
+ * and store them on dest.
+ */
+void storage_character_close_to(storage_character_t *storage, struct List **dest, character_t *character, unsigned int range);
 
 #endif

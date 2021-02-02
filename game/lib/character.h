@@ -1,9 +1,18 @@
 #ifndef LIB_CHARACTER_H
 #define LIB_CHARACTER_H
 
+#include "session.h"
 #include "vec3.h"
 
+enum CharacterState {
+        IDLE,
+        RUNNING,
+        WALKING,
+};
+
 struct Character {
+        session_t *session;
+        enum CharacterState state;
         int id;
         // Hardcoded, not sure if it's the correct max limit
         char name[20];
@@ -57,5 +66,11 @@ void character_move(character_t *character, vec3_t *target);
  * sends a validate position request.
  */
 void character_validate_position(character_t *character, vec3_t *pos, int heading);
+
+/**
+ * Update character's internal state.
+ * Used for state machine.
+ */
+void character_update_state(character_t *character, enum CharacterState new_state);
 
 #endif

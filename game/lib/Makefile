@@ -27,6 +27,8 @@ C_FILES=\
 	server_packet/select_character.c \
 	server_packet/show_map.c \
 	server_packet/validate_position.c \
+	state_machine/character/handle.c \
+	state_machine/character/idle.c \
 	state_machine/auth_request.c \
 	state_machine/character_selection.c \
 	state_machine/creating_character.c \
@@ -43,6 +45,7 @@ C_FILES=\
 	game_server.c \
 	l2_string.c \
 	packet.c \
+	position.c \
 	request.c \
 	session.c
 
@@ -73,7 +76,7 @@ CFLAGS=\
 	-Wswitch-enum \
 	-Wconversion \
 	-Wunreachable-code
-CLIBS=-ldatastructures
+CLIBS=-ldatastructures -lm
 
 %.o: %.c $(H_FILES)
 	$(CC) $(CFLAGS) -fPIC -c -o $@ $<

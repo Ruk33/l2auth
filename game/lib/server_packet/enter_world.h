@@ -10,7 +10,7 @@ struct ServerPacketEnterWorld {
         int z;
         int heading;
         int id;
-        l2_string name[28];
+        l2_string_t name[28];
         int race_id;
         int sex;
         int class_id;
@@ -75,7 +75,7 @@ struct ServerPacketEnterWorld {
         int hair_color_id;
         int face;
         int access_level;
-        l2_string title[28];
+        l2_string_t title[28];
         int clan_id;
         int clan_crest_id;
         int ally_id;

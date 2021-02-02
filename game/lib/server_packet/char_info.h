@@ -9,7 +9,7 @@ struct ServerPacketCharInfo {
         int z;
         int heading;
         int char_id;
-        l2_string char_name[28];
+        l2_string_t char_name[28];
         int race_id;
         int sex;
         int class_id;
@@ -36,7 +36,7 @@ struct ServerPacketCharInfo {
         int hair_style_id;
         int hair_color_id;
         int face;
-        l2_string title[28];
+        l2_string_t title[28];
         int clan_id;
         int clan_crest_id;
         int ally_id;

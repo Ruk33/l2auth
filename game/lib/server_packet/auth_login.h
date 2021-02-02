@@ -5,10 +5,10 @@
 
 struct ServerPacketAuthLoginCharacter {
         int empty[10];
-        l2_string name[28];
+        l2_string_t name[28];
         int id;
         // For some reason, name goes twice in the packet
-        l2_string name_copy[28];
+        l2_string_t name_copy[28];
         int playOK1;
         int clan_id;
         int sex;
