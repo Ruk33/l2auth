@@ -36,9 +36,9 @@ C_FILES=\
 	state_machine/handle.c \
 	state_machine/in_world.c \
 	state_machine/protocol_version.c \
-	storage/character.c \
-	storage/server.c \
-	storage/session.c \
+	storage/memory/character.c \
+	storage/memory/server.c \
+	storage/memory/session.c \
 	character.c \
 	decrypt_packet.c \
 	encrypt_packet.c \
@@ -50,8 +50,10 @@ C_FILES=\
 	session.c
 
 H_FILES=\
-	$(C_FILES:.c=.h) \
 	client_packet/type.h \
+	storage/character.h \
+	storage/server.h \
+	storage/session.h \
 	byte_read.h \
 	byte_write.h \
 	headers.h \

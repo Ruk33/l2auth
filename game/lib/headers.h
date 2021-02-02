@@ -2,7 +2,7 @@
 #define LIB_HEADERS_H
 
 #include <assert.h>
-#include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>

@@ -1,6 +1,7 @@
 #include <headers.h>
-#include "session.h"
-#include "character.h"
+#include <character.h>
+#include <storage/session.h>
+#include <storage/character.h>
 
 void storage_character_init(storage_character_t *storage, host_alloc alloc, host_dealloc dealloc)
 {
@@ -25,7 +26,6 @@ void storage_character_add(storage_character_t *storage, char *account, size_t a
         character_t *character_copy = storage->alloc(sizeof(*character_copy));
 
         memcpy(character_copy, character, sizeof(*character_copy));
-        character_copy->id = 42;
         character_copy->level = 1;
         character_copy->x = -83968;
         character_copy->y = 244634;
