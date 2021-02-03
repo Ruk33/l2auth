@@ -9,12 +9,8 @@ struct ClientRequestMove {
         vec3_t position;
 };
 
-void client_request_move(
-        int client,
-        packet *request,
-        session_t *session,
-        character_t *character,
-        host_send_response_cb send_response
-);
+typedef struct ClientRequestMove client_request_move_t;
+
+void client_request_move(client_request_move_t *dest, packet *request);
 
 #endif

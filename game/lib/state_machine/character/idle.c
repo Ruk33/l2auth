@@ -8,6 +8,7 @@
 #include <storage/character.h>
 #include <server_packet/say.h>
 #include <server_packet/logout.h>
+#include <server_packet/move.h>
 #include <client_request/say.h>
 #include "idle.h"
 
@@ -40,12 +41,17 @@ static void logout(request_t *request, character_t *character)
  */
 static void move(request_t *request, character_t *character)
 {
-        assert_valid_request(request);
-        assert(character);
+        client_request_move_t parsed_request = {0};
+        packet response[SERVER_PACKET_MOVE_FULL_SIZE] = {0};
 
         struct List *close_characters = NULL;
         struct ListEntry *i_close_character = NULL;
         character_t *close_character = NULL;
+
+        assert_valid_request(request);
+        assert(character);
+
+        client_request_move(&parsed_request, request->packet);
 
         close_characters = list_create(request->host->alloc_memory, request->host->dealloc_memory);
         storage_character_close_to(&request->storage->character_storage, &close_characters, character, 1200);
@@ -55,10 +61,17 @@ static void move(request_t *request, character_t *character)
         while (i_close_character) {
                 close_character = list_get_value(i_close_character);
 
-                client_request_move(close_character->session->socket, request->packet, close_character->session, character, request->host->send_response);
+                server_packet_move(response, character, &parsed_request.position);
+                session_encrypt_packet(close_character->session, response, response, (size_t) packet_get_size(response));
+                request->host->send_response(close_character->session->socket, response, (size_t) packet_get_size(response)
+                );
+
+                memset(response, 0, sizeof(response));
 
                 i_close_character = list_get_next(i_close_character);
         }
+
+        character_move(character, &parsed_request.position);
 
         list_free(close_characters);
 }
