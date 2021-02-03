@@ -18,7 +18,7 @@ void character_move(character_t *character, vec3_t *target)
         character->z = target->z;
 }
 
-void character_validate_position(character_t *character, vec3_t *pos, int heading)
+void character_validate_position(character_t *character, position_t *pos, int heading)
 {
         assert(character);
         assert(pos);

@@ -6,16 +6,12 @@
 #include <character.h>
 
 struct ClientRequestValidatePosition {
-        vec3_t position;
+        position_t position;
         int heading;
 };
 
-void client_request_validate_position(
-        int client,
-        packet *request,
-        session_t *session,
-        character_t *character,
-        host_send_response_cb send_response
-);
+typedef struct ClientRequestValidatePosition client_request_validate_position_t;
+
+void client_request_validate_position(client_request_validate_position_t *dest, packet *request);
 
 #endif

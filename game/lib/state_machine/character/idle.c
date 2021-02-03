@@ -8,6 +8,7 @@
 #include <server_packet/logout.h>
 #include <server_packet/restart.h>
 #include <server_packet/move.h>
+#include <server_packet/validate_position.h>
 #include <server_packet/show_map.h>
 #include <client_request/say.h>
 #include "../auth_request.h"
@@ -111,6 +112,28 @@ static void move(request_t *request, character_t *character)
 }
 
 /**
+ * The client performs this request every 1 second (double check)
+ * to make sure the client and server are in sync with
+ * a character's position.
+ */
+static void validate_position(request_t *request, character_t *character)
+{
+        packet response[SERVER_PACKET_VALIDATE_POSITION_FULL_SIZE] = {0};
+        client_request_validate_position_t parsed_request = {0};
+
+        assert_valid_request(request);
+        assert(character);
+
+        client_request_validate_position(&parsed_request, request->packet);
+
+        character_validate_position(character, &parsed_request.position, parsed_request.heading);
+
+        server_packet_validate_position(response, character, parsed_request.heading);
+        session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
+        request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));
+}
+
+/**
  * Send a message to all characters close enough
  * to the speaker.
  */
@@ -172,21 +195,19 @@ static void show_map(request_t *request, character_t *character)
 
 void state_machine_character_idle(request_t *request, character_t *character)
 {
+        packet_type type = 0;
+
         assert_valid_request(request);
         assert(character);
 
-        packet_type type = 0;
-        int socket = 0;
-
         type = packet_get_type(request->packet);
-        socket = request->session->socket;
 
         switch (type) {
         case CLIENT_PACKET_TYPE_MOVE_BACKWARDS_TO_LOCATION:
                 move(request, character);
                 break;
         case CLIENT_PACKET_TYPE_VALIDATE_POS:
-                client_request_validate_position(socket, request->packet, request->session, character, request->host->send_response);
+                validate_position(request, character);
                 break;
         case CLIENT_PACKET_TYPE_ACTION:
                 printf("Action request -> TODO\n");

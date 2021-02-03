@@ -66,7 +66,7 @@ void character_move(character_t *character, vec3_t *target);
  * is usually called when the client
  * sends a validate position request.
  */
-void character_validate_position(character_t *character, vec3_t *pos, int heading);
+void character_validate_position(character_t *character, position_t *pos, int heading);
 
 /**
  * Update character's internal state.
