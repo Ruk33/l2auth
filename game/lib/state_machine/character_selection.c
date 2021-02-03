@@ -1,11 +1,34 @@
 #include <request.h>
 #include <storage/session.h>
 #include <server_packet/select_character.h>
-#include <client_request/new_char.h>
+#include <server_packet/new_char.h>
 #include <client_request/select_character.h>
 #include <client_packet/type.h>
 #include "character_selection.h"
 
+/**
+ * The user is in character selection and
+ * clicks on create new character.
+ * This takes the user to the character creation
+ * screen.
+ */
+static void new_character(request_t *request)
+{
+        packet response[SERVER_PACKET_NEW_CHAR_FULL_SIZE] = {0};
+
+        assert_valid_request(request);
+
+        server_packet_new_char(response);
+        session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
+        request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));
+
+        session_update_state(request->session, CREATING_CHARACTER);
+}
+
+/**
+ * The user selects a character to play with.
+ * This initiates the process of entering the world.
+ */
 static void select_character(request_t *request)
 {
         string_t account_str = {0};
@@ -46,8 +69,7 @@ void state_machine_character_selection(request_t *request)
 
         switch (type) {
         case CLIENT_PACKET_TYPE_NEW_CHAR:
-                client_request_new_char(request->session->socket, request->session, request->host->send_response);
-                session_update_state(request->session, CREATING_CHARACTER);
+                new_character(request);
                 break;
         case CLIENT_PACKET_TYPE_SELECTED_CHAR:
                 select_character(request);

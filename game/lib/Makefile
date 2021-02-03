@@ -2,7 +2,6 @@ C_FILES=\
 	client_request/auth_request.c \
 	client_request/create_char.c \
 	client_request/move.c \
-	client_request/new_char.c \
 	client_request/protocol_version.c \
 	client_request/quest_list.c \
 	client_request/restart.c \
