@@ -32,8 +32,6 @@ static void enter_world(request_t *request)
                 return;
         }
 
-        session_entered_world(request->session);
-
         server_packet_enter_world(response, character);
         session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
         request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));

@@ -4,13 +4,40 @@
 #include <client_request/say.h>
 #include <client_request/show_map.h>
 #include <client_request/restart.h>
-#include <client_request/logout.h>
 #include <client_packet/type.h>
 #include <storage/character.h>
 #include <server_packet/say.h>
+#include <server_packet/logout.h>
 #include <client_request/say.h>
 #include "idle.h"
 
+/**
+ * The player clicks on logout.
+ * Do not confuse with losing the connection.
+ */
+static void logout(request_t *request, character_t *character)
+{
+        packet response[SERVER_PACKET_LOGOUT_FULL_SIZE] = {0};
+
+        assert_valid_request(request);
+        assert(character);
+
+        server_packet_logout(response);
+        session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
+        request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));
+
+        /*
+         * Maybe here would be a good moment
+         * to persist the character into the database.
+         */
+
+        session_update_state(request->session, PROTOCOL_VERSION);
+}
+
+/**
+ * The player clicks to move to a particular
+ * position.
+ */
 static void move(request_t *request, character_t *character)
 {
         assert_valid_request(request);
@@ -113,8 +140,7 @@ void state_machine_character_idle(request_t *request, character_t *character)
                 session_update_state(request->session, CHARACTER_SELECTION);
                 break;
         case CLIENT_PACKET_TYPE_LOGOUT:
-                client_request_logout(socket, request->session, request->host->send_response);
-                session_update_state(request->session, PROTOCOL_VERSION);
+                logout(request, character);
                 break;
         default:
                 printf("Packet %02X can't be handled by state_machine_character_idle.\n", type);

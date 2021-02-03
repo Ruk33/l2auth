@@ -40,18 +40,6 @@ void session_update_state(session_t *session, enum SessionState new_state)
         session->state = new_state;
 }
 
-void session_entered_world(session_t *session)
-{
-        assert(session);
-        session->in_world = 1;
-}
-
-void session_leaved_world(session_t *session)
-{
-        assert(session);
-        session->in_world = 0;
-}
-
 void session_update(
         session_t *session,
         char *username,

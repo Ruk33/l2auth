@@ -38,6 +38,4 @@ void client_request_restart(
         //         character_storage,
         //         send_response
         // );
-
-        session_leaved_world(session);
 }

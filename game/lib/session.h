@@ -96,17 +96,6 @@ void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_
 void session_update_state(session_t *session, session_state_t new_state);
 
 /**
- * The user using this session
- * has logged into the game's world.
- */
-void session_entered_world(session_t *session);
-
-/**
- * Mark the session as leaving the world.
- */
-void session_leaved_world(session_t *session);
-
-/**
  * Update session.
  */
 void session_update(session_t *session, char *username, size_t username_size, int loginOK1, int loginOK2, int playOK1, int playOK2);
