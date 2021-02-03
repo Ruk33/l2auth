@@ -1,7 +1,6 @@
 C_FILES=\
 	client_request/auth_request.c \
 	client_request/create_char.c \
-	client_request/enter_world.c \
 	client_request/logout.c \
 	client_request/move.c \
 	client_request/new_char.c \
