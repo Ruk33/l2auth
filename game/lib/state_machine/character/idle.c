@@ -2,13 +2,13 @@
 #include <client_request/move.h>
 #include <client_request/validate_position.h>
 #include <client_request/say.h>
-#include <client_request/show_map.h>
 #include <client_packet/type.h>
 #include <storage/character.h>
 #include <server_packet/say.h>
 #include <server_packet/logout.h>
 #include <server_packet/restart.h>
 #include <server_packet/move.h>
+#include <server_packet/show_map.h>
 #include <client_request/say.h>
 #include "../auth_request.h"
 #include "idle.h"
@@ -154,6 +154,22 @@ static void say(request_t *request, character_t *character)
         list_free(close_characters);
 }
 
+/**
+ * In game, the user clicks on display map.
+ */
+static void show_map(request_t *request, character_t *character)
+{
+        packet response[SERVER_PACKET_SHOW_MAP_FULL_SIZE] = {0};
+
+        assert_valid_request(request);
+        assert(character);
+
+        // Map id hardcoded just for the time being.
+        server_packet_show_map(response, 1665);
+        session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
+        request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));
+}
+
 void state_machine_character_idle(request_t *request, character_t *character)
 {
         assert_valid_request(request);
@@ -179,7 +195,7 @@ void state_machine_character_idle(request_t *request, character_t *character)
                 say(request, character);
                 break;
         case CLIENT_PACKET_TYPE_SHOW_MAP:
-                client_request_show_map(socket, request->session, request->host->send_response);
+                show_map(request, character);
                 break;
         case CLIENT_PACKET_TYPE_RESTART:
                 restart(request, character);

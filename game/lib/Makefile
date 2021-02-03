@@ -4,7 +4,6 @@ C_FILES=\
 	client_request/move.c \
 	client_request/say.c \
 	client_request/select_character.c \
-	client_request/show_map.c \
 	client_request/validate_position.c \
 	server_packet/auth_login.c \
 	server_packet/char_info.c \
