@@ -29,25 +29,26 @@ static void send_playable_characters(request_t *request)
  * This request is made when the user is transitioning
  * from the login to the game server.
  */
-static void auth_request(request_t *request)
+static void auth_request(request_t *request, int update_session)
 {
-        assert_valid_request(request);
-
         client_request_auth_t parsed_request = {0};
-
         // Hardcoded, not sure if this is the correct maximum
         char username[28] = {0};
 
-        client_request_auth_request(&parsed_request, request->packet);
-        l2_string_to_char(username, parsed_request.username, sizeof(username));
+        if (update_session) {
+                assert_valid_request(request);
 
-        session_update(request->session, username, strlen(username) + 1, parsed_request.loginOK1, parsed_request.loginOK2, parsed_request.playOK1, parsed_request.playOK2);
+                client_request_auth_request(&parsed_request, request->packet);
+                l2_string_to_char(username, parsed_request.username, sizeof(username));
+
+                session_update(request->session, username, strlen(username) + 1, parsed_request.loginOK1, parsed_request.loginOK2, parsed_request.playOK1, parsed_request.playOK2);
+        }
+
         session_update_state(request->session, CHARACTER_SELECTION);
-
         send_playable_characters(request);
 }
 
-void state_machine_auth_request(request_t *request)
+void state_machine_auth_request(request_t *request, int update_session)
 {
         assert_valid_request(request);
 
@@ -57,7 +58,7 @@ void state_machine_auth_request(request_t *request)
 
         switch (type) {
         case CLIENT_PACKET_TYPE_AUTH_REQUEST:
-                auth_request(request);
+                auth_request(request, update_session);
                 break;
         default:
                 printf("Packet %02X can't be handled by state_machine_auth_request.\n", type);

@@ -7,13 +7,11 @@
 
 void packet_build(packet *dest, packet_type type, byte_t *content, size_t content_size)
 {
-        assert(dest);
-        // Packet of type 0 is also valid
-        // assert(type);
-        assert(content);
-        assert(content_size);
+        packet_size size = 0;
 
-        packet_size size = (unsigned short) (
+        assert(dest);
+
+        size = (unsigned short) (
                 sizeof(size) +
                 sizeof(type) +
                 content_size
@@ -21,6 +19,11 @@ void packet_build(packet *dest, packet_type type, byte_t *content, size_t conten
 
         BYTE_WRITE_VAL(dest, size);
         BYTE_WRITE_VAL(dest, type);
+
+        if (!content || !content_size) {
+                return;
+        }
+
         BYTE_WRITE(dest, content, content_size);
 }
 

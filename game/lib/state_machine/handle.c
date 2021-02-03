@@ -39,7 +39,7 @@ void state_machine_handle(int client, byte_t *request_packet, size_t request_siz
                 state_machine_protocol_version(&request);
                 break;
         case AUTH_REQUEST:
-                state_machine_auth_request(&request);
+                state_machine_auth_request(&request, 1);
                 break;
         case CHARACTER_SELECTION:
                 state_machine_character_selection(&request);
