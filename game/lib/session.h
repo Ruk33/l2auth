@@ -39,6 +39,8 @@ enum SessionState {
         IN_WORLD,
 };
 
+typedef enum SessionState session_state_t;
+
 struct Session {
         int socket;
         byte_t encrypt_key[8];
@@ -49,9 +51,9 @@ struct Session {
         int loginOK2;
         char username[16];
         int conn_encrypted;
-        int selected_character_index;
+        unsigned int selected_character_index;
         int in_world;
-        enum SessionState state;
+        session_state_t state;
 };
 
 typedef struct Session session_t;
@@ -91,7 +93,7 @@ void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_
 /**
  * Update session's state.
  */
-void session_update_state(session_t *session, enum SessionState new_state);
+void session_update_state(session_t *session, session_state_t new_state);
 
 /**
  * The user using this session
@@ -107,15 +109,7 @@ void session_leaved_world(session_t *session);
 /**
  * Update session.
  */
-void session_update(
-        session_t *session,
-        char *username,
-        size_t username_size,
-        int loginOK1,
-        int loginOK2,
-        int playOK1,
-        int playOK2
-);
+void session_update(session_t *session, char *username, size_t username_size, int loginOK1, int loginOK2, int playOK1, int playOK2);
 
 /**
  * Print session to std out.

@@ -1,3 +1,4 @@
+#include <request.h>
 #include <client_request/d0.h>
 #include <client_request/quest_list.h>
 #include <client_request/enter_world.h>

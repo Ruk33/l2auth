@@ -2,6 +2,7 @@
 #define LIB_STATE_MACHINE_CHARACTER_HANDLE_H
 
 #include <headers.h>
+#include <request.h>
 
 /**
  * Entry point to handle character using

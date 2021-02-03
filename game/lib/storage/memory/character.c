@@ -97,7 +97,7 @@ character_t *storage_character_active_from_session(storage_character_t *storage,
         assert(storage);
         assert(session);
 
-        int index = session->selected_character_index;
+        unsigned int index = session->selected_character_index;
         struct List *characters = storage_character_all_from_session(storage, session);
         struct ListEntry *iterator = NULL;
 
@@ -147,4 +147,36 @@ void storage_character_close_to(storage_character_t *storage, struct List **dest
 
                 iterator = list_get_next(iterator);
         }
+}
+
+int storage_character_get_by_index(character_t *dest, storage_character_t *storage, string_t *account, unsigned int index)
+{
+        struct List *characters = NULL;
+        struct ListEntry *i_character = NULL;
+
+        assert(dest);
+        assert(storage);
+        assert(account);
+        assert(account->buf);
+
+        characters = storage_character_get(storage, account->buf, account->size);
+
+        if (!characters) {
+                return 0;
+        }
+
+        i_character = list_get_iterator(characters);
+
+        while (i_character && index) {
+                i_character = list_get_next(i_character);
+                index -= 1;
+        }
+
+        if (!i_character) {
+                return 0;
+        }
+
+        memcpy(dest, list_get_value(i_character), sizeof(*dest));
+
+        return 1;
 }

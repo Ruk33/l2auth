@@ -5,12 +5,17 @@
 #include <session.h>
 #include <storage/character.h>
 
-void client_request_select_character(
-        int client,
-        packet *request,
-        session_t *session,
-        storage_character_t *character_storage,
-        host_send_response_cb send_response
-);
+struct ClientRequestSelectCharacter {
+        unsigned int index;
+};
+
+typedef struct ClientRequestSelectCharacter client_request_select_character_t;
+
+/**
+ * Client makes this request when the user
+ * selects a character to play with.
+ * Parse the raw request and store it on dest.
+ */
+void client_request_select_character(client_request_select_character_t *dest, packet *request);
 
 #endif

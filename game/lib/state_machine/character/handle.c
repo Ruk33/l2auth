@@ -1,4 +1,5 @@
 #include <headers.h>
+#include <request.h>
 #include "spawn.h"
 #include "idle.h"
 #include "handle.h"

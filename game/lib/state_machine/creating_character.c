@@ -1,3 +1,4 @@
+#include <request.h>
 #include <client_request/create_char.h>
 #include <client_packet/type.h>
 #include "character_selection.h"

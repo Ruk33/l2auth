@@ -1,3 +1,4 @@
+#include <request.h>
 #include "protocol_version.h"
 #include "auth_request.h"
 #include "character_selection.h"

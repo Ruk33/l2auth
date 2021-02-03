@@ -1,3 +1,4 @@
+#include <request.h>
 #include <client_request/protocol_version.h>
 #include <client_packet/type.h>
 #include "protocol_version.h"

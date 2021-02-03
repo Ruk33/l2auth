@@ -37,6 +37,13 @@ struct List *storage_character_get(storage_character_t *storage, char *account, 
 struct List *storage_character_all_from_session(storage_character_t *storage, session_t *session);
 
 /**
+ * Get character from account using index and store it in dest.
+ * On success, 1 will be returned.
+ * On failure (character not found), 0 will be returned.
+ */
+int storage_character_get_by_index(character_t *dest, storage_character_t *storage, string_t *account, unsigned int index);
+
+/**
  * Get active character from session.
  * Session's selected character index must be set.
  * NULL can be returned if no character is found.

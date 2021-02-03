@@ -2,6 +2,7 @@
 #include <storage/session.h>
 #include <storage/character.h>
 #include <server_packet/create_char.h>
+#include <server_packet/auth_login.h>
 #include <client_request/auth_request.h>
 #include <character.h>
 #include "create_char.h"
@@ -76,6 +77,16 @@ static void store_new_char_from_packet(session_t *session, char *account, storag
         storage_character_add(character_storage, account, strlen(account) + 1, &new_character);
 }
 
+static void send_playable_characters(int client, storage_character_t *character_storage, session_t *session, host_send_response_cb send_response)
+{
+        packet auth_login[SERVER_PACKET_AUTH_LOGIN_FULL_SIZE] = {0};
+        struct List *characters = storage_character_all_from_session(character_storage, session);
+
+        server_packet_auth_login(auth_login, session->playOK1, characters);
+        session_encrypt_packet(session, auth_login, auth_login, (size_t) packet_get_size(auth_login));
+        send_response(client, auth_login, (size_t) packet_get_size(auth_login));
+}
+
 void client_request_create_char(int client, packet *request, session_t *session, storage_character_t *character_storage, host_send_response_cb send_response)
 {
         assert(client > 0);
@@ -97,5 +108,5 @@ void client_request_create_char(int client, packet *request, session_t *session,
         session_encrypt_packet(session, response, response, (size_t) packet_get_size(response));
         send_response(client, response, (size_t) packet_get_size(response));
 
-        client_request_auth_request_from_session(client, session, character_storage, send_response);
+        send_playable_characters(client, character_storage, session, send_response);
 }

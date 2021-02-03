@@ -14,6 +14,7 @@ void client_request_restart(
 {
         assert(client > 0);
         assert(session);
+        assert(character_storage);
         assert(send_response);
 
         packet response[SERVER_PACKET_RESTART_FULL_SIZE] = {0};
@@ -31,12 +32,12 @@ void client_request_restart(
                 (size_t) packet_get_size(response)
         );
 
-        client_request_auth_request_from_session(
-                client,
-                session,
-                character_storage,
-                send_response
-        );
+        // client_request_auth_request_from_session(
+        //         client,
+        //         session,
+        //         character_storage,
+        //         send_response
+        // );
 
         session_leaved_world(session);
 }

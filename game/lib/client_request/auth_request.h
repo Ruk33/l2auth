@@ -5,22 +5,20 @@
 #include <storage/session.h>
 #include <storage/character.h>
 
-/**
- * Client makes this request
- * when accessing a game server.
- * In this request, we will answer with
- * all the characters saved on the account.
- * On this request, the session keys and
- * username will also be updated.
- */
-void client_request_auth_request(int client, packet *request, storage_character_t *character_storage, session_t *session, host_send_response_cb send_response);
+struct ClientRequestAuth {
+        l2_string_t *username;
+        int playOK1;
+        int playOK2;
+        int loginOK1;
+        int loginOK2;
+};
+
+typedef struct ClientRequestAuth client_request_auth_t;
 
 /**
- * Only send characters from session
- * to the client. Useful when the client
- * restarts from in game or creates a
- * new character.
+ * Client makes this request when accessing a game server.
+ * Parse the raw request and store it on dest.
  */
-void client_request_auth_request_from_session(int client, session_t *session, storage_character_t *character_storage, host_send_response_cb send_response);
+void client_request_auth_request(client_request_auth_t *dest, packet *request);
 
 #endif

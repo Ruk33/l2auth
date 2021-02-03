@@ -1,3 +1,4 @@
+#include <request.h>
 #include <client_request/move.h>
 #include <client_request/validate_position.h>
 #include <client_request/say.h>

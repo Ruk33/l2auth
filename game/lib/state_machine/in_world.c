@@ -1,3 +1,4 @@
+#include <request.h>
 #include "character/handle.h"
 #include "in_world.h"
 
