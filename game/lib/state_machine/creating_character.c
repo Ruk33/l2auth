@@ -11,6 +11,7 @@ static void create_character(request_t *request)
         client_request_create_char_t parsed_request = {0};
         packet response[SERVER_PACKET_CREATE_CHAR_FULL_SIZE] = {0};
         character_t new_character = {0};
+
         packet request_characters_packet[8] = {0};
         request_t request_characters = {0};
 
@@ -54,7 +55,6 @@ static void create_character(request_t *request)
          * character is visible.
          */
         packet_build(request_characters_packet, (unsigned char) CLIENT_PACKET_TYPE_AUTH_REQUEST, NULL, 0);
-        assert(packet_get_type(request_characters_packet) == CLIENT_PACKET_TYPE_AUTH_REQUEST);
 
         memcpy(&request_characters, request, sizeof(request_characters));
         request_characters.packet = request_characters_packet;

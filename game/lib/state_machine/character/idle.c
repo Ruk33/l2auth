@@ -3,13 +3,14 @@
 #include <client_request/validate_position.h>
 #include <client_request/say.h>
 #include <client_request/show_map.h>
-#include <client_request/restart.h>
 #include <client_packet/type.h>
 #include <storage/character.h>
 #include <server_packet/say.h>
 #include <server_packet/logout.h>
+#include <server_packet/restart.h>
 #include <server_packet/move.h>
 #include <client_request/say.h>
+#include "../auth_request.h"
 #include "idle.h"
 
 /**
@@ -31,8 +32,41 @@ static void logout(request_t *request, character_t *character)
          * Maybe here would be a good moment
          * to persist the character into the database.
          */
+        character_update_state(character, SPAWN);
 
         session_update_state(request->session, PROTOCOL_VERSION);
+}
+
+/**
+ * The user clicks on restart.
+ * This is where we take the user back
+ * to the character selection screen.
+ */
+static void restart(request_t *request, character_t *character)
+{
+        packet response[SERVER_PACKET_RESTART_FULL_SIZE] = {0};
+        packet request_characters_packet[8] = {0};
+        request_t request_characters = {0};
+
+        assert_valid_request(request);
+        assert(character);
+
+        server_packet_restart(response);
+        session_encrypt_packet(request->session, response, response, (size_t) packet_get_size(response));
+        request->host->send_response(request->session->socket, response, (size_t) packet_get_size(response));
+
+        character_update_state(character, SPAWN);
+
+        /*
+         * Create a dummy request to refetch all
+         * characters from a session.
+         */
+        packet_build(request_characters_packet, (unsigned char) CLIENT_PACKET_TYPE_AUTH_REQUEST, NULL, 0);
+
+        memcpy(&request_characters, request, sizeof(request_characters));
+        request_characters.packet = request_characters_packet;
+
+        state_machine_auth_request(&request_characters, 0);
 }
 
 /**
@@ -148,9 +182,7 @@ void state_machine_character_idle(request_t *request, character_t *character)
                 client_request_show_map(socket, request->session, request->host->send_response);
                 break;
         case CLIENT_PACKET_TYPE_RESTART:
-                client_request_restart(socket, request->session, &request->storage->character_storage, request->host->send_response);
-                character_update_state(character, SPAWN);
-                session_update_state(request->session, CHARACTER_SELECTION);
+                restart(request, character);
                 break;
         case CLIENT_PACKET_TYPE_LOGOUT:
                 logout(request, character);
