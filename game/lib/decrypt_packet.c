@@ -28,7 +28,7 @@ void decrypt_packet(packet *dest, byte_t *src, size_t src_size, byte_t *key)
                temp2 = src_body[i];
                dest_body[i] = (byte_t) (temp2 ^ key[i & 7] ^ temp);
                temp = temp2;
-        };
+        }
 
         old  = (unsigned int) key[0] & 0xff;
         old |= (unsigned int) key[1] << 8 & 0xff00;

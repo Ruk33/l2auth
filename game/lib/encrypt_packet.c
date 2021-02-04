@@ -25,7 +25,7 @@ void encrypt_packet(byte_t *dest, packet *src, size_t src_size, byte_t *key)
                temp2 = packet_content[i] & 0xff;
                dest_content[i] = (byte_t) (temp2 ^ key[i & 7] ^ temp);
                temp = dest_content[i];
-        };
+        }
 
         old  = ((unsigned int) key[0] &0xff);
         old |= ((unsigned int) key[1] << 8 &0xff00);

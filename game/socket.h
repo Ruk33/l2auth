@@ -29,6 +29,16 @@ typedef void (*socket_on_request_cb)(int fd, void *attached_data, unsigned char 
  */
 typedef void (*socket_on_disconnect_cb)(int fd, void *attached_data);
 
+struct SocketConnection {
+        int fd;
+        void *data;
+        socket_on_conn_cb on_connect;
+        socket_on_request_cb on_request;
+        socket_on_disconnect_cb on_disconnect;
+};
+
+typedef struct SocketConnection socket_conn_t;
+
 /**
  * Create a new socket listening on port
  * accepting a maximum of max_connections
@@ -65,6 +75,6 @@ void socket_close(int fd);
  * On success, the thread will be blocked
  * to handle all request. On error, -1 will be returned.
  */
-int socket_handle_requests(int fd, void *data, socket_on_conn_cb conn, socket_on_request_cb req, socket_on_disconnect_cb dis);
+int socket_handle_requests(socket_conn_t *conn);
 
 #endif

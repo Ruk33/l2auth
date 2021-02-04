@@ -22,11 +22,11 @@
 
 int socket_create(unsigned short port, size_t max_connections)
 {
-        assert(port);
-        assert(max_connections);
-
         int server = 0;
         struct sockaddr_in address = {0};
+
+        assert(port);
+        assert(max_connections);
 
         EXPR_OR_RETURN_ERR(server = socket(AF_INET, SOCK_STREAM, 0));
 
@@ -42,12 +42,10 @@ int socket_create(unsigned short port, size_t max_connections)
 
 int socket_accept(int fd)
 {
-        assert(fd > 0);
-
         struct sockaddr_in address = {0};
         unsigned int addrlen = 0;
 
-        return accept(fd, (struct sockaddr *)&address, &addrlen);
+        return accept(fd, (struct sockaddr *) &address, &addrlen);
 }
 
 size_t socket_send(int fd, unsigned char *response, size_t response_size)
@@ -79,12 +77,12 @@ static void socket_set_non_blocking(int fd)
 #endif
 }
 
-static int socket_handle_conn(int fd, void *data, int epoll_fd, socket_on_conn_cb conn)
+static int socket_handle_conn(socket_conn_t *conn, int epoll_fd)
 {
         struct epoll_event client_event = {0};
 
         client_event.events = EPOLLIN | EPOLLET;
-        client_event.data.fd = conn(fd, data);
+        client_event.data.fd = conn->on_connect(conn->fd, conn->data);
 
         EXPR_OR_RETURN_ERR(client_event.data.fd);
 
@@ -93,26 +91,27 @@ static int socket_handle_conn(int fd, void *data, int epoll_fd, socket_on_conn_c
         return 0;
 }
 
-static int socket_handle_events(int fd, void *data, int epoll_fd, socket_on_conn_cb conn, socket_on_request_cb req, socket_on_disconnect_cb dis)
+static int socket_handle_events(socket_conn_t *conn, int epoll_fd)
 {
-        assert(fd > 0);
-        assert(epoll_fd > 0);
-
         int events_count = 0;
         struct epoll_event events[MAX_REQUESTS] = {0};
 
         int is_new_conn = 0;
 
-        unsigned char *request = memory_alloc(MAX_REQUEST_SIZE);
+        unsigned char *request = 0;
         size_t request_size = 0;
+
+        assert(conn);
+
+        request = memory_alloc(MAX_REQUEST_SIZE);
 
         EXPR_OR_RETURN_ERR(events_count = epoll_wait(epoll_fd, events, MAX_REQUESTS, -1));
 
         for (int i = 0; i < events_count; i++) {
-                is_new_conn = events[i].data.fd == fd;
+                is_new_conn = events[i].data.fd == conn->fd;
 
                 if (is_new_conn) {
-                        socket_handle_conn(fd, data, epoll_fd, conn);
+                        socket_handle_conn(conn, epoll_fd);
                         continue;
                 }
 
@@ -120,12 +119,12 @@ static int socket_handle_events(int fd, void *data, int epoll_fd, socket_on_conn
                 request_size = recv(events[i].data.fd, request, MAX_REQUEST_SIZE, 0);
 
                 if (request_size == 0) {
-                        dis(events[i].data.fd, data);
+                        conn->on_disconnect(events[i].data.fd, conn->data);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         continue;
                 }
 
-                req(events[i].data.fd, data, request, request_size);
+                conn->on_request(events[i].data.fd, conn->data, request, request_size);
         }
 
         memory_free(request);
@@ -133,27 +132,24 @@ static int socket_handle_events(int fd, void *data, int epoll_fd, socket_on_conn
         return 0;
 }
 
-int socket_handle_requests(int fd, void *data, socket_on_conn_cb conn, socket_on_request_cb req, socket_on_disconnect_cb dis)
+int socket_handle_requests(socket_conn_t *conn)
 {
-        assert(fd > 0);
-        assert(conn);
-        assert(req);
-        assert(dis);
-
         int epoll_fd = 0;
         struct epoll_event event = {0};
 
-        socket_set_non_blocking(fd);
+        assert(conn);
+
+        socket_set_non_blocking(conn->fd);
 
         EXPR_OR_RETURN_ERR(epoll_fd = epoll_create1(0));
 
         event.events = EPOLLIN;
-        event.data.fd = fd;
+        event.data.fd = conn->fd;
 
-        EXPR_OR_RETURN_ERR(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event));
+        EXPR_OR_RETURN_ERR(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, conn->fd, &event));
 
         while (1) {
-                EXPR_OR_RETURN_ERR(socket_handle_events(fd, data, epoll_fd, conn, req, dis));
+                EXPR_OR_RETURN_ERR(socket_handle_events(conn, epoll_fd));
         }
 
         return 0;
