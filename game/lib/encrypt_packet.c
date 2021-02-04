@@ -3,19 +3,23 @@
 
 void encrypt_packet(byte_t *dest, packet *src, size_t src_size, byte_t *key)
 {
+        size_t size_header = 0;
+
+        byte_t *packet_content = 0;
+        byte_t *dest_content = 0;
+
+        int temp = 0;
+        int temp2 = 0;
+        unsigned int old = 0;
+
         assert(dest);
         assert(src);
         assert(src_size);
         assert(key);
 
-        size_t size_header = sizeof(short);
-
-        byte_t *packet_content = src + size_header;
-        byte_t *dest_content = dest + size_header;
-
-        int temp = 0;
-        int temp2 = 0;
-        unsigned int old = 0;
+        size_header = sizeof(short);
+        packet_content = src + size_header;
+        dest_content = dest + size_header;
 
         for (size_t i = 0; i < src_size - size_header; i++) {
                temp2 = packet_content[i] & 0xff;

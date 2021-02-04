@@ -61,6 +61,8 @@ struct ServerPacketCharInfo {
         int name_color;
 };
 
+typedef struct ServerPacketCharInfo server_packet_char_info_t;
+
 #define SERVER_PACKET_CHAR_INFO_SIZE sizeof(struct ServerPacketCharInfo)
 #define SERVER_PACKET_CHAR_INFO_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_CHAR_INFO_SIZE
 

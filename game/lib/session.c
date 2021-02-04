@@ -18,15 +18,14 @@ void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_
         encrypt_packet(dest, src, src_size, session->encrypt_key);
 }
 
-void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size)
+void session_decrypt_packet(session_t *session, packet *dest, byte_t *src, size_t src_size)
 {
         assert(session);
         assert(dest);
         assert(src);
         assert(src_size);
 
-        if (!session->conn_encrypted)
-        {
+        if (!session->conn_encrypted) {
                 memcpy(dest, src, src_size);
                 return;
         }

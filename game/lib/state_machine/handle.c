@@ -9,12 +9,13 @@
 
 void state_machine_handle(int client, byte_t *request_packet, size_t request_size, host_t *host, storage_server_t *server_storage)
 {
+        request_t request = {0};
+        packet *decrypted_packet = NULL;
+        session_t *session = NULL;
+
         assert(request_packet);
         assert(host);
         assert(server_storage);
-
-        request_t request = {0};
-        session_t *session = NULL;
 
         session = storage_session_get(&server_storage->session_storage, client);
 
@@ -25,13 +26,14 @@ void state_machine_handle(int client, byte_t *request_packet, size_t request_siz
                 return;
         }
 
-        session_decrypt_packet(session, request_packet, request_packet, packet_get_size(request_packet));
+        decrypted_packet = host->alloc_memory(65536);
+        session_decrypt_packet(session, decrypted_packet, request_packet, packet_get_size(request_packet));
         session_encrypt_connection(session);
 
         request.host = host;
         request.session = session;
         request.storage = server_storage;
-        request.packet = request_packet;
+        request.packet = decrypted_packet;
         request.size = request_size;
 
         switch (session->state) {
@@ -58,5 +60,6 @@ void state_machine_handle(int client, byte_t *request_packet, size_t request_siz
                 break;
         }
 
+        host->dealloc_memory(decrypted_packet);
         fflush(stdout);
 }

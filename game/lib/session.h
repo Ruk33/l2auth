@@ -88,7 +88,7 @@ void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_
  * decrypted. It's the same as encryption.
  * The key always gets updated.
  */
-void session_decrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size);
+void session_decrypt_packet(session_t *session, packet *dest, byte_t *src, size_t src_size);
 
 /**
  * Update session's state.
