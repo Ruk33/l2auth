@@ -8,6 +8,6 @@
  * Entry point for handling the state of the
  * user's session.
  */
-void state_machine_handle(int client, byte_t *request, size_t request_size, host_t *host, storage_server_t *server_storage);
+void state_machine_handle(int client, byte_t *request, ssize_t request_size, host_t *host, storage_server_t *server_storage);
 
 #endif

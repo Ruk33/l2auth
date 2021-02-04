@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -48,12 +49,29 @@ int socket_accept(int fd)
         return accept(fd, (struct sockaddr *) &address, &addrlen);
 }
 
-size_t socket_send(int fd, unsigned char *response, size_t response_size)
+ssize_t socket_send(int fd, unsigned char *response, size_t response_size)
 {
+        ssize_t sent = 0;
+        ssize_t tmp = 0;
+
         if (!fd || !response || !response_size) {
                 return 0;
         }
-        return send(fd, response, response_size, 0);
+
+        /*
+         * TODO make sure we don't overflow
+         */
+        while (sent != (ssize_t) response_size) {
+                tmp = send(fd, response + sent, response_size - sent, 0);
+
+                if (tmp == -1) {
+                        return -1;
+                }
+
+                sent += tmp;
+        }
+
+        return sent;
 }
 
 void socket_close(int fd)
@@ -86,9 +104,42 @@ static int socket_handle_conn(socket_conn_t *conn, int epoll_fd)
 
         EXPR_OR_RETURN_ERR(client_event.data.fd);
 
+        socket_set_non_blocking(client_event.data.fd);
+
         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_event.data.fd, &client_event);
 
         return 0;
+}
+
+static ssize_t socket_receive(int fd, unsigned char *dest, size_t dest_size)
+{
+        ssize_t read = 0;
+        ssize_t tmp = 0;
+
+        assert(dest);
+
+        /*
+         * TODO make sure we don't overflow
+         */
+        while (1) {
+                tmp = recv(fd, dest + read, dest_size - read, 0);
+
+                if (read > 0 && tmp == -1) {
+                        return read;
+                }
+
+                if (tmp == -1) {
+                        return -1;
+                }
+
+                if (tmp == 0) {
+                        break;
+                }
+
+                read += tmp;
+        }
+
+        return read;
 }
 
 static int socket_handle_events(socket_conn_t *conn, int epoll_fd)
@@ -96,10 +147,11 @@ static int socket_handle_events(socket_conn_t *conn, int epoll_fd)
         int events_count = 0;
         struct epoll_event events[MAX_REQUESTS] = {0};
 
+        int fd = 0;
         int is_new_conn = 0;
 
         unsigned char *request = 0;
-        size_t request_size = 0;
+        ssize_t request_size = 0;
 
         assert(conn);
 
@@ -108,7 +160,8 @@ static int socket_handle_events(socket_conn_t *conn, int epoll_fd)
         EXPR_OR_RETURN_ERR(events_count = epoll_wait(epoll_fd, events, MAX_REQUESTS, -1));
 
         for (int i = 0; i < events_count; i++) {
-                is_new_conn = events[i].data.fd == conn->fd;
+                fd = events[i].data.fd;
+                is_new_conn = fd == conn->fd;
 
                 if (is_new_conn) {
                         socket_handle_conn(conn, epoll_fd);
@@ -116,15 +169,16 @@ static int socket_handle_events(socket_conn_t *conn, int epoll_fd)
                 }
 
                 memset(request, 0, MAX_REQUEST_SIZE);
-                request_size = recv(events[i].data.fd, request, MAX_REQUEST_SIZE, 0);
+                request_size = socket_receive(fd, request, MAX_REQUEST_SIZE);
+                printf("Socket packet: %ld\n", request_size);
 
                 if (request_size == 0) {
-                        conn->on_disconnect(events[i].data.fd, conn->data);
-                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                        conn->on_disconnect(fd, conn->data);
+                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
                         continue;
                 }
 
-                conn->on_request(events[i].data.fd, conn->data, request, request_size);
+                conn->on_request(fd, conn->data, request, request_size);
         }
 
         memory_free(request);

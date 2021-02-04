@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <sys/types.h>
 #include <data_structures/hash_map.h>
 #include <data_structures/list.h>
 #include "str.h"

@@ -40,7 +40,7 @@ static int handle_connection(int fd, void *data)
         return client_socket;
 }
 
-static void handle_request(int fd, void *data, unsigned char *request, size_t request_size)
+static void handle_request(int fd, void *data, unsigned char *request, ssize_t request_size)
 {
         server_t *server = NULL;
 

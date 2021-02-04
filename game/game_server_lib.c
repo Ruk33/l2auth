@@ -10,15 +10,13 @@ static void *library = NULL;
 
 static int load_library(void)
 {
-        if (library)
-        {
+        if (library) {
                 dlclose(library);
         }
 
         library = dlopen(GAME_SERVER_LIB_PATH, RTLD_LAZY);
 
-        if (!library)
-        {
+        if (!library) {
                 printf("Failed to load game server library.\n");
                 printf("%s.\n", dlerror());
                 return -1;
@@ -33,15 +31,13 @@ static void *load_function(char *name)
 
         void *function = NULL;
 
-        if (load_library() == -1)
-        {
+        if (load_library() == -1) {
                 return NULL;
         }
 
         function = dlsym(library, name);
 
-        if (!function)
-        {
+        if (!function) {
                 printf("Failed to load function %s.\n", name);
                 printf("%s.\n", dlerror());
                 return NULL;
@@ -61,8 +57,7 @@ void *game_server_lib_handle_init(
         void *(*handler)() = NULL;
         *(void **) (&handler) = load_function("game_server_init");
 
-        if (!handler)
-        {
+        if (!handler) {
                 return NULL;
         }
 
@@ -76,8 +71,7 @@ int game_server_lib_new_connection(int fd, void *data)
         void (*handler)() = NULL;
         *(void **) (&handler) = load_function("game_server_new_connection");
 
-        if (!handler)
-        {
+        if (!handler) {
                 return -1;
         }
 
@@ -89,11 +83,11 @@ int game_server_lib_new_connection(int fd, void *data)
 int game_server_lib_handle_request(
         int fd,
         unsigned char *request,
-        size_t request_size,
+        ssize_t request_size,
         void *data,
         void *(*alloc_cb)(size_t),
         void (*dealloc_cb)(void *),
-        size_t (*send_response_cb)(int, unsigned char *, size_t),
+        ssize_t (*send_response_cb)(int, unsigned char *, size_t),
         void (*close_conn_cb)(int)
 )
 {
@@ -109,8 +103,7 @@ int game_server_lib_handle_request(
         void (*handler)() = NULL;
         *(void **) (&handler) = load_function("game_server_new_request");
 
-        if (!handler)
-        {
+        if (!handler) {
                 return -1;
         }
 
@@ -130,14 +123,13 @@ int game_server_lib_handle_request(
 
 int game_server_lib_handle_disconnect(int fd, void *data)
 {
-        assert(fd > 0);
+        void (*handler)() = NULL;
+
         assert(data);
 
-        void (*handler)() = NULL;
         *(void **) (&handler) = load_function("game_server_client_disconnected");
 
-        if (!handler)
-        {
+        if (!handler) {
                 return -1;
         }
 

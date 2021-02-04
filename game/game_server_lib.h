@@ -2,6 +2,7 @@
 #define GAME_SERVER_LIB_H
 
 #include <stddef.h>
+#include <sys/types.h>
 
 /**
  * The game server's logic is implemented
@@ -43,11 +44,11 @@ int game_server_lib_new_connection(int fd, void *data);
 int game_server_lib_handle_request(
         int fd,
         unsigned char *request,
-        size_t request_size,
+        ssize_t request_size,
         void *data,
         void *(*alloc_cb)(size_t),
         void (*dealloc_cb)(void *),
-        size_t (*send_response_cb)(int, unsigned char *, size_t),
+        ssize_t (*send_response_cb)(int, unsigned char *, size_t),
         void (*close_conn_cb)(int)
 );
 

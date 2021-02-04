@@ -2,6 +2,7 @@
 #define LIB_REQUEST_H
 
 #include <stddef.h>
+#include <sys/types.h>
 #include "storage/server.h"
 #include "host.h"
 #include "session.h"
@@ -12,7 +13,7 @@ struct Request {
         storage_server_t *storage;
         host_t *host;
         packet *packet;
-        size_t size;
+        ssize_t size;
 };
 
 typedef struct Request request_t;

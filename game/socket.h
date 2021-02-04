@@ -2,6 +2,7 @@
 #define SOCKET_H
 
 #include <stdlib.h>
+#include <sys/types.h>
 
 /**
  * Callback to be executed
@@ -19,7 +20,7 @@ typedef int (*socket_on_conn_cb)(int fd, void *attached_data);
  * attached_data is the information
  * attached using data from socket_handle_requests.
  */
-typedef void (*socket_on_request_cb)(int fd, void *attached_data, unsigned char *request, size_t request_size);
+typedef void (*socket_on_request_cb)(int fd, void *attached_data, unsigned char *request, ssize_t request_size);
 
 /**
  * Callback to be executed
@@ -60,7 +61,7 @@ int socket_accept(int fd);
  * On success, the number of bytes sent will be returned.
  * On error, -1 will be returned.
  */
-size_t socket_send(int fd, unsigned char *response, size_t response_size);
+ssize_t socket_send(int fd, unsigned char *response, size_t response_size);
 
 /**
  * Close a socket.
