@@ -29,7 +29,7 @@ static void mark_block_as_used(unsigned char *block)
 
 int memory_init()
 {
-        memory_head = calloc(MAX_ALLOCATIONS * ALLOCATION_PER_BLOCK, 1);
+        memory_head = calloc(MAX_ALLOCATIONS, ALLOCATION_PER_BLOCK);
         return memory_head != NULL;
 }
 
@@ -54,10 +54,10 @@ void memory_print_stats()
 
 void *memory_alloc(size_t n)
 {
+        unsigned char *block = memory_head;
+
         assert(memory_head);
         assert(n <= MAX_ALLOCATION_PER_BLOCK);
-
-        unsigned char *block = memory_head;
 
         while (is_block_used(block)) {
                 block += ALLOCATION_PER_BLOCK;
@@ -71,10 +71,12 @@ void *memory_alloc(size_t n)
 
 void memory_free(void *memory)
 {
+        unsigned char *block = NULL;
+
         if (!memory) {
                 return;
         }
 
-        unsigned char *block = (unsigned char *) memory - 1;
+        block = (unsigned char *) memory - 1;
         memset(block, 0, ALLOCATION_PER_BLOCK);
 }
