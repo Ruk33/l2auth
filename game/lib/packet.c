@@ -13,8 +13,7 @@ void packet_build(packet *dest, packet_type type, byte_t *content, size_t conten
 
         size = (unsigned short) (
                 sizeof(size) +
-                sizeof(type) +
-                content_size
+                PACKET_PADDED_SIZE(sizeof(type) + content_size)
         );
 
         BYTE_WRITE_VAL(dest, size);

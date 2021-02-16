@@ -25,6 +25,37 @@ typedef unsigned short packet_size;
 typedef unsigned char packet_type;
 
 /**
+ * Packets need to be multiple of 8
+ * Not only that, we need to reserve
+ * 4 bytes for checksum.
+ *
+ * Example:
+ *
+ * packet size = 5 (includes byte from packet type)
+ * checksum = 4
+ * packet size + checksum = 9
+ * padded = PACKET_PADDED_SIZE(packet size + checksum) = 16
+ *
+ * padded (16) is now safe to use as packet size.
+ */
+#define PACKET_PADDED_SIZE(size) \
+        (((size_t) (size + 4 + 7)) & ((size_t) (~7)))
+
+/**
+ * Calculate packet safe size (multiple of 8)
+ * from packet content + packet type byte.
+ */
+#define PACKET_SAFE_SIZE(content) \
+        (PACKET_PADDED_SIZE(sizeof(packet_type) + sizeof(content)))
+
+/**
+ * Calculate full safe packet size, including
+ * packet type + content (these last two multiple of 8) + size
+ */
+#define PACKET_SAFE_FULL_SIZE(content) \
+        (sizeof(packet_size) + PACKET_SAFE_SIZE(content))
+
+/**
  * Build packet from type and content.
  * dest must be long enough to hold the
  * entire information.
