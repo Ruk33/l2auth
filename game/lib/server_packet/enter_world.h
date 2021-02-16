@@ -108,8 +108,7 @@ struct ServerPacketEnterWorld {
         int name_color;
 };
 
-#define SERVER_PACKET_ENTER_WORLD_SIZE sizeof(struct ServerPacketEnterWorld)
-#define SERVER_PACKET_ENTER_WORLD_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_ENTER_WORLD_SIZE
+typedef struct ServerPacketEnterWorld server_packet_enter_world_t;
 
 void server_packet_enter_world(packet *dest, character_t *character);
 

@@ -9,10 +9,10 @@ void server_packet_validate_position(packet *dest, character_t *character, int h
 
         packet_type type = 0x61;
 
-        byte_t buf[SERVER_PACKET_VALIDATE_POSITION_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_validate_position_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketValidatePosition validate_position_packet = {0};
+        server_packet_validate_position_t validate_position_packet = {0};
 
         validate_position_packet.obj_id = character->id;
         validate_position_packet.x = character->x;

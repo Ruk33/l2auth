@@ -8,8 +8,7 @@ struct ServerPacketD0 {
         int manor_size;
 };
 
-#define SERVER_PACKET_D0_SIZE sizeof(struct ServerPacketD0)
-#define SERVER_PACKET_D0_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_D0_SIZE
+typedef struct ServerPacketD0 server_packet_d0_t;
 
 void server_packet_d0(packet *dest);
 

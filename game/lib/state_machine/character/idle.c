@@ -20,7 +20,7 @@
  */
 static void logout(request_t *request, character_t *character)
 {
-        packet response[SERVER_PACKET_LOGOUT_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_logout_t)] = {0};
 
         assert_valid_request(request);
         assert(character);
@@ -45,7 +45,7 @@ static void logout(request_t *request, character_t *character)
  */
 static void restart(request_t *request, character_t *character)
 {
-        packet response[SERVER_PACKET_RESTART_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_restart_t)] = {0};
         packet request_characters_packet[8] = {0};
         request_t request_characters = {0};
 
@@ -77,7 +77,7 @@ static void restart(request_t *request, character_t *character)
 static void move(request_t *request, character_t *character)
 {
         client_request_move_t parsed_request = {0};
-        packet response[SERVER_PACKET_MOVE_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_move_t)] = {0};
 
         struct List *close_characters = NULL;
         struct ListEntry *i_close_character = NULL;
@@ -118,7 +118,7 @@ static void move(request_t *request, character_t *character)
  */
 static void validate_position(request_t *request, character_t *character)
 {
-        packet response[SERVER_PACKET_VALIDATE_POSITION_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_validate_position_t)] = {0};
         client_request_validate_position_t parsed_request = {0};
 
         assert_valid_request(request);
@@ -142,7 +142,7 @@ static void say(request_t *request, character_t *character)
         assert_valid_request(request);
         assert(character);
 
-        packet response[SERVER_PACKET_SAY_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_say_t)] = {0};
         client_request_say_t say_request = {0};
         struct List *close_characters = NULL;
         struct ListEntry *i_close_character = NULL;
@@ -182,7 +182,7 @@ static void say(request_t *request, character_t *character)
  */
 static void show_map(request_t *request, character_t *character)
 {
-        packet response[SERVER_PACKET_SHOW_MAP_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_show_map_t)] = {0};
 
         assert_valid_request(request);
         assert(character);

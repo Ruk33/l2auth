@@ -9,7 +9,7 @@
 static void create_character(request_t *request)
 {
         client_request_create_char_t parsed_request = {0};
-        packet response[SERVER_PACKET_CREATE_CHAR_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_create_char_t)] = {0};
         character_t new_character = {0};
 
         packet request_characters_packet[8] = {0};

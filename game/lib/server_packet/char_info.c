@@ -9,7 +9,7 @@ void server_packet_char_info(packet *dest, character_t *character, int heading)
 
         packet_type type = 0x03;
 
-        byte_t buf[SERVER_PACKET_CHAR_INFO_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_char_info_t)] = {0};
         byte_t *p = buf;
 
         server_packet_char_info_t char_info_packet = {0};

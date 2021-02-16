@@ -7,10 +7,10 @@ void server_packet_create_char(packet *dest)
 
         packet_type type = 0x19;
 
-        byte_t buf[SERVER_PACKET_CREATE_CHAR_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_create_char_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketCreateChar create_char_packet = {0};
+        server_packet_create_char_t create_char_packet = {0};
 
         create_char_packet.response = 0x01;
         BYTE_WRITE_VAL(p, create_char_packet.response);

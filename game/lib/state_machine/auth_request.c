@@ -13,7 +13,7 @@
 static void send_playable_characters(request_t *request)
 {
         struct List *characters = NULL;
-        packet response[SERVER_PACKET_AUTH_LOGIN_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_auth_login_t)] = {0};
 
         assert_valid_request(request);
 

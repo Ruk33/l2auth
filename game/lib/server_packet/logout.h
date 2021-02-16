@@ -7,8 +7,7 @@ struct ServerPacketLogout {
         byte_t empty[4];
 };
 
-#define SERVER_PACKET_LOGOUT_SIZE sizeof(struct ServerPacketLogout)
-#define SERVER_PACKET_LOGOUT_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_LOGOUT_SIZE
+typedef struct ServerPacketLogout server_packet_logout_t;
 
 void server_packet_logout(packet *dest);
 

@@ -10,8 +10,7 @@ struct ServerPacketMove {
         vec3_t old_position;
 };
 
-#define SERVER_PACKET_MOVE_SIZE sizeof(struct ServerPacketMove)
-#define SERVER_PACKET_MOVE_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_MOVE_SIZE
+typedef struct ServerPacketMove server_packet_move_t;
 
 void server_packet_move(packet *dest, character_t *character, vec3_t *position);
 

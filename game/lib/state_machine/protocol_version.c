@@ -9,7 +9,7 @@
  */
 static void protocol_version(request_t *request)
 {
-        packet response[SERVER_PACKET_PROTOCOL_VERSION_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_protocol_version_t)] = {0};
 
         assert_valid_request(request);
 

@@ -7,8 +7,7 @@ struct ServerPacketProtocolVersion {
         byte_t content[9];
 };
 
-#define SERVER_PACKET_PROTOCOL_VERSION_SIZE sizeof(struct ServerPacketProtocolVersion)
-#define SERVER_PACKET_PROTOCOL_VERSION_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_PROTOCOL_VERSION_SIZE
+typedef struct ServerPacketProtocolVersion server_packet_protocol_version_t;
 
 void server_packet_protocol_version(packet *dest);
 

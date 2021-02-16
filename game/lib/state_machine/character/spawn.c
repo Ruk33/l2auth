@@ -10,7 +10,7 @@ static void spawn_character(request_t *request, character_t *character)
         assert_valid_request(request);
         assert(character);
 
-        packet response[SERVER_PACKET_CHAR_INFO_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_char_info_t)] = {0};
         struct List *close_characters = NULL;
         struct ListEntry *i_close_character = NULL;
         character_t *close_character = NULL;

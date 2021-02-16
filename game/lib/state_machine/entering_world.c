@@ -8,7 +8,7 @@
 
 static void d0(request_t *request)
 {
-        packet response[SERVER_PACKET_D0_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_d0_t)] = {0};
 
         assert_valid_request(request);
 
@@ -19,7 +19,7 @@ static void d0(request_t *request)
 
 static void quest_list(request_t *request)
 {
-        packet response[SERVER_PACKET_QUEST_LIST_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_quest_list_t)] = {0};
 
         assert_valid_request(request);
 
@@ -32,7 +32,7 @@ static void quest_list(request_t *request)
 
 static void enter_world(request_t *request)
 {
-        packet response[SERVER_PACKET_ENTER_WORLD_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_enter_world_t)] = {0};
         character_t *character = NULL;
 
         assert_valid_request(request);

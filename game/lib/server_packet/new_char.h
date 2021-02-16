@@ -21,8 +21,7 @@ struct ServerPacketNewChar {
         struct ServerPacketNewCharCharTemplate char_templates[10];
 };
 
-#define SERVER_PACKET_NEW_CHAR_SIZE sizeof(struct ServerPacketNewChar)
-#define SERVER_PACKET_NEW_CHAR_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_NEW_CHAR_SIZE
+typedef struct ServerPacketNewChar server_packet_new_char_t;
 
 void server_packet_new_char(packet *dest);
 

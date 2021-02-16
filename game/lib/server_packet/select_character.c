@@ -8,10 +8,10 @@ void server_packet_select_character(packet *dest, character_t *character, int pl
 
         packet_type type = 0x15;
 
-        byte_t buf[SERVER_PACKET_SELECT_CHARACTER_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_select_character_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketSelectCharacter select_character_packet = {0};
+        server_packet_select_character_t select_character_packet = {0};
 
         l2_string_from_char(
                 select_character_packet.name,

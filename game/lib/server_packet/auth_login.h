@@ -73,8 +73,7 @@ struct ServerPacketAuthLogin {
         struct ServerPacketAuthLoginCharacter characters[10];
 };
 
-#define SERVER_PACKET_AUTH_LOGIN_SIZE sizeof(struct ServerPacketAuthLogin)
-#define SERVER_PACKET_AUTH_LOGIN_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_AUTH_LOGIN_SIZE
+typedef struct ServerPacketAuthLogin server_packet_auth_login_t;
 
 void server_packet_auth_login(packet *dest, int playOK1, struct List *characters);
 

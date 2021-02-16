@@ -9,10 +9,10 @@ void server_packet_enter_world(packet *dest, character_t *character)
 
         packet_type type = 0x04;
 
-        byte_t buf[SERVER_PACKET_ENTER_WORLD_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_enter_world_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketEnterWorld enter_world_packet = {0};
+        server_packet_enter_world_t enter_world_packet = {0};
 
         l2_string_from_char(
                 enter_world_packet.name,

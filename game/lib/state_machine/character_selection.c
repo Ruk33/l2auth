@@ -14,7 +14,7 @@
  */
 static void new_character(request_t *request)
 {
-        packet response[SERVER_PACKET_NEW_CHAR_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_new_char_t)] = {0};
 
         assert_valid_request(request);
 
@@ -35,7 +35,7 @@ static void select_character(request_t *request)
         client_request_select_character_t parsed_request = {0};
         character_t selected_character = {0};
         int character_found = 0;
-        packet response[SERVER_PACKET_SELECT_CHARACTER_FULL_SIZE] = {0};
+        packet response[PACKET_SAFE_FULL_SIZE(server_packet_select_character_t)] = {0};
 
         assert_valid_request(request);
 

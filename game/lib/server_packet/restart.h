@@ -7,8 +7,7 @@ struct ServerPacketRestart {
         int response;
 };
 
-#define SERVER_PACKET_RESTART_SIZE sizeof(struct ServerPacketRestart)
-#define SERVER_PACKET_RESTART_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_RESTART_SIZE
+typedef struct ServerPacketRestart server_packet_restart_t;
 
 void server_packet_restart(packet *dest);
 

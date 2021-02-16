@@ -7,10 +7,10 @@ void server_packet_logout(packet *dest)
 
         packet_type type = 0x7e;
 
-        unsigned char buf[SERVER_PACKET_LOGOUT_SIZE] = {0};
+        unsigned char buf[sizeof(server_packet_logout_t)] = {0};
         unsigned char *p = buf;
 
-        struct ServerPacketLogout logout_packet = {0};
+        server_packet_logout_t logout_packet = {0};
 
         BYTE_WRITE(p, logout_packet.empty, sizeof(logout_packet.empty));
 

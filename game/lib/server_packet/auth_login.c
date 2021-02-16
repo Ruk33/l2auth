@@ -86,17 +86,15 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
         character_t *character = NULL;
         int character_count = 0;
 
-        struct ServerPacketAuthLogin auth_login_packet = {0};
-        byte_t buf[SERVER_PACKET_AUTH_LOGIN_SIZE] = {0};
+        server_packet_auth_login_t auth_login_packet = {0};
+        byte_t buf[sizeof(server_packet_auth_login_t)] = {0};
         byte_t *p = buf;
 
-        if (characters)
-        {
+        if (characters) {
                 iterator = list_get_iterator(characters);
         }
 
-        while (iterator)
-        {
+        while (iterator) {
                 character_count += 1;
                 iterator = list_get_next(iterator);
         }
@@ -104,13 +102,11 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
         auth_login_packet.character_count = character_count;
         BYTE_WRITE_VAL(p, auth_login_packet.character_count);
 
-        if (characters)
-        {
+        if (characters) {
                 iterator = list_get_iterator(characters);
         }
 
-        for (int i = 0; i < character_count; i++)
-        {
+        for (int i = 0; i < character_count; i++) {
                 character = list_get_value(iterator);
 
                 l2_string_from_char(

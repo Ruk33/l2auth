@@ -7,8 +7,7 @@ struct ServerPacketCreateChar {
         int response;
 };
 
-#define SERVER_PACKET_CREATE_CHAR_SIZE sizeof(struct ServerPacketCreateChar)
-#define SERVER_PACKET_CREATE_CHAR_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_CREATE_CHAR_SIZE
+typedef struct ServerPacketCreateChar server_packet_create_char_t;
 
 void server_packet_create_char(packet *dest);
 

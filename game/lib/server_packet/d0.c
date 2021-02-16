@@ -7,10 +7,10 @@ void server_packet_d0(packet *dest)
 
         packet_type type = 0xFE;
 
-        byte_t buf[SERVER_PACKET_D0_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_d0_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketD0 d0_packet = {0};
+        server_packet_d0_t d0_packet = {0};
 
         d0_packet.unknown = 0x1B;
         d0_packet.manor_size = 0;

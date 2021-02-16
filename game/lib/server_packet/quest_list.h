@@ -7,8 +7,7 @@ struct ServerPacketQuestList {
         byte_t empty[7];
 };
 
-#define SERVER_PACKET_QUEST_LIST_SIZE sizeof(struct ServerPacketQuestList)
-#define SERVER_PACKET_QUEST_LIST_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_QUEST_LIST_SIZE
+typedef struct ServerPacketQuestList server_packet_quest_list_t;
 
 void server_packet_quest_list(packet *dest);
 

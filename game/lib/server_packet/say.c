@@ -11,10 +11,10 @@ void server_packet_say(packet *dest, character_t *character, l2_string_type_t ms
 
         packet_type type = 0x4a;
 
-        unsigned char buf[SERVER_PACKET_SAY_SIZE] = {0};
+        unsigned char buf[sizeof(server_packet_say_t)] = {0};
         unsigned char *p = buf;
 
-        struct ServerPacketSay say_packet = {0};
+        server_packet_say_t say_packet = {0};
         size_t max_msg_size = sizeof(say_packet.msg) / 2;
 
         say_packet.sender_obj_id = character->id;

@@ -42,9 +42,9 @@ void server_packet_new_char(packet *dest)
 
         packet_type type = 0x17;
 
-        struct ServerPacketNewChar new_char_packet = {0};
+        server_packet_new_char_t new_char_packet = {0};
 
-        byte_t buf[SERVER_PACKET_NEW_CHAR_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_new_char_t)] = {0};
         byte_t *p = buf;
 
         size_t human_figher = 0;

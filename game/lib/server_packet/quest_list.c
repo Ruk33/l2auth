@@ -7,10 +7,10 @@ void server_packet_quest_list(packet *dest)
 
         packet_type type = 0x80;
 
-        byte_t buf[SERVER_PACKET_QUEST_LIST_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_quest_list_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketQuestList quest_list_packet = {0};
+        server_packet_quest_list_t quest_list_packet = {0};
 
         BYTE_WRITE(p, quest_list_packet.empty, sizeof(quest_list_packet.empty));
 

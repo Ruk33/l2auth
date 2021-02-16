@@ -32,8 +32,7 @@ struct ServerPacketSelectCharacter {
         int game_time;
 };
 
-#define SERVER_PACKET_SELECT_CHARACTER_SIZE sizeof(struct ServerPacketSelectCharacter)
-#define SERVER_PACKET_SELECT_CHARACTER_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_SELECT_CHARACTER_SIZE
+typedef struct ServerPacketSelectCharacter server_packet_select_character_t;
 
 void server_packet_select_character(packet *dest, character_t *character, int playOK1);
 

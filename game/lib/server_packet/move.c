@@ -10,10 +10,10 @@ void server_packet_move(packet *dest, character_t *character, vec3_t *position)
 
         packet_type type = 0x01;
 
-        byte_t buf[SERVER_PACKET_MOVE_SIZE] = {0};
+        byte_t buf[sizeof(server_packet_move_t)] = {0};
         byte_t *p = buf;
 
-        struct ServerPacketMove move_packet = {0};
+        server_packet_move_t move_packet = {0};
 
         move_packet.obj_id = character->id;
         move_packet.new_position.x = position->x;

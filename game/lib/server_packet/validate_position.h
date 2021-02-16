@@ -12,8 +12,7 @@ struct ServerPacketValidatePosition {
         int heading;
 };
 
-#define SERVER_PACKET_VALIDATE_POSITION_SIZE sizeof(struct ServerPacketValidatePosition)
-#define SERVER_PACKET_VALIDATE_POSITION_FULL_SIZE sizeof(short) + sizeof(char) + SERVER_PACKET_VALIDATE_POSITION_SIZE
+typedef struct ServerPacketValidatePosition server_packet_validate_position_t;
 
 void server_packet_validate_position(packet *dest, character_t *character, int heading);
 
