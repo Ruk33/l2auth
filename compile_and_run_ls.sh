@@ -7,7 +7,6 @@ echo "----------------------------"
 echo "Building login server"
 echo "----------------------------"
 cd login
-make clean
 make
 
 echo "----------------------------"

@@ -1,7 +1,7 @@
 #include <headers.h>
 #include <character.h>
-#include <storage/session.h>
-#include <storage/character.h>
+#include <storage/memory/session.h>
+#include <storage/memory/character.h>
 
 struct StorageCharacterMemory {
         struct HashMap *characters_by_account;

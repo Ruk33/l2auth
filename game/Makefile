@@ -1,22 +1,19 @@
-C_FILES=\
-	game_server_lib.c \
-	main.c \
-	memory.c \
-	server.c \
-	socket.c
-H_FILES=$(C_FILES:.c=.h)
-O_FILES=$(C_FILES:.c=.o)
+CC	= gcc
+CFLAGS	= -std=c99 -Wall -Werror -Wextra -g -pedantic
+CLIBS	= -ldl
+SOURCES	= $(wildcard *.c)
+OBJS	= $(filter-out main.o, $(SOURCES:.c=.o))
 
-CC=gcc
-CFLAGS=-std=c99 -Wall -Werror -Wextra -g -pedantic
-CLIBS=-ldl
+%.o : %.c %.h
+	@echo "🔧 File $< needs to be rebuilt"
+	-$(CC) $(CFLAGS) -c $< -o $@
+	@echo ""
 
-%.o: %.c $(H_FILES)
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-game_server: $(O_FILES)
-	$(CC) $(CFLAGS) $(CLIBS) -o $@ $^
+game_server : $(OBJS) main.c
+	@echo "⛏️ Building game server..."
+	$(CC) $(CFLAGS) -o $@ $^ $(CLIBS)
 
 .PHONY: clean
 clean:
-	rm -f $(O_FILES)
+	@echo "🗑️ Removing .o files"
+	@$(RM) *.o

@@ -1,6 +1,6 @@
 #include <headers.h>
 #include <session.h>
-#include <storage/session.h>
+#include <storage/memory/session.h>
 
 struct StorageSessionMemory {
         struct HashMap *sessions_by_id;

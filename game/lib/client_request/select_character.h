@@ -3,7 +3,7 @@
 
 #include <headers.h>
 #include <session.h>
-#include <storage/character.h>
+#include <storage/memory/character.h>
 
 struct ClientRequestSelectCharacter {
         unsigned int index;

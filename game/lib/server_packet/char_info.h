@@ -2,6 +2,7 @@
 #define LIB_SERVER_PACKET_CHAR_INFO_H
 
 #include <headers.h>
+#include <character.h>
 
 struct ServerPacketCharInfo {
         int x;

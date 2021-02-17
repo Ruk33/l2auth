@@ -1,7 +1,7 @@
 #include <headers.h>
-#include <storage/session.h>
-#include <storage/character.h>
-#include <storage/server.h>
+#include <storage/memory/session.h>
+#include <storage/memory/character.h>
+#include <storage/memory/server.h>
 
 void storage_server_init(storage_server_t *storage, host_alloc alloc_memory, host_dealloc dealloc_memory)
 {

@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <sys/types.h>
-#include "storage/server.h"
+#include "storage/memory/server.h"
 #include "host.h"
 #include "session.h"
 #include "packet.h"

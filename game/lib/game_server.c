@@ -1,7 +1,7 @@
 #include "headers.h"
 #include "state_machine/handle.h"
-#include "storage/server.h"
-#include "storage/session.h"
+#include "storage/memory/server.h"
+#include "storage/memory/session.h"
 #include "session.h"
 #include "game_server.h"
 

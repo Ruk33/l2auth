@@ -2,8 +2,8 @@
 #define LIB_CLIENT_REQUEST_CREATE_CHAR_H
 
 #include <headers.h>
-#include <storage/session.h>
-#include <storage/character.h>
+#include <storage/memory/session.h>
+#include <storage/memory/character.h>
 
 struct ClientRequestCreateChar {
         l2_string_t *name;
