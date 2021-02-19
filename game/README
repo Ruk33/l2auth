@@ -1,6 +1,4 @@
-Lineage 2 game server
-----------------------
-
+== Lineage 2 game server
 This folder contains the code used for the game server.
 Lineage 2 separates the login from the game itself.
 

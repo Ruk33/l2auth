@@ -1,21 +1,23 @@
-Lineage 2 game server library
------------------------------
-
+== Lineage 2 game server library
 This folder contains the code of the game server's library.
 It's exported as a library to allow being loaded at run time, thus,
 allowing for hot code reload (code can be recompiled and changes
 will be live without having to shutdown/restart the server).
 
-Folders
--------
-
-- client_packet: Contains the packet types the client can send.
-- client_request: Contains all the parsers for a client request. This means,
-it will convert the raw request (bytes) from the request into a struct.
-- server_packet: Contains all the packets sent from the server to the client.
-- state_machine: The way sessions and characters are being handled is by
-using a state machine.
-- storage: Contains the logic for dealing with storage (database). Currently,
-only in memory database is implemented, meaning, data will be lost once the
-server is taken down. To implement a new driver (for example, postgresql) just
-create a new folder and modify the Makefile to use it instead of memory.
+== Folders
+- client_packet
+        Contains the packet types the client can send.
+- client_request
+        Contains all the parsers for a client request. This means,
+        it will convert the raw request (bytes) from the request into a struct.
+- server_packet
+        Contains all the packets sent from the server to the client.
+- state_machine
+        The way sessions and characters are being handled is by using a
+        state machine.
+- storage
+        Contains the logic for dealing with storage (database). Currently,
+        only in memory database is implemented, meaning, data will be lost once
+        the server is taken down. To implement a new driver (for example,
+        postgresql) just create a new folder and modify the Makefile to use it
+        instead of memory.
