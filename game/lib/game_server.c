@@ -1,8 +1,8 @@
-#include "headers.h"
-#include "state_machine/handle.h"
-#include "storage/memory/server.h"
-#include "storage/memory/session.h"
-#include "session.h"
+#include <headers.h>
+#include <state_machine/handle.h>
+#include <storage/server.h>
+#include <storage/session.h>
+#include <session.h>
 #include "game_server.h"
 
 void *game_server_init(host_alloc alloc_memory, host_dealloc dealloc_memory)

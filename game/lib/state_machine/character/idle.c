@@ -3,7 +3,7 @@
 #include <client_request/validate_position.h>
 #include <client_request/say.h>
 #include <client_packet/type.h>
-#include <storage/memory/character.h>
+#include <storage/character.h>
 #include <server_packet/say.h>
 #include <server_packet/logout.h>
 #include <server_packet/restart.h>

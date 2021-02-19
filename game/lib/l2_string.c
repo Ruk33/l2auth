@@ -4,10 +4,10 @@
 
 void l2_string_to_char(char *dest, l2_string_t *src, size_t n)
 {
+        size_t i = 0;
+
         assert(dest);
         assert(src);
-
-        size_t i = 0;
 
         while (*src && i < n) {
                 dest[i] = (char) *src;
@@ -33,9 +33,9 @@ void l2_string_from_char(l2_string_t *dest, char *src, size_t n)
 
 size_t l2_string_len(l2_string_t *src)
 {
-        assert(src);
-
         size_t len = 0;
+
+        assert(src);
 
         while (*src) {
                 len += 1;

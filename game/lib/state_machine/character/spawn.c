@@ -1,7 +1,7 @@
 #include <headers.h>
 #include <request.h>
 #include <character.h>
-#include <storage/memory/character.h>
+#include <storage/character.h>
 #include <server_packet/char_info.h>
 #include "spawn.h"
 

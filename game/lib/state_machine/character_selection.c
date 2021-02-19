@@ -1,5 +1,5 @@
 #include <request.h>
-#include <storage/memory/session.h>
+#include <storage/session.h>
 #include <server_packet/select_character.h>
 #include <server_packet/new_char.h>
 #include <client_request/select_character.h>

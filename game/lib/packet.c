@@ -11,7 +11,7 @@ void packet_build(packet *dest, packet_type type, byte_t *content, size_t conten
 
         assert(dest);
 
-        size = (unsigned short) (
+        size = (packet_size) (
                 sizeof(size) +
                 PACKET_PADDED_SIZE(sizeof(type) + content_size)
         );
@@ -28,22 +28,24 @@ void packet_build(packet *dest, packet_type type, byte_t *content, size_t conten
 
 packet_size packet_get_size(packet *src)
 {
-        assert(src);
         packet_size size = 0;
+
+        assert(src);
         BYTE_READ_VAL(size, src);
-        return size;
+
+        return (packet_size) (size & 0xFFFF);
 }
 
 packet_type packet_get_type(packet *src)
 {
         assert(src);
-        return src[2];
+        return (packet_type) (src[2] & 0xff);
 }
 
 byte_t *packet_body(packet *src)
 {
-        assert(src);
         size_t size_header = sizeof(packet_size);
         size_t type_header = sizeof(packet_type);
+        assert(src);
         return src + size_header + type_header;
 }

@@ -1,5 +1,5 @@
 #include <request.h>
-#include <storage/memory/character.h>
+#include <storage/character.h>
 #include <server_packet/auth_login.h>
 #include <client_request/auth_request.h>
 #include <client_packet/type.h>

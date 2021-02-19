@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 #include <sys/types.h>
-#include "host.h"
-#include "storage/memory/server.h"
+#include <host.h>
+#include <storage/server.h>
 
 /**
  * Handle game server initialization.

@@ -2,7 +2,7 @@
 #define LIB_STATE_MACHINE_HANDLE_H
 
 #include <headers.h>
-#include <storage/memory/server.h>
+#include <storage/server.h>
 
 /**
  * Entry point for handling the state of the
