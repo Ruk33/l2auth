@@ -7,7 +7,11 @@
 #include "in_world.h"
 #include "handle.h"
 
-void state_machine_handle(int client, byte_t *request_packet, ssize_t request_size, host_t *host, storage_server_t *server_storage)
+void state_machine_handle(int client,
+                          byte_t *request_packet,
+                          ssize_t request_size,
+                          host_t *host,
+                          storage_server_t *server_storage)
 {
         request_t request = {0};
         packet *decrypted_packet = NULL;
@@ -19,11 +23,10 @@ void state_machine_handle(int client, byte_t *request_packet, ssize_t request_si
 
         session = storage_session_get(&server_storage->session_storage, client);
 
-        if (!session)
-        {
+        if (!session) {
                 printf("Warning: session for client %d not found.\n", client);
                 printf("Ignoring request.\n");
-                return;
+                goto check_for_other_packets;
         }
 
         decrypted_packet = host->alloc_memory(65536);
@@ -62,4 +65,17 @@ void state_machine_handle(int client, byte_t *request_packet, ssize_t request_si
 
         host->dealloc_memory(decrypted_packet);
         fflush(stdout);
+
+check_for_other_packets:
+        if ((ssize_t) packet_get_size(request_packet) == request_size) {
+                return;
+        }
+
+        state_machine_handle(
+                client,
+                request_packet + packet_get_size(request_packet),
+                request_size - packet_get_size(request_packet),
+                host,
+                server_storage
+        );
 }

@@ -53,7 +53,7 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Enter world
 - [x] Walk
 - [x] Handle multiple connections
-- [ ] Correctly handle multiple packets at once
+- [x] Correctly handle multiple packets at once
 - [ ] See other players
 
 == Want to contribute?
