@@ -54,7 +54,7 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Walk
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once
-- [ ] See other players
+- [x] See other players
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
