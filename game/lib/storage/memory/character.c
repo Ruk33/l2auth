@@ -10,7 +10,8 @@ struct StorageCharacterMemory {
 
 typedef struct StorageCharacterMemory storage_handler_h;
 
-void storage_character_init(storage_character_t *storage, host_alloc alloc, host_dealloc dealloc)
+void storage_character_init(storage_character_t *storage, host_alloc alloc,
+                            host_dealloc dealloc)
 {
         assert(storage);
         assert(alloc);
@@ -27,7 +28,8 @@ void storage_character_init(storage_character_t *storage, host_alloc alloc, host
         storage->handler = handler;
 }
 
-void storage_character_add(storage_character_t *storage, char *account, size_t account_size,character_t *character)
+void storage_character_add(storage_character_t *storage, char *account,
+                           size_t account_size, character_t *character)
 {
         assert(storage);
         assert(storage->handler);
@@ -40,7 +42,8 @@ void storage_character_add(storage_character_t *storage, char *account, size_t a
         character_t *character_copy = NULL;
 
         handler = storage->handler;
-        account_characters = hash_map_get(handler->characters_by_account, account, account_size);
+        account_characters = hash_map_get(handler->characters_by_account,
+                                          account, account_size);
         character_copy = storage->alloc(sizeof(*character_copy));
 
         memcpy(character_copy, character, sizeof(*character_copy));
@@ -65,15 +68,18 @@ void storage_character_add(storage_character_t *storage, char *account, size_t a
         character_copy->critical_hit = 1;
 
         if (!account_characters) {
-                account_characters = list_create(storage->alloc, storage->dealloc);
-                hash_map_set(handler->characters_by_account, account, account_size, account_characters);
+                account_characters =
+                        list_create(storage->alloc, storage->dealloc);
+                hash_map_set(handler->characters_by_account, account,
+                             account_size, account_characters);
         }
 
         list_add_last(&account_characters, character_copy);
         list_add_last(&handler->characters, character_copy);
 }
 
-struct List *storage_character_get(storage_character_t *storage, char *account, size_t account_size)
+struct List *storage_character_get(storage_character_t *storage, char *account,
+                                   size_t account_size)
 {
         assert(storage);
         assert(storage->handler);
@@ -81,24 +87,29 @@ struct List *storage_character_get(storage_character_t *storage, char *account, 
         assert(account_size);
         storage_handler_h *handler = NULL;
         handler = storage->handler;
-        return hash_map_get(handler->characters_by_account, account, account_size);
+        return hash_map_get(handler->characters_by_account, account,
+                            account_size);
 }
 
-struct List *storage_character_all_from_session(storage_character_t *storage, session_t *session)
+struct List *storage_character_all_from_session(storage_character_t *storage,
+                                                session_t *session)
 {
         assert(storage);
         assert(session);
 
-        return storage_character_get(storage, session->username, strlen(session->username) + 1);
+        return storage_character_get(storage, session->username,
+                                     strlen(session->username) + 1);
 }
 
-character_t *storage_character_active_from_session(storage_character_t *storage, session_t *session)
+character_t *storage_character_active_from_session(storage_character_t *storage,
+                                                   session_t *session)
 {
         assert(storage);
         assert(session);
 
         unsigned int index = session->selected_character_index;
-        struct List *characters = storage_character_all_from_session(storage, session);
+        struct List *characters =
+                storage_character_all_from_session(storage, session);
         struct ListEntry *iterator = NULL;
 
         if (characters) {
@@ -117,39 +128,47 @@ character_t *storage_character_active_from_session(storage_character_t *storage,
         return NULL;
 }
 
-void storage_character_close_to(storage_character_t *storage, struct List **dest, character_t *character, unsigned int range)
+size_t storage_character_close_to(storage_character_t *storage,
+                                  character_t *dest, size_t max,
+                                  character_t *character, unsigned int range)
 {
+        storage_handler_h *storage_handler = NULL;
+        struct ListEntry *iterator = NULL;
+        character_t *i_character = NULL;
+        position_t position = { 0 };
+        position_t i_position = { 0 };
+        size_t count = 0;
+
         assert(storage);
         assert(dest);
         assert(character);
 
-        storage_handler_h *handler = NULL;
-        struct ListEntry *iterator = NULL;
-        character_t *i_character = NULL;
-        position_t position = {0};
-        position_t i_position = {0};
-
-        handler = storage->handler;
-        iterator = list_get_iterator(handler->characters);
+        storage_handler = storage->handler;
+        iterator = list_get_iterator(storage_handler->characters);
         position.x = character->x;
         position.y = character->y;
         position.z = character->z;
 
-        while (iterator) {
+        while (iterator && count < max) {
                 i_character = list_get_value(iterator);
                 i_position.x = i_character->x;
                 i_position.y = i_character->y;
                 i_position.z = i_character->z;
 
                 if (position_distance(&position, &i_position) <= range) {
-                        list_add_last(dest, i_character);
+                        dest[count] = *i_character;
+                        count += 1;
                 }
 
                 iterator = list_get_next(iterator);
         }
+
+        return count;
 }
 
-int storage_character_get_by_index(character_t *dest, storage_character_t *storage, string_t *account, unsigned int index)
+int storage_character_get_by_index(character_t *dest,
+                                   storage_character_t *storage,
+                                   string_t *account, unsigned int index)
 {
         struct List *characters = NULL;
         struct ListEntry *i_character = NULL;
@@ -159,7 +178,8 @@ int storage_character_get_by_index(character_t *dest, storage_character_t *stora
         assert(account);
         assert(account->buf);
 
-        characters = storage_character_get(storage, account->buf, account->size);
+        characters =
+                storage_character_get(storage, account->buf, account->size);
 
         if (!characters) {
                 return 0;

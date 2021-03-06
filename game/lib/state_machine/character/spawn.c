@@ -9,8 +9,9 @@ static void spawn_character(request_t *request, character_t *spawned_character)
 {
         packet *char_info_packet = NULL;
 
-        struct List *close_characters = NULL;
-        struct ListEntry *i_close_character = NULL;
+        size_t close_characters_count = 0;
+        size_t max_close_characters = 0;
+        character_t *close_characters = NULL;
         character_t *close_character = NULL;
 
         assert_valid_request(request);
@@ -18,17 +19,18 @@ static void spawn_character(request_t *request, character_t *spawned_character)
 
         char_info_packet = request->host->alloc_memory(
                 PACKET_SAFE_FULL_SIZE(server_packet_char_info_t));
-        close_characters = list_create(request->host->alloc_memory,
-                                       request->host->dealloc_memory);
-        storage_character_close_to(&request->storage->character_storage,
-                                   &close_characters, spawned_character, 1200);
-        i_close_character = list_get_iterator(close_characters);
+
+        max_close_characters = 10;
+        close_characters = request->host->alloc_memory(
+                sizeof(*close_characters) * max_close_characters);
+        close_characters_count = storage_character_close_to(
+                &request->storage->character_storage, close_characters,
+                max_close_characters, spawned_character, 1200);
 
         printf("Player spawned\n");
 
-        while (i_close_character) {
-                close_character = list_get_value(i_close_character);
-                i_close_character = list_get_next(i_close_character);
+        for (size_t i = 0; i < close_characters_count; i++) {
+                close_character = &close_characters[i];
 
                 printf("Showing new spawned player to %d\n",
                        close_character->id);
@@ -63,7 +65,7 @@ static void spawn_character(request_t *request, character_t *spawned_character)
         }
 
         request->host->dealloc_memory(char_info_packet);
-        list_free(close_characters);
+        request->host->dealloc_memory(close_characters);
 }
 
 void state_machine_character_spawn(request_t *request, character_t *character)

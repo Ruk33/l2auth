@@ -7,13 +7,11 @@
 #include "in_world.h"
 #include "handle.h"
 
-void state_machine_handle(int client,
-                          byte_t *request_packet,
-                          ssize_t request_size,
-                          host_t *host,
+void state_machine_handle(int client, byte_t *request_packet,
+                          ssize_t request_size, host_t *host,
                           storage_server_t *server_storage)
 {
-        request_t request = {0};
+        request_t request = { 0 };
         packet *decrypted_packet = NULL;
         session_t *session = NULL;
 
@@ -30,7 +28,8 @@ void state_machine_handle(int client,
         }
 
         decrypted_packet = host->alloc_memory(65536);
-        session_decrypt_packet(session, decrypted_packet, request_packet, packet_get_size(request_packet));
+        session_decrypt_packet(session, decrypted_packet, request_packet,
+                               packet_get_size(request_packet));
         session_encrypt_connection(session);
 
         request.host = host;
@@ -71,11 +70,8 @@ check_for_other_packets:
                 return;
         }
 
-        state_machine_handle(
-                client,
-                request_packet + packet_get_size(request_packet),
-                request_size - packet_get_size(request_packet),
-                host,
-                server_storage
-        );
+        state_machine_handle(client,
+                             request_packet + packet_get_size(request_packet),
+                             request_size - packet_get_size(request_packet),
+                             host, server_storage);
 }
