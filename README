@@ -55,6 +55,7 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once
 - [x] See other players
+- [x] Spawn random orc (see docs/screenshot/orc.jpg)
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
