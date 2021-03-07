@@ -1,6 +1,6 @@
 CC	= gcc
 CFLAGS	= -std=c99 -Wall -Werror -Wextra -g -pedantic
-CLIBS	= -ldl
+CLIBS	= -ldl -lpthread -ldatastructures
 SOURCES	= $(wildcard *.c)
 OBJS	= $(filter-out main.o, $(SOURCES:.c=.o))
 

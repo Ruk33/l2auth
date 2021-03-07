@@ -3,20 +3,26 @@
 #include <stdio.h>
 #include "socket.h"
 #include "game_server_lib.h"
+#include "work_queue.h"
 #include "memory.h"
 #include "server.h"
 
-struct Server {
+typedef struct {
         void *data;
-};
+} server_t;
 
-typedef struct Server server_t;
+static server_t server = { 0 };
+
+void *server_data(void)
+{
+        return server.data;
+}
 
 static int handle_connection(int fd, void *data)
 {
-        server_t *server = NULL;
-        int new_conn_result = 0;
-        int client_socket = 0;
+        server_t *server          = NULL;
+        int       new_conn_result = 0;
+        int       client_socket   = 0;
 
         assert(data);
 
@@ -30,7 +36,8 @@ static int handle_connection(int fd, void *data)
                 return -1;
         }
 
-        new_conn_result = game_server_lib_new_connection(client_socket, server->data);
+        new_conn_result =
+                game_server_lib_new_connection(client_socket, server->data);
 
         if (new_conn_result == -1) {
                 printf("Failed to handle new connection.\n");
@@ -40,7 +47,8 @@ static int handle_connection(int fd, void *data)
         return client_socket;
 }
 
-static void handle_request(int fd, void *data, unsigned char *request, ssize_t request_size)
+static void
+handle_request(int fd, void *data, unsigned char *request, ssize_t request_size)
 {
         server_t *server = NULL;
 
@@ -51,17 +59,7 @@ static void handle_request(int fd, void *data, unsigned char *request, ssize_t r
         server = data;
 
         printf("Handling new request from %d of size %ld.\n", fd, request_size);
-
-        game_server_lib_handle_request(
-                fd,
-                request,
-                request_size,
-                server->data,
-                &memory_alloc,
-                &memory_free,
-                &socket_send,
-                &socket_close
-        );
+        work_queue_add_client_request(server->data, fd, request, request_size);
 }
 
 static void handle_disconnect(int fd, void *data)
@@ -76,17 +74,16 @@ static void handle_disconnect(int fd, void *data)
 
 int server_start(unsigned short port, size_t max_connections)
 {
-        server_t server = {0};
-        socket_conn_t conn = {0};
-        int handle_requests_result = 0;
+        socket_conn_t conn                   = { 0 };
+        int           handle_requests_result = 0;
 
         assert(port);
         assert(max_connections);
 
-        conn.fd = socket_create(port, max_connections);
-        conn.data = &server;
-        conn.on_connect = &handle_connection;
-        conn.on_request = &handle_request;
+        conn.fd            = socket_create(port, max_connections);
+        conn.data          = &server;
+        conn.on_connect    = &handle_connection;
+        conn.on_request    = &handle_request;
         conn.on_disconnect = &handle_disconnect;
 
         if (conn.fd == -1) {

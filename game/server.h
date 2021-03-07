@@ -12,4 +12,11 @@
  */
 int server_start(unsigned short port, size_t max_connections);
 
+/**
+ * Get server data. This data is created
+ * when the server is initialized using the game
+ * server library.
+ */
+void *server_data(void);
+
 #endif

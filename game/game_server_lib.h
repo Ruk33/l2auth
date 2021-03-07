@@ -61,4 +61,9 @@ int game_server_lib_handle_request(
  */
 int game_server_lib_handle_disconnect(int fd, void *data);
 
+/**
+ * Handle timer tick.
+ */
+void game_server_lib_handle_timer_tick(double delta, void *data);
+
 #endif

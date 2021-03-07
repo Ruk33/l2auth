@@ -48,13 +48,12 @@ static void *load_function(char *name)
 
 void *game_server_lib_handle_init(
         void *(*alloc_cb)(size_t),
-        void (*dealloc_cb)(void *)
-)
+        void (*dealloc_cb)(void *))
 {
         assert(alloc_cb);
         assert(dealloc_cb);
 
-        void *(*handler)() = NULL;
+        void *(*handler)()    = NULL;
         *(void **) (&handler) = load_function("game_server_init");
 
         if (!handler) {
@@ -68,7 +67,7 @@ int game_server_lib_new_connection(int fd, void *data)
 {
         assert(fd > 0);
         assert(data);
-        void (*handler)() = NULL;
+        void (*handler)()     = NULL;
         *(void **) (&handler) = load_function("game_server_new_connection");
 
         if (!handler) {
@@ -81,15 +80,14 @@ int game_server_lib_new_connection(int fd, void *data)
 }
 
 int game_server_lib_handle_request(
-        int fd,
+        int            fd,
         unsigned char *request,
-        ssize_t request_size,
-        void *data,
+        ssize_t        request_size,
+        void *         data,
         void *(*alloc_cb)(size_t),
         void (*dealloc_cb)(void *),
         ssize_t (*send_response_cb)(int, unsigned char *, size_t),
-        void (*close_conn_cb)(int)
-)
+        void (*close_conn_cb)(int))
 {
         assert(fd > 0);
         assert(request);
@@ -100,23 +98,21 @@ int game_server_lib_handle_request(
         assert(send_response_cb);
         assert(close_conn_cb);
 
-        void (*handler)() = NULL;
+        void (*handler)()     = NULL;
         *(void **) (&handler) = load_function("game_server_new_request");
 
         if (!handler) {
                 return -1;
         }
 
-        handler(
-                fd,
+        handler(fd,
                 request,
                 request_size,
                 data,
                 alloc_cb,
                 dealloc_cb,
                 send_response_cb,
-                close_conn_cb
-        );
+                close_conn_cb);
 
         return 1;
 }
@@ -127,7 +123,8 @@ int game_server_lib_handle_disconnect(int fd, void *data)
 
         assert(data);
 
-        *(void **) (&handler) = load_function("game_server_client_disconnected");
+        *(void **) (&handler) =
+                load_function("game_server_client_disconnected");
 
         if (!handler) {
                 return -1;
@@ -136,4 +133,17 @@ int game_server_lib_handle_disconnect(int fd, void *data)
         handler(fd, data);
 
         return 1;
+}
+
+void game_server_lib_handle_timer_tick(double delta, void *data)
+{
+        void (*handler)(double, void *) = NULL;
+        *(void **) (&handler) = load_function("game_server_timer_tick");
+
+        if (!handler) {
+                printf("Couldn't load game_server_timer_tick\n");
+                return;
+        }
+
+        handler(delta, data);
 }
