@@ -27,9 +27,14 @@ void character_move_forward(character_t *character)
         double run_speed = 0;
         double movement  = 0;
 
+        if (character->target_x == 0 && character->target_y == 0 &&
+            character->target_z == 0) {
+                return;
+        }
+
         dx = character->target_x - character->x;
         dy = character->target_y - character->y;
-        d  = sqrt(dx * dx + dy * dy);
+        d  = sqrt(dx * dx + dy * dy) - 5;
 
         if (d <= 10) {
                 character->x = character->target_x;
@@ -38,12 +43,13 @@ void character_move_forward(character_t *character)
                 return;
         }
 
-        a         = atan2(dy, dx);
         run_speed = 120;
         movement  = run_speed < d ? run_speed : d;
 
-        character->x += (int) (movement * cos(a));
-        character->y += (int) (movement * sin(a));
+        a = dx / d;
+        character->x += (int) (movement * a);
+        a = dy / d;
+        character->y += (int) (movement * a);
 }
 
 void character_validate_position(
@@ -70,10 +76,10 @@ void character_validate_position(
         distance = position_distance(position_to_validate, &character_position);
 
         /*
-         * If it's close enough we don't
-         * apply any correction.
+         * Distance can't be bigger to what the
+         * character's movement is
          */
-        if (distance < character_speed * 1.5) {
+        if (character_speed < distance) {
                 validated_position->x = character->x;
                 validated_position->y = character->y;
                 validated_position->z = character->z;
