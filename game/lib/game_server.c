@@ -2,6 +2,7 @@
 #include <state_machine/handle.h>
 #include <storage/server.h>
 #include <storage/session.h>
+#include <storage/character.h>
 #include <session.h>
 #include "game_server.h"
 
@@ -79,7 +80,19 @@ void game_server_client_disconnected(
 
 void game_server_timer_tick(double delta, storage_server_t *server_storage)
 {
-        if (server_storage) {
+        size_t       max              = 0;
+        character_t *characters[10]   = { 0 };
+        size_t       characters_count = 0;
+
+        if (!server_storage) {
+                return;
         }
-        printf("Timer, delta: %f\n", delta);
+
+        max              = 10 + (size_t) delta;
+        characters_count = storage_character_all(
+                &server_storage->character_storage, characters, max);
+
+        for (size_t i = 0; i < characters_count; i++) {
+                character_move_forward(characters[i]);
+        }
 }

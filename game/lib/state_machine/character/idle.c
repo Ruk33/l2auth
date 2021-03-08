@@ -10,6 +10,7 @@
 #include <server_packet/move.h>
 #include <server_packet/validate_position.h>
 #include <server_packet/show_map.h>
+#include <server_packet/npc_info.h>
 #include <client_request/say.h>
 #include "../auth_request.h"
 #include "idle.h"
@@ -26,10 +27,15 @@ static void logout(request_t *request, character_t *character)
         assert(character);
 
         server_packet_logout(response);
-        session_encrypt_packet(request->session, response, response,
-                               (size_t) packet_get_size(response));
-        request->host->send_response(request->session->socket, response,
-                                     (size_t) packet_get_size(response));
+        session_encrypt_packet(
+                request->session,
+                response,
+                response,
+                (size_t) packet_get_size(response));
+        request->host->send_response(
+                request->session->socket,
+                response,
+                (size_t) packet_get_size(response));
 
         /*
          * Maybe here would be a good moment
@@ -48,17 +54,22 @@ static void logout(request_t *request, character_t *character)
 static void restart(request_t *request, character_t *character)
 {
         packet response[PACKET_SAFE_FULL_SIZE(server_packet_restart_t)] = { 0 };
-        packet request_characters_packet[8] = { 0 };
-        request_t request_characters = { 0 };
+        packet request_characters_packet[8]                             = { 0 };
+        request_t request_characters                                    = { 0 };
 
         assert_valid_request(request);
         assert(character);
 
         server_packet_restart(response);
-        session_encrypt_packet(request->session, response, response,
-                               (size_t) packet_get_size(response));
-        request->host->send_response(request->session->socket, response,
-                                     (size_t) packet_get_size(response));
+        session_encrypt_packet(
+                request->session,
+                response,
+                response,
+                (size_t) packet_get_size(response));
+        request->host->send_response(
+                request->session->socket,
+                response,
+                (size_t) packet_get_size(response));
 
         character_update_state(character, SPAWN);
 
@@ -66,8 +77,11 @@ static void restart(request_t *request, character_t *character)
          * Create a dummy request to refetch all
          * characters from a session.
          */
-        packet_build(request_characters_packet,
-                     (unsigned char) CLIENT_PACKET_TYPE_AUTH_REQUEST, NULL, 0);
+        packet_build(
+                request_characters_packet,
+                (unsigned char) CLIENT_PACKET_TYPE_AUTH_REQUEST,
+                NULL,
+                0);
 
         memcpy(&request_characters, request, sizeof(request_characters));
         request_characters.packet = request_characters_packet;
@@ -81,13 +95,13 @@ static void restart(request_t *request, character_t *character)
  */
 static void move(request_t *request, character_t *character)
 {
-        client_request_move_t parsed_request = { 0 };
+        client_request_move_t parsed_request                         = { 0 };
         packet response[PACKET_SAFE_FULL_SIZE(server_packet_move_t)] = { 0 };
 
-        size_t max_close_characters = 0;
-        size_t close_characters_count = 0;
-        character_t *close_characters = NULL;
-        character_t *close_character = NULL;
+        size_t       max_close_characters   = 0;
+        size_t       close_characters_count = 0;
+        character_t *close_characters       = NULL;
+        character_t *close_character        = NULL;
 
         assert_valid_request(request);
         assert(character);
@@ -95,22 +109,28 @@ static void move(request_t *request, character_t *character)
         client_request_move(&parsed_request, request->packet);
 
         max_close_characters = 10;
-        close_characters = request->host->alloc_memory(
+        close_characters     = request->host->alloc_memory(
                 sizeof(*close_characters) * max_close_characters);
         close_characters_count = storage_character_close_to(
-                &request->storage->character_storage, close_characters,
-                max_close_characters, character, 1200);
+                &request->storage->character_storage,
+                close_characters,
+                max_close_characters,
+                character,
+                1200);
 
         for (size_t i = 0; i < close_characters_count; i++) {
                 close_character = &close_characters[i];
 
-                server_packet_move(response, character,
-                                   &parsed_request.position);
-                session_encrypt_packet(close_character->session, response,
-                                       response,
-                                       (size_t) packet_get_size(response));
+                server_packet_move(
+                        response, character, &parsed_request.position);
+                session_encrypt_packet(
+                        close_character->session,
+                        response,
+                        response,
+                        (size_t) packet_get_size(response));
                 request->host->send_response(
-                        close_character->session->socket, response,
+                        close_character->session->socket,
+                        response,
                         (size_t) packet_get_size(response));
         }
 
@@ -127,22 +147,74 @@ static void validate_position(request_t *request, character_t *character)
 {
         packet response[PACKET_SAFE_FULL_SIZE(
                 server_packet_validate_position_t)] = { 0 };
-        client_request_validate_position_t parsed_request = { 0 };
+
+        client_request_validate_position_t parsed_request     = { 0 };
+        position_t                         validated_position = { 0 };
 
         assert_valid_request(request);
         assert(character);
 
         client_request_validate_position(&parsed_request, request->packet);
 
-        character_validate_position(character, &parsed_request.position,
-                                    parsed_request.heading);
+        character_validate_position(
+                character,
+                &validated_position,
+                &parsed_request.position,
+                parsed_request.heading);
 
-        server_packet_validate_position(response, character,
-                                        parsed_request.heading);
-        session_encrypt_packet(request->session, response, response,
-                               (size_t) packet_get_size(response));
-        request->host->send_response(request->session->socket, response,
-                                     (size_t) packet_get_size(response));
+        server_packet_validate_position(
+                response,
+                character,
+                &validated_position,
+                parsed_request.heading);
+        session_encrypt_packet(
+                request->session,
+                response,
+                response,
+                (size_t) packet_get_size(response));
+        request->host->send_response(
+                request->session->socket,
+                response,
+                (size_t) packet_get_size(response));
+}
+
+/*
+ * Test code, remove!
+ */
+static void spawn_random_orc(request_t *request, position_t *position)
+{
+        size_t  packet_safe_size = 0;
+        packet *npc_info_packet  = NULL;
+
+        character_t orc = { 0 };
+
+        assert_valid_request(request);
+        assert(position);
+
+        packet_safe_size =
+                PACKET_SAFE_FULL_SIZE(sizeof(server_packet_npc_info_t));
+        npc_info_packet = request->host->alloc_memory(packet_safe_size);
+
+        orc.id = rand();
+        orc.x  = position->x;
+        orc.y  = position->y;
+        orc.z  = position->z;
+
+        strcat(orc.name, "Orc");
+        strcat(orc.title, "Archer");
+
+        server_packet_npc_info(npc_info_packet, &orc);
+        session_encrypt_packet(
+                request->session,
+                npc_info_packet,
+                npc_info_packet,
+                (size_t) packet_get_size(npc_info_packet));
+        request->host->send_response(
+                request->session->socket,
+                npc_info_packet,
+                (size_t) packet_get_size(npc_info_packet));
+
+        request->host->dealloc_memory(npc_info_packet);
 }
 
 /**
@@ -152,42 +224,65 @@ static void validate_position(request_t *request, character_t *character)
 static void say(request_t *request, character_t *character)
 {
         packet response[PACKET_SAFE_FULL_SIZE(server_packet_say_t)] = { 0 };
-        client_request_say_t say_request = { 0 };
-        size_t close_characters_count = 0;
-        size_t max_close_characters = 0;
-        character_t *close_characters = NULL;
-        character_t *close_character = NULL;
+        client_request_say_t say_request                            = { 0 };
+
+        size_t       close_characters_count = 0;
+        size_t       max_close_characters   = 0;
+        character_t *close_characters       = NULL;
+        character_t *close_character        = NULL;
+
+        position_t orc_position = { 0 };
 
         // Hardcoded, not sure if this is the correct maximum
-        char raw_message[128] = { 0 };
-        size_t message_len = 0;
+        char   raw_message[128] = { 0 };
+        size_t message_len      = 0;
 
         assert_valid_request(request);
         assert(character);
 
         max_close_characters = 10;
-        close_characters = request->host->alloc_memory(
+        close_characters     = request->host->alloc_memory(
                 sizeof(*close_characters) * max_close_characters);
         close_characters_count = storage_character_close_to(
-                &request->storage->character_storage, close_characters,
-                max_close_characters, character, CONFIG_SHOUT_RANGE);
+                &request->storage->character_storage,
+                close_characters,
+                max_close_characters,
+                character,
+                CONFIG_SHOUT_RANGE);
 
         client_request_say(&say_request, request->packet);
-        l2_string_to_char(raw_message, say_request.message,
-                          sizeof(raw_message));
+        l2_string_to_char(
+                raw_message, say_request.message, sizeof(raw_message));
         message_len = strlen(raw_message) + 1;
 
         for (size_t i = 0; i < close_characters_count; i++) {
                 close_character = &close_characters[i];
 
-                server_packet_say(response, character, say_request.type,
-                                  raw_message, message_len);
-                session_encrypt_packet(close_character->session, response,
-                                       response,
-                                       (size_t) packet_get_size(response));
-                request->host->send_response(
-                        close_character->session->socket, response,
+                server_packet_say(
+                        response,
+                        character,
+                        say_request.type,
+                        raw_message,
+                        message_len);
+                session_encrypt_packet(
+                        close_character->session,
+                        response,
+                        response,
                         (size_t) packet_get_size(response));
+                request->host->send_response(
+                        close_character->session->socket,
+                        response,
+                        (size_t) packet_get_size(response));
+        }
+
+        /*
+         * Test code, remove!
+         */
+        if (strcmp("orc", raw_message) == 0) {
+                orc_position.x = character->x;
+                orc_position.y = character->y;
+                orc_position.z = character->z;
+                spawn_random_orc(request, &orc_position);
         }
 
         request->host->dealloc_memory(close_characters);
@@ -205,10 +300,15 @@ static void show_map(request_t *request, character_t *character)
 
         // Map id hardcoded just for the time being.
         server_packet_show_map(response, 1665);
-        session_encrypt_packet(request->session, response, response,
-                               (size_t) packet_get_size(response));
-        request->host->send_response(request->session->socket, response,
-                                     (size_t) packet_get_size(response));
+        session_encrypt_packet(
+                request->session,
+                response,
+                response,
+                (size_t) packet_get_size(response));
+        request->host->send_response(
+                request->session->socket,
+                response,
+                (size_t) packet_get_size(response));
 }
 
 void state_machine_character_idle(request_t *request, character_t *character)

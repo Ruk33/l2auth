@@ -14,6 +14,6 @@ struct ServerPacketValidatePosition {
 
 typedef struct ServerPacketValidatePosition server_packet_validate_position_t;
 
-void server_packet_validate_position(packet *dest, character_t *character, int heading);
+void server_packet_validate_position(packet *dest, character_t *character, position_t *position, int heading);
 
 #endif

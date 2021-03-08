@@ -47,7 +47,6 @@ static void handle_work_when_required(void)
 
                 pthread_mutex_unlock(&thread_mutex);
 
-                delta = (double) ((end - start) / CLOCKS_PER_SEC);
                 start = clock();
 
                 switch (work->type) {
@@ -64,12 +63,14 @@ static void handle_work_when_required(void)
                                 &memory_free,
                                 &socket_send,
                                 &socket_close);
+                        memory_free(work->buf);
                         break;
                 default:
                         break;
                 }
 
-                end = clock();
+                end   = clock();
+                delta = (double) ((end - start) / CLOCKS_PER_SEC);
 
                 memory_free(work);
         }
