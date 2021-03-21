@@ -5,23 +5,21 @@
 #include <storage/session.h>
 #include <storage/character.h>
 
-struct ClientRequestCreateChar {
+typedef struct {
         l2_string_t *name;
-        int race;
-        int sex;
-        int _class;
-        int _int;
-        int str;
-        int con;
-        int men;
-        int dex;
-        int wit;
-        int hair_style;
-        int hair_color;
-        int face;
-};
-
-typedef struct ClientRequestCreateChar client_request_create_char_t;
+        int          race;
+        int          sex;
+        int          _class;
+        int          _int;
+        int          str;
+        int          con;
+        int          men;
+        int          dex;
+        int          wit;
+        int          hair_style;
+        int          hair_color;
+        int          face;
+} client_request_create_char_t;
 
 /**
  * Client performs this request when
@@ -29,6 +27,8 @@ typedef struct ClientRequestCreateChar client_request_create_char_t;
  * The new character information will
  * be sent, meaning, race, name, etc.
  */
-void client_request_create_char(client_request_create_char_t *dest, packet *request);
+void client_request_create_char(
+        client_request_create_char_t *dest,
+        packet *                      request);
 
 #endif

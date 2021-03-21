@@ -2,14 +2,16 @@
 #include <character.h>
 #include "auth_login.h"
 
-static byte_t *write_char_to_buf(byte_t *p, struct ServerPacketAuthLoginCharacter *character)
+static byte_t *
+write_char_to_buf(byte_t *p, server_packet_auth_login_character_t *character)
 {
         assert(p);
         assert(character);
 
         BYTE_WRITE(p, character->name, l2_string_bytes(character->name));
         BYTE_WRITE_VAL(p, character->id);
-        BYTE_WRITE(p, character->name_copy, l2_string_bytes(character->name_copy));
+        BYTE_WRITE(
+                p, character->name_copy, l2_string_bytes(character->name_copy));
         BYTE_WRITE_VAL(p, character->playOK1);
         BYTE_WRITE_VAL(p, character->clan_id);
         BYTE_WRITE_VAL(p, character->empty[0]);
@@ -78,17 +80,17 @@ static byte_t *write_char_to_buf(byte_t *p, struct ServerPacketAuthLoginCharacte
 
 void server_packet_auth_login(packet *dest, int playOK1, struct List *characters)
 {
-        assert(dest);
-
         packet_type type = 0x13;
 
-        struct ListEntry *iterator = NULL;
-        character_t *character = NULL;
-        int character_count = 0;
+        struct ListEntry *iterator        = NULL;
+        character_t *     character       = NULL;
+        int               character_count = 0;
 
-        server_packet_auth_login_t auth_login_packet = {0};
-        byte_t buf[sizeof(server_packet_auth_login_t)] = {0};
-        byte_t *p = buf;
+        server_packet_auth_login_t auth_login_packet    = { 0 };
+        byte_t  buf[sizeof(server_packet_auth_login_t)] = { 0 };
+        byte_t *p                                       = buf;
+
+        assert(dest);
 
         if (characters) {
                 iterator = list_get_iterator(characters);
@@ -112,38 +114,36 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
                 l2_string_from_char(
                         auth_login_packet.characters[i].name,
                         character->name,
-                        strlen(character->name) + 1
-                );
+                        strlen(character->name) + 1);
                 l2_string_from_char(
                         auth_login_packet.characters[i].name_copy,
                         character->name,
-                        strlen(character->name) + 1
-                );
+                        strlen(character->name) + 1);
 
-                auth_login_packet.characters[i].id = character->id;
-                auth_login_packet.characters[i].playOK1 = playOK1;
-                auth_login_packet.characters[i].active = character->active;
-                auth_login_packet.characters[i].level = character->level;
-                auth_login_packet.characters[i].hp = character->hp;
-                auth_login_packet.characters[i].mp = character->mp;
-                auth_login_packet.characters[i].max_hp = character->max_hp;
-                auth_login_packet.characters[i].max_mp = character->max_mp;
-                auth_login_packet.characters[i].clan_id = character->clan_id;
-                auth_login_packet.characters[i].sex = character->sex;
-                auth_login_packet.characters[i].race_id = character->race_id;
+                auth_login_packet.characters[i].id       = character->id;
+                auth_login_packet.characters[i].playOK1  = playOK1;
+                auth_login_packet.characters[i].active   = character->active;
+                auth_login_packet.characters[i].level    = character->level;
+                auth_login_packet.characters[i].hp       = character->hp;
+                auth_login_packet.characters[i].mp       = character->mp;
+                auth_login_packet.characters[i].max_hp   = character->max_hp;
+                auth_login_packet.characters[i].max_mp   = character->max_mp;
+                auth_login_packet.characters[i].clan_id  = character->clan_id;
+                auth_login_packet.characters[i].sex      = character->sex;
+                auth_login_packet.characters[i].race_id  = character->race_id;
                 auth_login_packet.characters[i].class_id = character->class_id;
-                auth_login_packet.characters[i].x = character->x;
-                auth_login_packet.characters[i].y = character->y;
-                auth_login_packet.characters[i].z = character->z;
-                auth_login_packet.characters[i].sp = character->sp;
-                auth_login_packet.characters[i].exp = character->exp;
-                auth_login_packet.characters[i].level = character->level;
-                auth_login_packet.characters[i].karma = character->karma;
+                auth_login_packet.characters[i].x        = character->x;
+                auth_login_packet.characters[i].y        = character->y;
+                auth_login_packet.characters[i].z        = character->z;
+                auth_login_packet.characters[i].sp       = character->sp;
+                auth_login_packet.characters[i].exp      = character->exp;
+                auth_login_packet.characters[i].level    = character->level;
+                auth_login_packet.characters[i].karma    = character->karma;
 
                 p = write_char_to_buf(p, &auth_login_packet.characters[i]);
 
                 iterator = list_get_next(iterator);
         }
 
-        packet_build(dest, type, buf, (size_t) (p - buf));
+        packet_build(dest, type, buf, (size_t)(p - buf));
 }

@@ -5,11 +5,15 @@
 #include <character.h>
 #include "select_character.h"
 
-void client_request_select_character(client_request_select_character_t *dest, packet *request)
+void client_request_select_character(
+        client_request_select_character_t *dest,
+        packet *                           request)
 {
+        byte_t *p = NULL;
+
         assert(dest);
         assert(request);
 
-        byte_t *p = packet_body(request);
+        p = packet_body(request);
         BYTE_READ_VAL(dest->index, p);
 }

@@ -7,7 +7,9 @@
 #include <character.h>
 #include "create_char.h"
 
-void client_request_create_char(client_request_create_char_t *dest, packet *request)
+void client_request_create_char(
+        client_request_create_char_t *dest,
+        packet *                      request)
 {
         byte_t *p = NULL;
 

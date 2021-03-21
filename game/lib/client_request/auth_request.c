@@ -3,10 +3,10 @@
 
 void client_request_auth_request(client_request_auth_t *dest, packet *request)
 {
+        byte_t *p = NULL;
+
         assert(dest);
         assert(request);
-
-        byte_t *p = NULL;
 
         p = packet_body(request);
 

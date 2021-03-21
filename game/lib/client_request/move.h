@@ -5,12 +5,12 @@
 #include <session.h>
 #include <character.h>
 
-struct ClientRequestMove {
+typedef struct {
         vec3_t position;
-};
-
-typedef struct ClientRequestMove client_request_move_t;
+} client_request_move_t;
 
 void client_request_move(client_request_move_t *dest, packet *request);
+
+void client_request_move_as_packet(packet *dest, client_request_move_t *src);
 
 #endif

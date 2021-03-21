@@ -4,7 +4,9 @@
 #include <character.h>
 #include "validate_position.h"
 
-void client_request_validate_position(client_request_validate_position_t *dest, packet *request)
+void client_request_validate_position(
+        client_request_validate_position_t *dest,
+        packet *                            request)
 {
         byte_t *p = NULL;
 

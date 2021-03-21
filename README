@@ -45,7 +45,6 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
 - [ ] Correctly handle big/little-endian
-- [ ] Use light/green threads to handle each connection
 - [x] Display terms of service view
 - [x] Display server list
 - [x] Allow to enter game server
@@ -56,6 +55,10 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Correctly handle multiple packets at once
 - [x] See other players
 - [x] Spawn random orc (see docs/screenshot/orc.jpg)
+- [ ] Clean up hardcoded values
+- [ ] Replace in memory db for sqlite
+- [ ] Basic AI (walk)
+- [ ] Queue packets in work queue
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way

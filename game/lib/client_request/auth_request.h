@@ -5,15 +5,13 @@
 #include <storage/session.h>
 #include <storage/character.h>
 
-struct ClientRequestAuth {
+typedef struct {
         l2_string_t *username;
-        int playOK1;
-        int playOK2;
-        int loginOK1;
-        int loginOK2;
-};
-
-typedef struct ClientRequestAuth client_request_auth_t;
+        int          playOK1;
+        int          playOK2;
+        int          loginOK1;
+        int          loginOK2;
+} client_request_auth_t;
 
 /**
  * Client makes this request when accessing a game server.

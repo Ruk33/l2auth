@@ -5,13 +5,13 @@
 #include <session.h>
 #include <character.h>
 
-struct ClientRequestValidatePosition {
+typedef struct {
         position_t position;
-        int heading;
-};
+        int        heading;
+} client_request_validate_position_t;
 
-typedef struct ClientRequestValidatePosition client_request_validate_position_t;
-
-void client_request_validate_position(client_request_validate_position_t *dest, packet *request);
+void client_request_validate_position(
+        client_request_validate_position_t *dest,
+        packet *                            request);
 
 #endif
