@@ -9,7 +9,11 @@ void session_encrypt_connection(session_t *session)
         session->conn_encrypted = 1;
 }
 
-void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size)
+void session_encrypt_packet(
+        session_t *session,
+        byte_t *   dest,
+        packet *   src,
+        size_t     src_size)
 {
         assert(session);
         assert(dest);
@@ -18,7 +22,11 @@ void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_
         encrypt_packet(dest, src, src_size, session->encrypt_key);
 }
 
-void session_decrypt_packet(session_t *session, packet *dest, byte_t *src, size_t src_size)
+void session_decrypt_packet(
+        session_t *session,
+        packet *   dest,
+        byte_t *   src,
+        size_t     src_size)
 {
         assert(session);
         assert(dest);
@@ -33,7 +41,7 @@ void session_decrypt_packet(session_t *session, packet *dest, byte_t *src, size_
         decrypt_packet(dest, src, src_size, session->decrypt_key);
 }
 
-void session_update_state(session_t *session, enum SessionState new_state)
+void session_update_state(session_t *session, session_state_t new_state)
 {
         assert(session);
         session->state = new_state;
@@ -41,13 +49,12 @@ void session_update_state(session_t *session, enum SessionState new_state)
 
 void session_update(
         session_t *session,
-        char *username,
-        size_t username_size,
-        int loginOK1,
-        int loginOK2,
-        int playOK1,
-        int playOK2
-)
+        char *     username,
+        size_t     username_size,
+        int        loginOK1,
+        int        loginOK2,
+        int        playOK1,
+        int        playOK2)
 {
         assert(session);
         assert(username);
@@ -58,8 +65,8 @@ void session_update(
 
         session->loginOK1 = loginOK1;
         session->loginOK2 = loginOK2;
-        session->playOK1 = playOK1;
-        session->playOK2 = playOK2;
+        session->playOK1  = playOK1;
+        session->playOK2  = playOK2;
 }
 
 void session_print(session_t *session)

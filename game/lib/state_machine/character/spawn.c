@@ -1,7 +1,8 @@
 #include <headers.h>
 #include <request.h>
 #include <character.h>
-#include <storage/character.h>
+#include <util/session_crypt.h>
+#include <db/character.h>
 #include <server_packet/char_info.h>
 #include <server_packet/npc_info.h>
 #include "spawn.h"
@@ -28,8 +29,9 @@ static void spawn_random_orc(request_t *request)
         strcat(orc.title, "Archer");
 
         server_packet_npc_info(npc_info_packet, &orc);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 npc_info_packet,
                 npc_info_packet,
                 (size_t) packet_get_size(npc_info_packet));
@@ -50,6 +52,8 @@ static void spawn_character(request_t *request, character_t *spawned_character)
         character_t *close_characters       = NULL;
         character_t *close_character        = NULL;
 
+        position_t spawned_character_position = { 0 };
+
         assert_valid_request(request);
         assert(spawned_character);
 
@@ -58,11 +62,14 @@ static void spawn_character(request_t *request, character_t *spawned_character)
         max_close_characters = 10;
         close_characters     = request->host->alloc_memory(
                 sizeof(*close_characters) * max_close_characters);
-        close_characters_count = storage_character_close_to(
-                &request->storage->character_storage,
+        spawned_character_position.x = spawned_character->x;
+        spawned_character_position.y = spawned_character->y;
+        spawned_character_position.z = spawned_character->z;
+        close_characters_count       = db_character_in_radius(
+                request->storage,
                 close_characters,
                 max_close_characters,
-                spawned_character,
+                &spawned_character_position,
                 1200);
 
         printf("Player spawned\n");
@@ -82,8 +89,9 @@ static void spawn_character(request_t *request, character_t *spawned_character)
                  * Notify close character of the player being spawn.
                  */
                 server_packet_char_info(char_info_packet, spawned_character, 0);
-                session_encrypt_packet(
-                        close_character->session,
+                util_session_encrypt_packet(
+                        request->storage,
+                        close_character->session->socket,
                         char_info_packet,
                         char_info_packet,
                         (size_t) packet_get_size(char_info_packet));

@@ -22,4 +22,9 @@ void db_session_remove(db_conn_t *db, int session_id);
  */
 int db_session_get(db_conn_t *db, session_t *dest, int session_id);
 
+/**
+ * Update session with src values.
+ */
+void db_session_update(db_conn_t *db, int session_id, session_t *src);
+
 #endif

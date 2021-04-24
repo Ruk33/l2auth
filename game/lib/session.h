@@ -3,7 +3,7 @@
 
 #include "headers.h"
 
-enum SessionState {
+typedef enum {
         /*
          * Initial state. When the user tries to
          * connect to the game server the first
@@ -37,26 +37,22 @@ enum SessionState {
          * The user enters the world with a character.
          */
         IN_WORLD,
-};
+} session_state_t;
 
-typedef enum SessionState session_state_t;
-
-struct Session {
-        int socket;
-        byte_t encrypt_key[8];
-        byte_t decrypt_key[8];
-        int playOK1;
-        int playOK2;
-        int loginOK1;
-        int loginOK2;
-        char username[16];
-        int conn_encrypted;
-        unsigned int selected_character_index;
-        int in_world;
+typedef struct {
+        int             socket;
+        byte_t          encrypt_key[8];
+        byte_t          decrypt_key[8];
+        int             playOK1;
+        int             playOK2;
+        int             loginOK1;
+        int             loginOK2;
+        char            username[16];
+        int             conn_encrypted;
+        unsigned int    selected_character_index;
+        int             in_world;
         session_state_t state;
-};
-
-typedef struct Session session_t;
+} session_t;
 
 /**
  * Mark the connection as encrypted.
@@ -75,7 +71,11 @@ void session_encrypt_connection(session_t *session);
  * gets updated on every encrypt, the
  * result won't work.
  */
-void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_t src_size);
+void session_encrypt_packet(
+        session_t *session,
+        byte_t *   dest,
+        packet *   src,
+        size_t     src_size);
 
 /**
  * Decrypt packet only if connection
@@ -88,7 +88,11 @@ void session_encrypt_packet(session_t *session, byte_t *dest, packet *src, size_
  * decrypted. It's the same as encryption.
  * The key always gets updated.
  */
-void session_decrypt_packet(session_t *session, packet *dest, byte_t *src, size_t src_size);
+void session_decrypt_packet(
+        session_t *session,
+        packet *   dest,
+        byte_t *   src,
+        size_t     src_size);
 
 /**
  * Update session's state.
@@ -98,7 +102,14 @@ void session_update_state(session_t *session, session_state_t new_state);
 /**
  * Update session.
  */
-void session_update(session_t *session, char *username, size_t username_size, int loginOK1, int loginOK2, int playOK1, int playOK2);
+void session_update(
+        session_t *session,
+        char *     username,
+        size_t     username_size,
+        int        loginOK1,
+        int        loginOK2,
+        int        playOK1,
+        int        playOK2);
 
 /**
  * Print session to std out.

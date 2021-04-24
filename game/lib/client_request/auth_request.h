@@ -2,8 +2,6 @@
 #define LIB_CLIENT_REQUEST_AUTH_REQUEST_H
 
 #include <headers.h>
-#include <storage/session.h>
-#include <storage/character.h>
 
 typedef struct {
         l2_string_t *username;

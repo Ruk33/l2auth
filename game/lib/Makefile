@@ -1,5 +1,5 @@
 CC	= gcc
-CLIBS	= -ldatastructures -lm
+CLIBS	= -ldatastructures -lm -lsqlite3
 CFLAGS	=			\
 	-std=c99		\
 	-Wall			\
@@ -27,16 +27,17 @@ CFLAGS	=			\
 # Adding a new driver should be as easy as
 # copying the "memory" folder and adapting
 # it to the desired driver (ie mysql, psql, etc.)
-STORAGE	= memory
+STORAGE	= sqlite
 
 SGE_SRC	=					\
-	$(wildcard storage/$(STORAGE)/*.c)
+	$(wildcard db/$(STORAGE)/*.c)
 
 SOURCES	=					\
 	$(wildcard client_request/*.c)		\
 	$(wildcard server_packet/*.c)		\
 	$(wildcard state_machine/character/*.c)	\
 	$(wildcard state_machine/*.c)		\
+	$(wildcard util/*.c)			\
 	$(wildcard *.c)
 
 SGE_OBJS= $(SGE_SRC:.c=.o)
@@ -50,8 +51,8 @@ $(OBJS) : %.o : %.c %.h
 	-$(CC) $(CFLAGS) -fPIC -c $< -o $@
 	@echo ""
 
-$(SGE_OBJS) : storage/$(STORAGE)/%.o : storage/$(STORAGE)/%.c storage/%.h
-	@echo "🔧 Storage strategy file $< needs to be rebuilt"
+$(SGE_OBJS) : db/$(STORAGE)/%.o : db/$(STORAGE)/%.c db/%.h
+	@echo "🔧 DB strategy file $< needs to be rebuilt"
 	-$(CC) $(CFLAGS) -fPIC -c $< -o $@
 	@echo ""
 

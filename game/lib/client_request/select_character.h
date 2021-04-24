@@ -3,7 +3,6 @@
 
 #include <headers.h>
 #include <session.h>
-#include <storage/character.h>
 
 typedef struct {
         unsigned int index;

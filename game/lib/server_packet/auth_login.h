@@ -2,6 +2,7 @@
 #define LIB_SERVER_PACKET_AUTH_LOGIN_H
 
 #include <headers.h>
+#include <character.h>
 
 typedef struct {
         int         empty[10];
@@ -76,6 +77,7 @@ typedef struct {
 void server_packet_auth_login(
         packet *     dest,
         int          playOK1,
-        struct List *characters);
+        character_t *characters,
+        size_t       character_count);
 
 #endif

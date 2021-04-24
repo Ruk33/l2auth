@@ -1,9 +1,10 @@
 #include <request.h>
+#include <util/session_crypt.h>
 #include <client_request/move.h>
 #include <client_request/validate_position.h>
 #include <client_request/say.h>
 #include <client_packet/type.h>
-#include <storage/character.h>
+#include <db/character.h>
 #include <server_packet/say.h>
 #include <server_packet/logout.h>
 #include <server_packet/restart.h>
@@ -27,8 +28,9 @@ static void logout(request_t *request, character_t *character)
         assert(character);
 
         server_packet_logout(response);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
@@ -61,8 +63,9 @@ static void restart(request_t *request, character_t *character)
         assert(character);
 
         server_packet_restart(response);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
@@ -102,6 +105,7 @@ static void move(request_t *request, character_t *character)
         size_t       close_characters_count = 0;
         character_t *close_characters       = NULL;
         character_t *close_character        = NULL;
+        position_t   character_position     = { 0 };
 
         assert_valid_request(request);
         assert(character);
@@ -111,11 +115,14 @@ static void move(request_t *request, character_t *character)
         max_close_characters = 10;
         close_characters     = request->host->alloc_memory(
                 sizeof(*close_characters) * max_close_characters);
-        close_characters_count = storage_character_close_to(
-                &request->storage->character_storage,
+        character_position.x   = character->x;
+        character_position.y   = character->y;
+        character_position.z   = character->z;
+        close_characters_count = db_character_in_radius(
+                request->storage,
                 close_characters,
                 max_close_characters,
-                character,
+                &character_position,
                 1200);
 
         for (size_t i = 0; i < close_characters_count; i++) {
@@ -123,8 +130,9 @@ static void move(request_t *request, character_t *character)
 
                 server_packet_move(
                         response, character, &parsed_request.position);
-                session_encrypt_packet(
-                        close_character->session,
+                util_session_encrypt_packet(
+                        request->storage,
+                        close_character->session->socket,
                         response,
                         response,
                         (size_t) packet_get_size(response));
@@ -167,8 +175,9 @@ static void validate_position(request_t *request, character_t *character)
                 character,
                 &validated_position,
                 parsed_request.heading);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
@@ -204,8 +213,9 @@ static void spawn_random_orc(request_t *request, position_t *position)
         strcat(orc.title, "Archer");
 
         server_packet_npc_info(npc_info_packet, &orc);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 npc_info_packet,
                 npc_info_packet,
                 (size_t) packet_get_size(npc_info_packet));
@@ -231,7 +241,8 @@ static void say(request_t *request, character_t *character)
         character_t *close_characters       = NULL;
         character_t *close_character        = NULL;
 
-        position_t orc_position = { 0 };
+        position_t orc_position       = { 0 };
+        position_t character_position = { 0 };
 
         // Hardcoded, not sure if this is the correct maximum
         char   raw_message[128] = { 0 };
@@ -243,11 +254,14 @@ static void say(request_t *request, character_t *character)
         max_close_characters = 10;
         close_characters     = request->host->alloc_memory(
                 sizeof(*close_characters) * max_close_characters);
-        close_characters_count = storage_character_close_to(
-                &request->storage->character_storage,
+        character_position.x   = character->x;
+        character_position.y   = character->y;
+        character_position.z   = character->z;
+        close_characters_count = db_character_in_radius(
+                request->storage,
                 close_characters,
                 max_close_characters,
-                character,
+                &character_position,
                 CONFIG_SHOUT_RANGE);
 
         client_request_say(&say_request, request->packet);
@@ -264,8 +278,9 @@ static void say(request_t *request, character_t *character)
                         say_request.type,
                         raw_message,
                         message_len);
-                session_encrypt_packet(
-                        close_character->session,
+                util_session_encrypt_packet(
+                        request->storage,
+                        close_character->session->socket,
                         response,
                         response,
                         (size_t) packet_get_size(response));
@@ -300,8 +315,9 @@ static void show_map(request_t *request, character_t *character)
 
         // Map id hardcoded just for the time being.
         server_packet_show_map(response, 1665);
-        session_encrypt_packet(
-                request->session,
+        util_session_encrypt_packet(
+                request->storage,
+                request->session->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));

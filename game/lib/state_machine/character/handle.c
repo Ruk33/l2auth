@@ -1,5 +1,6 @@
 #include <headers.h>
 #include <request.h>
+#include <character.h>
 #include "spawn.h"
 #include "idle.h"
 #include "handle.h"
@@ -10,7 +11,10 @@ void state_machine_character_handle(request_t *request)
 
         character_t *character = NULL;
 
-        character = storage_character_active_from_session(&request->storage->character_storage, request->session);
+        /**
+         * TODO: Get character from session.
+         */
+        character = NULL;
 
         if (!character) {
                 printf("In world but no character? Ignoring request.\n");

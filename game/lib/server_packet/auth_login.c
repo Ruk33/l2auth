@@ -78,13 +78,15 @@ write_char_to_buf(byte_t *p, server_packet_auth_login_character_t *character)
         return p;
 }
 
-void server_packet_auth_login(packet *dest, int playOK1, struct List *characters)
+void server_packet_auth_login(
+        packet *     dest,
+        int          playOK1,
+        character_t *characters,
+        size_t       character_count)
 {
         packet_type type = 0x13;
 
-        struct ListEntry *iterator        = NULL;
-        character_t *     character       = NULL;
-        int               character_count = 0;
+        character_t *character = NULL;
 
         server_packet_auth_login_t auth_login_packet    = { 0 };
         byte_t  buf[sizeof(server_packet_auth_login_t)] = { 0 };
@@ -92,24 +94,11 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
 
         assert(dest);
 
-        if (characters) {
-                iterator = list_get_iterator(characters);
-        }
-
-        while (iterator) {
-                character_count += 1;
-                iterator = list_get_next(iterator);
-        }
-
-        auth_login_packet.character_count = character_count;
+        auth_login_packet.character_count = (int) character_count;
         BYTE_WRITE_VAL(p, auth_login_packet.character_count);
 
-        if (characters) {
-                iterator = list_get_iterator(characters);
-        }
-
-        for (int i = 0; i < character_count; i++) {
-                character = list_get_value(iterator);
+        for (size_t i = 0; i < character_count; i++) {
+                character = &characters[i];
 
                 l2_string_from_char(
                         auth_login_packet.characters[i].name,
@@ -141,8 +130,6 @@ void server_packet_auth_login(packet *dest, int playOK1, struct List *characters
                 auth_login_packet.characters[i].karma    = character->karma;
 
                 p = write_char_to_buf(p, &auth_login_packet.characters[i]);
-
-                iterator = list_get_next(iterator);
         }
 
         packet_build(dest, type, buf, (size_t)(p - buf));

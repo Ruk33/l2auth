@@ -1,102 +1,178 @@
 #include <headers.h>
-#include <session.h>
-#include <storage/session.h>
+#include <sqlite3.h>
+#include "helper.h"
+#include "../conn.h"
+#include "../session.h"
 
-struct StorageSessionMemory {
-        struct HashMap *sessions_by_id;
-        struct List *sessions;
-};
+/**
+ * NOTE: Need a way to store logs in case anything goes wrong.
+ * NOTE: Instead of accepting just the db_conn_t, it could receive
+ * the entire server struct, where not only it can access the db
+ * connection but also a handler for logs
+ */
 
-typedef struct StorageSessionMemory storage_handler_t;
-
-void storage_session_init(storage_session_t *manager, host_alloc alloc_memory, host_dealloc dealloc_memory)
+void db_session_add(db_conn_t *c, int session_id, session_t *session)
 {
-        assert(manager);
-        assert(alloc_memory);
-        assert(dealloc_memory);
+        db_conn_t *db = NULL;
 
-        storage_handler_t *handler = NULL;
+        char query[] = "insert into sessions ("
+                       "id, username, encrypt_key, decrypt_key,"
+                       "playOK1, playOK2, loginOK1, loginOK2,"
+                       "char_index, encrypted, state "
+                       ") values ("
+                       ":id, :username, :encrypt_key, :decrypt_key,"
+                       ":playOK1, :playOK2, :loginOK1, :loginOK2,"
+                       ":char_index, :encrypted, :state"
+                       ")";
 
-        handler = alloc_memory(sizeof(*handler));
-        handler->sessions_by_id = hash_map_create(alloc_memory, dealloc_memory, 50);
-        handler->sessions = list_create(alloc_memory, dealloc_memory);
+        sqlite3_stmt *stmt = NULL;
 
-        manager->alloc_memory = alloc_memory;
-        manager->dealloc_memory = dealloc_memory;
-        manager->handler = handler;
-}
+        int selected_char = 0;
 
-void storage_session_add(storage_session_t *manager, int session_id, session_t *session)
-{
-        assert(manager);
-        assert(manager->alloc_memory);
-        assert(manager->handler);
-        assert(session_id > 0);
+        assert(c);
         assert(session);
 
-        storage_handler_t *handler = NULL;
-        session_t *session_copy = NULL;
-        char key[8] = {0};
+        selected_char = (int) session->selected_character_index;
 
-        handler = manager->handler;
-        session_copy = manager->alloc_memory(sizeof(*session_copy));
+        db_conn_open(&db);
 
-        snprintf(key, sizeof(key), "%d", session_id);
-        memcpy(session_copy, session, sizeof(*session_copy));
-        hash_map_set(handler->sessions_by_id, key, strlen(key) + 1, session_copy);
-        list_add_last(&handler->sessions, session_copy);
+        sqlite3_prepare_v2(db, query, sizeof(query) - 1, &stmt, NULL);
+
+        /**
+         * NOTE: Not sure if all this information needs
+         * to be saved (ie playOK & loginOK).
+         */
+        helper_bind_int(stmt, ":id", session_id);
+        helper_bind_text(stmt, ":username", session->username);
+        helper_bind_blob_arr(stmt, ":encrypt_key", session->encrypt_key);
+        helper_bind_blob_arr(stmt, ":decrypt_key", session->decrypt_key);
+        helper_bind_int(stmt, ":playOK1", session->playOK1);
+        helper_bind_int(stmt, ":playOK2", session->playOK2);
+        helper_bind_int(stmt, ":loginOK1", session->loginOK1);
+        helper_bind_int(stmt, ":loginOK2", session->loginOK2);
+        helper_bind_int(stmt, ":char_index", selected_char);
+        helper_bind_int(stmt, ":encrypted", session->conn_encrypted);
+        helper_bind_int(stmt, ":state", session->state);
+
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        db_conn_close(db);
 }
 
-void storage_session_remove(storage_session_t *manager, int session_id)
+void db_session_remove(db_conn_t *c, int session_id)
 {
-        assert(manager);
-        assert(manager->handler);
-        assert(session_id > 0);
+        db_conn_t *db = NULL;
 
-        storage_handler_t *handler = NULL;
-        session_t *session = NULL;
-        struct ListEntry *entry = NULL;
-        char key[8] = {0};
+        char *query_fmt = "delete from sessions where id = %d limit 1;";
+        char  query[64] = { 0 };
 
-        handler = manager->handler;
-        session = storage_session_get(manager, session_id);
+        assert(c);
 
-        if (!session) {
-                return;
+        // Note: We may want to use sqlite bind functions instead
+        // of "manually" binding the id to the query
+        // but since it isn't a complex query/value, it should be fine.
+        snprintf(query, sizeof(query), query_fmt, session_id);
+
+        db_conn_open(&db);
+        sqlite3_exec(db, query, NULL, NULL, NULL);
+        db_conn_close(db);
+}
+
+int db_session_get(db_conn_t *c, session_t *dest, int session_id)
+{
+        db_conn_t *db = NULL;
+
+        char query[] = "select "
+                       "id, username, encrypt_key, decrypt_key,"
+                       "playOK1, playOK2, loginOK1, loginOK2,"
+                       "char_index, encrypted, state "
+                       "from sessions where id = :id limit 1;";
+
+        sqlite3_stmt *stmt = NULL;
+
+        assert(c);
+        assert(dest);
+
+        db_conn_open(&db);
+
+        sqlite3_prepare_v2(db, query, sizeof(query) - 1, &stmt, NULL);
+        helper_bind_int(stmt, ":id", session_id);
+
+        if (sqlite3_step(stmt) != SQLITE_ROW) {
+                sqlite3_finalize(stmt);
+                db_conn_close(db);
+                return 0;
         }
 
-        snprintf(key, sizeof(key), "%d", session_id);
-        hash_map_set(handler->sessions_by_id, key, strlen(key) + 1, NULL);
+        /**
+         * TODO: Refactor, don't like these magic index numbers...
+         * TODO: Saving the socket can't be a good idea...
+         */
+        dest->socket = sqlite3_column_int(stmt, 0);
+        strncpy(dest->username,
+                (char *) sqlite3_column_text(stmt, 1),
+                sizeof(dest->username));
+        memcpy(dest->encrypt_key,
+               sqlite3_column_blob(stmt, 2),
+               sizeof(dest->encrypt_key));
+        memcpy(dest->decrypt_key,
+               sqlite3_column_blob(stmt, 3),
+               sizeof(dest->decrypt_key));
+        dest->playOK1  = sqlite3_column_int(stmt, 4);
+        dest->playOK2  = sqlite3_column_int(stmt, 5);
+        dest->loginOK1 = sqlite3_column_int(stmt, 6);
+        dest->loginOK2 = sqlite3_column_int(stmt, 7);
+        dest->selected_character_index =
+                (unsigned int) sqlite3_column_int(stmt, 8);
+        dest->conn_encrypted = sqlite3_column_int(stmt, 9);
+        dest->state          = sqlite3_column_int(stmt, 10);
 
-        entry = storage_session_all(manager);
-        while (list_has_next(entry) && list_get_value(entry) != session) {
-                entry = list_get_next(entry);
-        }
-        list_remove(&handler->sessions, entry);
+        sqlite3_finalize(stmt);
+        db_conn_close(db);
 
-        manager->dealloc_memory(session);
+        return 1;
 }
 
-session_t *storage_session_get(storage_session_t *manager, int session_id)
+void db_session_update(db_conn_t *c, int session_id, session_t *src)
 {
-        assert(manager);
-        assert(manager->handler);
-        assert(session_id > 0);
+        db_conn_t *db = NULL;
 
-        storage_handler_t *handler = NULL;
-        char key[8] = {0};
+        char query[] = "update sessions set "
+                       "username = :username, encrypt_key = :encrypt_key, "
+                       "decrypt_key = :decrypt_key, playOK1 = :playOK1, "
+                       "playOK2 = :playOK2, loginOK1 = :loginOK1, "
+                       "loginOK2 = :loginOK2, char_index = :char_index, "
+                       "encrypted = :encrypted, state = :state "
+                       "where id = :id;";
 
-        handler = manager->handler;
-        snprintf(key, sizeof(key), "%d", session_id);
+        sqlite3_stmt *stmt = NULL;
 
-        return hash_map_get(handler->sessions_by_id, key, strlen(key) + 1);
-}
+        int char_index = 0;
 
-struct ListEntry *storage_session_all(storage_session_t *manager)
-{
-        assert(manager);
-        assert(manager->handler);
-        storage_handler_t *handler = NULL;
-        handler = manager->handler;
-        return list_get_iterator(handler->sessions);
+        assert(c);
+        assert(src);
+
+        char_index = (int) src->selected_character_index;
+
+        db_conn_open(&db);
+
+        sqlite3_prepare(db, query, sizeof(query) - 1, &stmt, NULL);
+
+        helper_bind_text(stmt, ":username", src->username);
+        helper_bind_blob_arr(stmt, ":encrypt_key", src->encrypt_key);
+        helper_bind_blob_arr(stmt, ":decrypt_key", src->decrypt_key);
+        helper_bind_int(stmt, ":playOK1", src->playOK1);
+        helper_bind_int(stmt, ":playOK2", src->playOK2);
+        helper_bind_int(stmt, ":loginOK1", src->loginOK1);
+        helper_bind_int(stmt, ":loginOK2", src->loginOK2);
+        helper_bind_int(stmt, ":char_index", char_index);
+        helper_bind_int(stmt, ":encrypted", src->conn_encrypted);
+        helper_bind_int(stmt, ":state", src->state);
+        helper_bind_int(stmt, ":id", session_id);
+
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        db_conn_close(db);
 }

@@ -1,6 +1,4 @@
 #include <headers.h>
-#include <storage/session.h>
-#include <storage/character.h>
 #include <server_packet/create_char.h>
 #include <server_packet/auth_login.h>
 #include <client_request/auth_request.h>

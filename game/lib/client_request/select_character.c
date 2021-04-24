@@ -1,6 +1,5 @@
 #include <headers.h>
 #include <session.h>
-#include <storage/character.h>
 #include <server_packet/select_character.h>
 #include <character.h>
 #include "select_character.h"

@@ -1,88 +1,48 @@
-#ifndef STORAGE_CHARACTER_H
-#define STORAGE_CHARACTER_H
+#ifndef LIB_DB_CHARACTER_H
+#define LIB_DB_CHARACTER_H
 
 #include <headers.h>
 #include <character.h>
-#include "session.h"
-
-struct StorageCharacter {
-        host_alloc   alloc;
-        host_dealloc dealloc;
-        void *       handler;
-};
-
-typedef struct StorageCharacter storage_character_t;
+#include "conn.h"
 
 /**
- * This function must be called before
- * using any of the others.
+ * These characters represent characters in the world.
+ * Characters can refer to NPC or Players.
+ * This information is meant to be stored temporarily
+ * (think of it as a cache).
  */
-void storage_character_init(
-        storage_character_t *storage,
-        host_alloc           alloc,
-        host_dealloc         dealloc);
+
+typedef unsigned int char_obj_id_t;
 
 /**
- * Add a new character to an account.
+ * Add a character to the world.
+ * Returns its unique identifier.
  */
-void storage_character_add(
-        storage_character_t *storage,
-        char *               account,
-        size_t               account_size,
-        character_t *        character);
+char_obj_id_t db_character_add(db_conn_t *db, character_t *character);
 
 /**
- * Get all the characters from
- * account. If no characters are found,
- * NULL will be returned.
+ * Get character with id and store it in dest.
  */
-struct List *storage_character_get(
-        storage_character_t *storage,
-        char *               account,
-        size_t               account_size);
+void db_character_get(db_conn_t *db, character_t *dest, char_obj_id_t id);
 
 /**
- * Get all characters associated to session.
+ * Remove character from world.
  */
-struct List *storage_character_all_from_session(
-        storage_character_t *storage,
-        session_t *          session);
+void db_character_remove(db_conn_t *db, char_obj_id_t id);
 
 /**
- * Get character from account using index and store it in dest.
- * On success, 1 will be returned.
- * On failure (character not found), 0 will be returned.
+ * Update character with values stored in character.
  */
-int storage_character_get_by_index(
-        character_t *        dest,
-        storage_character_t *storage,
-        string_t *           account,
-        unsigned int         index);
+void db_character_update(db_conn_t *db, char_obj_id_t id, character_t *src);
 
 /**
- * Get active character from session.
- * Session's selected character index must be set.
- * NULL can be returned if no character is found.
+ * Get up until max amount of characters inside of radius.
  */
-character_t *storage_character_active_from_session(
-        storage_character_t *storage,
-        session_t *          session);
-
-/**
- * Get a maximum of max characters in range of a character
- * and store them on dest. dest must be big enough
- * to hold max characters.
- */
-size_t storage_character_close_to(
-        storage_character_t *storage,
-        character_t *        dest,
-        size_t               max,
-        character_t *        character,
-        unsigned int         range);
-
-size_t storage_character_all(
-        storage_character_t *storage,
-        character_t **       dest,
-        size_t               max);
+size_t db_character_in_radius(
+        db_conn_t *  db,
+        character_t *dest,
+        size_t       max,
+        position_t * pos,
+        int          radius);
 
 #endif

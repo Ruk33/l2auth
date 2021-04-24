@@ -3,6 +3,7 @@
 
 #include <headers.h>
 #include <request.h>
+#include <character.h>
 
 void state_machine_character_spawn(request_t *request, character_t *character);
 

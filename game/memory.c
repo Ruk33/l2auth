@@ -11,7 +11,7 @@
 // used by the allocator to know
 // if a particular block of
 // memory is being used.
-#define ALLOCATION_PER_BLOCK ((size_t) (MAX_ALLOCATION_PER_BLOCK + 1))
+#define ALLOCATION_PER_BLOCK ((size_t)(MAX_ALLOCATION_PER_BLOCK + 1))
 
 static unsigned char *memory_head = NULL;
 
@@ -36,7 +36,7 @@ int memory_init()
 void memory_print_stats()
 {
         unsigned char *block = memory_head;
-        size_t used = 0;
+        size_t         used  = 0;
 
         for (size_t i = 0; i < MAX_ALLOCATIONS; i++) {
                 if (is_block_used(block)) {
@@ -45,10 +45,12 @@ void memory_print_stats()
                 block += ALLOCATION_PER_BLOCK;
         }
 
-        printf("Memory block: %ld bytes.\n", MAX_ALLOCATIONS * ALLOCATION_PER_BLOCK);
+        printf("Memory block: %ld bytes.\n",
+               MAX_ALLOCATIONS * ALLOCATION_PER_BLOCK);
         printf("Memory per allocation: %ld bytes.\n", ALLOCATION_PER_BLOCK);
         printf("Memory used: %ld bytes.\n", used * ALLOCATION_PER_BLOCK);
-        printf("Memory left: %ld bytes.\n", (MAX_ALLOCATIONS - used) * ALLOCATION_PER_BLOCK);
+        printf("Memory left: %ld bytes.\n",
+               (MAX_ALLOCATIONS - used) * ALLOCATION_PER_BLOCK);
         printf("Memory allocations left: %ld.\n", MAX_ALLOCATIONS - used);
 }
 
