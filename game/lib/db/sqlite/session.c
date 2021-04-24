@@ -11,10 +11,8 @@
  * connection but also a handler for logs
  */
 
-void db_session_add(db_conn_t *c, int session_id, session_t *session)
+void db_session_add(db_conn_t *db, int session_id, session_t *session)
 {
-        db_conn_t *db = NULL;
-
         char query[] = "insert into sessions ("
                        "id, username, encrypt_key, decrypt_key,"
                        "playOK1, playOK2, loginOK1, loginOK2,"
@@ -29,12 +27,10 @@ void db_session_add(db_conn_t *c, int session_id, session_t *session)
 
         int selected_char = 0;
 
-        assert(c);
+        assert(db);
         assert(session);
 
         selected_char = (int) session->selected_character_index;
-
-        db_conn_open(&db);
 
         sqlite3_prepare_v2(db, query, sizeof(query) - 1, &stmt, NULL);
 
@@ -56,33 +52,24 @@ void db_session_add(db_conn_t *c, int session_id, session_t *session)
 
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
-
-        db_conn_close(db);
 }
 
-void db_session_remove(db_conn_t *c, int session_id)
+void db_session_remove(db_conn_t *db, int session_id)
 {
-        db_conn_t *db = NULL;
-
         char *query_fmt = "delete from sessions where id = %d limit 1;";
         char  query[64] = { 0 };
 
-        assert(c);
+        assert(db);
 
         // Note: We may want to use sqlite bind functions instead
         // of "manually" binding the id to the query
         // but since it isn't a complex query/value, it should be fine.
         snprintf(query, sizeof(query), query_fmt, session_id);
-
-        db_conn_open(&db);
         sqlite3_exec(db, query, NULL, NULL, NULL);
-        db_conn_close(db);
 }
 
-int db_session_get(db_conn_t *c, session_t *dest, int session_id)
+int db_session_get(db_conn_t *db, session_t *dest, int session_id)
 {
-        db_conn_t *db = NULL;
-
         char query[] = "select "
                        "id, username, encrypt_key, decrypt_key,"
                        "playOK1, playOK2, loginOK1, loginOK2,"
@@ -91,10 +78,8 @@ int db_session_get(db_conn_t *c, session_t *dest, int session_id)
 
         sqlite3_stmt *stmt = NULL;
 
-        assert(c);
+        assert(db);
         assert(dest);
-
-        db_conn_open(&db);
 
         sqlite3_prepare_v2(db, query, sizeof(query) - 1, &stmt, NULL);
         helper_bind_int(stmt, ":id", session_id);
@@ -129,15 +114,12 @@ int db_session_get(db_conn_t *c, session_t *dest, int session_id)
         dest->state          = sqlite3_column_int(stmt, 10);
 
         sqlite3_finalize(stmt);
-        db_conn_close(db);
 
         return 1;
 }
 
-void db_session_update(db_conn_t *c, int session_id, session_t *src)
+void db_session_update(db_conn_t *db, int session_id, session_t *src)
 {
-        db_conn_t *db = NULL;
-
         char query[] = "update sessions set "
                        "username = :username, encrypt_key = :encrypt_key, "
                        "decrypt_key = :decrypt_key, playOK1 = :playOK1, "
@@ -150,12 +132,10 @@ void db_session_update(db_conn_t *c, int session_id, session_t *src)
 
         int char_index = 0;
 
-        assert(c);
+        assert(db);
         assert(src);
 
         char_index = (int) src->selected_character_index;
-
-        db_conn_open(&db);
 
         sqlite3_prepare(db, query, sizeof(query) - 1, &stmt, NULL);
 
@@ -173,6 +153,4 @@ void db_session_update(db_conn_t *c, int session_id, session_t *src)
 
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
-
-        db_conn_close(db);
 }

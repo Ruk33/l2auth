@@ -3,7 +3,12 @@
 
 typedef void db_conn_t;
 
-void db_conn_open(db_conn_t **db);
+/**
+ * Open a db conn.
+ * On success, 1 will be returned.
+ * On failure, 0.
+ */
+int db_conn_open(db_conn_t **db);
 
 void db_conn_close(db_conn_t *db);
 

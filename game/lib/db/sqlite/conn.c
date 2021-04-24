@@ -6,9 +6,13 @@
  * Note: Need a way to log stuff in case conn can't be opened.
  */
 
-void db_conn_open(db_conn_t **db)
+int db_conn_open(db_conn_t **db)
 {
-        sqlite3_open("/mnt/c/Users/Franco/l2auth.db", (sqlite3 **) db);
+        /**
+         * TODO: refactor hardcoded db path.
+         */
+        char *db_path = "/mnt/c/Users/Franco/l2auth.db";
+        return sqlite3_open(db_path, (sqlite3 **) db) == SQLITE_OK;
 }
 
 void db_conn_close(db_conn_t *db)

@@ -15,8 +15,11 @@ void state_machine_handle(
         byte_t *   request_packet,
         ssize_t    request_size,
         host_t *   host,
-        db_conn_t *db)
+        db_conn_t *c)
 {
+        db_conn_t *db      = NULL;
+        int        db_open = 0;
+
         int       session_found    = 0;
         request_t request          = { 0 };
         packet *  decrypted_packet = NULL;
@@ -24,7 +27,14 @@ void state_machine_handle(
 
         assert(request_packet);
         assert(host);
-        assert(db);
+        assert(c);
+
+        db_open = db_conn_open(&db);
+
+        if (!db_open) {
+                printf("Couldn't open db to handle request.\n");
+                goto check_for_other_packets;
+        }
 
         session_found = db_session_get(db, &session, client);
 
@@ -76,6 +86,7 @@ void state_machine_handle(
         }
 
         db_session_update(db, session.socket, &session);
+        db_conn_close(db);
 
         host->dealloc_memory(decrypted_packet);
         fflush(stdout);
