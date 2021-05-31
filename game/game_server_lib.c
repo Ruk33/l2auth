@@ -4,7 +4,31 @@
 #include <dlfcn.h>
 #include "game_server_lib.h"
 
+/**
+ * TODO: Use proper types for functions instead of void pointers.
+ */
+
 #define GAME_SERVER_LIB_PATH "lib/game_server.so"
+
+typedef enum {
+        host_to_gs_new_conn,
+        host_to_gs_request,
+        host_to_gs_disconnect = 3,
+} host_to_gs_msg_type;
+
+typedef struct {
+        int socket;
+} host_client_conn_msg_t;
+
+typedef struct {
+        int            socket;
+        unsigned char *request;
+        ssize_t        size;
+} host_request_msg_t;
+
+typedef struct {
+        int socket;
+} host_client_exit_msg_t;
 
 static void *library = NULL;
 
@@ -47,34 +71,38 @@ static void *load_function(char *name)
 }
 
 void *game_server_lib_handle_init(
-        void *(*alloc_cb)(size_t),
-        void (*dealloc_cb)(void *))
+        void * memory,
+        size_t size,
+        void (*msg_to_host_cb)(int type, void *))
 {
-        assert(alloc_cb);
-        assert(dealloc_cb);
-
         void *(*handler)()    = NULL;
         *(void **) (&handler) = load_function("game_server_init");
+
+        assert(memory);
+        assert(msg_to_host_cb);
 
         if (!handler) {
                 return NULL;
         }
 
-        return handler(alloc_cb, dealloc_cb);
+        return handler(memory, size, msg_to_host_cb);
 }
 
 int game_server_lib_new_connection(int fd, void *data)
 {
-        assert(fd > 0);
+        void (*handler)() = NULL;
+
+        host_client_conn_msg_t payload = { 0 };
+        *(void **) (&handler)          = load_function("game_server_request");
+
         assert(data);
-        void (*handler)()     = NULL;
-        *(void **) (&handler) = load_function("game_server_new_connection");
 
         if (!handler) {
                 return -1;
         }
 
-        handler(fd, data);
+        payload.socket = fd;
+        handler(data, host_to_gs_new_conn, &payload, sizeof(payload));
 
         return 1;
 }
@@ -83,36 +111,27 @@ int game_server_lib_handle_request(
         int            fd,
         unsigned char *request,
         ssize_t        request_size,
-        void *         data,
-        void *(*alloc_cb)(size_t),
-        void (*dealloc_cb)(void *),
-        ssize_t (*send_response_cb)(int, unsigned char *, size_t),
-        void (*close_conn_cb)(int))
+        void *         data)
 {
-        assert(fd > 0);
+        void (*handler)() = NULL;
+
+        host_request_msg_t payload = { 0 };
+
         assert(request);
         assert(request_size);
         assert(data);
-        assert(alloc_cb);
-        assert(dealloc_cb);
-        assert(send_response_cb);
-        assert(close_conn_cb);
 
-        void (*handler)()     = NULL;
-        *(void **) (&handler) = load_function("game_server_new_request");
+        *(void **) (&handler) = load_function("game_server_request");
 
         if (!handler) {
                 return -1;
         }
 
-        handler(fd,
-                request,
-                request_size,
-                data,
-                alloc_cb,
-                dealloc_cb,
-                send_response_cb,
-                close_conn_cb);
+        payload.socket  = fd;
+        payload.request = request;
+        payload.size    = request_size;
+
+        handler(data, host_to_gs_request, &payload, sizeof(payload));
 
         return 1;
 }
@@ -121,29 +140,37 @@ int game_server_lib_handle_disconnect(int fd, void *data)
 {
         void (*handler)() = NULL;
 
+        host_client_exit_msg_t payload = { 0 };
+
         assert(data);
 
-        *(void **) (&handler) =
-                load_function("game_server_client_disconnected");
+        *(void **) (&handler) = load_function("game_server_request");
 
         if (!handler) {
                 return -1;
         }
 
-        handler(fd, data);
+        payload.socket = fd;
+        handler(data, 3, &payload, sizeof(payload));
 
         return 1;
 }
 
 void game_server_lib_handle_timer_tick(double delta, void *data)
 {
-        void (*handler)(double, void *) = NULL;
-        *(void **) (&handler) = load_function("game_server_timer_tick");
+        /**
+         * TODO: Implement
+         */
 
-        if (!handler) {
-                printf("Couldn't load game_server_timer_tick\n");
-                return;
+        if (delta && data) {
         }
+        // void (*handler)(double, void *) = NULL;
+        // *(void **) (&handler) = load_function("game_server_timer_tick");
 
-        handler(delta, data);
+        // if (!handler) {
+        //         printf("Couldn't load game_server_timer_tick\n");
+        //         return;
+        // }
+
+        // handler(delta, data);
 }

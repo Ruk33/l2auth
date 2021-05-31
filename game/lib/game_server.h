@@ -6,40 +6,47 @@
 #include <host.h>
 #include <db/conn.h>
 
-/**
- * Handle game server initialization.
- * Return data that will be attached
- * and sent in new connections, requests
- * and disconnect.
- */
-void *game_server_init(host_alloc alloc_memory, host_dealloc dealloc_memory);
+typedef void (*msg_to_host_cb)(int type, void *);
+
+typedef struct {
+        void *         memory_pool;
+        size_t         memory_pool_size;
+        msg_to_host_cb msg_to_host;
+} game_server_t;
 
 /**
- * Handle a new connection.
+ * To be called from host at initialization.
  */
-void game_server_new_connection(int client, db_conn_t *db);
+game_server_t *game_server_init(void *memory, size_t size, msg_to_host_cb cb);
 
 /**
- * Handle new request from client.
+ * "Allocate" memory. Since the host sends us
+ * a chunk of memory at initialization (game_server_init)
+ * the memory is guaranteed to be returned.
  */
-void game_server_new_request(
-        int                   client,
-        unsigned char *       request,
-        ssize_t               request_size,
-        db_conn_t *           db,
-        host_alloc            alloc_memory,
-        host_dealloc          dealloc_memory,
-        host_send_response_cb send_response,
-        host_disconnect_cb    disconnect_connection);
+void *game_server_alloc_mem(game_server_t *gs, size_t n);
 
 /**
- * Client was disconnected from the server.
+ * Free allocated memory with game_server_alloc_mem.
  */
-void game_server_client_disconnected(int client, db_conn_t *db);
+void game_server_free_mem(game_server_t *gs, void *m);
 
 /**
- * Timer tick.
+ * Ask host to log msg.
+ * Assume it will be q'd and handled when possible.
  */
-void game_server_timer_tick(double delta, db_conn_t *db);
+void game_server_log(game_server_t *gs, char *msg);
+
+/**
+ * Send response to host.
+ * Assume it will be q'd to be handled when possible.
+ */
+void game_server_send_response(game_server_t *gs, int socket, void *r, size_t n);
+
+/**
+ * Intended to be called from host.
+ * type = new request, timer tick, etc.
+ */
+void game_server_request(game_server_t *gs, int type, void *payload, ssize_t n);
 
 #endif

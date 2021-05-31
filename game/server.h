@@ -4,19 +4,13 @@
 #include <stddef.h>
 
 /**
- * Start the game server.
- * If everything goes well, the thread
- * will be blocked to listen and handle
- * requests. When finished, 0 will be returned.
- * On error, -1 will be immediately returned.
+ * Start listening for socket connections.
+ * data refers to the server data initialized
+ * by the game server library at initialization.
+ * This function will block the thread.
+ *
+ * NOTE: Should we not block the thread?
  */
-int server_start(unsigned short port, size_t max_connections);
-
-/**
- * Get server data. This data is created
- * when the server is initialized using the game
- * server library.
- */
-void *server_data(void);
+void *server_start(void *data);
 
 #endif

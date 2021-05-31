@@ -31,4 +31,15 @@ void util_session_decrypt_packet(
  */
 void util_session_encrypt_connection(db_conn_t *db, int session_id);
 
+/**
+ * Updates account associated to session.
+ * Account being the username used by the client to log in.
+ */
+void util_session_update_account(db_conn_t *db, int id, char *account);
+
+/**
+ * Updates the session's state and saves it to the database.
+ */
+void util_session_update_state(db_conn_t *db, int id, session_state_t state);
+
 #endif

@@ -4,9 +4,13 @@
 #include "server.h"
 #include "server_timer.h"
 
+/**
+ * TODO: Implement
+ */
+
 static void tick(void)
 {
-        void *data = server_data();
+        void *data = NULL; // server_data();
 
         if (!data) {
                 printf("Server timer: server data not found\n");

@@ -1,26 +1,28 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "bridge.h"
 #include "server.h"
-#include "server_timer.h"
 #include "work_queue.h"
-#include "memory.h"
 
 int main(/* int arc, char **argv */)
 {
-        unsigned short port            = 7777;
-        size_t         max_connections = 10;
+        void *data = NULL;
 
-        pthread_t work_thread  = 0;
-        pthread_t timer_thread = 0;
+        pthread_t work_thread   = 0;
+        pthread_t socket_thread = 0;
 
-        if (!memory_init()) {
-                printf("Failed to allocate memory.\n");
-                return EXIT_FAILURE;
-        }
+        data = bridge_init();
 
+        /**
+         * NOTE: Should we use only one thread for
+         * everything and take work from q'?
+         */
         pthread_create(&work_thread, NULL, &work_queue_start, NULL);
-        pthread_create(&timer_thread, NULL, &server_timer_start, NULL);
+        pthread_create(&socket_thread, NULL, &server_start, data);
 
-        return server_start(port, max_connections);
+        pthread_join(work_thread, NULL);
+        pthread_join(socket_thread, NULL);
+
+        return 0;
 }

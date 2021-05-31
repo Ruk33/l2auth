@@ -24,9 +24,9 @@
  * allocates. NULL can be returned.
  */
 void *game_server_lib_handle_init(
-        void *(*alloc_cb)(size_t),
-        void (*dealloc_cb)(void *)
-);
+        void * memory,
+        size_t size,
+        void (*msg_to_host_cb)(int type, void *));
 
 /**
  * Handle new connection.
@@ -42,15 +42,10 @@ int game_server_lib_new_connection(int fd, void *data);
  * be loaded.
  */
 int game_server_lib_handle_request(
-        int fd,
+        int            fd,
         unsigned char *request,
-        ssize_t request_size,
-        void *data,
-        void *(*alloc_cb)(size_t),
-        void (*dealloc_cb)(void *),
-        ssize_t (*send_response_cb)(int, unsigned char *, size_t),
-        void (*close_conn_cb)(int)
-);
+        ssize_t        request_size,
+        void *         data);
 
 /**
  * Handle client being disconnected.

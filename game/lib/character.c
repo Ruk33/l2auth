@@ -91,9 +91,7 @@ void character_validate_position(
         validated_position->z = position_to_validate->z;
 }
 
-void character_update_state(
-        character_t *       character,
-        enum CharacterState new_state)
+void character_update_state(character_t *character, character_state_t new_state)
 {
         assert(character);
         character->state = new_state;

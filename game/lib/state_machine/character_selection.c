@@ -13,34 +13,34 @@
  * This takes the user to the character creation
  * screen.
  */
-static void new_character(request_t *request)
+static void new_character(request_t *req)
 {
         packet response[PACKET_SAFE_FULL_SIZE(server_packet_new_char_t)] = { 0 };
 
-        assert_valid_request(request);
+        session_state_t creating_char = 0;
+
+        assert_valid_request(req);
+
+        creating_char = CREATING_CHARACTER;
 
         server_packet_new_char(response);
         util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
+                req->storage,
+                req->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
-
-        session_update_state(request->session, CREATING_CHARACTER);
+        request_send_response(req, response, packet_get_size(response));
+        util_session_update_state(req->storage, req->socket, creating_char);
 }
 
 /**
  * The user selects a character to play with.
  * This initiates the process of entering the world.
  */
-static void select_character(request_t *request)
+static void select_character(request_t *req)
 {
-        client_request_select_character_t parsed_request = { 0 };
+        client_request_select_character_t parsed_req = { 0 };
 
         character_t selected_character = { 0 };
         int         character_found    = 0;
@@ -48,15 +48,18 @@ static void select_character(request_t *request)
         packet response[PACKET_SAFE_FULL_SIZE(
                 server_packet_select_character_t)] = { 0 };
 
-        assert_valid_request(request);
+        assert_valid_request(req);
 
-        client_request_select_character(&parsed_request, request->packet);
+        client_request_select_character(&parsed_req, req->packet);
 
-        db_player_by_index(
-                request->storage,
-                request->session->username,
-                &selected_character,
-                (int) parsed_request.index);
+        /**
+         * TODO: Get character selected by index.
+         */
+        // db_player_by_index(
+        //         req->storage,
+        //         req->session->username,
+        //         &selected_character,
+        //         (int) parsed_request.index);
 
         character_found = selected_character.id != 0;
 
@@ -65,22 +68,18 @@ static void select_character(request_t *request)
                 return;
         }
 
-        request->session->selected_character_index = parsed_request.index;
+        // request->session->selected_character_index = parsed_request.index;
+        // session_update_state(request->session, ENTERING_WORLD);
 
-        session_update_state(request->session, ENTERING_WORLD);
-
-        server_packet_select_character(
-                response, &selected_character, request->session->playOK1);
+        // server_packet_select_character(
+        //         response, &selected_character, request->session->playOK1);
         util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
+                req->storage,
+                req->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        request_send_response(req, response, packet_get_size(response));
 }
 
 void state_machine_character_selection(request_t *request)

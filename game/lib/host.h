@@ -4,36 +4,18 @@
 #include <stdlib.h>
 
 /**
- * Allocate heap memory.
+ * Dummy struct to prevent cyclic dependencies.
+ * For example, game_server requiring state_machine/handle
+ * and vice versa. Instead of state_machine/handle accepting
+ * a game_server_t type, we just pass a host_t.
  */
-typedef void *(*host_alloc)(size_t how_much);
 
-/**
- * Deallocate heap memory.
- */
-typedef void (*host_dealloc)(void *memory);
-
-/**
- * Allows to send a response to client by id.
- */
-typedef void (*host_send_response_cb)(
-        int client,
-        unsigned char *response,
-        size_t response_size
-);
-
-/**
- * Allows to disconnect a client by id.
- */
-typedef void (*host_disconnect_cb)(int client);
-
-struct Host {
-        host_alloc alloc_memory;
-        host_dealloc dealloc_memory;
-        host_send_response_cb send_response;
-        host_disconnect_cb disconnect_connection;
-};
-
-typedef struct Host host_t;
+typedef struct {
+        void *gs;
+        void *(*alloc_mem)(void *gs, size_t n);
+        void (*free_mem)(void *gs, void *m);
+        void (*log)(void *gs, char *msg);
+        void (*send_response)(void *gs, int socket, void *r, size_t n);
+} host_t;
 
 #endif

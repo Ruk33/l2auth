@@ -17,6 +17,10 @@
 #include "idle.h"
 
 /**
+ * TODO: Implement commented code.
+ */
+
+/**
  * The player clicks on logout.
  * Do not confuse with losing the connection.
  */
@@ -30,14 +34,13 @@ static void logout(request_t *request, character_t *character)
         server_packet_logout(response);
         util_session_encrypt_packet(
                 request->storage,
-                request->session->socket,
+                request->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        // request->host->send_response(
+        //         request->socket, response, (size_t)
+        //         packet_get_size(response));
 
         /*
          * Maybe here would be a good moment
@@ -45,7 +48,7 @@ static void logout(request_t *request, character_t *character)
          */
         character_update_state(character, SPAWN);
 
-        session_update_state(request->session, PROTOCOL_VERSION);
+        // session_update_state(request->session, PROTOCOL_VERSION);
 }
 
 /**
@@ -63,16 +66,16 @@ static void restart(request_t *request, character_t *character)
         assert(character);
 
         server_packet_restart(response);
-        util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
-                response,
-                response,
-                (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        // util_session_encrypt_packet(
+        //         request->storage,
+        //         request->session->socket,
+        //         response,
+        //         response,
+        //         (size_t) packet_get_size(response));
+        // request->host->send_response(
+        //         request->session->socket,
+        //         response,
+        //         (size_t) packet_get_size(response));
 
         character_update_state(character, SPAWN);
 
@@ -113,8 +116,8 @@ static void move(request_t *request, character_t *character)
         client_request_move(&parsed_request, request->packet);
 
         max_close_characters = 10;
-        close_characters     = request->host->alloc_memory(
-                sizeof(*close_characters) * max_close_characters);
+        // close_characters     = request->host->alloc_memory(
+        //         sizeof(*close_characters) * max_close_characters);
         character_position.x   = character->x;
         character_position.y   = character->y;
         character_position.z   = character->z;
@@ -136,14 +139,14 @@ static void move(request_t *request, character_t *character)
                         response,
                         response,
                         (size_t) packet_get_size(response));
-                request->host->send_response(
-                        close_character->session->socket,
-                        response,
-                        (size_t) packet_get_size(response));
+                // request->host->send_response(
+                //         close_character->session->socket,
+                //         response,
+                //         (size_t) packet_get_size(response));
         }
 
         character_move(character, &parsed_request.position);
-        request->host->dealloc_memory(close_characters);
+        // request->host->dealloc_memory(close_characters);
 }
 
 /**
@@ -175,16 +178,16 @@ static void validate_position(request_t *request, character_t *character)
                 character,
                 &validated_position,
                 parsed_request.heading);
-        util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
-                response,
-                response,
-                (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        // util_session_encrypt_packet(
+        //         request->storage,
+        //         request->session->socket,
+        //         response,
+        //         response,
+        //         (size_t) packet_get_size(response));
+        // request->host->send_response(
+        //         request->session->socket,
+        //         response,
+        //         (size_t) packet_get_size(response));
 }
 
 /*
@@ -192,17 +195,17 @@ static void validate_position(request_t *request, character_t *character)
  */
 static void spawn_random_orc(request_t *request, position_t *position)
 {
-        size_t  packet_safe_size = 0;
-        packet *npc_info_packet  = NULL;
+        // size_t  packet_safe_size = 0;
+        packet *npc_info_packet = NULL;
 
         character_t orc = { 0 };
 
         assert_valid_request(request);
         assert(position);
 
-        packet_safe_size =
-                PACKET_SAFE_FULL_SIZE(sizeof(server_packet_npc_info_t));
-        npc_info_packet = request->host->alloc_memory(packet_safe_size);
+        // packet_safe_size =
+        //         PACKET_SAFE_FULL_SIZE(sizeof(server_packet_npc_info_t));
+        // npc_info_packet = request->host->alloc_memory(packet_safe_size);
 
         orc.id = rand();
         orc.x  = position->x;
@@ -213,18 +216,18 @@ static void spawn_random_orc(request_t *request, position_t *position)
         strcat(orc.title, "Archer");
 
         server_packet_npc_info(npc_info_packet, &orc);
-        util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
-                npc_info_packet,
-                npc_info_packet,
-                (size_t) packet_get_size(npc_info_packet));
-        request->host->send_response(
-                request->session->socket,
-                npc_info_packet,
-                (size_t) packet_get_size(npc_info_packet));
+        // util_session_encrypt_packet(
+        //         request->storage,
+        //         request->session->socket,
+        //         npc_info_packet,
+        //         npc_info_packet,
+        //         (size_t) packet_get_size(npc_info_packet));
+        // request->host->send_response(
+        //         request->session->socket,
+        //         npc_info_packet,
+        //         (size_t) packet_get_size(npc_info_packet));
 
-        request->host->dealloc_memory(npc_info_packet);
+        // request->host->dealloc_memory(npc_info_packet);
 }
 
 /**
@@ -252,8 +255,8 @@ static void say(request_t *request, character_t *character)
         assert(character);
 
         max_close_characters = 10;
-        close_characters     = request->host->alloc_memory(
-                sizeof(*close_characters) * max_close_characters);
+        // close_characters     = request->host->alloc_memory(
+        //         sizeof(*close_characters) * max_close_characters);
         character_position.x   = character->x;
         character_position.y   = character->y;
         character_position.z   = character->z;
@@ -284,10 +287,10 @@ static void say(request_t *request, character_t *character)
                         response,
                         response,
                         (size_t) packet_get_size(response));
-                request->host->send_response(
-                        close_character->session->socket,
-                        response,
-                        (size_t) packet_get_size(response));
+                // request->host->send_response(
+                //         close_character->session->socket,
+                //         response,
+                //         (size_t) packet_get_size(response));
         }
 
         /*
@@ -300,7 +303,7 @@ static void say(request_t *request, character_t *character)
                 spawn_random_orc(request, &orc_position);
         }
 
-        request->host->dealloc_memory(close_characters);
+        // request->host->dealloc_memory(close_characters);
 }
 
 /**
@@ -315,16 +318,16 @@ static void show_map(request_t *request, character_t *character)
 
         // Map id hardcoded just for the time being.
         server_packet_show_map(response, 1665);
-        util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
-                response,
-                response,
-                (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        // util_session_encrypt_packet(
+        //         request->storage,
+        //         request->session->socket,
+        //         response,
+        //         response,
+        //         (size_t) packet_get_size(response));
+        // request->host->send_response(
+        //         request->session->socket,
+        //         response,
+        //         (size_t) packet_get_size(response));
 }
 
 void state_machine_character_idle(request_t *request, character_t *character)

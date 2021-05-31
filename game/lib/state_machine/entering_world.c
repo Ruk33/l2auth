@@ -7,56 +7,51 @@
 #include "in_world.h"
 #include "entering_world.h"
 
-static void d0(request_t *request)
-{
-        packet response[PACKET_SAFE_FULL_SIZE(server_packet_d0_t)] = { 0 };
+#define d0_packet_size PACKET_SAFE_FULL_SIZE(server_packet_d0_t)
+#define quest_list_packet_size PACKET_SAFE_FULL_SIZE(server_packet_quest_list_t)
+#define enter_world_packet_size \
+        PACKET_SAFE_FULL_SIZE(server_packet_enter_world_t)
 
-        assert_valid_request(request);
+static void d0(request_t *req)
+{
+        packet response[d0_packet_size] = { 0 };
+
+        assert_valid_request(req);
 
         server_packet_d0(response);
         util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
+                req->storage,
+                req->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
+        request_send_response(req, response, packet_get_size(response));
 }
 
-static void quest_list(request_t *request)
+static void quest_list(request_t *req)
 {
-        packet response[PACKET_SAFE_FULL_SIZE(server_packet_quest_list_t)] = {
-                0
-        };
+        packet response[quest_list_packet_size] = { 0 };
 
-        assert_valid_request(request);
+        assert_valid_request(req);
 
         server_packet_quest_list(response);
         util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
+                req->storage,
+                req->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
-
-        session_update_state(request->session, ENTERING_WORLD);
+        request_send_response(req, response, packet_get_size(response));
+        util_session_update_state(req->storage, req->socket, ENTERING_WORLD);
 }
 
-static void enter_world(request_t *request)
+static void enter_world(request_t *req)
 {
-        packet response[PACKET_SAFE_FULL_SIZE(server_packet_enter_world_t)] = {
-                0
-        };
+        packet response[enter_world_packet_size] = { 0 };
+
         character_t *character = NULL;
 
-        assert_valid_request(request);
+        assert_valid_request(req);
 
         character = NULL;
 
@@ -68,17 +63,13 @@ static void enter_world(request_t *request)
 
         server_packet_enter_world(response, character);
         util_session_encrypt_packet(
-                request->storage,
-                request->session->socket,
+                req->storage,
+                req->socket,
                 response,
                 response,
                 (size_t) packet_get_size(response));
-        request->host->send_response(
-                request->session->socket,
-                response,
-                (size_t) packet_get_size(response));
-
-        session_update_state(request->session, IN_WORLD);
+        request_send_response(req, response, packet_get_size(response));
+        util_session_update_state(req->storage, req->socket, IN_WORLD);
 
         /*
          * This is being executed so the first spawn
@@ -87,7 +78,7 @@ static void enter_world(request_t *request)
          *
          * After that, the caracter's state will be idle.
          */
-        state_machine_in_world(request);
+        state_machine_in_world(req);
 }
 
 void state_machine_entering_world(request_t *request)

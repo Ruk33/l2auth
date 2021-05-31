@@ -2,31 +2,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include "socket.h"
-#include "game_server_lib.h"
 #include "work_queue.h"
-#include "memory.h"
 #include "server.h"
-
-typedef struct {
-        void *data;
-} server_t;
-
-static server_t server = { 0 };
-
-void *server_data(void)
-{
-        return server.data;
-}
 
 static int handle_connection(int fd, void *data)
 {
-        server_t *server          = NULL;
-        int       new_conn_result = 0;
-        int       client_socket   = 0;
+        int client_socket = 0;
 
         assert(data);
-
-        server = data;
 
         printf("Accepting new connection.\n");
         client_socket = socket_accept(fd);
@@ -36,13 +19,7 @@ static int handle_connection(int fd, void *data)
                 return -1;
         }
 
-        new_conn_result =
-                game_server_lib_new_connection(client_socket, server->data);
-
-        if (new_conn_result == -1) {
-                printf("Failed to handle new connection.\n");
-                return -1;
-        }
+        work_queue_new_connection(data, client_socket);
 
         return client_socket;
 }
@@ -50,52 +27,47 @@ static int handle_connection(int fd, void *data)
 static void
 handle_request(int fd, void *data, unsigned char *request, ssize_t request_size)
 {
-        server_t *server = NULL;
-
         assert(data);
         assert(request);
         assert(request_size);
 
-        server = data;
-
         printf("Handling new request from %d of size %ld.\n", fd, request_size);
-        work_queue_add_client_request(server->data, fd, request, request_size);
+        work_queue_client_request(data, fd, request, request_size);
 }
 
 static void handle_disconnect(int fd, void *data)
 {
-        server_t *server = data;
-
         assert(data);
 
         printf("Client %d disconnected.\n", fd);
-        game_server_lib_handle_disconnect(fd, server->data);
+        work_queue_disconnected(data, fd);
 }
 
-int server_start(unsigned short port, size_t max_connections)
+void *server_start(void *data)
 {
-        socket_conn_t conn                   = { 0 };
-        int           handle_requests_result = 0;
+        socket_conn_t conn = { 0 };
 
-        assert(port);
-        assert(max_connections);
+        unsigned short port = 0;
+
+        size_t max_connections = 0;
+
+        int handle_requests_result = 0;
+
+        /**
+         * TODO: Make these configurable
+         */
+        port            = 7777;
+        max_connections = 10;
 
         conn.fd            = socket_create(port, max_connections);
-        conn.data          = &server;
+        conn.data          = data;
         conn.on_connect    = &handle_connection;
         conn.on_request    = &handle_request;
         conn.on_disconnect = &handle_disconnect;
 
         if (conn.fd == -1) {
                 printf("Unable to create socket.\n");
-                return EXIT_FAILURE;
-        }
-
-        server.data = game_server_lib_handle_init(&memory_alloc, &memory_free);
-
-        if (!server.data) {
-                printf("Failed to initialize game server.\n");
-                return EXIT_FAILURE;
+                return data;
         }
 
         printf("Waiting for requests...\n");
@@ -103,8 +75,8 @@ int server_start(unsigned short port, size_t max_connections)
 
         if (handle_requests_result == -1) {
                 printf("Unable to handle requests.\n");
-                return EXIT_FAILURE;
+                return data;
         }
 
-        return EXIT_SUCCESS;
+        return data;
 }

@@ -3,16 +3,11 @@
 
 #include <headers.h>
 #include <db/conn.h>
+#include <host.h>
 
 /**
- * Entry point for handling the state of the
- * user's session.
+ * Entry point for client request.
  */
-void state_machine_handle(
-        int        client,
-        byte_t *   request,
-        ssize_t    request_size,
-        host_t *   host,
-        db_conn_t *conn);
+void state_machine_handle(host_t *h, int socket, byte_t *request, ssize_t size);
 
 #endif

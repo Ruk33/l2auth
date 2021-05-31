@@ -4,17 +4,17 @@
 #include "session.h"
 #include "vec3.h"
 
-enum CharacterState {
+typedef enum {
         SPAWN,
         IDLE,
         RUNNING,
         WALKING,
-};
+} character_state_t;
 
-struct Character {
-        session_t *         session;
-        enum CharacterState state;
-        int                 id;
+typedef struct {
+        session_t *       session;
+        character_state_t state;
+        int               id;
         char   name[20];  // Hardcoded, not sure if it's the correct max limit
         char   title[20]; // Hardcoded, not sure if it's the correct max limit
         int    active;
@@ -50,9 +50,7 @@ struct Character {
         int    target_x;
         int    target_y;
         int    target_z;
-};
-
-typedef struct Character character_t;
+} character_t;
 
 /**
  * Calculate and update new character's
@@ -95,8 +93,6 @@ void character_validate_position(
  * Update character's internal state.
  * Used for state machine.
  */
-void character_update_state(
-        character_t *       character,
-        enum CharacterState new_state);
+void character_update_state(character_t *character, character_state_t new_state);
 
 #endif

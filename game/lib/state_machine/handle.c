@@ -10,56 +10,70 @@
 #include "in_world.h"
 #include "handle.h"
 
-void state_machine_handle(
-        int        client,
-        byte_t *   request_packet,
-        ssize_t    request_size,
-        host_t *   host,
-        db_conn_t *c)
+static void log_session_not_found(host_t *h, int socket)
 {
-        db_conn_t *db      = NULL;
-        int        db_open = 0;
+        char err_fmt[] = "Warning: session for client %d not found.";
+        char err[64]   = { 0 };
 
-        int       session_found    = 0;
-        request_t request          = { 0 };
-        packet *  decrypted_packet = NULL;
-        session_t session          = { 0 };
+        assert(h);
 
-        assert(request_packet);
-        assert(host);
-        assert(c);
+        snprintf(err, sizeof(err), err_fmt, socket);
+        h->log(h->gs, err);
+        h->log(h->gs, "Request will be ignored.");
+}
 
+void state_machine_handle(host_t *h, int socket, byte_t *raw_req, ssize_t size)
+{
+        db_conn_t *db = NULL;
+
+        int db_open       = 0;
+        int session_found = 0;
+
+        request_t request = { 0 };
+        session_t session = { 0 };
+
+        packet *decrypted_packet = NULL;
+
+        packet_size p_size = 0;
+
+        assert(h);
+        assert(raw_req);
+
+        /**
+         * NOTE: Since only one request will be handled at
+         * a time, shouldn't just be used 1 db conn?
+         * This way we can also guarantee the databse will be
+         * properly opened for queries.
+         */
         db_open = db_conn_open(&db);
 
         if (!db_open) {
-                printf("Couldn't open db to handle request.\n");
+                h->log(h->gs, "Couldn't open db to handle request.");
                 goto check_for_other_packets;
         }
 
-        session_found = db_session_get(db, &session, client);
+        session_found = db_session_get(db, &session, socket);
 
         if (!session_found) {
-                printf("Warning: session for client %d not found.\n", client);
-                printf("Ignoring request.\n");
+                log_session_not_found(h, socket);
                 goto check_for_other_packets;
         }
 
-        decrypted_packet = host->alloc_memory(65536);
+        /**
+         * TODO: Refactor, don't use 65536
+         */
+        decrypted_packet = h->alloc_mem(h->gs, 65536);
+        p_size           = packet_get_size(raw_req);
+
         util_session_decrypt_packet(
-                db,
-                session.socket,
-                decrypted_packet,
-                request_packet,
-                packet_get_size(request_packet));
+                db, socket, decrypted_packet, raw_req, p_size);
+        util_session_encrypt_connection(db, socket);
 
-        session_encrypt_connection(&session);
-        util_session_encrypt_connection(db, session.socket);
-
-        request.host    = host;
-        request.session = &session;
+        request.host    = h;
+        request.socket  = socket;
         request.storage = db;
         request.packet  = decrypted_packet;
-        request.size    = request_size;
+        request.size    = size;
 
         switch (session.state) {
         case PROTOCOL_VERSION:
@@ -81,25 +95,18 @@ void state_machine_handle(
                 state_machine_in_world(&request);
                 break;
         default:
-                printf("Invalid state from client. Ignoring request.\n");
+                h->log(h->gs, "Invalid request. Will be ignored...");
                 break;
         }
 
-        db_session_update(db, session.socket, &session);
         db_conn_close(db);
 
-        host->dealloc_memory(decrypted_packet);
-        fflush(stdout);
+        h->free_mem(h->gs, decrypted_packet);
 
 check_for_other_packets:
-        if ((ssize_t) packet_get_size(request_packet) == request_size) {
+        if ((ssize_t) p_size == size) {
                 return;
         }
 
-        state_machine_handle(
-                client,
-                request_packet + packet_get_size(request_packet),
-                request_size - packet_get_size(request_packet),
-                host,
-                db);
+        state_machine_handle(h, socket, raw_req + p_size, size - p_size);
 }
