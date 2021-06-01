@@ -27,6 +27,17 @@
         (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 #endif
 
+// Copy n bytes from src to dest and advance src.
+#define byte_read_n(dest, src, n)                                  \
+        do {                                                       \
+                bytes_cpy((byte_t *) (dest), (byte_t *) (src), n); \
+                src += n;                                          \
+        } while (0)
+
+#define byte_read(dest, src) byte_read_n(dest, src, sizeof(dest))
+
+#define byte_read_val(dest, src) byte_read_n(&(dest), src, sizeof(dest))
+
 typedef unsigned char byte_t;
 
 typedef int8_t   i8_t;

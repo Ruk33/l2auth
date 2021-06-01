@@ -1,6 +1,18 @@
 #include "include/util.h"
 #include "include/l2_string.h"
 
+void l2_string_cpy(l2_string_t *dest, l2_string_t *src, size_t n)
+{
+        while (dest && src && *src && n) {
+                *dest       = *src;
+                *(dest + 1) = *(src + 1);
+
+                dest += 2;
+                src += 2;
+                n -= 2;
+        }
+}
+
 void l2_string_to_char(char *dest, l2_string_t *src, size_t n)
 {
         while (dest && src && *src && n) {

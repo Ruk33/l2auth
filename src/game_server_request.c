@@ -5,6 +5,7 @@
 #include "include/gs_session.h"
 #include "include/packet_protocol_version.h"
 #include "include/packet_auth_login.h"
+#include "include/packet_auth_request.h"
 #include "include/game_server_request.h"
 
 static void handle_protocol_version(gs_session_t *session)
@@ -19,19 +20,27 @@ static void handle_protocol_version(gs_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
-static void handle_auth_login(gs_session_t *session)
+static void handle_auth_login(gs_session_t *session, packet_t *packet)
 {
         static packet_t response[4096] = { 0 };
 
         static packet_auth_login_t auth_login = { 0 };
 
+        packet_auth_request_t auth_request = { 0 };
+
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
+
+        packet_auth_request_unpack(&auth_request, packet);
+        gs_session_update_auth(session, &auth_request);
 
         // packet_auth_login_add_character(&auth_login, character);
         packet_auth_login_pack(response, &auth_login);
         gs_session_encrypt(session, response, response);
+
         conn_send_packet(session->socket, response);
+
+        log("Fetch characters for %s.", session->username);
 }
 
 void game_server_request_new_conn(socket_t *socket)
@@ -65,7 +74,7 @@ void game_server_request(socket_t *socket, byte_t *buf, size_t n)
                 handle_protocol_version(session);
                 break;
         case 0x08: // Auth request
-                handle_auth_login(session);
+                handle_auth_login(session, packet);
                 break;
         default:
                 break;

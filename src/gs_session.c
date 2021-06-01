@@ -1,7 +1,9 @@
 #include "include/config.h"
 #include "include/util.h"
 #include "include/socket.h"
+#include "include/l2_string.h"
 #include "include/game_server_crypt.h"
+#include "include/packet_auth_request.h"
 #include "include/gs_session.h"
 
 static gs_session_t sessions[MAX_CLIENTS] = { 0 };
@@ -38,6 +40,19 @@ gs_session_t *gs_session_find(socket_t *socket)
 void gs_session_encrypt_conn(gs_session_t *session)
 {
         session->conn_encrypted = 1;
+}
+
+void gs_session_update_auth(gs_session_t *dest, packet_auth_request_t *src)
+{
+        size_t max_username_size = 0;
+
+        max_username_size = sizeof(dest->username);
+        l2_string_to_char(dest->username, src->username, max_username_size);
+
+        dest->loginOK1 = src->loginOK1;
+        dest->loginOK2 = src->loginOK2;
+        dest->playOK1  = src->playOK1;
+        dest->playOK2  = src->playOK2;
 }
 
 void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src)
