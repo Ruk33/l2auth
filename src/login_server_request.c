@@ -1,6 +1,8 @@
 #include "include/config.h"
 #include "include/util.h"
 #include "include/socket.h"
+#include "include/conn.h"
+#include "include/log.h"
 #include "include/rsa.h"
 #include "include/packet.h"
 #include "include/session.h"
@@ -10,7 +12,6 @@
 #include "include/packet_ok.h"
 #include "include/packet_server_list.h"
 #include "include/packet_play_ok.h"
-#include "include/login_server.h"
 #include "include/login_server_crypt.h"
 #include "include/login_server_request.h"
 
@@ -25,7 +26,7 @@ static void handle_gg_auth(session_t *session)
         packet_gg_auth_pack(response, &gg_auth);
         login_server_encrypt(session->blowfish, response, response);
 
-        login_server_send_packet(session->socket, response);
+        conn_send_packet(session->socket, response);
 }
 
 static void handle_auth_login(session_t *session)
@@ -41,7 +42,7 @@ static void handle_auth_login(session_t *session)
         packet_ok_pack(response, &ok);
         login_server_encrypt(session->blowfish, response, response);
 
-        login_server_send_packet(session->socket, response);
+        conn_send_packet(session->socket, response);
 }
 
 static void handle_request_server_list(session_t *session)
@@ -64,7 +65,7 @@ static void handle_request_server_list(session_t *session)
         packet_server_list_pack(response, &server_list);
         login_server_encrypt(session->blowfish, response, response);
 
-        login_server_send_packet(session->socket, response);
+        conn_send_packet(session->socket, response);
 }
 
 static void handle_login_server(session_t *session)
@@ -73,7 +74,7 @@ static void handle_login_server(session_t *session)
 
         packet_play_ok_t play_ok = { 0 };
 
-        login_server_log("Player wants to log into game server.");
+        log("Player wants to log into game server.");
 
         play_ok.playOK1 = session->playOK1;
         play_ok.playOK2 = session->playOK2;
@@ -81,7 +82,7 @@ static void handle_login_server(session_t *session)
         packet_play_ok_pack(response, &play_ok);
         login_server_encrypt(session->blowfish, response, response);
 
-        login_server_send_packet(session->socket, response);
+        conn_send_packet(session->socket, response);
 }
 
 void login_server_request_new_conn(socket_t *socket)
@@ -102,7 +103,7 @@ void login_server_request_new_conn(socket_t *socket)
         packet_init(&init, modulus);
         packet_init_pack(response, &init);
 
-        login_server_send_packet(socket, response);
+        conn_send_packet(socket, response);
 }
 
 void login_server_request(socket_t *socket, byte_t *buf, size_t n)
@@ -117,7 +118,7 @@ void login_server_request(socket_t *socket, byte_t *buf, size_t n)
         session = session_find(socket);
 
         if (!session) {
-                login_server_log("Session not found. Ignoring request.");
+                log("Session not found. Ignoring request.");
                 return;
         }
 
@@ -138,7 +139,7 @@ void login_server_request(socket_t *socket, byte_t *buf, size_t n)
                 handle_gg_auth(session);
                 break;
         default:
-                login_server_log("Ignoring unknown packet.");
+                log("Ignoring unknown packet.");
                 break;
         }
 

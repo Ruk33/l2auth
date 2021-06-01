@@ -1,10 +1,10 @@
 #include <arpa/inet.h>
 #include "include/server.h"
-#include "include/login_server.h"
+#include "include/conn.h"
 #include "include/login_server_request.h"
 #include "include/login_server_lib.h"
 
-void login_server_lib_load(send_response_cb cb)
+void login_server_lib_load(conn_send_response_cb cb)
 {
         // Todo: Get these servers from a database.
         server_t bartz     = { 0 };
@@ -35,7 +35,7 @@ void login_server_lib_load(send_response_cb cb)
         server_add(&bartz);
         server_add(&sieghardt);
 
-        login_server_set_send_response(cb);
+        conn_set_cb(cb);
 }
 
 void login_server_lib_new_conn(socket_t *socket)

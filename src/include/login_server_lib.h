@@ -3,9 +3,9 @@
 
 #include "util.h"
 #include "socket.h"
-#include "login_server.h"
+#include "conn.h"
 
-void login_server_lib_load(send_response_cb cb);
+void login_server_lib_load(conn_send_response_cb cb);
 
 void login_server_lib_new_conn(socket_t *socket);
 
