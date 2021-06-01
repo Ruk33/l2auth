@@ -1,17 +1,13 @@
 version: '3'
 
 services:
-  loginserver:
+  login_server:
     build: .
-    command: bash ./compile_and_run_ls.sh
-    volumes:
-      - ./login:/usr/src/l2auth/login
+    command: make clean && make login_server && ./login_server
     ports:
       - 2106:2106
-  gameserver:
+  game_server:
     build: .
-    command: bash ./compile_and_run_gs.sh
-    volumes:
-      - ./game:/usr/src/l2auth/game
+    command: make clean && make game_server && ./game_server
     ports:
       - 7777:7777

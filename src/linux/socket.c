@@ -118,7 +118,7 @@ static socket_t *socket_accept(socket_t *socket)
 
 ssize_t socket_send(socket_t *socket, byte_t *src, size_t n)
 {
-        int     id   = 0;
+        size_t  id   = 0;
         ssize_t sent = 0;
 
         id = socket_id(socket);

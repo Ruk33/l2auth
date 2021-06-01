@@ -41,7 +41,7 @@ int main(/* int argc, char **argv */)
                 return 1;
         }
 
-        // login_server_lib_load(send_response);
+        game_server_lib_load(send_response);
 
         if (!socket_handle_requests(socket, on_request)) {
                 printf("Game server request can't be handled.\n");

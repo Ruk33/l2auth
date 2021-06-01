@@ -6,6 +6,27 @@
 
 #define PREVENT_UNUSED_WARNING(var) var = var
 
+// Returns min number between a and b
+#ifndef min
+#define min(a, b) ((a) > (b) ? (b) : (a))
+#endif
+
+// Returns highes number between a and b
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+// Absolute value
+#ifndef abs
+#define abs(a) ((a) < 0 ? -(a) : (a))
+#endif
+
+// Ensures x is higher/equal than low and lower/equal than high.
+#ifndef clamp
+#define clamp(x, low, high) \
+        (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+#endif
+
 typedef unsigned char byte_t;
 
 typedef int8_t   i8_t;

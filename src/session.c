@@ -14,9 +14,7 @@ session_t *session_new(socket_t *socket)
 
         session = &sessions[session_count];
 
-        session->socket        = socket;
-        session->rsa_decrypted = 0;
-
+        session->socket   = socket;
         session->rsa      = rsa_new();
         session->blowfish = blowfish_new();
 

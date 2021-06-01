@@ -12,7 +12,6 @@ typedef struct {
 
         rsa_t *rsa;
 
-        int rsa_decrypted;
         int playOK1;
         int playOK2;
 } session_t;
