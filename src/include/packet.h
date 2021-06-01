@@ -3,7 +3,11 @@
 
 #include "util.h"
 
-#define packet_append(dest, src) packet_append_n(dest, src, sizeof(src))
+#define packet_append(dest, src) \
+        packet_append_n(dest, (byte_t *) (src), sizeof(src))
+
+#define packet_append_val(dest, src) \
+        packet_append_n(dest, (byte_t *) &(src), sizeof(src))
 
 typedef byte_t packet_t;
 

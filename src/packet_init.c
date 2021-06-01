@@ -16,7 +16,7 @@ void packet_init_pack(packet_t *dest, packet_init_t *src)
 {
         byte_t type = 0x00;
 
-        packet_append_n(dest, &type, sizeof(type));
+        packet_append_val(dest, type);
         packet_append(dest, src->session_id);
         packet_append(dest, src->protocol);
         packet_append(dest, src->modulus);
