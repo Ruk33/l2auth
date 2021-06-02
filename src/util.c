@@ -10,6 +10,16 @@ void bytes_cpy(byte_t *dest, byte_t *src, size_t n)
         }
 }
 
+void bytes_cpy_until(byte_t *dest, byte_t *src, byte_t c, size_t n)
+{
+        while (dest && src && *src != c && n) {
+                *dest = *src;
+                dest += 1;
+                src += 1;
+                n -= 1;
+        }
+}
+
 void bytes_zero(byte_t *dest, size_t n)
 {
         while (dest && n) {

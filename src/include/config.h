@@ -7,4 +7,7 @@
 // Maximum amount of servers to register.
 #define MAX_SERVERS 2
 
+// Maximum bytes used for usernames.
+#define MAX_USERNAME_SIZE 28
+
 #endif

@@ -3,6 +3,7 @@
 
 #include "packet.h"
 #include "l2_string.h"
+#include "character.h"
 
 typedef struct {
         int         empty[10];
@@ -74,9 +75,7 @@ typedef struct {
         packet_auth_login_char_t characters[10];
 } packet_auth_login_t;
 
-void packet_auth_login_add_character(
-        packet_auth_login_t *     dest,
-        packet_auth_login_char_t *src);
+void packet_auth_login_add_character(packet_auth_login_t *d, character_t *src);
 
 void packet_auth_login_pack(packet_t *dest, packet_auth_login_t *src);
 

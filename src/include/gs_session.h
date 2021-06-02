@@ -1,6 +1,7 @@
 #ifndef INCLUDE_GS_SESSION_H
 #define INCLUDE_GS_SESSION_H
 
+#include "config.h"
 #include "util.h"
 #include "socket.h"
 #include "packet.h"
@@ -17,7 +18,7 @@ typedef struct {
         int loginOK1;
         int loginOK2;
 
-        char username[16];
+        char username[MAX_USERNAME_SIZE];
         int  conn_encrypted;
 } gs_session_t;
 

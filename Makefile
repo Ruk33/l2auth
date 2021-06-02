@@ -1,8 +1,9 @@
 CC	= gcc
-CFLAGS	= -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -g -pedantic -O2
-CLIBS	= -lcrypto
+CFLAGS	= -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -g -pedantic
+CLIBS	= -lcrypto -lsqlite3
 OS	= linux
-SOURCES	= $(wildcard src/$(OS)/*.c) $(wildcard src/*.c)
+STORAGE	= sqlite
+SOURCES	= $(wildcard src/$(OS)/*.c) src/storage/$(STORAGE).c $(wildcard src/*.c)
 OBJS	= $(SOURCES:.c=.o)
 
 .PHONY	: clean

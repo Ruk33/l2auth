@@ -1,12 +1,12 @@
 #include "include/util.h"
 #include "include/packet.h"
+#include "include/character.h"
 #include "include/packet_auth_login.h"
 
-void packet_auth_login_add_character(
-        packet_auth_login_t *     dest,
-        packet_auth_login_char_t *src)
+void packet_auth_login_add_character(packet_auth_login_t *dest, character_t *src)
 {
-        dest->characters[dest->count] = *src;
+        PREVENT_UNUSED_WARNING(src);
+        // dest->characters[dest->count] = *src;
         dest->count += 1;
 }
 

@@ -1,12 +1,14 @@
 #include "include/util.h"
 #include "include/socket.h"
 #include "include/conn.h"
+#include "include/storage.h"
 #include "include/game_server_request.h"
 #include "include/game_server_lib.h"
 
 void game_server_lib_load(conn_send_response_cb cb)
 {
         conn_set_cb(cb);
+        storage_open();
 }
 
 void game_server_lib_new_conn(socket_t *socket)

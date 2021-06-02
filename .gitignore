@@ -77,7 +77,6 @@ dkms.conf
 cmake-build-debug/
 build/
 .idea/
-.vscode/
 infer-out
 log/
 login_server

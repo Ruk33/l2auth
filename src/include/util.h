@@ -38,6 +38,8 @@
 
 #define byte_read_val(dest, src) byte_read_n(&(dest), src, sizeof(dest))
 
+#define bytes_cpy_str(dest, src, n) bytes_cpy_until(dest, src, 0, n);
+
 typedef unsigned char byte_t;
 
 typedef int8_t   i8_t;
@@ -49,6 +51,9 @@ typedef uint32_t u32_t;
 
 // Copy n bytes from src to dest.
 void bytes_cpy(byte_t *dest, byte_t *src, size_t n);
+
+// Copy up to n bytes or c byte from src to dest.
+void bytes_cpy_until(byte_t *dest, byte_t *src, byte_t c, size_t n);
 
 // Zero n bytes from dest.
 void bytes_zero(byte_t *dest, size_t n);
