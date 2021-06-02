@@ -31,6 +31,9 @@
                 sqlite_ok_or_log(sqlite3_finalize(stmt)); \
         } while (0)
 
+// Check if last sqlite operation went well.
+#define sqlite_last_op_ok() sqlite3_errcode(conn) == SQLITE_OK
+
 /**
  * Bind bytes to key from query.
  * Intended to be used with fixed sized values.
@@ -81,17 +84,34 @@
                 (byte_t *) sqlite3_column_text(stmt, col), \
                 sizeof(dest) - 1)
 
-#define CHARACTERS_COLUMNS "name"
+#define CHARACTERS_COLUMNS \
+        "username, name, race, sex, _class, _int, str, con, men, dex, wit, hair_style, hair_color, face"
 
 #define CHARACTERS_BY_USERNAME_QUERY \
         "select " CHARACTERS_COLUMNS \
         " from characters where username = :username limit :limit;"
 
+#define CHARACTERS_CREATE_QUERY                       \
+        "insert into characters (" CHARACTERS_COLUMNS \
+        ") values (:username, :name, :race, :sex, :_class, :_int, :str, :con, :men, :dex, :wit, :hair_style, :hair_color, :face);"
+
 static sqlite3 *conn = 0;
 
 static void sqlite_to_character(character_t *dest, sqlite3_stmt *stmt)
 {
-        sqlite_cpy_text((byte_t *) (dest->name), stmt, 0);
+        sqlite_cpy_text((byte_t *) (dest->name), stmt, 1);
+        dest->race       = sqlite3_column_int(stmt, 2);
+        dest->sex        = sqlite3_column_int(stmt, 3);
+        dest->_class     = sqlite3_column_int(stmt, 4);
+        dest->_int       = sqlite3_column_int(stmt, 5);
+        dest->str        = sqlite3_column_int(stmt, 6);
+        dest->con        = sqlite3_column_int(stmt, 7);
+        dest->men        = sqlite3_column_int(stmt, 8);
+        dest->dex        = sqlite3_column_int(stmt, 9);
+        dest->wit        = sqlite3_column_int(stmt, 10);
+        dest->hair_style = sqlite3_column_int(stmt, 11);
+        dest->hair_color = sqlite3_column_int(stmt, 12);
+        dest->face       = sqlite3_column_int(stmt, 13);
 }
 
 void storage_open(void)
@@ -116,4 +136,30 @@ size_t storage_get_characters(character_t *dest, char *username, size_t max)
         }
 
         return found;
+}
+
+int storage_create_character(char *username, character_t *src)
+{
+        sqlite3_stmt *stmt = 0;
+
+        sqlite_query(stmt, CHARACTERS_CREATE_QUERY);
+
+        sqlite_ok_or_log(sqlite_bind_text(stmt, ":username", username));
+        sqlite_ok_or_log(sqlite_bind_text(stmt, ":name", src->name));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":race", src->race));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":sex", src->sex));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":_class", src->_class));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":_int", src->_int));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":str", src->str));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":con", src->con));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":men", src->men));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":dex", src->dex));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":wit", src->wit));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":hair_style", src->hair_style));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":hair_color", src->hair_color));
+        sqlite_ok_or_log(sqlite_bind_int(stmt, ":face", src->face));
+
+        sqlite_step_and_finalize(stmt);
+
+        return sqlite_last_op_ok();
 }

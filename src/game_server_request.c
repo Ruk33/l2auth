@@ -36,15 +36,17 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
 
         static packet_auth_login_t auth_login = { 0 };
 
+        static character_t characters[10] = { 0 };
+
         packet_auth_request_t auth_request = { 0 };
 
         char *username = 0;
 
-        character_t characters[10] = { 0 };
-        size_t characters_count    = 0;
+        size_t characters_count = 0;
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
+        bytes_zero((byte_t *) characters, sizeof(characters));
 
         if (packet) {
                 packet_auth_request_unpack(&auth_request, packet);
@@ -95,13 +97,13 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
 
         packet_create_char_t create_char = { 0 };
 
-        char name[64] = { 0 };
+        character_t character = { 0 };
 
         packet_create_char_request_unpack(&create_char_request, packet);
-        l2_string_to_char(name, create_char_request.name, sizeof(name));
+        character_from_request(&character, &create_char_request);
 
-        log("Create character %s for %s", name, session->username);
-        create_char.response = 0x01; // Success.
+        create_char.response =
+                storage_create_character(session->username, &character);
 
         packet_create_char_pack(response, &create_char);
         gs_session_encrypt(session, response, response);
