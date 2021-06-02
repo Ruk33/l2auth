@@ -3,6 +3,8 @@
 #include "include/conn.h"
 #include "include/storage.h"
 #include "include/log.h"
+#include "include/l2_string.h"
+#include "include/packet.h"
 #include "include/gs_session.h"
 #include "include/character.h"
 #include "include/character_template.h"
@@ -10,6 +12,8 @@
 #include "include/packet_auth_login.h"
 #include "include/packet_auth_request.h"
 #include "include/packet_new_char.h"
+#include "include/packet_create_char_request.h"
+#include "include/packet_create_char.h"
 #include "include/game_server_request.h"
 
 static void handle_protocol_version(gs_session_t *session)
@@ -24,6 +28,8 @@ static void handle_protocol_version(gs_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
+// If packet is not NULL, the session will be updated and characters fetched.
+// If packet is NULL, only the characters will be fetch (no session update).
 static void handle_auth_login(gs_session_t *session, packet_t *packet)
 {
         static packet_t response[4096] = { 0 };
@@ -34,14 +40,16 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
 
         char *username = 0;
 
-        character_t characters[10]   = { 0 };
-        size_t      characters_count = 0;
+        character_t characters[10] = { 0 };
+        size_t characters_count    = 0;
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
 
-        packet_auth_request_unpack(&auth_request, packet);
-        gs_session_update_auth(session, &auth_request);
+        if (packet) {
+                packet_auth_request_unpack(&auth_request, packet);
+                gs_session_update_auth(session, &auth_request);
+        }
 
         username         = session->username;
         characters_count = storage_get_characters(characters, username, 10);
@@ -79,6 +87,31 @@ static void handle_new_character(gs_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
+static void handle_create_character(gs_session_t *session, packet_t *packet)
+{
+        packet_t response[8] = { 0 };
+
+        packet_create_char_request_t create_char_request = { 0 };
+
+        packet_create_char_t create_char = { 0 };
+
+        char name[64] = { 0 };
+
+        packet_create_char_request_unpack(&create_char_request, packet);
+        l2_string_to_char(name, create_char_request.name, sizeof(name));
+
+        log("Create character %s for %s", name, session->username);
+        create_char.response = 0x01; // Success.
+
+        packet_create_char_pack(response, &create_char);
+        gs_session_encrypt(session, response, response);
+
+        conn_send_packet(session->socket, response);
+
+        // Refetch characters.
+        handle_auth_login(session, 0);
+}
+
 void game_server_request_new_conn(socket_t *socket)
 {
         gs_session_new(socket);
@@ -113,7 +146,7 @@ void game_server_request(socket_t *socket, byte_t *buf, size_t n)
                 handle_new_character(session);
                 break;
         case 0x0b: // Create character
-                log("Create character.");
+                handle_create_character(session, packet);
                 break;
         case 0x08: // Auth request
                 handle_auth_login(session, packet);

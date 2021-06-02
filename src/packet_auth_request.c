@@ -9,7 +9,7 @@ void packet_auth_request_unpack(packet_auth_request_t *dest, packet_t *src)
 
         size_t max_username_size = 0;
 
-        body = packet_body(src) + 1; // Remove packet type.
+        body = packet_body(src) + 1; // Ignore packet type.
 
         max_username_size = sizeof(dest->username);
         l2_string_cpy(dest->username, (l2_string_t *) body, max_username_size);
