@@ -62,114 +62,14 @@ static void handle_new_character(gs_session_t *session)
 
         static packet_new_char_t new_char = { 0 };
 
-        static character_template_t templates[10] = { 0 };
+        character_template_t *templates = 0;
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &new_char, sizeof(new_char));
-        bytes_zero((byte_t *) &templates, sizeof(templates));
 
-        // Human fighter
-        templates[0].race   = 0;
-        templates[0]._class = 0;
-        templates[0].str    = 40;
-        templates[0].dex    = 30;
-        templates[0].con    = 43;
-        templates[0]._int   = 21;
-        templates[0].wit    = 11;
-        templates[0].men    = 25;
+        templates = character_template_default();
 
-        // Human figher copy
-        // Not sure why the clients requires it...
-        templates[1].race   = 0;
-        templates[1]._class = 0;
-        templates[1].str    = 40;
-        templates[1].dex    = 30;
-        templates[1].con    = 43;
-        templates[1]._int   = 21;
-        templates[1].wit    = 11;
-        templates[1].men    = 25;
-
-        // Human mage
-        templates[2].race   = 0;
-        templates[2]._class = 10;
-        templates[2].str    = 22;
-        templates[2].dex    = 21;
-        templates[2].con    = 27;
-        templates[2]._int   = 41;
-        templates[2].wit    = 20;
-        templates[2].men    = 39;
-
-        // Elf fighter
-        templates[3].race   = 1;
-        templates[3]._class = 18;
-        templates[3].str    = 36;
-        templates[3].dex    = 35;
-        templates[3].con    = 36;
-        templates[3]._int   = 23;
-        templates[3].wit    = 14;
-        templates[3].men    = 26;
-
-        // Elf mage
-        templates[4].race   = 1;
-        templates[4]._class = 25;
-        templates[4].str    = 21;
-        templates[4].dex    = 24;
-        templates[4].con    = 25;
-        templates[4]._int   = 37;
-        templates[4].wit    = 23;
-        templates[4].men    = 40;
-
-        // Dark elf fighter
-        templates[5].race   = 2;
-        templates[5]._class = 31;
-        templates[5].str    = 41;
-        templates[5].dex    = 34;
-        templates[5].con    = 32;
-        templates[5]._int   = 25;
-        templates[5].wit    = 12;
-        templates[5].men    = 26;
-
-        // Dark elf mage
-        templates[6].race   = 2;
-        templates[6]._class = 38;
-        templates[6].str    = 23;
-        templates[6].dex    = 23;
-        templates[6].con    = 24;
-        templates[6]._int   = 44;
-        templates[6].wit    = 19;
-        templates[6].men    = 37;
-
-        // Orc fighter
-        templates[7].race   = 3;
-        templates[7]._class = 44;
-        templates[7].str    = 40;
-        templates[7].dex    = 26;
-        templates[7].con    = 47;
-        templates[7]._int   = 18;
-        templates[7].wit    = 12;
-        templates[7].men    = 27;
-
-        // Orc mage
-        templates[8].race   = 3;
-        templates[8]._class = 49;
-        templates[8].str    = 27;
-        templates[8].dex    = 24;
-        templates[8].con    = 31;
-        templates[8]._int   = 31;
-        templates[8].wit    = 15;
-        templates[8].men    = 42;
-
-        // Dwarf
-        templates[9].race   = 4;
-        templates[9]._class = 53;
-        templates[9].str    = 39;
-        templates[9].dex    = 29;
-        templates[9].con    = 45;
-        templates[9]._int   = 20;
-        templates[9].wit    = 10;
-        templates[9].men    = 27;
-
-        for (size_t i = 0; i < 10; i += 1) {
+        for (size_t i = 0, max = character_template_count(); i < max; i += 1) {
                 packet_new_char_add_template(&new_char, &templates[i]);
         }
 
