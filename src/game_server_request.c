@@ -14,6 +14,11 @@
 #include "include/packet_new_char.h"
 #include "include/packet_create_char_request.h"
 #include "include/packet_create_char.h"
+#include "include/packet_char_select_request.h"
+#include "include/packet_char_select.h"
+#include "include/packet_d0.h"
+#include "include/packet_quest_list.h"
+#include "include/packet_enter_world.h"
 #include "include/game_server_request.h"
 
 static void handle_protocol_version(gs_session_t *session)
@@ -25,6 +30,30 @@ static void handle_protocol_version(gs_session_t *session)
         packet_protocol_version(&protocol_version);
         packet_protocol_version_pack(response, &protocol_version);
 
+        conn_send_packet(session->socket, response);
+}
+
+static void handle_enter_world(gs_session_t *session)
+{
+        static packet_t response[1024] = { 0 };
+
+        static packet_enter_world_t enter_world = { 0 };
+
+        character_t character = { 0 };
+
+        bytes_zero(response, sizeof(response));
+        bytes_zero((byte_t *) &enter_world, sizeof(enter_world));
+
+        // Todo check which character the client selected.
+        if (!storage_get_characters(&character, session->username, 1)) {
+                log("Character not found.");
+                return;
+        }
+
+        packet_enter_world_set_char(&enter_world, &character);
+        packet_enter_world_pack(response, &enter_world);
+
+        gs_session_encrypt(session, response, response);
         conn_send_packet(session->socket, response);
 }
 
@@ -114,6 +143,56 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
         handle_auth_login(session, 0);
 }
 
+static void handle_selected_character(gs_session_t *session, packet_t *packet)
+{
+        static packet_t response[512] = { 0 };
+
+        static packet_char_select_t char_select = { 0 };
+
+        packet_char_select_request_t char_select_request = { 0 };
+
+        character_t character = { 0 };
+
+        bytes_zero(response, sizeof(response));
+        bytes_zero((byte_t *) &char_select, sizeof(char_select));
+
+        packet_char_select_request_unpack(&char_select_request, packet);
+
+        if (!storage_get_characters(&character, session->username, 1)) {
+                log("Character not found");
+                return;
+        }
+
+        packet_char_select_set_char(&char_select, &character);
+        packet_char_select_set_playok(&char_select, session->playOK1);
+        packet_char_select_pack(response, &char_select);
+
+        gs_session_encrypt(session, response, response);
+        conn_send_packet(session->socket, response);
+}
+
+static void handle_quest_list(gs_session_t *session)
+{
+        packet_t response[16] = { 0 };
+
+        packet_quest_list_t quest_list = { 0 };
+
+        packet_quest_list_pack(response, &quest_list);
+        gs_session_encrypt(session, response, response);
+        conn_send_packet(session->socket, response);
+}
+
+static void handle_auto_ss_bsps(gs_session_t *session)
+{
+        packet_t response[16] = { 0 };
+
+        packet_d0_t d0 = { 0 };
+
+        packet_d0_pack(response, &d0);
+        gs_session_encrypt(session, response, response);
+        conn_send_packet(session->socket, response);
+}
+
 void game_server_request_new_conn(socket_t *socket)
 {
         gs_session_new(socket);
@@ -144,14 +223,47 @@ void game_server_request(socket_t *socket, byte_t *buf, size_t n)
         case 0x00: // Protocol version
                 handle_protocol_version(session);
                 break;
-        case 0x0e: // New character
-                handle_new_character(session);
+        case 0x01: // Move backwards.
+                log("TODO: Move backwards");
+                break;
+        case 0x03: // Enter world.
+                handle_enter_world(session);
+                break;
+        case 0x04: // Action.
+                log("TODO: Action");
+                break;
+        case 0x08: // Auth request
+                handle_auth_login(session, packet);
+                break;
+        case 0x09: // Logout.
+                log("TODO: Logout");
                 break;
         case 0x0b: // Create character
                 handle_create_character(session, packet);
                 break;
-        case 0x08: // Auth request
-                handle_auth_login(session, packet);
+        case 0x0d: // Selected char.
+                handle_selected_character(session, packet);
+                break;
+        case 0x0e: // New character
+                handle_new_character(session);
+                break;
+        case 0x38: // Say.
+                log("TODO: Say");
+                break;
+        case 0x46: // Restart.
+                log("TODO: Restart");
+                break;
+        case 0x48: // Validate position.
+                log("TODO: Validate position");
+                break;
+        case 0x63: // Quest list.
+                handle_quest_list(session);
+                break;
+        case 0xcd: // Show map.
+                log("TODO: Show map");
+                break;
+        case 0xd0: // Auto ss bsps.
+                handle_auto_ss_bsps(session);
                 break;
         default:
                 break;
