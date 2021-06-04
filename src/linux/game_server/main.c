@@ -1,16 +1,34 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <dlfcn.h>
 #include "../../include/util.h"
 #include "../../include/socket.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
+typedef void (*send_response_cb)(socket_t *, byte_t *, size_t);
+typedef void (*save_sessions_cb)(void *, size_t);
+
+typedef void (*load_cb)(send_response_cb, save_sessions_cb);
+typedef void (*unload_cb)(void);
+typedef void (*load_sessions_cb)(void *, size_t);
+typedef void (*new_conn_cb)(socket_t *);
+typedef void (*new_req_cb)(socket_t *, byte_t *, size_t);
+typedef void (*disconnect_cb)(socket_t *);
+
 typedef struct {
+        void *sessions;
+        size_t session_size;
+
         void *lib;
-        void (*initialize)(void (*)(socket_t *, byte_t *, size_t));
-        void (*new_conn)(socket_t *);
-        void (*new_req)(socket_t *, byte_t *, size_t);
-        void (*disconnect)(socket_t *);
+        load_cb load;
+        unload_cb unload;
+
+        load_sessions_cb load_sessions;
+        new_conn_cb new_conn;
+        new_req_cb new_req;
+        disconnect_cb disconnect;
 } gs_lib_t;
 
 static gs_lib_t gs_lib = { 0 };
@@ -60,11 +78,31 @@ static void send_response(socket_t *socket, byte_t *buf, size_t n)
         socket_send(socket, buf, n);
 }
 
+static void save_sessions(void *sessions, size_t n)
+{
+        if (!gs_lib.sessions) {
+                gs_lib.sessions     = malloc(n);
+                gs_lib.session_size = n;
+        }
+
+        memcpy(gs_lib.sessions, sessions, n);
+}
+
 static int init_gs_lib(void)
 {
+        int all_load = 0;
+
+        if (gs_lib.unload) {
+                gs_lib.unload();
+        }
+
         load_library();
-        *(void **) (&gs_lib.initialize) =
-                load_lib_function("game_server_lib_load");
+
+        *(void **) (&gs_lib.load) = load_lib_function("game_server_lib_load");
+        *(void **) (&gs_lib.unload) =
+                load_lib_function("game_server_lib_unload");
+        *(void **) (&gs_lib.load_sessions) =
+                load_lib_function("game_server_lib_load_sessions");
         *(void **) (&gs_lib.new_conn) =
                 load_lib_function("game_server_lib_new_conn");
         *(void **) (&gs_lib.new_req) =
@@ -72,8 +110,19 @@ static int init_gs_lib(void)
         *(void **) (&gs_lib.disconnect) =
                 load_lib_function("game_server_lib_disconnect");
 
-        return gs_lib.lib && gs_lib.initialize && gs_lib.new_conn &&
-               gs_lib.new_req && gs_lib.disconnect;
+        all_load =
+                (gs_lib.lib && gs_lib.load && gs_lib.unload &&
+                 gs_lib.load_sessions && gs_lib.new_conn && gs_lib.new_req &&
+                 gs_lib.disconnect);
+
+        if (!all_load) {
+                return 0;
+        }
+
+        gs_lib.load(send_response, save_sessions);
+        gs_lib.load_sessions(gs_lib.sessions, gs_lib.session_size);
+
+        return 1;
 }
 
 static void on_request(socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
@@ -119,8 +168,6 @@ int main(/* int argc, char **argv */)
                 printf("Unable to load game server library.\n");
                 return 1;
         }
-
-        gs_lib.initialize(send_response);
 
         if (!socket_handle_requests(socket, on_request)) {
                 printf("Game server request can't be handled.\n");

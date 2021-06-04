@@ -6,31 +6,51 @@
 #include "include/packet_auth_request.h"
 #include "include/gs_session.h"
 
-static gs_session_t sessions[MAX_CLIENTS] = { 0 };
-static size_t       session_count         = 0;
+typedef struct {
+        gs_session_t sessions[MAX_CLIENTS];
+        size_t count;
+} session_list_t;
+
+static session_list_t storage     = { 0 };
+static gs_session_save_cb save_cb = 0;
+
+void gs_session_set_save_cb(gs_session_save_cb cb)
+{
+        save_cb = cb;
+}
+
+void gs_session_load(void *src, size_t n)
+{
+        bytes_cpy((byte_t *) &storage, (byte_t *) src, n);
+}
+
+void gs_sessions_save(void)
+{
+        save_cb(&storage, sizeof(storage));
+}
 
 gs_session_t *gs_session_new(socket_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         gs_session_t *new_session = 0;
 
-        new_session = &sessions[session_count];
+        new_session = &storage.sessions[storage.count];
 
         bytes_zero((byte_t *) new_session, sizeof(*new_session));
         bytes_cpy(new_session->encrypt_key, key, sizeof(key));
         bytes_cpy(new_session->decrypt_key, key, sizeof(key));
 
         new_session->socket = socket;
-        session_count += 1;
+        storage.count += 1;
 
         return new_session;
 }
 
 gs_session_t *gs_session_find(socket_t *socket)
 {
-        for (size_t i = 0; i < session_count; i += 1) {
-                if (sessions[i].socket == socket) {
-                        return &sessions[i];
+        for (size_t i = 0; i < storage.count; i += 1) {
+                if (storage.sessions[i].socket == socket) {
+                        return &storage.sessions[i];
                 }
         }
 

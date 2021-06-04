@@ -119,6 +119,11 @@ void storage_open(void)
         sqlite_ok_or_log(sqlite3_open("db", &conn));
 }
 
+void storage_close(void)
+{
+        sqlite3_close(conn);
+}
+
 size_t storage_get_characters(character_t *dest, char *username, size_t max)
 {
         sqlite3_stmt *stmt = 0;

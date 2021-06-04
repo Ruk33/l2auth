@@ -7,6 +7,8 @@
 #include "packet.h"
 #include "packet_auth_request.h"
 
+typedef void (*gs_session_save_cb)(void *, size_t);
+
 typedef struct {
         socket_t *socket;
 
@@ -19,8 +21,14 @@ typedef struct {
         int loginOK2;
 
         char username[MAX_USERNAME_SIZE];
-        int  conn_encrypted;
+        int conn_encrypted;
 } gs_session_t;
+
+void gs_session_set_save_cb(gs_session_save_cb cb);
+
+void gs_session_load(void *sessions, size_t n);
+
+void gs_sessions_save(void);
 
 gs_session_t *gs_session_new(socket_t *socket);
 
