@@ -1,5 +1,5 @@
-#ifndef INCLUDE_PACKET_D0
-#define INCLUDE_PACKET_D0
+#ifndef INCLUDE_PACKET_D0_H
+#define INCLUDE_PACKET_D0_H
 
 #include "packet.h"
 

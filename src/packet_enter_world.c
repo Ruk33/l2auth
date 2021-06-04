@@ -6,48 +6,48 @@
 
 void packet_enter_world_set_char(packet_enter_world_t *dest, character_t *src)
 {
-        dest->x             = 42; // src->x;
-        dest->y             = 42; // src->y;
-        dest->z             = 42; // src->z;
-        dest->id            = 42; // src->id;
+        dest->x             = src->x; // -83968
+        dest->y             = src->y; // 244634
+        dest->z             = src->z; // -3730
+        dest->id            = src->id;
         dest->race_id       = src->race;
         dest->sex           = src->sex;
         dest->class_id      = src->_class;
         dest->class_id_copy = src->_class;
-        dest->level         = 1; // src->level;
-        dest->exp           = 0; // src->exp;
+        dest->level         = src->level;
+        dest->exp           = src->exp;
         dest->str           = src->str;
         dest->dex           = src->dex;
         dest->con           = src->con;
         dest->_int          = src->_int;
         dest->wit           = src->wit;
         dest->men           = src->men;
-        dest->hp            = (int) 400; // src->hp;
-        dest->mp            = (int) 400; // src->mp;
-        dest->max_hp        = (int) 400; // src->max_hp;
-        dest->max_mp        = (int) 400; // src->max_mp;
-        dest->cp            = 400;       // src->cp;
-        dest->max_cp        = 400;       // src->max_cp;
-        dest->sp            = 0;         // src->sp;
-        dest->exp           = 0;         // src->exp;
-        dest->sp            = 0;         // src->sp;
-        dest->p_attack      = 0;         // src->p_attack;
-        dest->m_attack      = 0;         // src->m_attack;
-        dest->p_def         = 0;         // src->p_def;
-        dest->m_def         = 0;         // src->m_def;
-        dest->evasion_rate  = 0;         // src->evasion_rate;
-        dest->critical_hit  = 0;         // src->critical_hit;
+        dest->hp            = src->hp;
+        dest->mp            = src->mp;
+        dest->max_hp        = src->max_hp;
+        dest->max_mp        = src->max_mp;
+        dest->cp            = src->cp;
+        dest->max_cp        = src->max_cp;
+        dest->sp            = src->sp;
+        dest->exp           = src->exp;
+        dest->sp            = src->sp;
+        dest->p_attack      = src->p_attack;
+        dest->m_attack      = src->m_attack;
+        dest->p_def         = src->p_def;
+        dest->m_def         = src->m_def;
+        dest->evasion_rate  = src->evasion_rate;
+        dest->critical_hit  = src->critical_hit;
 
-        dest->run_speed                 = 120;
-        dest->walk_speed                = 100;
-        dest->p_attack_speed            = 20;
-        dest->p_attack_speed_copy       = 20;
-        dest->movement_speed_multiplier = 1;
-        dest->attack_speed_multiplier   = 1;
-        dest->collision_radius          = 9;
-        dest->collision_height          = 23;
-        dest->name_color                = 0xFFFFFF;
-        dest->max_load                  = 42;
+        dest->run_speed                 = src->run_speed;
+        dest->walk_speed                = src->walk_speed;
+        dest->p_attack_speed            = src->p_attack_speed;
+        dest->p_attack_speed_copy       = src->p_attack_speed;
+        dest->movement_speed_multiplier = src->movement_speed_multiplier;
+        dest->attack_speed_multiplier   = src->attack_speed_multiplier;
+        dest->collision_radius          = src->collision_radius;
+        dest->collision_height          = src->collision_height;
+        dest->name_color                = src->name_color;
+        dest->max_load                  = src->max_load;
 }
 
 void packet_enter_world_pack(packet_t *dest, packet_enter_world_t *src)

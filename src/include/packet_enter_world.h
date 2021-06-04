@@ -1,5 +1,5 @@
-#ifndef INCLUDE_PACKET_ENTER_WORLD
-#define INCLUDE_PACKET_ENTER_WORLD
+#ifndef INCLUDE_PACKET_ENTER_WORLD_H
+#define INCLUDE_PACKET_ENTER_WORLD_H
 
 #include "l2_string.h"
 #include "packet.h"

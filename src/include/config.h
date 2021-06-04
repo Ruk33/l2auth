@@ -10,4 +10,7 @@
 // Maximum bytes used for usernames.
 #define MAX_USERNAME_SIZE 28
 
+// Ignore.
+void make_iso_compilers_happy(void);
+
 #endif

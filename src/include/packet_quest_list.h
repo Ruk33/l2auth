@@ -1,5 +1,5 @@
-#ifndef INCLUDE_PACKET_QUEST_LIST
-#define INCLUDE_PACKET_QUEST_LIST
+#ifndef INCLUDE_PACKET_QUEST_LIST_H
+#define INCLUDE_PACKET_QUEST_LIST_H
 
 #include "util.h"
 #include "packet.h"
