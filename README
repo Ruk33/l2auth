@@ -25,42 +25,43 @@ This is the exact same approach as to what projects like L2J do.
 == Lineage 2 Protocol
 Lineage 2 uses TCP to send packets.
 
-All integers are little-endian.
+All integers are little-endian and this project is MEANT to run on little
+endian machines.
 
 The first two bytes of the packet contain the packet size and the third one, 
 usually the packet type.
 
-Other than the first packet, all packets are encrypted with blowfish using 
-the following hardcoded key ;5.]94-31==-%xT!^[$\000.
+Other than the first packet, all the login server packets are encrypted with 
+blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
-- [ ] Correctly handle big/little-endian
+- [x] Hotcode reload
 - [x] Display terms of service view
 - [x] Display server list
 - [x] Allow to enter game server
 - [x] Create character
-- [ ] Enter world
+- [x] Enter world
 - [ ] Walk
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once
 - [ ] See other players
-- [ ] Spawn random orc (see docs/screenshot/orc.jpg)
+- [ ] Spawn random orc
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
 we can be more organized with the work. After that, just have fun working on it!
 
-A few rules for new contributors:
-- no dynamic memory allocation (only third party libs are allowed to do so)
-- all variables must be initialized
-- no NULL, use 0 (shorter to write)
-- os related stuff must be inside of the os folder (ie, src/linux)
-- storage related stuff, must be inside of storage/name.c (ie, storage/sqlite.c)
-- only 1 thread is used to handle requests
-- only 1 storage/database connection is used for the server
-- only game_server/main.c and login_server/main.c are allowed to spawn threads
-- variables exceeding 100 bytes, must be static and zeroed before used
-- have fun
+A few rules for contributors:
+- No dynamic memory allocation (only third party libs are allowed to do so)
+- All variables must be initialized
+- No NULL, use 0 (shorter to write)
+- OS related stuff must be inside of the os folder (ie, src/linux)
+- Storage related stuff, must be inside of storage/name.c (ie, storage/sqlite.c)
+- Only 1 thread is used to handle requests
+- Only 1 storage/database connection is used for the server
+- Only game_server/main.c and login_server/main.c are allowed to spawn threads
+- Variables exceeding 100 bytes, must be static and zeroed before used
+- Have fun
 
 == Credits
 - l2jserver (http://l2jserver.com/)
