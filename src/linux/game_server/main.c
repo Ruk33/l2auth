@@ -3,19 +3,19 @@
 #include <string.h>
 #include <dlfcn.h>
 #include "../../include/util.h"
-#include "../../include/socket.h"
+#include "../../include/os_socket.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
-typedef void (*send_response_cb)(socket_t *, byte_t *, size_t);
+typedef void (*send_response_cb)(os_socket_t *, byte_t *, size_t);
 typedef void (*save_sessions_cb)(void *, size_t);
 
 typedef void (*load_cb)(send_response_cb, save_sessions_cb);
 typedef void (*unload_cb)(void);
 typedef void (*load_sessions_cb)(void *, size_t);
-typedef void (*new_conn_cb)(socket_t *);
-typedef void (*new_req_cb)(socket_t *, byte_t *, size_t);
-typedef void (*disconnect_cb)(socket_t *);
+typedef void (*new_conn_cb)(os_socket_t *);
+typedef void (*new_req_cb)(os_socket_t *, byte_t *, size_t);
+typedef void (*disconnect_cb)(os_socket_t *);
 
 typedef struct {
         void *sessions;
@@ -73,9 +73,9 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void send_response(socket_t *socket, byte_t *buf, size_t n)
+static void send_response(os_socket_t *socket, byte_t *buf, size_t n)
 {
-        socket_send(socket, buf, n);
+        os_socket_send(socket, buf, n);
 }
 
 static void save_sessions(void *sessions, size_t n)
@@ -98,17 +98,14 @@ static int init_gs_lib(void)
 
         load_library();
 
-        *(void **) (&gs_lib.load) = load_lib_function("game_server_lib_load");
-        *(void **) (&gs_lib.unload) =
-                load_lib_function("game_server_lib_unload");
+        *(void **) (&gs_lib.load)   = load_lib_function("gs_lib_load");
+        *(void **) (&gs_lib.unload) = load_lib_function("gs_lib_unload");
         *(void **) (&gs_lib.load_sessions) =
-                load_lib_function("game_server_lib_load_sessions");
-        *(void **) (&gs_lib.new_conn) =
-                load_lib_function("game_server_lib_new_conn");
-        *(void **) (&gs_lib.new_req) =
-                load_lib_function("game_server_lib_new_req");
+                load_lib_function("gs_lib_load_sessions");
+        *(void **) (&gs_lib.new_conn) = load_lib_function("gs_lib_new_conn");
+        *(void **) (&gs_lib.new_req)  = load_lib_function("gs_lib_new_req");
         *(void **) (&gs_lib.disconnect) =
-                load_lib_function("game_server_lib_disconnect");
+                load_lib_function("gs_lib_disconnect");
 
         all_load =
                 (gs_lib.lib && gs_lib.load && gs_lib.unload &&
@@ -125,7 +122,8 @@ static int init_gs_lib(void)
         return 1;
 }
 
-static void on_request(socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
+static void
+on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
 {
         // Todo: only load if required.
         if (!init_gs_lib()) {
@@ -155,9 +153,9 @@ static void on_request(socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
 
 int main(/* int argc, char **argv */)
 {
-        socket_t *socket = 0;
+        os_socket_t *socket = 0;
 
-        socket = socket_create(7777);
+        socket = os_socket_create(7777);
 
         if (!socket) {
                 printf("Game server socket couldn't be created.\n");
@@ -169,7 +167,7 @@ int main(/* int argc, char **argv */)
                 return 1;
         }
 
-        if (!socket_handle_requests(socket, on_request)) {
+        if (!os_socket_handle_requests(socket, on_request)) {
                 printf("Game server request can't be handled.\n");
                 return 1;
         }

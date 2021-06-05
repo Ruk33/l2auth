@@ -1,7 +1,7 @@
 #include <sqlite3.h>
 #include "../include/util.h"
 #include "../include/log.h"
-#include "../include/character.h"
+#include "../include/gs_character.h"
 #include "../include/storage.h"
 
 // Log if operation didn't executed well.
@@ -97,7 +97,7 @@
 
 static sqlite3 *conn = 0;
 
-static void sqlite_to_character(character_t *dest, sqlite3_stmt *stmt)
+static void sqlite_to_character(gs_character_t *dest, sqlite3_stmt *stmt)
 {
         sqlite_cpy_text((byte_t *) (dest->name), stmt, 1);
         dest->race       = sqlite3_column_int(stmt, 2);
@@ -124,7 +124,7 @@ void storage_close(void)
         sqlite3_close(conn);
 }
 
-size_t storage_get_characters(character_t *dest, char *username, size_t max)
+size_t storage_get_characters(gs_character_t *dest, char *username, size_t max)
 {
         sqlite3_stmt *stmt = 0;
 
@@ -143,7 +143,7 @@ size_t storage_get_characters(character_t *dest, char *username, size_t max)
         return found;
 }
 
-int storage_create_character(char *username, character_t *src)
+int storage_create_character(char *username, gs_character_t *src)
 {
         sqlite3_stmt *stmt = 0;
 

@@ -3,14 +3,14 @@
 
 #include "config.h"
 #include "util.h"
-#include "socket.h"
+#include "os_socket.h"
 #include "packet.h"
-#include "packet_auth_request.h"
+#include "gs_packet_auth_request.h"
 
 typedef void (*gs_session_save_cb)(void *, size_t);
 
 typedef struct {
-        socket_t *socket;
+        os_socket_t *socket;
 
         byte_t encrypt_key[8];
         byte_t decrypt_key[8];
@@ -30,15 +30,15 @@ void gs_session_load(void *sessions, size_t n);
 
 void gs_sessions_save(void);
 
-gs_session_t *gs_session_new(socket_t *socket);
+gs_session_t *gs_session_new(os_socket_t *socket);
 
-gs_session_t *gs_session_find(socket_t *socket);
+gs_session_t *gs_session_find(os_socket_t *socket);
 
 // Mark the connection as encrypted.
 // This function AFFECTS gs_session_decrypt.
 void gs_session_encrypt_conn(gs_session_t *session);
 
-void gs_session_update_auth(gs_session_t *dest, packet_auth_request_t *src);
+void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src);
 
 void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src);
 

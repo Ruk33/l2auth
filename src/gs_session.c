@@ -1,9 +1,9 @@
 #include "include/config.h"
 #include "include/util.h"
-#include "include/socket.h"
+#include "include/os_socket.h"
 #include "include/l2_string.h"
-#include "include/game_server_crypt.h"
-#include "include/packet_auth_request.h"
+#include "include/gs_crypt.h"
+#include "include/gs_packet_auth_request.h"
 #include "include/gs_session.h"
 
 typedef struct {
@@ -29,7 +29,7 @@ void gs_sessions_save(void)
         save_cb(&storage, sizeof(storage));
 }
 
-gs_session_t *gs_session_new(socket_t *socket)
+gs_session_t *gs_session_new(os_socket_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         gs_session_t *new_session = 0;
@@ -46,7 +46,7 @@ gs_session_t *gs_session_new(socket_t *socket)
         return new_session;
 }
 
-gs_session_t *gs_session_find(socket_t *socket)
+gs_session_t *gs_session_find(os_socket_t *socket)
 {
         for (size_t i = 0; i < storage.count; i += 1) {
                 if (storage.sessions[i].socket == socket) {
@@ -62,7 +62,7 @@ void gs_session_encrypt_conn(gs_session_t *session)
         session->conn_encrypted = 1;
 }
 
-void gs_session_update_auth(gs_session_t *dest, packet_auth_request_t *src)
+void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src)
 {
         size_t max_username_size = 0;
 
@@ -77,13 +77,13 @@ void gs_session_update_auth(gs_session_t *dest, packet_auth_request_t *src)
 
 void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src)
 {
-        game_server_encrypt(session->encrypt_key, dest, src);
+        gs_encrypt(session->encrypt_key, dest, src);
 }
 
 void gs_session_decrypt(gs_session_t *session, packet_t *dest, byte_t *src)
 {
         if (session->conn_encrypted) {
-                game_server_decrypt(session->decrypt_key, dest, src);
+                gs_decrypt(session->decrypt_key, dest, src);
                 return;
         }
 
