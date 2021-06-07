@@ -6,6 +6,8 @@
 
 #define PREVENT_UNUSED_WARNING(var) var = var
 
+#define arr_size(a) (sizeof(a) / sizeof(a[0]))
+
 // Returns min number between a and b
 #ifndef min
 #define min(a, b) ((a) > (b) ? (b) : (a))
@@ -42,10 +44,10 @@
 
 typedef unsigned char byte_t;
 
-typedef int8_t   i8_t;
-typedef int16_t  i16_t;
-typedef int32_t  i32_t;
-typedef uint8_t  u8_t;
+typedef int8_t i8_t;
+typedef int16_t i16_t;
+typedef int32_t i32_t;
+typedef uint8_t u8_t;
 typedef uint16_t u16_t;
 typedef uint32_t u32_t;
 
