@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include "include/config.h"
@@ -17,6 +18,8 @@ static void rsa_scramble_modulo(byte_t *n)
         byte_t temp = 0;
 
         int i = 0;
+
+        assert(n);
 
         for (i = 0; i < 4; i++) {
                 temp        = n[0x00 + i];
@@ -44,10 +47,15 @@ ls_rsa_t *ls_rsa_new()
 {
         rsa_pack_t *instance = 0;
 
+        assert(key_count < arr_size(keys));
+
         instance = &keys[key_count];
 
         instance->e   = BN_new();
         instance->key = RSA_new();
+
+        assert(instance->e);
+        assert(instance->key);
 
         BN_dec2bn(&instance->e, "65537");
         RSA_generate_key_ex(instance->key, 1024, instance->e, NULL);
@@ -61,6 +69,8 @@ size_t ls_rsa_size(ls_rsa_t *rsa)
 {
         rsa_pack_t *instance = 0;
 
+        assert(rsa);
+
         instance = (rsa_pack_t *) rsa;
 
         return (size_t) RSA_size(instance->key);
@@ -71,6 +81,9 @@ void ls_rsa_modulus(ls_rsa_t *rsa, byte_t *dest)
         rsa_pack_t *instance = 0;
 
         const BIGNUM *n = 0;
+
+        assert(rsa);
+        assert(dest);
 
         instance = (rsa_pack_t *) rsa;
 
@@ -84,6 +97,10 @@ int ls_rsa_decrypt(ls_rsa_t *rsa, byte_t *dest, byte_t *src)
         rsa_pack_t *instance = 0;
 
         int size = 0;
+
+        assert(rsa);
+        assert(dest);
+        assert(src);
 
         instance = (rsa_pack_t *) rsa;
         size     = (int) ls_rsa_size(rsa);

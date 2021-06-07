@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
@@ -8,6 +9,9 @@ void gs_packet_enter_world_set_char(
         gs_packet_enter_world_t *dest,
         gs_character_t *src)
 {
+        assert(dest);
+        assert(src);
+
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
 
         dest->x             = src->x;
@@ -60,6 +64,9 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
 
         size_t name_size  = 0;
         size_t title_size = 0;
+
+        assert(dest);
+        assert(src);
 
         type = 0x04;
 

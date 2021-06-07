@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/server.h"
@@ -5,6 +6,10 @@
 
 void ls_packet_server_list_add(ls_packet_server_list_t *dest, server_t *src)
 {
+        assert(dest);
+        assert(src);
+        assert(dest->count < arr_size(dest->servers));
+
         dest->servers[dest->count] = *src;
         dest->count += 1;
 }
@@ -14,6 +19,9 @@ void ls_packet_server_list_pack(packet_t *dest, ls_packet_server_list_t *src)
         byte_t type = 0;
 
         type = 0x04;
+
+        assert(dest);
+        assert(src);
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->count);

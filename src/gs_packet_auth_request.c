@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
@@ -8,6 +9,9 @@ void gs_packet_auth_request_unpack(gs_packet_auth_request_t *dest, packet_t *src
         byte_t *body = 0;
 
         size_t max_username_size = 0;
+
+        assert(dest);
+        assert(src);
 
         body = packet_body(src) + 1; // Ignore packet type.
 

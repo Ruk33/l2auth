@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
 #include "include/os_socket.h"
@@ -16,6 +17,7 @@ static gs_session_save_cb save_cb = 0;
 
 void gs_session_set_save_cb(gs_session_save_cb cb)
 {
+        assert(cb);
         save_cb = cb;
 }
 
@@ -26,6 +28,7 @@ void gs_session_load(void *src, size_t n)
 
 void gs_sessions_save(void)
 {
+        assert(save_cb);
         save_cb(&storage, sizeof(storage));
 }
 
@@ -33,6 +36,9 @@ gs_session_t *gs_session_new(os_socket_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         gs_session_t *new_session = 0;
+
+        assert(socket);
+        assert(storage.count < arr_size(storage.sessions));
 
         new_session = &storage.sessions[storage.count];
 
@@ -48,6 +54,8 @@ gs_session_t *gs_session_new(os_socket_t *socket)
 
 gs_session_t *gs_session_find(os_socket_t *socket)
 {
+        assert(socket);
+
         for (size_t i = 0; i < storage.count; i += 1) {
                 if (storage.sessions[i].socket == socket) {
                         return &storage.sessions[i];
@@ -59,12 +67,16 @@ gs_session_t *gs_session_find(os_socket_t *socket)
 
 void gs_session_encrypt_conn(gs_session_t *session)
 {
+        assert(session);
         session->conn_encrypted = 1;
 }
 
 void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src)
 {
         size_t max_username_size = 0;
+
+        assert(dest);
+        assert(src);
 
         max_username_size = sizeof(dest->username);
         l2_string_to_char(dest->username, src->username, max_username_size);
@@ -77,11 +89,18 @@ void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src)
 
 void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src)
 {
+        assert(session);
+        assert(dest);
+        assert(src);
         gs_encrypt(session->encrypt_key, dest, src);
 }
 
 void gs_session_decrypt(gs_session_t *session, packet_t *dest, byte_t *src)
 {
+        assert(session);
+        assert(dest);
+        assert(src);
+
         if (session->conn_encrypted) {
                 gs_decrypt(session->decrypt_key, dest, src);
                 return;

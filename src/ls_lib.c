@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <arpa/inet.h>
 #include "include/server.h"
 #include "include/conn.h"
@@ -9,6 +10,8 @@ void ls_lib_load(conn_send_response_cb cb)
         // Todo: Get these servers from a database.
         server_t bartz     = { 0 };
         server_t sieghardt = { 0 };
+
+        assert(cb);
 
         bartz.id = 1;
         inet_pton(AF_INET, "127.0.0.1", bartz.ip);
@@ -40,15 +43,18 @@ void ls_lib_load(conn_send_response_cb cb)
 
 void ls_lib_new_conn(os_socket_t *socket)
 {
+        assert(socket);
         ls_request_new_conn(socket);
 }
 
 void ls_lib_new_req(os_socket_t *socket, byte_t *buf, size_t n)
 {
+        assert(socket);
         ls_request(socket, buf, n);
 }
 
 void ls_lib_disconnect(os_socket_t *socket)
 {
+        assert(socket);
         ls_request_disconnect(socket);
 }

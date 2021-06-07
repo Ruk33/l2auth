@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/gs_character.h"
@@ -11,6 +12,10 @@ void gs_packet_auth_login_add_character(
 
         size_t name_size     = 0;
         size_t name_cpy_size = 0;
+
+        assert(dest);
+        assert(src);
+        assert((size_t) dest->count < arr_size(dest->characters));
 
         character = &dest->characters[dest->count];
 
@@ -44,6 +49,9 @@ void gs_packet_auth_login_pack(packet_t *dest, gs_packet_auth_login_t *src)
         gs_packet_auth_login_char_t *character = 0;
 
         size_t name_size = 0;
+
+        assert(dest);
+        assert(src);
 
         type = 0x13;
 

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
 #include "include/log.h"
@@ -14,6 +15,9 @@ void gs_character_from_request(
         gs_character_t *dest,
         gs_packet_create_char_request_t *src)
 {
+        assert(dest);
+        assert(src);
+
         l2_string_to_char(dest->name, src->name, sizeof(dest->name));
 
         dest->race       = src->race;
@@ -62,6 +66,9 @@ void gs_character_from_request(
 
 void gs_character_spawn(gs_session_t *session, gs_character_t *src)
 {
+        assert(session);
+        assert(src);
+
         for (size_t i = 0; i < character_count; i += 1) {
                 log("Notify close players.");
         }

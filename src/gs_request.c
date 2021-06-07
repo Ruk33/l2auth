@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/os_socket.h"
 #include "include/conn.h"
@@ -27,6 +28,8 @@ static void handle_protocol_version(gs_session_t *session)
 
         gs_packet_protocol_version_t protocol_version = { 0 };
 
+        assert(session);
+
         gs_packet_protocol_version(&protocol_version);
         gs_packet_protocol_version_pack(response, &protocol_version);
 
@@ -40,6 +43,8 @@ static void handle_enter_world(gs_session_t *session)
         static gs_packet_enter_world_t enter_world = { 0 };
 
         gs_character_t character = { 0 };
+
+        assert(session);
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &enter_world, sizeof(enter_world));
@@ -73,6 +78,8 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
 
         size_t characters_count = 0;
 
+        assert(session);
+
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
         bytes_zero((byte_t *) characters, sizeof(characters));
@@ -105,6 +112,8 @@ static void handle_new_character(gs_session_t *session)
 
         size_t template_count = 0;
 
+        assert(session);
+
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &new_char, sizeof(new_char));
 
@@ -131,6 +140,9 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
 
         gs_character_t character = { 0 };
 
+        assert(session);
+        assert(packet);
+
         gs_packet_create_char_request_unpack(&create_char_request, packet);
         gs_character_from_request(&character, &create_char_request);
 
@@ -156,6 +168,9 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
 
         gs_character_t character = { 0 };
 
+        assert(session);
+        assert(packet);
+
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &char_select, sizeof(char_select));
 
@@ -180,8 +195,11 @@ static void handle_quest_list(gs_session_t *session)
 
         gs_packet_quest_list_t quest_list = { 0 };
 
+        assert(session);
+
         gs_packet_quest_list_pack(response, &quest_list);
         gs_session_encrypt(session, response, response);
+
         conn_send_packet(session->socket, response);
 }
 
@@ -191,13 +209,17 @@ static void handle_auto_ss_bsps(gs_session_t *session)
 
         gs_packet_d0_t d0 = { 0 };
 
+        assert(session);
+
         gs_packet_d0_pack(response, &d0);
         gs_session_encrypt(session, response, response);
+
         conn_send_packet(session->socket, response);
 }
 
 void gs_request_new_conn(os_socket_t *socket)
 {
+        assert(socket);
         gs_session_new(socket);
 }
 
@@ -209,6 +231,8 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
         gs_session_t *session = 0;
 
         u16_t size = 0;
+
+        assert(socket);
 
         session = gs_session_find(socket);
 

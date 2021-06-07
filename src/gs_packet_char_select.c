@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/l2_string.h"
@@ -5,6 +6,7 @@
 
 void gs_packet_char_select_set_playok(gs_packet_char_select_t *dest, int playOK1)
 {
+        assert(dest);
         dest->playOK1 = playOK1;
 }
 
@@ -12,6 +14,9 @@ void gs_packet_char_select_set_char(
         gs_packet_char_select_t *dest,
         gs_character_t *src)
 {
+        assert(dest);
+        assert(src);
+
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
         // l2_string_from_char(dest->title, src->title, sizeof(dest->title));
 
@@ -44,6 +49,9 @@ void gs_packet_char_select_pack(packet_t *dest, gs_packet_char_select_t *src)
 
         size_t name_size  = 0;
         size_t title_size = 0;
+
+        assert(dest);
+        assert(src);
 
         type = 0x15;
 

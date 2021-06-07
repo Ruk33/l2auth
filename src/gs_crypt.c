@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/gs_crypt.h"
@@ -14,6 +15,10 @@ void gs_encrypt(byte_t *key, byte_t *dest, packet_t *src)
         int temp2 = 0;
 
         unsigned int old = 0;
+
+        assert(key);
+        assert(dest);
+        assert(src);
 
         src_size  = packet_size(src);
         body_size = src_size - 2;
@@ -52,6 +57,10 @@ void gs_decrypt(byte_t *key, packet_t *dest, byte_t *src)
         int temp2 = 0;
 
         unsigned int old = 0;
+
+        assert(key);
+        assert(dest);
+        assert(src);
 
         body_size = packet_size(src);
         body_size = body_size > 1 ? body_size - 2 : body_size;

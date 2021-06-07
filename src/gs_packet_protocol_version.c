@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/gs_packet_protocol_version.h"
@@ -17,6 +18,8 @@ void gs_packet_protocol_version(gs_packet_protocol_version_t *src)
                 0x87,
         };
 
+        assert(src);
+
         bytes_cpy(src->content, content, sizeof(src->content));
 }
 
@@ -25,6 +28,9 @@ void gs_packet_protocol_version_pack(
         gs_packet_protocol_version_t *src)
 {
         byte_t type = 0;
+
+        assert(dest);
+        assert(src);
 
         type = 0x00;
 

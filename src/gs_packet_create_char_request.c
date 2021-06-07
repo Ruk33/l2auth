@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/packet.h"
 #include "include/l2_string.h"
 #include "include/gs_packet_create_char_request.h"
@@ -9,6 +10,9 @@ void gs_packet_create_char_request_unpack(
         packet_t *body = 0;
 
         size_t max_name_size = 0;
+
+        assert(dest);
+        assert(src);
 
         body = packet_body(src) + 1; // Ignore packet type.
 

@@ -1,26 +1,35 @@
+#include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/gs_character_template.h"
 #include "include/gs_packet_new_char.h"
 
 void gs_packet_new_char_add_template(
-        gs_packet_new_char_t *d,
-        gs_character_template_t *s)
+        gs_packet_new_char_t *dest,
+        gs_character_template_t *src)
 {
-        d->templates[d->count].race   = s->race;
-        d->templates[d->count]._class = s->_class;
-        d->templates[d->count].con    = s->con;
-        d->templates[d->count].dex    = s->dex;
-        d->templates[d->count].men    = s->men;
-        d->templates[d->count].str    = s->str;
-        d->templates[d->count].wit    = s->wit;
-        d->templates[d->count]._int   = s->_int;
-        d->count += 1;
+        assert(dest);
+        assert(src);
+        assert((size_t) dest->count < arr_size(dest->templates));
+
+        dest->templates[dest->count].race   = src->race;
+        dest->templates[dest->count]._class = src->_class;
+        dest->templates[dest->count].con    = src->con;
+        dest->templates[dest->count].dex    = src->dex;
+        dest->templates[dest->count].men    = src->men;
+        dest->templates[dest->count].str    = src->str;
+        dest->templates[dest->count].wit    = src->wit;
+        dest->templates[dest->count]._int   = src->_int;
+
+        dest->count += 1;
 }
 
 void gs_packet_new_char_pack(packet_t *dest, gs_packet_new_char_t *src)
 {
         byte_t type = 0x0;
+
+        assert(dest);
+        assert(src);
 
         type = 0x17;
 

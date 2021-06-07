@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "include/os_socket.h"
 #include "include/config.h"
 #include "include/util.h"
@@ -21,6 +22,8 @@ static void handle_gg_auth(ls_session_t *session)
 
         ls_packet_gg_auth_t gg_auth = { 0 };
 
+        assert(session);
+
         gg_auth.response = PACKET_GG_AUTH_RESPONSE_SKIP;
 
         ls_packet_gg_auth_pack(response, &gg_auth);
@@ -34,6 +37,8 @@ static void handle_auth_login(ls_session_t *session)
         packet_t response[64] = { 0 };
 
         ls_packet_ok_t ok = { 0 };
+
+        assert(session);
 
         // Todo: Generate these values randomly.
         ok.loginOK1 = 42;
@@ -53,7 +58,10 @@ static void handle_request_server_list(ls_session_t *session)
 
         server_t *servers = 0;
 
+        assert(session);
+
         servers = server_all();
+        assert(servers);
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &server_list, sizeof(server_list));
@@ -74,6 +82,8 @@ static void handle_login_server(ls_session_t *session)
 
         ls_packet_play_ok_t play_ok = { 0 };
 
+        assert(session);
+
         log("Player wants to log into game server.");
 
         play_ok.playOK1 = session->playOK1;
@@ -93,11 +103,14 @@ void ls_request_new_conn(os_socket_t *socket)
 
         ls_session_t *session = 0;
 
+        assert(socket);
+
         bytes_zero(response, sizeof(response));
         bytes_zero(modulus, sizeof(modulus));
         bytes_zero((byte_t *) &init, sizeof(init));
 
         session = ls_session_new(socket);
+        assert(session);
 
         ls_rsa_modulus(session->rsa, modulus);
         ls_packet_init(&init, modulus);
@@ -114,6 +127,8 @@ void ls_request(os_socket_t *socket, byte_t *buf, size_t n)
         ls_session_t *session = 0;
 
         u16_t size = 0;
+
+        assert(socket);
 
         session = ls_session_find(socket);
 
@@ -153,5 +168,5 @@ void ls_request(os_socket_t *socket, byte_t *buf, size_t n)
 
 void ls_request_disconnect(os_socket_t *socket)
 {
-        PREVENT_UNUSED_WARNING(socket);
+        assert(socket);
 }
