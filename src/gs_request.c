@@ -103,13 +103,15 @@ static void handle_new_character(gs_session_t *session)
 
         gs_character_template_t *templates = 0;
 
+        size_t template_count = 0;
+
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &new_char, sizeof(new_char));
 
-        templates = gs_character_template_default();
+        templates      = gs_character_template_default();
+        template_count = gs_character_template_count();
 
-        for (size_t i = 0, max = gs_character_template_count(); i < max;
-             i += 1) {
+        for (size_t i = 0; i < template_count; i += 1) {
                 gs_packet_new_char_add_template(&new_char, &templates[i]);
         }
 

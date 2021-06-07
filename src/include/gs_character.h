@@ -1,9 +1,11 @@
 #ifndef INCLUDE_GS_CHARACTER_H
 #define INCLUDE_GS_CHARACTER_H
 
+#include "gs_session.h"
 #include "gs_packet_create_char_request.h"
 
 typedef struct {
+        gs_session_t *session;
         int id;
         char name[32];
         int race;
@@ -52,5 +54,9 @@ typedef struct {
 void gs_character_from_request(
         gs_character_t *dest,
         gs_packet_create_char_request_t *src);
+
+// Spawn character in the world and notify close players.
+// The session will get assign to the character.
+void gs_character_spawn(gs_session_t *session, gs_character_t *src);
 
 #endif

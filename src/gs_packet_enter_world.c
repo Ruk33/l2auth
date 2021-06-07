@@ -8,9 +8,11 @@ void gs_packet_enter_world_set_char(
         gs_packet_enter_world_t *dest,
         gs_character_t *src)
 {
-        dest->x             = src->x; // -83968
-        dest->y             = src->y; // 244634
-        dest->z             = src->z; // -3730
+        l2_string_from_char(dest->name, src->name, sizeof(dest->name));
+
+        dest->x             = src->x;
+        dest->y             = src->y;
+        dest->z             = src->z;
         dest->id            = src->id;
         dest->race_id       = src->race;
         dest->sex           = src->sex;
