@@ -1,5 +1,5 @@
 CC	= gcc
-CFLAGS	= -fPIC -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -O2 -g -pedantic
+CFLAGS	= -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -O2 -g -pedantic
 LDFLAGS	= -shared
 CLIBS	= -lcrypto -lsqlite3 -ldl
 OS	= linux
@@ -32,7 +32,11 @@ GS_OBJ		= $(GS_SRC:.c=.o)
 
 .PHONY	: clean
 
-# game_server_lib.so : CFLAGS += -fPIC
+# Note: Do NOT include header files as dependencies
+# for game_server_lib.so target. For some reason, it
+# makes the game_server executable seg fault when the
+# library gets loaded.
+game_server_lib.so : CFLAGS += -fPIC
 game_server_lib.so : $(OBJ) $(STG_OBJ) $(GS_OBJ)
 	@echo "⛏️ Building game server library..."
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(CLIBS)

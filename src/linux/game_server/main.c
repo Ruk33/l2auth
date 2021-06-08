@@ -12,6 +12,10 @@ static void (*on_new_conn)(os_socket_t *);
 static void (*on_new_req)(os_socket_t *, byte_t *, size_t);
 static void (*on_disconnect)(os_socket_t *);
 
+// Todo: Refactor. This is supposed to hold the live sessions.
+// It's on the host side so we don't lose the information
+// when the library gets reloaded.
+// 4096 big enough to hold sizeof(sessions) * MAX_CLIENTS
 static byte_t sessions[4096] = { 0 };
 
 // Load function from game server library.
