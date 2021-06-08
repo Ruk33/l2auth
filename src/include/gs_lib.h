@@ -2,15 +2,20 @@
 #define INCLUDE_GS_LIB_H
 
 #include "util.h"
+#include "config.h"
 #include "os_socket.h"
 #include "conn.h"
 #include "gs_session.h"
 
-void gs_lib_load(conn_send_response_cb cb, gs_session_save_cb save_sessions_cb);
+typedef struct {
+        conn_send_response_cb send_response;
+        gs_session_t sessions[MAX_CLIENTS];
+        size_t session_count;
+} gs_lib_t;
+
+void gs_lib_load(conn_send_response_cb cb, byte_t *sessions);
 
 void gs_lib_unload(void);
-
-void gs_lib_load_sessions(void *sessions, size_t n);
 
 void gs_lib_new_conn(os_socket_t *socket);
 

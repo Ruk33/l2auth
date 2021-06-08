@@ -1,11 +1,12 @@
 CC	= gcc
-CFLAGS	= -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -g -pedantic -fPIC
+CFLAGS	= -fPIC -std=c99 -Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -O2 -g -pedantic
+LDFLAGS	= -shared
 CLIBS	= -lcrypto -lsqlite3 -ldl
 OS	= linux
 STORAGE	= sqlite
 
 # Files used by both, login server and game server.
-HEADERS		= src/include/config.h src/include/util.h src/include/conn.h src/include/log.h src/include/packet.h src/include/l2_string.h
+HEADERS		= src/os_socket.h src/include/config.h src/include/util.h src/include/conn.h src/include/log.h src/include/packet.h src/include/l2_string.h
 SRC		= src/config.c src/util.c src/conn.c src/packet.c src/l2_string.c
 OBJ		= $(SRC:.c=.o)
 
@@ -31,18 +32,19 @@ GS_OBJ		= $(GS_SRC:.c=.o)
 
 .PHONY	: clean
 
-game_server_lib.so : $(OBJ) $(HEADERS) $(STG_OBJ) $(STG_HEADERS) $(GS_OBJ) $(GS_HEADERS)
+# game_server_lib.so : CFLAGS += -fPIC
+game_server_lib.so : $(OBJ) $(STG_OBJ) $(GS_OBJ)
 	@echo "⛏️ Building game server library..."
-	$(CC) $(CFLAGS) -o $@ $^ -shared $(CLIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(CLIBS)
 
-game_server : game_server_lib.so $(OBJ) $(HEADERS) $(OS_OBJ) $(OS_HEADERS) src/$(OS)/game_server/main.c
+game_server : game_server_lib.so $(OBJ) $(OS_OBJ) src/$(OS)/game_server/main.c
 	@echo "⛏️ Building game server..."
 	$(CC) $(CFLAGS) -o $@ $^ $(CLIBS)
 
-login_server : $(OBJ) $(HEADERS) $(OS_OBJ) $(OS_HEADERS) $(LS_OBJ) $(LS_HEADERS) src/$(OS)/login_server/main.c
+login_server : $(OBJ) $(OS_OBJ) $(LS_OBJ) src/$(OS)/login_server/main.c
 	@echo "⛏️ Building login server..."
 	$(CC) $(CFLAGS) -o $@ $^ $(CLIBS)
 
 clean :
 	@echo "🗑️ Removing .o files"
-	@$(RM) $(OBJS) game_server login_server game_server_lib.so
+	@$(RM) $(OBJ) $(OS_OBJ) $(STG_OBJ) $(LS_OBJ) $(GS_OBJ) game_server login_server game_server_lib.so

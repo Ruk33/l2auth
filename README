@@ -22,6 +22,27 @@ This project divides the login server (from where the user can authenticate
 with a username and password) from the game server (where the user can play).
 This is the exact same approach as to what projects like L2J do.
 
+== Files with ls prefix
+The ls prefix stands for login server. Files using this prefix are only
+used by the login server.
+
+== Files with gs prefix
+The gs prefix stands for game server. Files using this prefix are only
+used by the game server.
+
+== Files with os prefix
+The os prefix stands for operating system. Files using this prefix may be used
+by code targeting a specific os (for instance, src/linux/game_server/main.c) and
+may also be included in both, login and game server.
+
+== Files with no prefix
+These are files used by both, the login and game server.
+
+== Game server hot code reload
+The game server logic is implemented as a library. This means it can be
+loaded at runtime allowing for changes to occur and be live without having
+to shut down the server.
+
 == Lineage 2 Protocol
 Lineage 2 uses TCP to send packets.
 

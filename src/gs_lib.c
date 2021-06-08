@@ -2,35 +2,27 @@
 #include "include/util.h"
 #include "include/os_socket.h"
 #include "include/conn.h"
+#include "include/log.h"
 #include "include/storage.h"
 #include "include/gs_session.h"
 #include "include/gs_request.h"
 #include "include/gs_lib.h"
 
-void gs_lib_load(
-        conn_send_response_cb send_response_cb,
-        gs_session_save_cb save_sessions_cb)
+void gs_lib_load(conn_send_response_cb cb, byte_t *sessions)
 {
-        assert(send_response_cb);
-        assert(save_sessions_cb);
+        assert(cb);
+        assert(sessions);
 
-        conn_set_cb(send_response_cb);
+        log("GS loaded!");
+
+        conn_set_cb(cb);
+        gs_session_set(sessions);
         storage_open();
-        gs_session_set_save_cb(save_sessions_cb);
 }
 
 void gs_lib_unload(void)
 {
         storage_close();
-        gs_sessions_save();
-}
-
-void gs_lib_load_sessions(void *sessions, size_t n)
-{
-        if (!sessions || !n) {
-                return;
-        }
-        gs_session_load(sessions, n);
 }
 
 void gs_lib_new_conn(os_socket_t *socket)

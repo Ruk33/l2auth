@@ -1,56 +1,18 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <dlfcn.h>
 #include "../../include/util.h"
 #include "../../include/os_socket.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
-typedef void (*send_response_cb)(os_socket_t *, byte_t *, size_t);
-typedef void (*save_sessions_cb)(void *, size_t);
+static void *handle = 0;
+static void (*on_load)(void (*)(os_socket_t *, byte_t *, size_t), byte_t *);
+static void (*on_unload)(void);
+static void (*on_new_conn)(os_socket_t *);
+static void (*on_new_req)(os_socket_t *, byte_t *, size_t);
+static void (*on_disconnect)(os_socket_t *);
 
-typedef void (*load_cb)(send_response_cb, save_sessions_cb);
-typedef void (*unload_cb)(void);
-typedef void (*load_sessions_cb)(void *, size_t);
-typedef void (*new_conn_cb)(os_socket_t *);
-typedef void (*new_req_cb)(os_socket_t *, byte_t *, size_t);
-typedef void (*disconnect_cb)(os_socket_t *);
-
-typedef struct {
-        void *sessions;
-        size_t session_size;
-
-        void *lib;
-        load_cb load;
-        unload_cb unload;
-
-        load_sessions_cb load_sessions;
-        new_conn_cb new_conn;
-        new_req_cb new_req;
-        disconnect_cb disconnect;
-} gs_lib_t;
-
-static gs_lib_t gs_lib = { 0 };
-
-// Load game server in memory.
-// On success, 1 is returned. On error 0.
-static int load_library(void)
-{
-        if (gs_lib.lib) {
-                dlclose(gs_lib.lib);
-        }
-
-        gs_lib.lib = dlopen(GAME_SERVER_LIB_PATH, RTLD_LAZY);
-
-        if (!gs_lib.lib) {
-                printf("Failed to load game server library.\n");
-                printf("%s.\n", dlerror());
-                return 0;
-        }
-
-        return 1;
-}
+static byte_t sessions[4096] = { 0 };
 
 // Load function from game server library.
 // On success, the function's handler is returned. On error 0.
@@ -58,11 +20,11 @@ static void *load_lib_function(char *name)
 {
         void *function = 0;
 
-        if (!gs_lib.lib) {
+        if (!handle) {
                 return 0;
         }
 
-        function = dlsym(gs_lib.lib, name);
+        function = dlsym(handle, name);
 
         if (!function) {
                 printf("Failed to load function %s.\n", name);
@@ -73,57 +35,54 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void send_response(os_socket_t *socket, byte_t *buf, size_t n)
+static void internal_send_response(os_socket_t *socket, byte_t *buf, size_t n)
 {
         os_socket_send(socket, buf, n);
-}
-
-static void save_sessions(void *sessions, size_t n)
-{
-        if (!gs_lib.sessions) {
-                gs_lib.sessions     = malloc(n);
-                gs_lib.session_size = n;
-        }
-
-        memcpy(gs_lib.sessions, sessions, n);
 }
 
 static int init_gs_lib(void)
 {
         int all_load = 0;
 
-        if (gs_lib.unload) {
-                gs_lib.unload();
+        if (on_unload) {
+                on_unload();
         }
 
-        load_library();
+        if (handle && dlclose(handle) != 0) {
+                printf("Failed to unload game server library.\n");
+                printf("%s.\n", dlerror());
+                return 0;
+        }
 
-        *(void **) (&gs_lib.load)   = load_lib_function("gs_lib_load");
-        *(void **) (&gs_lib.unload) = load_lib_function("gs_lib_unload");
-        *(void **) (&gs_lib.load_sessions) =
-                load_lib_function("gs_lib_load_sessions");
-        *(void **) (&gs_lib.new_conn) = load_lib_function("gs_lib_new_conn");
-        *(void **) (&gs_lib.new_req)  = load_lib_function("gs_lib_new_req");
-        *(void **) (&gs_lib.disconnect) =
-                load_lib_function("gs_lib_disconnect");
+        handle = dlopen(GAME_SERVER_LIB_PATH, RTLD_LAZY);
+
+        if (!handle) {
+                printf("Failed to load game server library.\n");
+                printf("%s.\n", dlerror());
+                return 0;
+        }
+
+        *(void **) (&on_load)       = load_lib_function("gs_lib_load");
+        *(void **) (&on_unload)     = load_lib_function("gs_lib_unload");
+        *(void **) (&on_new_conn)   = load_lib_function("gs_lib_new_conn");
+        *(void **) (&on_new_req)    = load_lib_function("gs_lib_new_req");
+        *(void **) (&on_disconnect) = load_lib_function("gs_lib_disconnect");
 
         all_load =
-                (gs_lib.lib && gs_lib.load && gs_lib.unload &&
-                 gs_lib.load_sessions && gs_lib.new_conn && gs_lib.new_req &&
-                 gs_lib.disconnect);
+                (handle && on_load && on_unload && on_new_conn && on_new_req &&
+                 on_disconnect);
 
         if (!all_load) {
                 return 0;
         }
 
-        gs_lib.load(send_response, save_sessions);
-        gs_lib.load_sessions(gs_lib.sessions, gs_lib.session_size);
+        on_load(internal_send_response, sessions);
 
         return 1;
 }
 
 static void
-on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
+internal_on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
 {
         // Todo: only load if required.
         if (!init_gs_lib()) {
@@ -134,15 +93,15 @@ on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
         switch (ev) {
         case CONN:
                 printf("New connection.\n");
-                gs_lib.new_conn(socket);
+                on_new_conn(socket);
                 break;
         case REQ:
                 printf("New request.\n");
-                gs_lib.new_req(socket, buf, n);
+                on_new_req(socket, buf, n);
                 break;
         case CLOSED:
                 printf("Disconnect.\n");
-                gs_lib.disconnect(socket);
+                on_disconnect(socket);
                 break;
         default:
                 break;
@@ -167,7 +126,7 @@ int main(/* int argc, char **argv */)
                 return 1;
         }
 
-        if (!os_socket_handle_requests(socket, on_request)) {
+        if (!os_socket_handle_requests(socket, internal_on_request)) {
                 printf("Game server request can't be handled.\n");
                 return 1;
         }
