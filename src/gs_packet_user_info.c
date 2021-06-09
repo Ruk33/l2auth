@@ -13,7 +13,6 @@ void gs_packet_user_info_set_char(
         assert(src);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
-        // l2_string_from_char(dest->title, "Test", sizeof(dest->title));
 
         dest->x             = src->x;
         dest->y             = src->y;
