@@ -8,6 +8,7 @@
 typedef struct {
         gs_session_t *session;
         u32_t id;
+
         char name[32];
         u32_t race;
         u32_t sex;
@@ -30,19 +31,21 @@ typedef struct {
         u32_t max_hp;
         u32_t max_mp;
         u32_t max_cp;
-        i32_t p_attack;
-        i32_t m_attack;
-        i32_t p_def;
-        i32_t m_def;
+        u32_t p_attack;
+        u32_t m_attack;
+        u32_t p_def;
+        u32_t m_def;
         u32_t evasion_rate;
+        u32_t accuracy;
         u32_t critical_hit;
         u32_t run_speed;
         u32_t walk_speed;
         u32_t p_attack_speed;
-        u32_t movement_speed_multiplier;
-        u32_t attack_speed_multiplier;
-        u32_t collision_radius;
-        u32_t collision_height;
+        u32_t m_attack_speed;
+        double movement_speed_multiplier;
+        double attack_speed_multiplier;
+        double collision_radius;
+        double collision_height;
         u32_t name_color;
         i32_t max_load;
         i32_t x;

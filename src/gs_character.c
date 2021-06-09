@@ -54,10 +54,12 @@ void gs_character_from_request(
         dest->p_def                     = 42;
         dest->m_def                     = 42;
         dest->evasion_rate              = 2;
+        dest->accuracy                  = 2;
         dest->critical_hit              = 2;
         dest->run_speed                 = 120;
         dest->walk_speed                = 100;
         dest->p_attack_speed            = 20;
+        dest->m_attack_speed            = 20;
         dest->movement_speed_multiplier = 1;
         dest->attack_speed_multiplier   = 1;
         dest->collision_radius          = 9;

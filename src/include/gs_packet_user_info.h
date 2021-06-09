@@ -1,5 +1,5 @@
-#ifndef INCLUDE_GS_PACKET_ENTER_WORLD_H
-#define INCLUDE_GS_PACKET_ENTER_WORLD_H
+#ifndef INCLUDE_GS_PACKET_USER_INFO_H
+#define INCLUDE_GS_PACKET_USER_INFO_H
 
 #include "util.h"
 #include "l2_string.h"
@@ -59,7 +59,7 @@ typedef struct {
         u32_t m_attack_speed;
         u32_t p_attack_speed_copy;
         u32_t m_def;
-        u32_t pvp;
+        u32_t pvp_flag;
         u32_t karma;
         u32_t run_speed;
         u32_t walk_speed;
@@ -101,6 +101,7 @@ typedef struct {
         u32_t max_cp;
         u32_t cp;
         u8_t mounted;
+        u8_t team_circle;
         u32_t clan_crest_large_id;
         u8_t hero_symbol;
         u8_t hero;
@@ -108,12 +109,12 @@ typedef struct {
         i32_t fish_y;
         i32_t fish_z;
         u32_t name_color;
-} gs_packet_enter_world_t;
+} gs_packet_user_info_t;
 
-void gs_packet_enter_world_set_char(
-        gs_packet_enter_world_t *dest,
+void gs_packet_user_info_set_char(
+        gs_packet_user_info_t *dest,
         gs_character_t *src);
 
-void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src);
+void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src);
 
 #endif

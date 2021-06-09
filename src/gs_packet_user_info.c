@@ -3,17 +3,17 @@
 #include "include/l2_string.h"
 #include "include/packet.h"
 #include "include/gs_character.h"
-#include "include/gs_packet_enter_world.h"
+#include "include/gs_packet_user_info.h"
 
-void gs_packet_enter_world_set_char(
-        gs_packet_enter_world_t *dest,
+void gs_packet_user_info_set_char(
+        gs_packet_user_info_t *dest,
         gs_character_t *src)
 {
         assert(dest);
         assert(src);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
-        l2_string_from_char(dest->title, "Test", sizeof(dest->title));
+        // l2_string_from_char(dest->title, "Test", sizeof(dest->title));
 
         dest->x             = src->x;
         dest->y             = src->y;
@@ -22,7 +22,6 @@ void gs_packet_enter_world_set_char(
         dest->race_id       = src->race;
         dest->sex           = src->sex;
         dest->class_id      = src->_class;
-        dest->class_id_copy = src->_class;
         dest->level         = src->level;
         dest->exp           = src->exp;
         dest->str           = src->str;
@@ -45,12 +44,16 @@ void gs_packet_enter_world_set_char(
         dest->p_def         = src->p_def;
         dest->m_def         = src->m_def;
         dest->evasion_rate  = src->evasion_rate;
+        dest->accuracy      = src->accuracy;
         dest->critical_hit  = src->critical_hit;
+        dest->hair_style_id = src->hair_style;
+        dest->hair_color_id = src->hair_color;
+        dest->face          = src->face;
 
         dest->run_speed                 = src->run_speed;
         dest->walk_speed                = src->walk_speed;
         dest->p_attack_speed            = src->p_attack_speed;
-        dest->p_attack_speed_copy       = src->p_attack_speed;
+        dest->m_attack_speed            = src->m_attack_speed;
         dest->movement_speed_multiplier = src->movement_speed_multiplier;
         dest->attack_speed_multiplier   = src->attack_speed_multiplier;
         dest->collision_radius          = src->collision_radius;
@@ -59,7 +62,7 @@ void gs_packet_enter_world_set_char(
         dest->max_load                  = src->max_load;
 }
 
-void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
+void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
 {
         byte_t type = 0x00;
 
@@ -77,6 +80,10 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         src->unknown = 0x28;
         src->id      = 42;
         src->heading = 2;
+
+        // src->x = 147439;
+        // src->y = 1120;
+        // src->z = 218;
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->x);
@@ -120,7 +127,25 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         packet_append_val(dest, src->paperdoll_back);
         packet_append_val(dest, src->paperdoll_lr_hand);
         packet_append_val(dest, src->paperdoll_hair);
-        packet_append_n(dest, (byte_t *) src->empty, sizeof(src->empty));
+
+        packet_append_val(dest, src->paperdoll_under);
+        packet_append_val(dest, src->paperdoll_r_ear);
+        packet_append_val(dest, src->paperdoll_l_ear);
+        packet_append_val(dest, src->paperdoll_neck);
+        packet_append_val(dest, src->paperdoll_r_finger);
+        packet_append_val(dest, src->paperdoll_l_finger);
+
+        packet_append_val(dest, src->paperdoll_head);
+        packet_append_val(dest, src->paperdoll_r_hand);
+        packet_append_val(dest, src->paperdoll_l_hand);
+        packet_append_val(dest, src->paperdoll_gloves);
+        packet_append_val(dest, src->paperdoll_chest);
+        packet_append_val(dest, src->paperdoll_legs);
+        packet_append_val(dest, src->paperdoll_feet);
+        packet_append_val(dest, src->paperdoll_back);
+        packet_append_val(dest, src->paperdoll_lr_hand);
+        packet_append_val(dest, src->paperdoll_hair);
+
         packet_append_val(dest, src->p_attack);
         packet_append_val(dest, src->p_attack_speed);
         packet_append_val(dest, src->p_def);
@@ -129,18 +154,18 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         packet_append_val(dest, src->critical_hit);
         packet_append_val(dest, src->m_attack);
         packet_append_val(dest, src->m_attack_speed);
-        packet_append_val(dest, src->p_attack_speed_copy);
+        packet_append_val(dest, src->p_attack_speed);
         packet_append_val(dest, src->m_def);
-        packet_append_val(dest, src->pvp);
+        packet_append_val(dest, src->pvp_flag); // 0 = normal, 1 = violet
         packet_append_val(dest, src->karma);
         packet_append_val(dest, src->run_speed);
         packet_append_val(dest, src->walk_speed);
-        packet_append_val(dest, src->swim_run_speed);
-        packet_append_val(dest, src->swim_walk_speed);
-        packet_append_val(dest, src->fly_run_speed);
-        packet_append_val(dest, src->fly_walk_speed);
-        packet_append_val(dest, src->fly_run_speed_copy);
-        packet_append_val(dest, src->fly_walk_speed_copy);
+        packet_append_val(dest, src->run_speed);  // swim_run_speed
+        packet_append_val(dest, src->walk_speed); // swim_walk_speed
+        packet_append_val(dest, src->run_speed);  // fly_run_speed
+        packet_append_val(dest, src->walk_speed); // fly_walk_speed
+        packet_append_val(dest, src->run_speed);  // fly_run_speed
+        packet_append_val(dest, src->walk_speed); // fly_walk_speed
         packet_append_val(dest, src->movement_speed_multiplier);
         packet_append_val(dest, src->attack_speed_multiplier);
         packet_append_val(dest, src->collision_radius);
@@ -161,7 +186,7 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         packet_append_val(dest, src->pk_kills);
         packet_append_val(dest, src->pvp_kills);
         packet_append_val(dest, src->cubics);
-        packet_append_val(dest, src->party_members);
+        packet_append_val(dest, src->party_members); // 1 find party
         packet_append_val(dest, src->abnormal_effect);
         packet_append_val(dest, src->char_empty[0]);
         packet_append_val(dest, src->clan_privileges);
@@ -171,12 +196,12 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         packet_append_val(dest, src->recommendation_have);
         packet_append_val(dest, src->int_empty[0]);
         packet_append_val(dest, src->inventory_limit);
-        packet_append_val(dest, src->class_id_copy);
+        packet_append_val(dest, src->class_id);
         packet_append_val(dest, src->int_empty[0]);
         packet_append_val(dest, src->max_cp);
         packet_append_val(dest, src->cp);
         packet_append_val(dest, src->mounted);
-        packet_append_val(dest, src->char_empty[0]);
+        packet_append_val(dest, src->team_circle); // 1 = blue, 2 = red
         packet_append_val(dest, src->clan_crest_large_id);
         packet_append_val(dest, src->hero_symbol);
         packet_append_val(dest, src->hero);

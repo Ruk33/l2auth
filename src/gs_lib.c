@@ -3,7 +3,6 @@
 #include "include/os_socket.h"
 #include "include/conn.h"
 #include "include/log.h"
-#include "include/storage.h"
 #include "include/gs_session.h"
 #include "include/gs_request.h"
 #include "include/gs_lib.h"
@@ -17,12 +16,10 @@ void gs_lib_load(conn_send_response_cb cb, byte_t *sessions)
 
         conn_set_cb(cb);
         gs_session_set(sessions);
-        storage_open();
 }
 
 void gs_lib_unload(void)
 {
-        storage_close();
 }
 
 void gs_lib_new_conn(os_socket_t *socket)

@@ -19,7 +19,7 @@
 #include "include/gs_packet_char_select.h"
 #include "include/gs_packet_d0.h"
 #include "include/gs_packet_quest_list.h"
-#include "include/gs_packet_enter_world.h"
+#include "include/gs_packet_user_info.h"
 #include "include/gs_request.h"
 
 static void handle_protocol_version(gs_session_t *session)
@@ -40,14 +40,14 @@ static void handle_enter_world(gs_session_t *session)
 {
         static packet_t response[1024] = { 0 };
 
-        static gs_packet_enter_world_t enter_world = { 0 };
+        static gs_packet_user_info_t user_info = { 0 };
 
         gs_character_t character = { 0 };
 
         assert(session);
 
         bytes_zero(response, sizeof(response));
-        bytes_zero((byte_t *) &enter_world, sizeof(enter_world));
+        bytes_zero((byte_t *) &user_info, sizeof(user_info));
 
         // Todo check which character the client selected.
         if (!storage_get_characters(&character, session->username, 1)) {
@@ -55,8 +55,8 @@ static void handle_enter_world(gs_session_t *session)
                 return;
         }
 
-        gs_packet_enter_world_set_char(&enter_world, &character);
-        gs_packet_enter_world_pack(response, &enter_world);
+        gs_packet_user_info_set_char(&user_info, &character);
+        gs_packet_user_info_pack(response, &user_info);
 
         gs_session_encrypt(session, response, response);
         conn_send_packet(session->socket, response);

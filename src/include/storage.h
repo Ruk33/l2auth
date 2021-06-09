@@ -4,10 +4,6 @@
 #include "util.h"
 #include "gs_character.h"
 
-void storage_open(void);
-
-void storage_close(void);
-
 // Get up to max characters owned by username and store it on dest.
 // Return the amount of found characters.
 size_t storage_get_characters(gs_character_t *dest, char *username, size_t max);

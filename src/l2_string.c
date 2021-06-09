@@ -49,9 +49,5 @@ size_t l2_string_len(l2_string_t *src)
 
 size_t l2_string_bytes(l2_string_t *src)
 {
-        size_t size = 0;
-
-        size = l2_string_len(src);
-
-        return size == 0 ? 0 : (size + 1) * 2;
+        return (l2_string_len(src) + 1) * 2;
 }
