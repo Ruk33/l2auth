@@ -41,7 +41,8 @@ void gs_character_from_request(
         dest->id = 42;
 
         dest->level                     = 1;
-        dest->exp                       = 0;
+        dest->exp                       = 50;
+        dest->sp                        = 10;
         dest->hp                        = 400;
         dest->mp                        = 400;
         dest->cp                        = 200;
@@ -54,14 +55,15 @@ void gs_character_from_request(
         dest->m_def                     = 42;
         dest->evasion_rate              = 2;
         dest->critical_hit              = 2;
-        dest->run_speed                 = 200;
+        dest->run_speed                 = 120;
         dest->walk_speed                = 100;
-        dest->p_attack_speed            = 1;
+        dest->p_attack_speed            = 20;
         dest->movement_speed_multiplier = 1;
         dest->attack_speed_multiplier   = 1;
-        dest->collision_height          = 80;
-        dest->collision_height          = 80;
+        dest->collision_radius          = 9;
+        dest->collision_height          = 23;
         dest->max_load                  = 42;
+        dest->name_color                = 0xFFFFFF;
 }
 
 void gs_character_spawn(gs_session_t *session, gs_character_t *src)

@@ -13,6 +13,7 @@ void gs_packet_enter_world_set_char(
         assert(src);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
+        l2_string_from_char(dest->title, "Test", sizeof(dest->title));
 
         dest->x             = src->x;
         dest->y             = src->y;
@@ -74,6 +75,8 @@ void gs_packet_enter_world_pack(packet_t *dest, gs_packet_enter_world_t *src)
         title_size = l2_string_bytes(src->title);
 
         src->unknown = 0x28;
+        src->id      = 42;
+        src->heading = 2;
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->x);

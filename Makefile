@@ -50,5 +50,5 @@ login_server : $(OBJ) $(OS_OBJ) $(LS_OBJ) src/$(OS)/login_server/main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(CLIBS)
 
 clean :
-	@echo "🗑️ Removing .o files"
+	@echo "🗑️ Removing .o files, executables and library"
 	@$(RM) $(OBJ) $(OS_OBJ) $(STG_OBJ) $(LS_OBJ) $(GS_OBJ) game_server login_server game_server_lib.so

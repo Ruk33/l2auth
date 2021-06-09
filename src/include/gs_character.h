@@ -1,52 +1,53 @@
 #ifndef INCLUDE_GS_CHARACTER_H
 #define INCLUDE_GS_CHARACTER_H
 
+#include "util.h"
 #include "gs_session.h"
 #include "gs_packet_create_char_request.h"
 
 typedef struct {
         gs_session_t *session;
-        int id;
+        u32_t id;
         char name[32];
-        int race;
-        int sex;
-        int _class;
-        int _int;
-        int str;
-        int con;
-        int men;
-        int dex;
-        int wit;
-        int hair_style;
-        int hair_color;
-        int face;
-        int level;
-        int exp;
-        int sp;
-        int hp;
-        int mp;
-        int cp;
-        int max_hp;
-        int max_mp;
-        int max_cp;
-        int p_attack;
-        int m_attack;
-        int p_def;
-        int m_def;
-        int evasion_rate;
-        int critical_hit;
-        int run_speed;
-        int walk_speed;
-        int p_attack_speed;
-        int movement_speed_multiplier;
-        int attack_speed_multiplier;
-        int collision_radius;
-        int collision_height;
-        int name_color;
-        int max_load;
-        int x;
-        int y;
-        int z;
+        u32_t race;
+        u32_t sex;
+        u32_t _class;
+        i32_t _int;
+        i32_t str;
+        i32_t con;
+        i32_t men;
+        i32_t dex;
+        i32_t wit;
+        u32_t hair_style;
+        u32_t hair_color;
+        u32_t face;
+        u32_t level;
+        u32_t exp;
+        u32_t sp;
+        u32_t hp;
+        u32_t mp;
+        u32_t cp;
+        u32_t max_hp;
+        u32_t max_mp;
+        u32_t max_cp;
+        i32_t p_attack;
+        i32_t m_attack;
+        i32_t p_def;
+        i32_t m_def;
+        u32_t evasion_rate;
+        u32_t critical_hit;
+        u32_t run_speed;
+        u32_t walk_speed;
+        u32_t p_attack_speed;
+        u32_t movement_speed_multiplier;
+        u32_t attack_speed_multiplier;
+        u32_t collision_radius;
+        u32_t collision_height;
+        u32_t name_color;
+        i32_t max_load;
+        i32_t x;
+        i32_t y;
+        i32_t z;
 } gs_character_t;
 
 // Fill character d from client request (made when
