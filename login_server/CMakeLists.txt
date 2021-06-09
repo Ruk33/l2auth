@@ -13,8 +13,6 @@ add_executable(
         login_server
         ../src/linux/login_server/main.c
         ../src/linux/os_socket.c
-        ../src/config.c
-        ../src/conn.c
         ../src/ls_blowfish.c
         ../src/ls_crypt.c
         ../src/ls_lib.c
@@ -26,9 +24,10 @@ add_executable(
         ../src/ls_request.c
         ../src/ls_rsa.c
         ../src/ls_session.c
-        ../src/packet.c
         ../src/server.c
-        ../src/util.c
 )
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../shared ${CMAKE_CURRENT_BINARY_DIR}/shared)
+
 target_link_libraries(login_server OpenSSL::Crypto)
+target_link_libraries(login_server shared)
