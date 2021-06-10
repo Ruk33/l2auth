@@ -1,4 +1,5 @@
 #!/bin/bash
 
 make -C build
-cp build/libgame_server_lib.so ../build
+mv build/libgame_server_lib.so build/game_server_lib.so
+cp build/game_server_lib.so ../build

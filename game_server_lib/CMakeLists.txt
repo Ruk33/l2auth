@@ -8,12 +8,14 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED true)
 set(CMAKE_C_FLAGS "-Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -O2 -g -pedantic")
 set(OPENSSL_USE_STATIC_LIBS true)
-# set(SQLITE3_USE_STATIC_LIBS true)
 
 include(FindSQLite3)
 
 find_package(OpenSSL REQUIRED)
 find_package(SQLite3 REQUIRED)
+
+include_directories(../build)
+link_directories(../build)
 
 add_library(
         game_server_lib
@@ -38,8 +40,6 @@ add_library(
         ../src/gs_session.c
 )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../shared ${CMAKE_CURRENT_BINARY_DIR}/shared)
-
-target_link_libraries(game_server_lib shared)
 target_link_libraries(game_server_lib OpenSSL::Crypto)
 target_link_libraries(game_server_lib SQLite::SQLite3)
+target_link_libraries(game_server_lib l2auth)

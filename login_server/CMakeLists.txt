@@ -9,10 +9,12 @@ set(OPENSSL_USE_STATIC_LIBS true)
 
 find_package(OpenSSL REQUIRED)
 
+include_directories(../build)
+link_directories(../build)
+
 add_executable(
         login_server
         ../src/linux/login_server/main.c
-        ../src/linux/os_socket.c
         ../src/ls_blowfish.c
         ../src/ls_crypt.c
         ../src/ls_lib.c
@@ -27,7 +29,5 @@ add_executable(
         ../src/server.c
 )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../shared ${CMAKE_CURRENT_BINARY_DIR}/shared)
-
 target_link_libraries(login_server OpenSSL::Crypto)
-target_link_libraries(login_server shared)
+target_link_libraries(login_server l2auth)
