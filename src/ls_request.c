@@ -41,8 +41,10 @@ static void handle_auth_login(ls_session_t *session)
         assert(session);
 
         // Todo: Generate these values randomly.
-        ok.loginOK1 = 42;
-        ok.loginOK2 = 24;
+        session->playOK1 = 42;
+        session->playOK2 = 24;
+        ok.loginOK1      = session->playOK1;
+        ok.loginOK2      = session->playOK2;
 
         ls_packet_ok_pack(response, &ok);
         ls_encrypt(session->blowfish, response, response);

@@ -20,27 +20,26 @@ void gs_packet_char_select_set_char(
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
         // l2_string_from_char(dest->title, src->title, sizeof(dest->title));
 
-        dest->id       = 42;
-        dest->active   = 1;
-        dest->race_id  = src->race;
-        dest->class_id = src->_class;
-        dest->clan_id  = 0;
-        dest->exp      = 0;
-        dest->sp       = 0;
-        dest->level    = 1;
-        dest->hp       = 400;
-        dest->mp       = 400;
-        dest->con      = src->con;
-        dest->dex      = src->dex;
-        dest->men      = src->men;
-        dest->str      = src->str;
-        dest->wit      = src->wit;
-        dest->_int     = src->_int;
-        dest->sex      = src->sex;
-        dest->x        = 0;
-        dest->y        = 0;
-        dest->z        = 0;
-        // dest->game_time = 0;
+        dest->id        = 42;
+        dest->active    = 1;
+        dest->race_id   = src->race;
+        dest->class_id  = src->_class;
+        dest->exp       = src->exp;
+        dest->sp        = src->sp;
+        dest->level     = src->level;
+        dest->hp        = src->hp;
+        dest->mp        = src->mp;
+        dest->con       = src->con;
+        dest->dex       = src->dex;
+        dest->men       = src->men;
+        dest->str       = src->str;
+        dest->wit       = src->wit;
+        dest->_int      = src->_int;
+        dest->sex       = src->sex;
+        dest->x         = src->x;
+        dest->y         = src->y;
+        dest->z         = src->z;
+        dest->game_time = 42;
 }
 
 void gs_packet_char_select_pack(packet_t *dest, gs_packet_char_select_t *src)

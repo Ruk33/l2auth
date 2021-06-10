@@ -3,6 +3,22 @@
 
 #include "util.h"
 
+/**
+ * Packets need to be multiple of 8
+ * Not only that, we need to reserve
+ * 4 bytes for checksum.
+ *
+ * Example:
+ *
+ * packet size = 5 (includes byte from packet type)
+ * checksum = 4
+ * packet size + checksum = 9
+ * padded = PACKET_PADDED_SIZE(packet size + checksum) = 16
+ *
+ * padded (16) is now safe to use as packet size.
+ */
+#define packet_padded_size(size) (((size_t)(size + 4 + 7)) & ((size_t)(~7)))
+
 #define packet_append(dest, src) \
         packet_append_n(dest, (byte_t *) (src), sizeof(src))
 

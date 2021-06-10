@@ -6,12 +6,12 @@
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src)
+        gs_character_t *src,
+        int playOK1)
 {
         gs_packet_auth_login_char_t *character = 0;
 
-        size_t name_size     = 0;
-        size_t name_cpy_size = 0;
+        size_t name_size = 0;
 
         assert(dest);
         assert(src);
@@ -19,25 +19,29 @@ void gs_packet_auth_login_add_character(
 
         character = &dest->characters[dest->count];
 
-        name_size     = sizeof(character->name);
-        name_cpy_size = sizeof(character->name_copy);
+        name_size = sizeof(character->name);
 
         l2_string_from_char(character->name, src->name, name_size);
-        l2_string_from_char(character->name_copy, src->name, name_cpy_size);
 
+        character->playOK1       = playOK1;
         character->active        = 1;
         character->class_id      = src->_class;
-        character->class_id_copy = src->_class;
+        character->race_id       = src->race;
         character->face          = src->face;
         character->hair_color_id = src->hair_color;
         character->hair_style_id = src->hair_style;
-        character->hp            = 400;
-        character->id            = 42;
-        character->level         = 1;
-        character->max_hp        = 400;
-        character->max_mp        = 400;
-        character->mp            = 400;
+        character->hp            = src->hp;
+        character->id            = 45366422;
+        character->level         = src->level;
+        character->max_hp        = src->max_hp;
+        character->max_mp        = src->max_mp;
+        character->mp            = src->mp;
         character->sex           = src->sex;
+        character->x             = src->x;
+        character->y             = src->y;
+        character->z             = src->z;
+        character->sp            = src->sp;
+        character->exp           = src->exp;
 
         dest->count += 1;
 }
@@ -64,8 +68,7 @@ void gs_packet_auth_login_pack(packet_t *dest, gs_packet_auth_login_t *src)
 
                 packet_append_n(dest, (byte_t *) character->name, name_size);
                 packet_append_val(dest, character->id);
-                packet_append_n(
-                        dest, (byte_t *) character->name_copy, name_size);
+                packet_append_n(dest, (byte_t *) character->name, name_size);
                 packet_append_val(dest, character->playOK1);
                 packet_append_val(dest, character->clan_id);
                 packet_append_val(dest, character->empty[0]);

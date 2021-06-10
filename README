@@ -61,7 +61,7 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Display server list
 - [x] Allow to enter game server
 - [x] Create character
-- [ ] Enter world
+- [x] Enter world
 - [ ] Walk
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once

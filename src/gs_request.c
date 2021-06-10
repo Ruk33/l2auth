@@ -22,14 +22,15 @@
 #include "include/gs_packet_user_info.h"
 #include "include/gs_request.h"
 
+static packet_t response[65536] = { 0 };
+
 static void handle_protocol_version(gs_session_t *session)
 {
-        packet_t response[16] = { 0 };
-
         gs_packet_protocol_version_t protocol_version = { 0 };
 
         assert(session);
 
+        bytes_zero(response, sizeof(response));
         gs_packet_protocol_version(&protocol_version);
         gs_packet_protocol_version_pack(response, &protocol_version);
 
@@ -38,15 +39,12 @@ static void handle_protocol_version(gs_session_t *session)
 
 static void handle_enter_world(gs_session_t *session)
 {
-        static packet_t response[1024] = { 0 };
-
         static gs_packet_user_info_t user_info = { 0 };
 
         gs_character_t character = { 0 };
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &user_info, sizeof(user_info));
 
         // Todo check which character the client selected.
@@ -55,6 +53,7 @@ static void handle_enter_world(gs_session_t *session)
                 return;
         }
 
+        bytes_zero(response, sizeof(response));
         gs_packet_user_info_set_char(&user_info, &character);
         gs_packet_user_info_pack(response, &user_info);
 
@@ -66,8 +65,6 @@ static void handle_enter_world(gs_session_t *session)
 // If packet is NULL, only the characters will be fetch (no session update).
 static void handle_auth_login(gs_session_t *session, packet_t *packet)
 {
-        static packet_t response[4096] = { 0 };
-
         static gs_packet_auth_login_t auth_login = { 0 };
 
         static gs_character_t characters[10] = { 0 };
@@ -80,7 +77,6 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
         bytes_zero((byte_t *) characters, sizeof(characters));
 
@@ -93,9 +89,11 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
         characters_count = storage_get_characters(characters, username, 10);
 
         for (size_t i = 0; i < characters_count; i += 1) {
-                gs_packet_auth_login_add_character(&auth_login, &characters[i]);
+                gs_packet_auth_login_add_character(
+                        &auth_login, &characters[i], session->playOK1);
         }
 
+        bytes_zero(response, sizeof(response));
         gs_packet_auth_login_pack(response, &auth_login);
         gs_session_encrypt(session, response, response);
 
@@ -104,8 +102,6 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
 
 static void handle_new_character(gs_session_t *session)
 {
-        static packet_t response[1024] = { 0 };
-
         static gs_packet_new_char_t new_char = { 0 };
 
         gs_character_template_t *templates = 0;
@@ -114,7 +110,6 @@ static void handle_new_character(gs_session_t *session)
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &new_char, sizeof(new_char));
 
         templates      = gs_character_template_default();
@@ -124,6 +119,7 @@ static void handle_new_character(gs_session_t *session)
                 gs_packet_new_char_add_template(&new_char, &templates[i]);
         }
 
+        bytes_zero(response, sizeof(response));
         gs_packet_new_char_pack(response, &new_char);
         gs_session_encrypt(session, response, response);
 
@@ -132,8 +128,6 @@ static void handle_new_character(gs_session_t *session)
 
 static void handle_create_character(gs_session_t *session, packet_t *packet)
 {
-        packet_t response[8] = { 0 };
-
         gs_packet_create_char_request_t create_char_request = { 0 };
 
         gs_packet_create_char_t create_char = { 0 };
@@ -149,6 +143,7 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
         create_char.response =
                 storage_create_character(session->username, &character);
 
+        bytes_zero(response, sizeof(response));
         gs_packet_create_char_pack(response, &create_char);
         gs_session_encrypt(session, response, response);
 
@@ -160,8 +155,6 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
 
 static void handle_selected_character(gs_session_t *session, packet_t *packet)
 {
-        static packet_t response[512] = { 0 };
-
         static gs_packet_char_select_t char_select = { 0 };
 
         gs_packet_char_select_request_t char_select_request = { 0 };
@@ -171,7 +164,6 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
         assert(session);
         assert(packet);
 
-        bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &char_select, sizeof(char_select));
 
         gs_packet_char_select_request_unpack(&char_select_request, packet);
@@ -181,6 +173,7 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
                 return;
         }
 
+        bytes_zero(response, sizeof(response));
         gs_packet_char_select_set_char(&char_select, &character);
         gs_packet_char_select_set_playok(&char_select, session->playOK1);
         gs_packet_char_select_pack(response, &char_select);
@@ -191,12 +184,11 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
 
 static void handle_quest_list(gs_session_t *session)
 {
-        packet_t response[16] = { 0 };
-
         gs_packet_quest_list_t quest_list = { 0 };
 
         assert(session);
 
+        bytes_zero(response, sizeof(response));
         gs_packet_quest_list_pack(response, &quest_list);
         gs_session_encrypt(session, response, response);
 
@@ -205,12 +197,11 @@ static void handle_quest_list(gs_session_t *session)
 
 static void handle_auto_ss_bsps(gs_session_t *session)
 {
-        packet_t response[16] = { 0 };
-
         gs_packet_d0_t d0 = { 0 };
 
         assert(session);
 
+        bytes_zero(response, sizeof(response));
         gs_packet_d0_pack(response, &d0);
         gs_session_encrypt(session, response, response);
 

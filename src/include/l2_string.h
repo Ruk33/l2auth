@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-typedef char l2_string_t;
+typedef unsigned char l2_string_t;
 
 // Copy n bytes or until NULL terminator from src to dest.
 void l2_string_cpy(l2_string_t *dest, l2_string_t *src, size_t n);

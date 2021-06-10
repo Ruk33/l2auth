@@ -7,13 +7,13 @@ u16_t packet_size(packet_t *src)
         u16_t size = 0;
         assert(src);
         bytes_cpy((byte_t *) &size, src, sizeof(size));
-        return size;
+        return size & 0xFFFF;
 }
 
 u8_t packet_type(packet_t *src)
 {
         assert(src);
-        return (u8_t) src[2];
+        return (u8_t) src[2] & 0xff;
 }
 
 packet_t *packet_body(packet_t *src)

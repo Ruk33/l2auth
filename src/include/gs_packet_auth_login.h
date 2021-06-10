@@ -77,7 +77,8 @@ typedef struct {
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src);
+        gs_character_t *src,
+        int playOK1);
 
 void gs_packet_auth_login_pack(packet_t *dest, gs_packet_auth_login_t *src);
 

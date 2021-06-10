@@ -20,7 +20,7 @@ void gs_encrypt(byte_t *key, byte_t *dest, packet_t *src)
         assert(dest);
         assert(src);
 
-        src_size  = packet_size(src);
+        src_size  = 2 + packet_padded_size(packet_size(src) - 2);
         body_size = src_size - 2;
         src_body  = packet_body(src);
         dest_body = packet_body(dest);
@@ -36,7 +36,7 @@ void gs_encrypt(byte_t *key, byte_t *dest, packet_t *src)
         old |= ((unsigned int) key[2] << 0x10 & 0xff0000);
         old |= ((unsigned int) key[3] << 0x18 & 0xff000000);
 
-        old += (unsigned int) body_size;
+        old += body_size;
 
         key[0] = (byte_t)(old & 0xff);
         key[1] = (byte_t)(old >> 0x08 & 0xff);
@@ -79,7 +79,7 @@ void gs_decrypt(byte_t *key, packet_t *dest, byte_t *src)
         old |= (unsigned int) key[2] << 0x10 & 0xff0000;
         old |= (unsigned int) key[3] << 0x18 & 0xff000000;
 
-        old += (unsigned int) body_size;
+        old += body_size;
 
         key[0] = (byte_t)(old & 0xff);
         key[1] = (byte_t)(old >> 0x08 & 0xff);

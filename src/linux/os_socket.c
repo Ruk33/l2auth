@@ -7,8 +7,12 @@
 #include <netinet/in.h>
 #include "../include/os_socket.h"
 
-#define READ_BUF_SIZE 65536
-#define WRITE_BUF_SIZE 65536
+// Allow to read and send up to 5 packets
+// Each packet can have a max size of 65536
+// 65525 * 5 = 327680
+#define READ_BUF_SIZE 327680
+#define WRITE_BUF_SIZE 327680
+
 #define MAX_REQUESTS 256
 #define MAX_CLIENTS 30
 
@@ -20,7 +24,7 @@ static struct epoll_event events[MAX_REQUESTS] = { 0 };
 static unsigned char read_buf[READ_BUF_SIZE] = { 0 };
 
 static unsigned char write_buf[MAX_CLIENTS][WRITE_BUF_SIZE] = { 0 };
-static size_t to_be_sent[MAX_CLIENTS]                = { 0 };
+static size_t to_be_sent[MAX_CLIENTS]                       = { 0 };
 
 static int os_socket_to_fd(os_socket_t *src)
 {

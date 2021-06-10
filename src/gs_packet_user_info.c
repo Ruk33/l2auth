@@ -14,10 +14,11 @@ void gs_packet_user_info_set_char(
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
 
+        // dest->heading         = 2;
         dest->x             = src->x;
         dest->y             = src->y;
         dest->z             = src->z;
-        dest->id            = src->id;
+        dest->id            = 42; // src->id;
         dest->race_id       = src->race;
         dest->sex           = src->sex;
         dest->class_id      = src->_class;
@@ -48,6 +49,8 @@ void gs_packet_user_info_set_char(
         dest->hair_style_id = src->hair_style;
         dest->hair_color_id = src->hair_color;
         dest->face          = src->face;
+        // dest->access_level    = 1;
+        dest->inventory_limit = 42;
 
         dest->run_speed                 = src->run_speed;
         dest->walk_speed                = src->walk_speed;
@@ -58,7 +61,10 @@ void gs_packet_user_info_set_char(
         dest->collision_radius          = src->collision_radius;
         dest->collision_height          = src->collision_height;
         dest->name_color                = src->name_color;
+        dest->current_load              = 1;
         dest->max_load                  = src->max_load;
+        dest->unknown                   = 0x28;
+        dest->name_color                = 0xFFFFFF;
 }
 
 void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
@@ -75,14 +81,6 @@ void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
 
         name_size  = l2_string_bytes(src->name);
         title_size = l2_string_bytes(src->title);
-
-        src->unknown = 0x28;
-        src->id      = 42;
-        src->heading = 2;
-
-        // src->x = 147439;
-        // src->y = 1120;
-        // src->z = 218;
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->x);
@@ -110,13 +108,16 @@ void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
         packet_append_val(dest, src->current_load);
         packet_append_val(dest, src->max_load);
         packet_append_val(dest, src->unknown);
+
         packet_append_val(dest, src->paperdoll_under);
         packet_append_val(dest, src->paperdoll_r_ear);
         packet_append_val(dest, src->paperdoll_l_ear);
         packet_append_val(dest, src->paperdoll_neck);
         packet_append_val(dest, src->paperdoll_r_finger);
         packet_append_val(dest, src->paperdoll_l_finger);
+
         packet_append_val(dest, src->paperdoll_head);
+
         packet_append_val(dest, src->paperdoll_r_hand);
         packet_append_val(dest, src->paperdoll_l_hand);
         packet_append_val(dest, src->paperdoll_gloves);
@@ -187,10 +188,9 @@ void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
         packet_append_val(dest, src->cubics);
         packet_append_val(dest, src->party_members); // 1 find party
         packet_append_val(dest, src->abnormal_effect);
-        packet_append_val(dest, src->char_empty[0]);
+        packet_append_n(dest, src->char_empty, 1);
         packet_append_val(dest, src->clan_privileges);
-        packet_append_n(
-                dest, (byte_t *) src->int_empty, sizeof(src->int_empty[0]) * 7);
+        packet_append_n(dest, (byte_t *) src->int_empty, sizeof(i32_t) * 7);
         packet_append_val(dest, src->recommendation_left);
         packet_append_val(dest, src->recommendation_have);
         packet_append_val(dest, src->int_empty[0]);
@@ -200,11 +200,11 @@ void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src)
         packet_append_val(dest, src->max_cp);
         packet_append_val(dest, src->cp);
         packet_append_val(dest, src->mounted);
-        packet_append_val(dest, src->team_circle); // 1 = blue, 2 = red
+        packet_append_val(dest, src->char_empty[0]); // 1 = blue, 2 = red
         packet_append_val(dest, src->clan_crest_large_id);
         packet_append_val(dest, src->hero_symbol);
         packet_append_val(dest, src->hero);
-        packet_append_val(dest, src->char_empty[0]);
+        packet_append_n(dest, src->char_empty, 1);
         packet_append_val(dest, src->fish_x);
         packet_append_val(dest, src->fish_y);
         packet_append_val(dest, src->fish_z);
