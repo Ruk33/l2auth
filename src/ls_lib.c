@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <arpa/inet.h>
+#include "include/os_socket.h"
 #include "include/server.h"
 #include "include/conn.h"
 #include "include/ls_request.h"

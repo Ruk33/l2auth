@@ -4,10 +4,11 @@
 #include "config.h"
 #include "util.h"
 #include "packet.h"
+#include "os_socket.h"
 #include "gs_packet_auth_request.h"
 
 typedef struct {
-        void *socket;
+        os_socket_t *socket;
 
         byte_t encrypt_key[8];
         byte_t decrypt_key[8];
@@ -23,9 +24,9 @@ typedef struct {
 
 void gs_session_set(byte_t *sessions);
 
-gs_session_t *gs_session_new(void *socket);
+gs_session_t *gs_session_new(os_socket_t *socket);
 
-gs_session_t *gs_session_find(void *socket);
+gs_session_t *gs_session_find(os_socket_t *socket);
 
 // Mark the connection as encrypted.
 // This function AFFECTS gs_session_decrypt.

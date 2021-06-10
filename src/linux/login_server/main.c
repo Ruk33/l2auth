@@ -1,15 +1,14 @@
 #include <stdio.h>
-#include "../../include/util.h"
 #include "../../include/os_socket.h"
 #include "../../include/ls_lib.h"
 
-static void send_response(os_socket_t *socket, byte_t *buf, size_t n)
+static void send_response(os_socket_t *socket, unsigned char *buf, size_t n)
 {
         os_socket_send(socket, buf, n);
 }
 
 static void
-on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
+on_request(os_socket_t *socket, socket_ev_t ev, unsigned char *buf, size_t n)
 {
         switch (ev) {
         case CONN:
