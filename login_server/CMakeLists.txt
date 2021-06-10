@@ -5,8 +5,8 @@ project(login_server)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED true)
 set(CMAKE_C_FLAGS "-Wall -Werror -Wextra -Wshadow -Wdouble-promotion -Wundef -O2 -g -pedantic")
-
 set(OPENSSL_USE_STATIC_LIBS true)
+
 find_package(OpenSSL REQUIRED)
 
 add_executable(
