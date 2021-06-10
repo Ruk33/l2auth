@@ -6,8 +6,12 @@ Because it's fun; because I like Lineage 2 (at least until C4 and Interlude
 chronicles) and because I like the C programming language and I thought this 
 is an excellent project to work with it.
 
-== Screenshots/demos
-See doc/screenshot.
+== Dependencies
+- cmake
+- make
+- openssl
+- sqlite3
+- docker & docker-compose (optional)
 
 == Running the server with Docker
 - Install Docker
@@ -61,7 +65,7 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Display server list
 - [x] Allow to enter game server
 - [x] Create character
-- [x] Enter world
+- [ ] Enter world
 - [ ] Walk
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once

@@ -3,11 +3,11 @@ version: '3'
 services:
   login_server:
     build: .
-    command: make clean && make login_server && ./login_server
+    command: make && ./build/login_server
     ports:
       - 2106:2106
   game_server:
     build: .
-    command: make clean && make game_server && ./game_server
+    command: make && ./build/game_server
     ports:
       - 7777:7777
