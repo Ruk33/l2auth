@@ -11,15 +11,11 @@ is an excellent project to work with it.
 - make
 - openssl
 - sqlite3
-- docker & docker-compose (optional)
 
-== Running the server with Docker
-- Install Docker
-- Install docker-compose
-- Run docker-compose up
-- Server will start listening for connections on localhost (127.0.0.1) 
-  ports 2106 (loginserver) and 7777 (gameserver)
-- Use any user and password (all are valid) and you should be able to log in
+== Build & run
+Just run make in the root folder.
+Start login server by running build/login_server.
+Start game server by running build/game_server.
 
 == Game and login server
 This project divides the login server (from where the user can authenticate
