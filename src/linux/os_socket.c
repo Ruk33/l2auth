@@ -1,23 +1,25 @@
+#include <stddef.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <netinet/in.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include "../include/config.h"
 #include "../include/os_socket.h"
 
 #define READ_BUF_SIZE 65536
 #define WRITE_BUF_SIZE 65536
 #define MAX_REQUESTS 256
+#define MAX_CLIENTS 30
 
 static int sockets[MAX_CLIENTS] = { 0 };
 static size_t socket_count      = 0;
 
 static struct epoll_event events[MAX_REQUESTS] = { 0 };
 
-static byte_t read_buf[READ_BUF_SIZE] = { 0 };
+static unsigned char read_buf[READ_BUF_SIZE] = { 0 };
 
-static byte_t write_buf[MAX_CLIENTS][WRITE_BUF_SIZE] = { 0 };
+static unsigned char write_buf[MAX_CLIENTS][WRITE_BUF_SIZE] = { 0 };
 static size_t to_be_sent[MAX_CLIENTS]                = { 0 };
 
 static int os_socket_to_fd(os_socket_t *src)
@@ -58,7 +60,7 @@ static void socket_set_non_blocking(int fd)
         fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-os_socket_t *os_socket_create(u16_t port)
+os_socket_t *os_socket_create(unsigned short port)
 {
         int new_socket = 0;
 
@@ -116,14 +118,14 @@ static os_socket_t *socket_accept(os_socket_t *socket)
         return &sockets[socket_count - 1];
 }
 
-ssize_t os_socket_send(os_socket_t *socket, byte_t *src, size_t n)
+ssize_t os_socket_send(os_socket_t *socket, unsigned char *src, size_t n)
 {
         size_t id    = 0;
         ssize_t sent = 0;
 
         id = socket_id(socket);
 
-        bytes_cpy(write_buf[id] + to_be_sent[id], src, n);
+        memcpy(write_buf[id] + to_be_sent[id], src, n);
         to_be_sent[id] += n;
 
         sent = send(os_socket_to_fd(socket), write_buf[id], to_be_sent[id], 0);

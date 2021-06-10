@@ -1,22 +1,22 @@
 #include <stdio.h>
+#include <stddef.h>
 #include <dlfcn.h>
-#include "../../include/util.h"
 #include "../../include/os_socket.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
 static void *handle = 0;
-static void (*on_load)(void (*)(os_socket_t *, byte_t *, size_t), byte_t *);
+static void (*on_load)(void (*)(os_socket_t *, unsigned char *, size_t), unsigned char *);
 static void (*on_unload)(void);
 static void (*on_new_conn)(os_socket_t *);
-static void (*on_new_req)(os_socket_t *, byte_t *, size_t);
+static void (*on_new_req)(os_socket_t *, unsigned char *, size_t);
 static void (*on_disconnect)(os_socket_t *);
 
 // Todo: Refactor. This is supposed to hold the live sessions.
 // It's on the host side so we don't lose the information
 // when the library gets reloaded.
 // 4096 big enough to hold sizeof(sessions) * MAX_CLIENTS
-static byte_t sessions[4096] = { 0 };
+static unsigned char sessions[4096] = { 0 };
 
 // Load function from game server library.
 // On success, the function's handler is returned. On error 0.
@@ -39,7 +39,7 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void internal_send_response(os_socket_t *socket, byte_t *buf, size_t n)
+static void internal_send_response(os_socket_t *socket, unsigned char *buf, size_t n)
 {
         os_socket_send(socket, buf, n);
 }
@@ -86,7 +86,7 @@ static int init_gs_lib(void)
 }
 
 static void
-internal_on_request(os_socket_t *socket, socket_ev_t ev, byte_t *buf, size_t n)
+internal_on_request(os_socket_t *socket, socket_ev_t ev, unsigned char *buf, size_t n)
 {
         // Todo: only load if required.
         if (!init_gs_lib()) {

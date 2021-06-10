@@ -3,7 +3,6 @@
 
 #include "util.h"
 #include "config.h"
-#include "os_socket.h"
 #include "conn.h"
 #include "gs_session.h"
 
@@ -17,10 +16,10 @@ void gs_lib_load(conn_send_response_cb cb, byte_t *sessions);
 
 void gs_lib_unload(void);
 
-void gs_lib_new_conn(os_socket_t *socket);
+void gs_lib_new_conn(void *socket);
 
-void gs_lib_new_req(os_socket_t *socket, byte_t *buf, size_t n);
+void gs_lib_new_req(void *socket, byte_t *buf, size_t n);
 
-void gs_lib_disconnect(os_socket_t *socket);
+void gs_lib_disconnect(void *socket);
 
 #endif

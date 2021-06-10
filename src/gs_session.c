@@ -19,7 +19,7 @@ void gs_session_set(byte_t *src)
         session_storage = (session_storage_t *) src;
 }
 
-gs_session_t *gs_session_new(os_socket_t *socket)
+gs_session_t *gs_session_new(void *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         gs_session_t *new_session = 0;
@@ -39,7 +39,7 @@ gs_session_t *gs_session_new(os_socket_t *socket)
         return new_session;
 }
 
-gs_session_t *gs_session_find(os_socket_t *socket)
+gs_session_t *gs_session_find(void *socket)
 {
         assert(socket);
 

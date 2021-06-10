@@ -217,13 +217,13 @@ static void handle_auto_ss_bsps(gs_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
-void gs_request_new_conn(os_socket_t *socket)
+void gs_request_new_conn(void *socket)
 {
         assert(socket);
         gs_session_new(socket);
 }
 
-void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
+void gs_request(void *socket, byte_t *buf, size_t n)
 {
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
@@ -304,7 +304,7 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
         }
 }
 
-void gs_request_disconnect(os_socket_t *socket)
+void gs_request_disconnect(void *socket)
 {
         PREVENT_UNUSED_WARNING(socket);
 }

@@ -1,7 +1,8 @@
 #ifndef INCLUDE_OS_SOCKET_H
 #define INCLUDE_OS_SOCKET_H
 
-#include "util.h"
+#include <stddef.h>
+#include <unistd.h>
 
 typedef void os_socket_t;
 
@@ -11,11 +12,11 @@ typedef enum {
         CLOSED,
 } socket_ev_t;
 
-typedef void (*socket_ev_cb)(os_socket_t *s, socket_ev_t e, byte_t *b, size_t n);
+typedef void (*socket_ev_cb)(os_socket_t *s, socket_ev_t e, unsigned char *b, size_t n);
 
 // Creates a socket and binds it to a port.
 // On error, 0 is returned.
-os_socket_t *os_socket_create(u16_t port);
+os_socket_t *os_socket_create(unsigned short port);
 
 // Accept a socket connection.
 // On error, 0 is returned.
@@ -23,7 +24,7 @@ os_socket_t *os_socket_create(u16_t port);
 
 // Send n bytes from src through a specified socket.
 // The amount of bytes sent is returned. On error, -1.
-ssize_t os_socket_send(os_socket_t *socket, byte_t *src, size_t n);
+ssize_t os_socket_send(os_socket_t *socket, unsigned char *src, size_t n);
 
 // On success, 1 is returned. On error, 0.
 int os_socket_close(os_socket_t *socket);
