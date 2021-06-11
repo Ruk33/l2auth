@@ -24,6 +24,7 @@ typedef struct {
         i32_t target_x;
         i32_t target_y;
         i32_t target_z;
+        i32_t heading;
 
         // Fields bellow these line will be saved in database.
         char name[32];

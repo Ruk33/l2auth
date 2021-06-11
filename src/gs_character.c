@@ -9,6 +9,8 @@
 #include "include/gs_packet_create_char_request.h"
 #include "include/gs_packet_move.h"
 #include "include/gs_packet_move_request.h"
+#include "include/gs_packet_validate_pos.h"
+#include "include/gs_packet_validate_pos_request.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
@@ -40,6 +42,33 @@ static void handle_move_request(gs_character_t *character, packet_t *packet)
         conn_send_packet(character->session->socket, response);
 }
 
+static void
+handle_validate_position_request(gs_character_t *character, packet_t *packet)
+{
+        gs_packet_validate_pos_request_t validate_request = { 0 };
+        gs_packet_validate_pos_t validate_response        = { 0 };
+
+        assert(character);
+        assert(packet);
+
+        gs_packet_validate_pos_request_unpack(&validate_request, packet);
+
+        // Todo: Perform basic validation.
+        // If it's close enough to current location, update. If not, don't.
+        character->x       = validate_request.x;
+        character->y       = validate_request.y;
+        character->z       = validate_request.z;
+        character->heading = validate_request.heading;
+
+        bytes_zero(response, sizeof(response));
+
+        gs_packet_validate_pos(&validate_response, character);
+        gs_packet_validate_pos_pack(response, &validate_response);
+
+        gs_session_encrypt(character->session, response, response);
+        conn_send_packet(character->session->socket, response);
+}
+
 static void spawn_state(gs_character_t *character, packet_t *packet)
 {
         assert(character);
@@ -62,7 +91,7 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
                 log("TODO: Restart");
                 break;
         case 0x48: // Validate position.
-                log("TODO: Validate position");
+                handle_validate_position_request(character, packet);
                 break;
         case 0xcd: // Show map.
                 log("TODO: Show map");
