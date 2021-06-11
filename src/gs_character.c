@@ -3,13 +3,42 @@
 #include "include/util.h"
 #include "include/log.h"
 #include "include/packet.h"
+#include "include/conn.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
 #include "include/gs_packet_create_char_request.h"
+#include "include/gs_packet_move.h"
+#include "include/gs_packet_move_request.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
 static size_t *character_count    = 0;
+
+static packet_t response[65536] = { 0 };
+
+static void handle_move_request(gs_character_t *character, packet_t *packet)
+{
+        gs_packet_move_request_t move_request = { 0 };
+        gs_packet_move_t move_response        = { 0 };
+
+        assert(character);
+        assert(packet);
+
+        gs_packet_move_request_unpack(&move_request, packet);
+
+        character->target_x = move_request.x;
+        character->target_y = move_request.y;
+        character->target_z = move_request.z;
+
+        bytes_zero(response, sizeof(response));
+
+        // Todo: notify close players.
+        gs_packet_move(&move_response, character);
+        gs_packet_move_pack(response, &move_response);
+
+        gs_session_encrypt(character->session, response, response);
+        conn_send_packet(character->session->socket, response);
+}
 
 static void spawn_state(gs_character_t *character, packet_t *packet)
 {
@@ -18,7 +47,7 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
 
         switch (packet_type(packet)) {
         case 0x01: // Move backwards.
-                log("TODO: Move backwards");
+                handle_move_request(character, packet);
                 break;
         case 0x04: // Action.
                 log("TODO: Action");
@@ -119,6 +148,7 @@ void gs_character_spawn(gs_session_t *session, gs_character_t *src)
         log("Spawning new character and linking gs session.");
 
         characters[*character_count]         = *src;
+        characters[*character_count].id      = 42;
         characters[*character_count].state   = SPAWN;
         characters[*character_count].session = session;
 

@@ -21,6 +21,10 @@ typedef struct {
         gs_session_t *session;
         gs_character_state_t state;
 
+        i32_t target_x;
+        i32_t target_y;
+        i32_t target_z;
+
         // Fields bellow these line will be saved in database.
         char name[32];
         u32_t race;
