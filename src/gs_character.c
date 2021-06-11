@@ -8,9 +8,8 @@
 #include "include/gs_packet_create_char_request.h"
 #include "include/gs_character.h"
 
-static gs_character_t characters[MAX_CLIENTS] = { 0 };
-
-static size_t character_count = 0;
+static gs_character_t *characters = 0;
+static size_t *character_count    = 0;
 
 static void spawn_state(gs_character_t *character, packet_t *packet)
 {
@@ -43,6 +42,12 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
                 log("Can't handle packet from in world state.");
                 break;
         }
+}
+
+void gs_character_set(gs_character_t *src, size_t *count)
+{
+        characters      = src;
+        character_count = count;
 }
 
 void gs_character_from_request(
@@ -107,24 +112,24 @@ void gs_character_spawn(gs_session_t *session, gs_character_t *src)
         assert(session);
         assert(src);
 
-        for (size_t i = 0; i < character_count; i += 1) {
+        for (size_t i = 0; i < *character_count; i += 1) {
                 log("Notify close players.");
         }
 
         log("Spawning new character and linking gs session.");
 
-        characters[character_count]         = *src;
-        characters[character_count].state   = SPAWN;
-        characters[character_count].session = session;
+        characters[*character_count]         = *src;
+        characters[*character_count].state   = SPAWN;
+        characters[*character_count].session = session;
 
-        character_count += 1;
+        *character_count += 1;
 }
 
 gs_character_t *gs_character_from_session(gs_session_t *session)
 {
         assert(session);
 
-        for (size_t i = 0; i < character_count; i += 1) {
+        for (size_t i = 0; i < *character_count; i += 1) {
                 if (characters[i].session == session) {
                         return &characters[i];
                 }

@@ -6,14 +6,19 @@
 #include "conn.h"
 #include "os_socket.h"
 #include "gs_session.h"
+#include "gs_character.h"
 
 typedef struct {
         conn_send_response_cb send_response;
+
         gs_session_t sessions[MAX_CLIENTS];
         size_t session_count;
+
+        gs_character_t characters[MAX_CLIENTS];
+        size_t character_count;
 } gs_lib_t;
 
-void gs_lib_load(conn_send_response_cb cb, byte_t *sessions);
+void gs_lib_load(gs_lib_t *gs_lib);
 
 void gs_lib_unload(void);
 

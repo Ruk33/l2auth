@@ -4,18 +4,19 @@
 #include "include/log.h"
 #include "include/os_socket.h"
 #include "include/gs_session.h"
+#include "include/gs_character.h"
 #include "include/gs_request.h"
 #include "include/gs_lib.h"
 
-void gs_lib_load(conn_send_response_cb cb, byte_t *sessions)
+void gs_lib_load(gs_lib_t *gs_lib)
 {
-        assert(cb);
-        assert(sessions);
+        assert(gs_lib);
 
-        log("GS loaded");
+        log("GS loaded!");
 
-        conn_set_cb(cb);
-        gs_session_set(sessions);
+        conn_set_cb(gs_lib->send_response);
+        gs_session_set(gs_lib->sessions, &gs_lib->session_count);
+        gs_character_set(gs_lib->characters, &gs_lib->character_count);
 }
 
 void gs_lib_unload(void)

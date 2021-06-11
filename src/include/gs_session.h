@@ -42,7 +42,7 @@ typedef struct {
         int conn_encrypted;
 } gs_session_t;
 
-void gs_session_set(byte_t *sessions);
+void gs_session_set(gs_session_t *sessions, size_t *count);
 
 gs_session_t *gs_session_new(os_socket_t *socket);
 

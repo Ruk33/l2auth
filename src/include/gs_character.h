@@ -66,6 +66,8 @@ typedef struct {
         i32_t z;
 } gs_character_t;
 
+void gs_character_set(gs_character_t *characters, size_t *count);
+
 // Fill character d from client request (made when
 // creating a new character).
 void gs_character_from_request(

@@ -2,23 +2,18 @@
 #include <stddef.h>
 #include <dlfcn.h>
 #include "../../include/os_socket.h"
+#include "../../include/gs_lib.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
 static void *handle = 0;
-static void (*on_load)(
-        void (*)(os_socket_t *, unsigned char *, size_t),
-        unsigned char *);
+static void (*on_load)(gs_lib_t *);
 static void (*on_unload)(void);
 static void (*on_new_conn)(os_socket_t *);
 static void (*on_new_req)(os_socket_t *, unsigned char *, size_t);
 static void (*on_disconnect)(os_socket_t *);
 
-// Todo: Refactor. This is supposed to hold the live sessions.
-// It's on the host side so we don't lose the information
-// when the library gets reloaded.
-// 4096 big enough to hold sizeof(sessions) * MAX_CLIENTS
-static unsigned char sessions[4096] = { 0 };
+static gs_lib_t gs_lib = { 0 };
 
 // Load function from game server library.
 // On success, the function's handler is returned. On error 0.
@@ -83,7 +78,7 @@ static int init_gs_lib(void)
                 return 0;
         }
 
-        on_load(internal_send_response, sessions);
+        on_load(&gs_lib);
 
         return 1;
 }
@@ -95,13 +90,10 @@ static void internal_on_request(
         size_t n)
 {
         // Todo: only load if required.
-        // Todo: characters must be also reloaded...
-        // Use same strategy as sessions? or maybe just use a memory pool?
-
-        // if (!init_gs_lib()) {
-        //         printf("Unable to properly load gameserver library.\n");
-        //         return;
-        // }
+        if (!init_gs_lib()) {
+                printf("Unable to properly load gameserver library.\n");
+                return;
+        }
 
         switch (ev) {
         case CONN:
@@ -128,6 +120,8 @@ int main(/* int argc, char **argv */)
         os_socket_t *socket = 0;
 
         socket = os_socket_create(7777);
+
+        gs_lib.send_response = internal_send_response;
 
         if (!socket) {
                 printf("Game server socket couldn't be created.\n");
