@@ -7,8 +7,28 @@
 #include "os_socket.h"
 #include "gs_packet_auth_request.h"
 
+/*
+ * These represent the states of a client's session.
+ * It's a state machine, which makes it easier to understand
+ * the flow and avoid having to make some checks. For instance,
+ * if we are in CHARACTER_SELECTION, we know we have went through
+ * PROTOCOL_VERSION and AUTH_REQUEST, so we are dealing with
+ * a valid session.
+ * Keep these states in order.
+ */
+typedef enum {
+        PROTOCOL_VERSION,
+        AUTH_REQUEST,
+        CHARACTER_SELECTION,
+        CREATING_CHARACTER,
+        ENTERING_WORLD,
+        IN_WORLD,
+} gs_session_state_t;
+
 typedef struct {
         os_socket_t *socket;
+
+        gs_session_state_t state;
 
         byte_t encrypt_key[8];
         byte_t decrypt_key[8];

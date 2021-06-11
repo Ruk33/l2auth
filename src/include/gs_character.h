@@ -5,10 +5,23 @@
 #include "gs_session.h"
 #include "gs_packet_create_char_request.h"
 
-typedef struct {
-        gs_session_t *session;
-        u32_t id;
+/*
+ * Same as gs_session, these values represent
+ * the states in which a character can be.
+ * Keep these in order.
+ */
+typedef enum {
+        SPAWN,
+        IDLE,
+        MOVING,
+} gs_character_state_t;
 
+typedef struct {
+        u32_t id;
+        gs_session_t *session;
+        gs_character_state_t state;
+
+        // Fields bellow these line will be saved in database.
         char name[32];
         u32_t race;
         u32_t sex;
@@ -62,5 +75,9 @@ void gs_character_from_request(
 // Spawn character in the world and notify close players.
 // The session will get assign to the character.
 void gs_character_spawn(gs_session_t *session, gs_character_t *src);
+
+gs_character_t *gs_character_from_session(gs_session_t *session);
+
+void gs_character_request(gs_character_t *character, packet_t *packet);
 
 #endif

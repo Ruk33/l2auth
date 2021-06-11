@@ -53,6 +53,8 @@ static void handle_enter_world(gs_session_t *session)
                 return;
         }
 
+        gs_character_spawn(session, &character);
+
         bytes_zero(response, sizeof(response));
         gs_packet_user_info_set_char(&user_info, &character);
         gs_packet_user_info_pack(response, &user_info);
@@ -208,6 +210,105 @@ static void handle_auto_ss_bsps(gs_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
+static void protocol_version_state(gs_session_t *session, packet_t *packet)
+{
+        switch (packet_type(packet)) {
+        case 0x00: // Protocol version
+                handle_protocol_version(session);
+                session->state = AUTH_REQUEST;
+                break;
+        default:
+                log("Can't handle packet from protocol version state.");
+                break;
+        }
+}
+
+static void auth_request_state(gs_session_t *session, packet_t *packet)
+{
+        switch (packet_type(packet)) {
+        case 0x08: // Auth request
+                handle_auth_login(session, packet);
+                session->state = CHARACTER_SELECTION;
+                break;
+        default:
+                log("Can't handle packet from auth request state.");
+                break;
+        }
+}
+
+static void character_selection_state(gs_session_t *session, packet_t *packet)
+{
+        switch (packet_type(packet)) {
+        case 0x0d: // Selected char.
+                handle_selected_character(session, packet);
+                session->state = ENTERING_WORLD;
+                break;
+        case 0x0e: // New character
+                handle_new_character(session);
+                session->state = CREATING_CHARACTER;
+                break;
+        default:
+                log("Can't handle packet from character selection state.");
+                break;
+        }
+}
+
+static void creating_character_state(gs_session_t *session, packet_t *packet)
+{
+        switch (packet_type(packet)) {
+        case 0x0b: // Create character
+                handle_create_character(session, packet);
+                session->state = CHARACTER_SELECTION;
+                break;
+        default:
+                /*
+                 * When creating a new character, the user can go
+                 * back to the character selection screen and no
+                 * packet will be sent. This is why we also need to
+                 * accept states from character selection.
+                 */
+                log("Packet delegated from creating character to character selection.");
+                character_selection_state(session, packet);
+                break;
+        }
+}
+
+static void entering_world_state(gs_session_t *session, packet_t *packet)
+{
+        switch (packet_type(packet)) {
+        case 0x03: // Enter world.
+                handle_enter_world(session);
+                session->state = IN_WORLD;
+                break;
+        case 0x63: // Quest list.
+                handle_quest_list(session);
+                break;
+        case 0xd0: // Auto ss bsps.
+                handle_auto_ss_bsps(session);
+                break;
+        default:
+                log("Can't handle packet from entering world state.");
+                break;
+        }
+}
+
+static void in_world_state(gs_session_t *session, packet_t *packet)
+{
+        gs_character_t *character = 0;
+
+        assert(session);
+        assert(packet);
+
+        character = gs_character_from_session(session);
+
+        if (!character) {
+                log("No character found for session. Disconnect?");
+                return;
+        }
+
+        gs_character_request(character, packet);
+}
+
 void gs_request_new_conn(os_socket_t *socket)
 {
         assert(socket);
@@ -237,53 +338,27 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
         gs_session_decrypt(session, packet, buf);
         gs_session_encrypt_conn(session);
 
-        switch (packet_type(packet)) {
-        case 0x00: // Protocol version
-                handle_protocol_version(session);
+        switch (session->state) {
+        case PROTOCOL_VERSION:
+                protocol_version_state(session, packet);
                 break;
-        case 0x01: // Move backwards.
-                log("TODO: Move backwards");
+        case AUTH_REQUEST:
+                auth_request_state(session, packet);
                 break;
-        case 0x03: // Enter world.
-                handle_enter_world(session);
+        case CHARACTER_SELECTION:
+                character_selection_state(session, packet);
                 break;
-        case 0x04: // Action.
-                log("TODO: Action");
+        case CREATING_CHARACTER:
+                creating_character_state(session, packet);
                 break;
-        case 0x08: // Auth request
-                handle_auth_login(session, packet);
+        case ENTERING_WORLD:
+                entering_world_state(session, packet);
                 break;
-        case 0x09: // Logout.
-                log("TODO: Logout");
-                break;
-        case 0x0b: // Create character
-                handle_create_character(session, packet);
-                break;
-        case 0x0d: // Selected char.
-                handle_selected_character(session, packet);
-                break;
-        case 0x0e: // New character
-                handle_new_character(session);
-                break;
-        case 0x38: // Say.
-                log("TODO: Say");
-                break;
-        case 0x46: // Restart.
-                log("TODO: Restart");
-                break;
-        case 0x48: // Validate position.
-                log("TODO: Validate position");
-                break;
-        case 0x63: // Quest list.
-                handle_quest_list(session);
-                break;
-        case 0xcd: // Show map.
-                log("TODO: Show map");
-                break;
-        case 0xd0: // Auto ss bsps.
-                handle_auto_ss_bsps(session);
+        case IN_WORLD:
+                in_world_state(session, packet);
                 break;
         default:
+                log("Session in invalid state. Disconnect?");
                 break;
         }
 

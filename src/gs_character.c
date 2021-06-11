@@ -2,6 +2,7 @@
 #include "include/config.h"
 #include "include/util.h"
 #include "include/log.h"
+#include "include/packet.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
 #include "include/gs_packet_create_char_request.h"
@@ -10,6 +11,39 @@
 static gs_character_t characters[MAX_CLIENTS] = { 0 };
 
 static size_t character_count = 0;
+
+static void spawn_state(gs_character_t *character, packet_t *packet)
+{
+        assert(character);
+        assert(packet);
+
+        switch (packet_type(packet)) {
+        case 0x01: // Move backwards.
+                log("TODO: Move backwards");
+                break;
+        case 0x04: // Action.
+                log("TODO: Action");
+                break;
+        case 0x09: // Logout.
+                log("TODO: Logout");
+                break;
+        case 0x38: // Say.
+                log("TODO: Say");
+                break;
+        case 0x46: // Restart.
+                log("TODO: Restart");
+                break;
+        case 0x48: // Validate position.
+                log("TODO: Validate position");
+                break;
+        case 0xcd: // Show map.
+                log("TODO: Show map");
+                break;
+        default:
+                log("Can't handle packet from in world state.");
+                break;
+        }
+}
 
 void gs_character_from_request(
         gs_character_t *dest,
@@ -77,7 +111,39 @@ void gs_character_spawn(gs_session_t *session, gs_character_t *src)
                 log("Notify close players.");
         }
 
+        log("Spawning new character and linking gs session.");
+
         characters[character_count]         = *src;
+        characters[character_count].state   = SPAWN;
         characters[character_count].session = session;
+
         character_count += 1;
+}
+
+gs_character_t *gs_character_from_session(gs_session_t *session)
+{
+        assert(session);
+
+        for (size_t i = 0; i < character_count; i += 1) {
+                if (characters[i].session == session) {
+                        return &characters[i];
+                }
+        }
+
+        return 0;
+}
+
+void gs_character_request(gs_character_t *character, packet_t *packet)
+{
+        switch (character->state) {
+        case SPAWN:
+                spawn_state(character, packet);
+                break;
+        case IDLE:
+                break;
+        case MOVING:
+                break;
+        default:
+                break;
+        }
 }

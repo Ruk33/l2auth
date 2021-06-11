@@ -6,7 +6,9 @@
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
 static void *handle = 0;
-static void (*on_load)(void (*)(os_socket_t *, unsigned char *, size_t), unsigned char *);
+static void (*on_load)(
+        void (*)(os_socket_t *, unsigned char *, size_t),
+        unsigned char *);
 static void (*on_unload)(void);
 static void (*on_new_conn)(os_socket_t *);
 static void (*on_new_req)(os_socket_t *, unsigned char *, size_t);
@@ -39,7 +41,8 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void internal_send_response(os_socket_t *socket, unsigned char *buf, size_t n)
+static void
+internal_send_response(os_socket_t *socket, unsigned char *buf, size_t n)
 {
         os_socket_send(socket, buf, n);
 }
@@ -85,14 +88,20 @@ static int init_gs_lib(void)
         return 1;
 }
 
-static void
-internal_on_request(os_socket_t *socket, socket_ev_t ev, unsigned char *buf, size_t n)
+static void internal_on_request(
+        os_socket_t *socket,
+        socket_ev_t ev,
+        unsigned char *buf,
+        size_t n)
 {
         // Todo: only load if required.
-        if (!init_gs_lib()) {
-                printf("Unable to properly load gameserver library.\n");
-                return;
-        }
+        // Todo: characters must be also reloaded...
+        // Use same strategy as sessions? or maybe just use a memory pool?
+
+        // if (!init_gs_lib()) {
+        //         printf("Unable to properly load gameserver library.\n");
+        //         return;
+        // }
 
         switch (ev) {
         case CONN:
