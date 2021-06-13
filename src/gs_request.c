@@ -54,7 +54,9 @@ static void handle_enter_world(gs_session_t *session)
         }
 
         character.session = session;
-        gs_character_spawn(session, &character);
+        character.id      = session->id;
+
+        gs_character_spawn(&character);
 
         bytes_zero(response, sizeof(response));
         gs_packet_user_info_set_char(&user_info, &character);

@@ -6,18 +6,39 @@
 #include "include/conn.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
+#include "include/gs_random_id.h"
 #include "include/gs_packet_create_char_request.h"
 #include "include/gs_packet_move.h"
 #include "include/gs_packet_move_request.h"
 #include "include/gs_packet_validate_pos.h"
 #include "include/gs_packet_validate_pos_request.h"
 #include "include/gs_packet_char_info.h"
+#include "include/gs_packet_npc_info.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
 static size_t *character_count    = 0;
 
 static packet_t response[65536] = { 0 };
+
+static int is_npc(gs_character_t *src)
+{
+        assert(src);
+        return src->session ? 0 : 1;
+}
+
+static void encrypt_and_send_packet(gs_character_t *from, packet_t *packet)
+{
+        assert(from);
+        assert(packet);
+
+        if (is_npc(from)) {
+                return;
+        }
+
+        gs_session_encrypt(from->session, packet, packet);
+        conn_send_packet(from->session->socket, packet);
+}
 
 static void handle_move_request(gs_character_t *character, packet_t *packet)
 {
@@ -38,8 +59,7 @@ static void handle_move_request(gs_character_t *character, packet_t *packet)
         for (size_t i = 0; i < *character_count; i += 1) {
                 bytes_zero(response, sizeof(response));
                 gs_packet_move_pack(response, &move_response);
-                gs_session_encrypt(characters[i].session, response, response);
-                conn_send_packet(characters[i].session->socket, response);
+                encrypt_and_send_packet(&characters[i], response);
         }
 }
 
@@ -66,8 +86,31 @@ handle_validate_position_request(gs_character_t *character, packet_t *packet)
         gs_packet_validate_pos(&validate_response, character);
         gs_packet_validate_pos_pack(response, &validate_response);
 
-        gs_session_encrypt(character->session, response, response);
-        conn_send_packet(character->session->socket, response);
+        encrypt_and_send_packet(character, response);
+}
+
+static void spawn_random_orc(void)
+{
+        gs_character_t orc = { 0 };
+
+        gs_random_id(&orc.id);
+
+        orc.x                         = -84023;
+        orc.y                         = 244598;
+        orc.z                         = -3730;
+        orc.heading                   = 2;
+        orc.m_attack_speed            = 1;
+        orc.p_attack_speed            = 1;
+        orc.run_speed                 = 200;
+        orc.walk_speed                = 100;
+        orc.movement_speed_multiplier = 1;
+        orc.collision_radius          = 14;
+        orc.collision_height          = 25;
+
+        bytes_cpy_str(orc.name, "Orc", sizeof(orc.name) - 1);
+        bytes_cpy_str(orc.title, "Archer", sizeof(orc.title) - 1);
+
+        gs_character_spawn(&orc);
 }
 
 static void spawn_state(gs_character_t *character, packet_t *packet)
@@ -90,6 +133,7 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
                 break;
         case 0x46: // Restart.
                 log("TODO: Restart");
+                spawn_random_orc();
                 break;
         case 0x48: // Validate position.
                 handle_validate_position_request(character, packet);
@@ -164,42 +208,57 @@ void gs_character_from_request(
         dest->name_color                = 0xFFFFFF;
 }
 
-void gs_character_spawn(gs_session_t *session, gs_character_t *src)
+void gs_character_spawn(gs_character_t *src)
 {
+        // Todo: maybe rename to player_info?
         static gs_packet_char_info_t char_info = { 0 };
 
-        assert(session);
+        static gs_packet_npc_info_t npc_info = { 0 };
+
         assert(src);
+        assert(src->id);
 
         log("Spawning and notifying close players.");
-
-        // Todo: Check if we really need this.
-        src->session = session;
-        src->id      = session->id;
 
         for (size_t i = 0; i < *character_count; i += 1) {
                 // Notify player in the world of the new spawning character.
                 bytes_zero(response, sizeof(response));
-                bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                gs_packet_char_info(&char_info, src);
-                gs_packet_char_info_pack(response, &char_info);
-                gs_session_encrypt(characters[i].session, response, response);
-                conn_send_packet(characters[i].session->socket, response);
+
+                if (is_npc(src)) {
+                        bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
+                        gs_packet_npc_info(&npc_info, src);
+                        gs_packet_npc_info_pack(response, &npc_info);
+                } else {
+                        bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                        gs_packet_char_info(&char_info, src);
+                        gs_packet_char_info_pack(response, &char_info);
+                }
+
+                encrypt_and_send_packet(&characters[i], response);
 
                 // Notify the spawning character of characters already
-                // in the world.
+                // in the world (only if it's a player).
+                if (is_npc(src)) {
+                        continue;
+                }
+
                 bytes_zero(response, sizeof(response));
-                bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                gs_packet_char_info(&char_info, &characters[i]);
-                gs_packet_char_info_pack(response, &char_info);
-                gs_session_encrypt(src->session, response, response);
-                conn_send_packet(src->session->socket, response);
+
+                if (is_npc(&characters[i])) {
+                        bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
+                        gs_packet_npc_info(&npc_info, &characters[i]);
+                        gs_packet_npc_info_pack(response, &npc_info);
+                } else {
+                        bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                        gs_packet_char_info(&char_info, &characters[i]);
+                        gs_packet_char_info_pack(response, &char_info);
+                }
+
+                encrypt_and_send_packet(src, response);
         }
 
-        characters[*character_count]         = *src;
-        characters[*character_count].state   = SPAWN;
-        characters[*character_count].id      = session->id;
-        characters[*character_count].session = session;
+        characters[*character_count]       = *src;
+        characters[*character_count].state = SPAWN;
 
         *character_count += 1;
 }

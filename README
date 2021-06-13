@@ -73,7 +73,7 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once
 - [x] See other players
-- [ ] Spawn random orc
+- [x] Spawn random orc (spawned when trying to restart :D)
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
@@ -90,6 +90,11 @@ A few rules for contributors:
 - Only game_server/main.c and login_server/main.c are allowed to spawn threads
 - Variables exceeding 100 bytes, must be static and zeroed before used
 - Have fun
+
+Changes will be accepted through patches. Currently I'm using Fossil for 
+versioning and this is just a git mirror.
+
+Why? Because I'm trying new tools.
 
 == Credits
 - l2jserver (http://l2jserver.com/)

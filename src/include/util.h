@@ -40,7 +40,9 @@
 
 #define byte_read_val(dest, src) byte_read_n(&(dest), src, sizeof(dest))
 
-#define bytes_cpy_str(dest, src, n) bytes_cpy_until(dest, src, 0, n);
+#define bytes_cpy_str(dest, src, n) \
+        bytes_cpy_until(            \
+                (unsigned char *) (dest), (unsigned char *) (src), 0, n);
 
 typedef unsigned char byte_t;
 

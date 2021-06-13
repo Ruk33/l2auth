@@ -81,8 +81,9 @@ void gs_character_from_request(
         gs_packet_create_char_request_t *src);
 
 // Spawn character in the world and notify close players.
-// The session will get assign to the character.
-void gs_character_spawn(gs_session_t *session, gs_character_t *src);
+// If player, the session must be previously assigned, otherwise, it will
+// be threated as a NPC.
+void gs_character_spawn(gs_character_t *src);
 
 gs_character_t *gs_character_from_session(gs_session_t *session);
 
