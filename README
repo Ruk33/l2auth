@@ -12,10 +12,17 @@ is an excellent project to work with it.
 - openssl
 - sqlite3
 
+== Additional notes
+This project is intended to be ran on Linux, Ubuntu and on little endian machines.
+You can use Windows WSL for the Linux layer (that's what I do).
+
 == Build & run
-Just run make in the root folder.
-Start login server by running build/login_server.
-Start game server by running build/game_server.
+- Run make in the root folder.
+- Start login server by running build/login_server.
+- Start game server by running build/game_server.
+- Create database tables using the migration files:
+        - sqlite3 build/db < migrations/sqlite/00_create_characters_table.sql
+        - repeat with all the files in migrations
 
 == Game and login server
 This project divides the login server (from where the user can authenticate

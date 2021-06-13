@@ -3,6 +3,7 @@
 all : clean build
 
 conf : CMakeLists.txt
+	touch build/db
 	cmake -S . -B build
 
 build : conf
