@@ -14,11 +14,11 @@ void gs_packet_user_info_set_char(
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
 
-        // dest->heading         = 2;
+        dest->heading       = src->heading;
         dest->x             = src->x;
         dest->y             = src->y;
         dest->z             = src->z;
-        dest->id            = 42; // src->id;
+        dest->id            = src->session->id;
         dest->race_id       = src->race;
         dest->sex           = src->sex;
         dest->class_id      = src->_class;

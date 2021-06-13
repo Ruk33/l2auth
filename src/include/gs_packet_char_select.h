@@ -1,6 +1,7 @@
 #ifndef INCLUDE_GS_PACKET_CHAR_SELECT_H
 #define INCLUDE_GS_PACKET_CHAR_SELECT_H
 
+#include "util.h"
 #include "packet.h"
 #include "l2_string.h"
 #include "gs_character.h"
@@ -8,7 +9,7 @@
 typedef struct {
         int empty[54];
         l2_string_t name[28];
-        int id;
+        u32_t id;
         l2_string_t title[28];
         int playOK1;
         int clan_id;

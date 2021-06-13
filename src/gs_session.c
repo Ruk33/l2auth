@@ -5,6 +5,7 @@
 #include "include/l2_string.h"
 #include "include/gs_crypt.h"
 #include "include/gs_packet_auth_request.h"
+#include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
 static gs_session_t *sessions = 0;
@@ -27,10 +28,13 @@ gs_session_t *gs_session_new(os_socket_t *socket)
         new_session = &sessions[*session_count];
 
         bytes_zero((byte_t *) new_session, sizeof(*new_session));
+
+        new_session->socket = socket;
+
+        gs_random_id(&new_session->id);
         bytes_cpy(new_session->encrypt_key, key, sizeof(key));
         bytes_cpy(new_session->decrypt_key, key, sizeof(key));
 
-        new_session->socket = socket;
         *session_count += 1;
 
         return new_session;

@@ -53,6 +53,7 @@ static void handle_enter_world(gs_session_t *session)
                 return;
         }
 
+        character.session = session;
         gs_character_spawn(session, &character);
 
         bytes_zero(response, sizeof(response));
@@ -91,8 +92,8 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
         characters_count = storage_get_characters(characters, username, 10);
 
         for (size_t i = 0; i < characters_count; i += 1) {
-                gs_packet_auth_login_add_character(
-                        &auth_login, &characters[i], session->playOK1);
+                characters[i].session = session;
+                gs_packet_auth_login_add_character(&auth_login, &characters[i]);
         }
 
         bytes_zero(response, sizeof(response));
@@ -176,6 +177,9 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
         }
 
         bytes_zero(response, sizeof(response));
+
+        character.session = session;
+
         gs_packet_char_select_set_char(&char_select, &character);
         gs_packet_char_select_set_playok(&char_select, session->playOK1);
         gs_packet_char_select_pack(response, &char_select);
@@ -311,8 +315,12 @@ static void in_world_state(gs_session_t *session, packet_t *packet)
 
 void gs_request_new_conn(os_socket_t *socket)
 {
+        gs_session_t *session = 0;
+
         assert(socket);
-        gs_session_new(socket);
+
+        session = gs_session_new(socket);
+        log("New game session with id %d generated.", session->id);
 }
 
 void gs_request(os_socket_t *socket, byte_t *buf, size_t n)

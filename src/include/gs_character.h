@@ -28,6 +28,7 @@ typedef struct {
 
         // Fields bellow these line will be saved in database.
         char name[32];
+        char title[32];
         u32_t race;
         u32_t sex;
         u32_t _class;

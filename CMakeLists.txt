@@ -65,6 +65,7 @@ add_library(
         src/gs_packet_user_info.c
         src/gs_packet_validate_pos_request.c
         src/gs_packet_validate_pos.c
+        src/gs_random_id.c
         src/gs_request.c
         src/gs_session.c
         src/conn.c

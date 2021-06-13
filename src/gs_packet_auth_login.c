@@ -6,8 +6,7 @@
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src,
-        int playOK1)
+        gs_character_t *src)
 {
         gs_packet_auth_login_char_t *character = 0;
 
@@ -15,6 +14,7 @@ void gs_packet_auth_login_add_character(
 
         assert(dest);
         assert(src);
+        assert(src->session);
         assert((size_t) dest->count < arr_size(dest->characters));
 
         character = &dest->characters[dest->count];
@@ -23,7 +23,7 @@ void gs_packet_auth_login_add_character(
 
         l2_string_from_char(character->name, src->name, name_size);
 
-        character->playOK1       = playOK1;
+        character->playOK1       = src->session->playOK1;
         character->active        = 1;
         character->class_id      = src->_class;
         character->race_id       = src->race;
@@ -31,17 +31,18 @@ void gs_packet_auth_login_add_character(
         character->hair_color_id = src->hair_color;
         character->hair_style_id = src->hair_style;
         character->hp            = src->hp;
-        character->id            = 45366422;
-        character->level         = src->level;
-        character->max_hp        = src->max_hp;
-        character->max_mp        = src->max_mp;
-        character->mp            = src->mp;
-        character->sex           = src->sex;
-        character->x             = src->x;
-        character->y             = src->y;
-        character->z             = src->z;
-        character->sp            = src->sp;
-        character->exp           = src->exp;
+
+        character->id     = src->session->id;
+        character->level  = src->level;
+        character->max_hp = src->max_hp;
+        character->max_mp = src->max_mp;
+        character->mp     = src->mp;
+        character->sex    = src->sex;
+        character->x      = src->x;
+        character->y      = src->y;
+        character->z      = src->z;
+        character->sp     = src->sp;
+        character->exp    = src->exp;
 
         dest->count += 1;
 }

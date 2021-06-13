@@ -1,6 +1,7 @@
 #ifndef INCLUDE_GS_PACKET_AUTH_LOGIN_H
 #define INCLUDE_GS_PACKET_AUTH_LOGIN_H
 
+#include "util.h"
 #include "packet.h"
 #include "l2_string.h"
 #include "gs_character.h"
@@ -8,7 +9,7 @@
 typedef struct {
         int empty[10];
         l2_string_t name[28];
-        int id;
+        u32_t id;
         // For some reason, name goes twice in the packet
         l2_string_t name_copy[28];
         int playOK1;
@@ -77,8 +78,7 @@ typedef struct {
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src,
-        int playOK1);
+        gs_character_t *src);
 
 void gs_packet_auth_login_pack(packet_t *dest, gs_packet_auth_login_t *src);
 

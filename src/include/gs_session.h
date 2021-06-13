@@ -26,6 +26,7 @@ typedef enum {
 } gs_session_state_t;
 
 typedef struct {
+        u32_t id;
         os_socket_t *socket;
 
         gs_session_state_t state;

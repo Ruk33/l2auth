@@ -135,8 +135,6 @@ void gs_character_from_request(
         dest->y = 244634;
         dest->z = -3730;
 
-        dest->id = 42;
-
         dest->level                     = 1;
         dest->exp                       = 50;
         dest->sp                        = 10;
@@ -177,8 +175,8 @@ void gs_character_spawn(gs_session_t *session, gs_character_t *src)
         log("Spawning new character and linking gs session.");
 
         characters[*character_count]         = *src;
-        characters[*character_count].id      = 42;
         characters[*character_count].state   = SPAWN;
+        characters[*character_count].id      = session->id;
         characters[*character_count].session = session;
 
         *character_count += 1;
