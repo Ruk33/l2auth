@@ -11,6 +11,7 @@
 #include "include/gs_packet_move_request.h"
 #include "include/gs_packet_validate_pos.h"
 #include "include/gs_packet_validate_pos_request.h"
+#include "include/gs_packet_char_info.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
@@ -32,14 +33,14 @@ static void handle_move_request(gs_character_t *character, packet_t *packet)
         character->target_y = move_request.y;
         character->target_z = move_request.z;
 
-        bytes_zero(response, sizeof(response));
-
-        // Todo: notify close players.
         gs_packet_move(&move_response, character);
-        gs_packet_move_pack(response, &move_response);
 
-        gs_session_encrypt(character->session, response, response);
-        conn_send_packet(character->session->socket, response);
+        for (size_t i = 0; i < *character_count; i += 1) {
+                bytes_zero(response, sizeof(response));
+                gs_packet_move_pack(response, &move_response);
+                gs_session_encrypt(characters[i].session, response, response);
+                conn_send_packet(characters[i].session->socket, response);
+        }
 }
 
 static void
@@ -165,14 +166,35 @@ void gs_character_from_request(
 
 void gs_character_spawn(gs_session_t *session, gs_character_t *src)
 {
+        static gs_packet_char_info_t char_info = { 0 };
+
         assert(session);
         assert(src);
 
-        for (size_t i = 0; i < *character_count; i += 1) {
-                log("Notify close players.");
-        }
+        log("Spawning and notifying close players.");
 
-        log("Spawning new character and linking gs session.");
+        // Todo: Check if we really need this.
+        src->session = session;
+        src->id      = session->id;
+
+        for (size_t i = 0; i < *character_count; i += 1) {
+                // Notify player in the world of the new spawning character.
+                bytes_zero(response, sizeof(response));
+                bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                gs_packet_char_info(&char_info, src);
+                gs_packet_char_info_pack(response, &char_info);
+                gs_session_encrypt(characters[i].session, response, response);
+                conn_send_packet(characters[i].session->socket, response);
+
+                // Notify the spawning character of characters already
+                // in the world.
+                bytes_zero(response, sizeof(response));
+                bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                gs_packet_char_info(&char_info, &characters[i]);
+                gs_packet_char_info_pack(response, &char_info);
+                gs_session_encrypt(src->session, response, response);
+                conn_send_packet(src->session->socket, response);
+        }
 
         characters[*character_count]         = *src;
         characters[*character_count].state   = SPAWN;
