@@ -26,8 +26,8 @@ AlignConsecutiveAssignments: true
 
 # Align consecutive declarations
 # int    aaaa = 12;
-# double b    = 3.14;
-AlignConsecutiveDeclarations: true
+# double b = 3.14;
+AlignConsecutiveDeclarations: false
 
 # Align escaped newlines as far left as possible
 # #define A   \

@@ -6,46 +6,64 @@ Because it's fun; because I like Lineage 2 (at least until C4 and Interlude
 chronicles) and because I like the C programming language and I thought this 
 is an excellent project to work with it.
 
-== Screenshots/demos
-See doc/screenshot.
+== Dependencies
+- cmake
+- make
+- openssl
+- sqlite3
 
-== Running the server with Docker
-- Install Docker
-- Install docker-compose
-- Run docker-compose up
-- Server will start listening for connections on localhost (127.0.0.1) 
-  ports 2106 (loginserver) and 7777 (gameserver)
-- Use any user and password (all are valid) and you should be able to log in
+== Additional notes
+This project is intended to be ran on Linux, Ubuntu and on little endian machines.
+You can use Windows WSL for the Linux layer (that's what I do).
+
+== Build & run
+- Run make in the root folder.
+- Start login server by running build/login_server.
+- Start game server by running build/game_server.
+- Create database tables using the migration files:
+        - sqlite3 build/db < migrations/sqlite/00_create_characters_table.sql
+        - repeat with all the files in migrations
 
 == Game and login server
 This project divides the login server (from where the user can authenticate
 with a username and password) from the game server (where the user can play).
 This is the exact same approach as to what projects like L2J do.
 
-== Game server hot-code reload
-It is possible to make changes in the game server code and see those live
-without having to restart or shuting down the server. This is possible thanks
-to dlfcn.h (dlopen and dlsym).
+== Files with ls prefix
+The ls prefix stands for login server. Files using this prefix are only
+used by the login server.
 
-- Run the game server
-- Make a change in the code
-- Run docker-compose exec gameserver bash update_gs_code.sh
-- Check the Lineage 2 client, the change should be reflected live
+== Files with gs prefix
+The gs prefix stands for game server. Files using this prefix are only
+used by the game server.
+
+== Files with os prefix
+The os prefix stands for operating system. Files using this prefix may be used
+by code targeting a specific os (for instance, src/linux/game_server/main.c) and
+may also be included in both, login and game server.
+
+== Files with no prefix
+These are files used by both, the login and game server.
+
+== Game server hot code reload
+The game server logic is implemented as a library. This means it can be
+loaded at runtime allowing for changes to occur and be live without having
+to shut down the server.
 
 == Lineage 2 Protocol
 Lineage 2 uses TCP to send packets.
 
-All integers are little-endian.
+All integers are little-endian and this project is MEANT to run on little
+endian machines.
 
 The first two bytes of the packet contain the packet size and the third one, 
 usually the packet type.
 
-Other than the first packet, all packets are encrypted with blowfish using 
-the following hardcoded key ;5.]94-31==-%xT!^[$\000.
+Other than the first packet, all the login server packets are encrypted with 
+blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
-- [ ] Correctly handle big/little-endian
-- [ ] Use light/green threads to handle each connection
+- [x] Hotcode reload
 - [x] Display terms of service view
 - [x] Display server list
 - [x] Allow to enter game server
@@ -55,11 +73,23 @@ the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Handle multiple connections
 - [x] Correctly handle multiple packets at once
 - [x] See other players
-- [x] Spawn random orc (see docs/screenshot/orc.jpg)
+- [ ] Spawn random orc
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
 we can be more organized with the work. After that, just have fun working on it!
+
+A few rules for contributors:
+- No dynamic memory allocation (only third party libs are allowed to do so)
+- All variables must be initialized
+- No NULL, use 0 (shorter to write)
+- OS related stuff must be inside of the os folder (ie, src/linux)
+- Storage related stuff, must be inside of storage/name.c (ie, storage/sqlite.c)
+- Only 1 thread is used to handle requests
+- Only 1 storage/database connection is used for the server
+- Only game_server/main.c and login_server/main.c are allowed to spawn threads
+- Variables exceeding 100 bytes, must be static and zeroed before used
+- Have fun
 
 == Credits
 - l2jserver (http://l2jserver.com/)
