@@ -12,7 +12,7 @@ void gs_lib_load(gs_lib_t *gs_lib)
 {
         assert(gs_lib);
 
-        log("GS loaded!");
+        log("game server lib loaded");
 
         conn_set_cb(gs_lib->send_response);
         gs_session_set(gs_lib->sessions, &gs_lib->session_count);
