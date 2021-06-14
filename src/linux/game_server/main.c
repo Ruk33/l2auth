@@ -1,7 +1,11 @@
+// Required for MAP_ANONYMOUS to be defined.
+#define _DEFAULT_SOURCE
+
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <stddef.h>
 #include <dlfcn.h>
+#include <sys/mman.h>
 #include <sys/wait.h>
 #include "../../include/os_socket.h"
 #include "../../include/gs_lib.h"
@@ -85,16 +89,21 @@ static int init_gs_lib(void)
         return 1;
 }
 
-static void internal_on_request(
+// When a new request arrives, the parent process will spawn
+// a child to handle the request. This way, if the request fails
+// or crashes, the server will keep running.
+static void child_handle_request(
         os_socket_t *socket,
         socket_ev_t ev,
         unsigned char *buf,
         size_t n)
 {
-        // Todo: only load if required.
+        // Required?
+        gs_lib->send_response = internal_send_response;
+
         if (!init_gs_lib()) {
-                printf("unable to properly load gameserver library.\n");
-                return;
+                printf("unable to load game server library.\n");
+                exit(EXIT_FAILURE);
         }
 
         switch (ev) {
@@ -115,35 +124,14 @@ static void internal_on_request(
         }
 
         fflush(stdout);
+        exit(EXIT_SUCCESS);
 }
 
-static int handle_requests(os_socket_t *socket, gs_lib_t *parent_gs_lib)
-{
-        printf("game server listening for requests.\n");
-
-        // The gs lib resides in the parent
-        // so the information doesn't get lost
-        // in the case the child process dies and
-        // gets restarted.
-        gs_lib                = parent_gs_lib;
-        gs_lib->send_response = internal_send_response;
-
-        if (!init_gs_lib()) {
-                printf("unable to load game server library.\n");
-                return 0;
-        }
-
-        if (!os_socket_handle_requests(socket, internal_on_request)) {
-                printf("game server request can't be handled.\n");
-                return 0;
-        }
-
-        return 1;
-}
-
-// Requests will be handled by a clone/fork of the process
-// to prevent possible crashes or errors to blow up the entire server.
-static int spawn_process(os_socket_t *socket, gs_lib_t *parent_gs_lib)
+static void parent_handle_request(
+        os_socket_t *socket,
+        socket_ev_t ev,
+        unsigned char *buf,
+        size_t n)
 {
         pid_t pid   = 0;
         int wstatus = 0;
@@ -153,41 +141,50 @@ static int spawn_process(os_socket_t *socket, gs_lib_t *parent_gs_lib)
         switch (pid) {
         case -1:
                 printf("spawn process failed.\n");
-                return 0;
+                exit(EXIT_FAILURE);
         case 0: // child
                 printf("spawned child process. pid: %d.\n", pid);
-                return handle_requests(socket, parent_gs_lib);
+                child_handle_request(socket, ev, buf, n);
+                break;
         default: // parent
                 if (waitpid(pid, &wstatus, 0) == -1) {
                         printf("failed to wait for child process.\n");
-                        return 0;
+                        exit(EXIT_FAILURE);
                 }
                 if (WIFEXITED(wstatus)) {
                         printf("child stopped successfully.\n");
-                        return 1;
+                        return;
                 }
 
                 printf("child died unexpectedly. trying to respawn.\n");
-                return spawn_process(socket, parent_gs_lib);
+                parent_handle_request(socket, ev, buf, n);
         }
 }
 
 int main(/* int argc, char **argv */)
 {
-        static gs_lib_t parent_gs_lib = { 0 };
-
         os_socket_t *socket = 0;
+
+        // Will be shared across child proccesses.
+        gs_lib =
+                mmap(NULL,
+                     sizeof(*gs_lib),
+                     PROT_READ | PROT_WRITE,
+                     MAP_SHARED | MAP_ANONYMOUS,
+                     -1,
+                     0);
 
         socket = os_socket_create(7777);
 
         if (!socket) {
                 printf("game server socket couldn't be created.\n");
-                return 0;
+                return EXIT_FAILURE;
         }
 
-        if (!spawn_process(socket, &parent_gs_lib)) {
-                return 0;
+        if (!os_socket_handle_requests(socket, parent_handle_request)) {
+                printf("game server request can't be handled.\n");
+                return EXIT_FAILURE;
         }
 
-        return 1;
+        return EXIT_SUCCESS;
 }
