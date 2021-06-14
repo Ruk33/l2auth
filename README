@@ -1,6 +1,10 @@
 == L2 Auth
 Simple Lineage 2 C4 server emulator written in C as a learning exercise.
 
+== Streaming
+If you would like to follow the project's progress, I stream 
+on https://www.twitch.tv/franco_montenegro.
+
 == Why does this project exist?
 Because it's fun; because I like Lineage 2 (at least until C4 and Interlude 
 chronicles) and because I like the C programming language and I thought this 
