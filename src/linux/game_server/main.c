@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <sys/mman.h>
@@ -118,6 +119,9 @@ static void child_handle_request(
         case CLOSED:
                 printf("disconnect.\n");
                 on_disconnect(socket);
+                // Todo: closing the socket here indeeds closes it
+                // but also terminates the server. Investigate.
+                // os_socket_close(socket);
                 break;
         default:
                 break;
@@ -156,8 +160,14 @@ static void parent_handle_request(
                         return;
                 }
 
-                printf("child died unexpectedly. trying to respawn.\n");
-                parent_handle_request(socket, ev, buf, n);
+                // Note: Should we back the game state before
+                // the request crashed?
+
+                printf("child died unexpectedly, closing client connection.\n");
+                child_handle_request(socket, CLOSED, buf, n);
+
+                // Todo: Doesn't work as expected. Investigate.
+                // os_socket_close(socket);
         }
 }
 
@@ -182,9 +192,12 @@ int main(/* int argc, char **argv */)
         }
 
         if (!os_socket_handle_requests(socket, parent_handle_request)) {
+                os_socket_close(socket);
                 printf("game server request can't be handled.\n");
                 return EXIT_FAILURE;
         }
+
+        os_socket_close(socket);
 
         return EXIT_SUCCESS;
 }

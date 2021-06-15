@@ -31,12 +31,21 @@ void gs_lib_new_conn(os_socket_t *socket)
 
 void gs_lib_new_req(os_socket_t *socket, byte_t *buf, size_t n)
 {
-        assert(socket);
+        if (!socket) {
+                return;
+        }
+
         gs_request(socket, buf, n);
 }
 
 void gs_lib_disconnect(os_socket_t *socket)
 {
-        assert(socket);
+        log("client disconnected.");
+
+        if (!socket) {
+                log("disconnected client has no socket?");
+                return;
+        }
+
         gs_request_disconnect(socket);
 }

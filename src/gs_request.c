@@ -20,6 +20,7 @@
 #include "include/gs_packet_d0.h"
 #include "include/gs_packet_quest_list.h"
 #include "include/gs_packet_user_info.h"
+#include "include/gs_packet_leave_world.h"
 #include "include/gs_request.h"
 
 static packet_t response[65536] = { 0 };
@@ -174,7 +175,7 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
         gs_packet_char_select_request_unpack(&char_select_request, packet);
 
         if (!storage_get_characters(&character, session->username, 1)) {
-                log("Character not found");
+                log("character not found");
                 return;
         }
 
@@ -224,7 +225,7 @@ static void protocol_version_state(gs_session_t *session, packet_t *packet)
                 session->state = AUTH_REQUEST;
                 break;
         default:
-                log("Can't handle packet from protocol version state.");
+                log("can't handle packet from protocol version state.");
                 break;
         }
 }
@@ -237,7 +238,7 @@ static void auth_request_state(gs_session_t *session, packet_t *packet)
                 session->state = CHARACTER_SELECTION;
                 break;
         default:
-                log("Can't handle packet from auth request state.");
+                log("can't handle packet from auth request state.");
                 break;
         }
 }
@@ -254,7 +255,7 @@ static void character_selection_state(gs_session_t *session, packet_t *packet)
                 session->state = CREATING_CHARACTER;
                 break;
         default:
-                log("Can't handle packet from character selection state.");
+                log("can't handle packet from character selection state.");
                 break;
         }
 }
@@ -273,7 +274,7 @@ static void creating_character_state(gs_session_t *session, packet_t *packet)
                  * packet will be sent. This is why we also need to
                  * accept states from character selection.
                  */
-                log("Packet delegated from creating character to character selection.");
+                log("packet delegated from creating character to character selection.");
                 character_selection_state(session, packet);
                 break;
         }
@@ -293,7 +294,7 @@ static void entering_world_state(gs_session_t *session, packet_t *packet)
                 handle_auto_ss_bsps(session);
                 break;
         default:
-                log("Can't handle packet from entering world state.");
+                log("can't handle packet from entering world state.");
                 break;
         }
 }
@@ -308,7 +309,7 @@ static void in_world_state(gs_session_t *session, packet_t *packet)
         character = gs_character_from_session(session);
 
         if (!character) {
-                log("No character found for session. Disconnect?");
+                log("no character found for session. Disconnect?");
                 return;
         }
 
@@ -322,7 +323,7 @@ void gs_request_new_conn(os_socket_t *socket)
         assert(socket);
 
         session = gs_session_new(socket);
-        log("New game session with id %d generated.", session->id);
+        log("new game session with id %d generated.", session->id);
 }
 
 void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
@@ -339,7 +340,7 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
         session = gs_session_find(socket);
 
         if (!session) {
-                log("Game server, no session found for request. Ignoring.");
+                log("game server, no session found for request. Ignoring.");
                 return;
         }
 
@@ -368,7 +369,7 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
                 in_world_state(session, packet);
                 break;
         default:
-                log("Session in invalid state. Disconnect?");
+                log("session in invalid state. Disconnect?");
                 break;
         }
 
@@ -382,5 +383,21 @@ void gs_request(os_socket_t *socket, byte_t *buf, size_t n)
 
 void gs_request_disconnect(os_socket_t *socket)
 {
-        PREVENT_UNUSED_WARNING(socket);
+        gs_packet_leave_world_t leave_world = { 0 };
+
+        gs_session_t *session = 0;
+
+        session = gs_session_find(socket);
+
+        if (!session) {
+                log("disconnected client had no session, ignoring.");
+                return;
+        }
+
+        log("sending disconnect packet.");
+
+        bytes_zero(response, sizeof(response));
+        gs_packet_leave_world_pack(response, &leave_world);
+        gs_session_encrypt(session, response, response);
+        conn_send_packet(session->socket, response);
 }

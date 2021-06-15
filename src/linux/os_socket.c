@@ -144,9 +144,15 @@ ssize_t os_socket_send(os_socket_t *socket, unsigned char *src, size_t n)
 
 int os_socket_close(os_socket_t *socket)
 {
+        int fd = 0;
+
         // Todo: Do this properly.
-        socket_count -= 1;
-        return close(os_socket_to_fd(socket));
+        // socket_count -= 1;
+
+        fd = os_socket_to_fd(socket);
+        close(fd);
+
+        return 1;
 }
 
 int os_socket_handle_requests(os_socket_t *socket, socket_ev_cb cb)

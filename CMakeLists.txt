@@ -58,6 +58,7 @@ add_library(
         src/gs_packet_create_char_request.c
         src/gs_packet_create_char.c
         src/gs_packet_d0.c
+        src/gs_packet_leave_world.c
         src/gs_packet_move_request.c
         src/gs_packet_move.c
         src/gs_packet_new_char.c
