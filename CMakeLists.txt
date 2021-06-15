@@ -50,6 +50,7 @@ add_library(
         src/gs_character.c
         src/gs_crypt.c
         src/gs_lib.c
+        src/gs_packet_action_request.c
         src/gs_packet_auth_login.c
         src/gs_packet_auth_request.c
         src/gs_packet_char_info.c
@@ -65,6 +66,7 @@ add_library(
         src/gs_packet_npc_info.c
         src/gs_packet_protocol_version.c
         src/gs_packet_quest_list.c
+        src/gs_packet_target_selected.c
         src/gs_packet_user_info.c
         src/gs_packet_validate_pos_request.c
         src/gs_packet_validate_pos.c

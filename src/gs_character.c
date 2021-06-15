@@ -14,6 +14,8 @@
 #include "include/gs_packet_validate_pos_request.h"
 #include "include/gs_packet_char_info.h"
 #include "include/gs_packet_npc_info.h"
+#include "include/gs_packet_action_request.h"
+#include "include/gs_packet_target_selected.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
@@ -25,6 +27,17 @@ static int is_npc(gs_character_t *src)
 {
         assert(src);
         return src->session ? 0 : 1;
+}
+
+static gs_character_t *find_by_id(u32_t id)
+{
+        for (size_t i = 0; i < *character_count; i += 1) {
+                if (characters[i].id == id) {
+                        return &characters[i];
+                }
+        }
+
+        return 0;
 }
 
 static void encrypt_and_send_packet(gs_character_t *from, packet_t *packet)
@@ -89,6 +102,36 @@ handle_validate_position_request(gs_character_t *character, packet_t *packet)
         encrypt_and_send_packet(character, response);
 }
 
+static void handle_action_request(gs_character_t *character, packet_t *packet)
+{
+        gs_packet_action_request_t action = { 0 };
+
+        gs_packet_target_selected_t selected = { 0 };
+
+        gs_character_t *target = 0;
+
+        assert(character);
+        assert(packet);
+
+        gs_packet_action_request_unpack(&action, packet);
+
+        target = find_by_id(action.target_id);
+
+        if (!target) {
+                log("selected target %d not found, ignoring", action.target_id);
+                return;
+        }
+
+        character->target_id = action.target_id;
+
+        selected.target_id = action.target_id;
+        selected.color     = 0;
+
+        bytes_zero(response, sizeof(response));
+        gs_packet_target_selected_pack(response, &selected);
+        encrypt_and_send_packet(character, response);
+}
+
 static void spawn_random_orc(void)
 {
         gs_character_t orc = { 0 };
@@ -123,7 +166,7 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
                 handle_move_request(character, packet);
                 break;
         case 0x04: // Action.
-                log("TODO: Action");
+                handle_action_request(character, packet);
                 break;
         case 0x09: // Logout.
                 log("TODO: Logout");
