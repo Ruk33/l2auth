@@ -51,8 +51,10 @@ add_library(
         src/gs_crypt.c
         src/gs_lib.c
         src/gs_packet_action_request.c
+        src/gs_packet_attack.c
         src/gs_packet_auth_login.c
         src/gs_packet_auth_request.c
+        src/gs_packet_auto_attack.c
         src/gs_packet_char_info.c
         src/gs_packet_char_select_request.c
         src/gs_packet_char_select.c

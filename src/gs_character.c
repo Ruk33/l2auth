@@ -16,6 +16,8 @@
 #include "include/gs_packet_npc_info.h"
 #include "include/gs_packet_action_request.h"
 #include "include/gs_packet_target_selected.h"
+#include "include/gs_packet_auto_attack.h"
+#include "include/gs_packet_attack.h"
 #include "include/gs_character.h"
 
 static gs_character_t *characters = 0;
@@ -108,6 +110,12 @@ static void handle_action_request(gs_character_t *character, packet_t *packet)
 
         gs_packet_target_selected_t selected = { 0 };
 
+        gs_packet_auto_attack_t auto_attack = { 0 };
+
+        gs_packet_attack_t attack = { 0 };
+
+        gs_packet_attack_hit_t hit = { 0 };
+
         gs_character_t *target = 0;
 
         assert(character);
@@ -122,12 +130,32 @@ static void handle_action_request(gs_character_t *character, packet_t *packet)
                 return;
         }
 
+        bytes_zero(response, sizeof(response));
+
+        // If already selected, attack!
+        if (character->target_id == action.target_id) {
+                // Todo: needs to be broadcasted.
+                auto_attack.target_id = action.target_id;
+                hit.damage            = 42;
+                hit.target_id         = action.target_id;
+
+                gs_packet_auto_attack_pack(response, &auto_attack);
+                encrypt_and_send_packet(character, response);
+
+                bytes_zero(response, sizeof(response));
+                gs_packet_attack_set_attacker(&attack, character);
+                gs_packet_attack_add_hit(&attack, &hit);
+                gs_packet_attack_pack(response, &attack);
+                encrypt_and_send_packet(character, response);
+
+                return;
+        }
+
         character->target_id = action.target_id;
 
         selected.target_id = action.target_id;
         selected.color     = 0;
 
-        bytes_zero(response, sizeof(response));
         gs_packet_target_selected_pack(response, &selected);
         encrypt_and_send_packet(character, response);
 }
