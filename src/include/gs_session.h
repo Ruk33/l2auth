@@ -4,7 +4,7 @@
 #include "config.h"
 #include "util.h"
 #include "packet.h"
-#include "os_socket.h"
+#include "os_io.h"
 #include "gs_packet_auth_request.h"
 
 /*
@@ -27,7 +27,7 @@ typedef enum {
 
 typedef struct {
         u32_t id;
-        os_socket_t *socket;
+        os_io_t *socket;
 
         gs_session_state_t state;
 
@@ -45,9 +45,9 @@ typedef struct {
 
 void gs_session_set(gs_session_t *sessions, size_t *count);
 
-gs_session_t *gs_session_new(os_socket_t *socket);
+gs_session_t *gs_session_new(os_io_t *socket);
 
-gs_session_t *gs_session_find(os_socket_t *socket);
+gs_session_t *gs_session_find(os_io_t *socket);
 
 // Mark the connection as encrypted.
 // This function AFFECTS gs_session_decrypt.

@@ -18,7 +18,7 @@ find_package(SQLite3 REQUIRED)
 add_executable(
         login_server
         src/linux/login_server/main.c
-        src/linux/os_socket.c # Todo: Should be set depending on OS
+        src/linux/os_io.c # Todo: Should be set depending on OS
         src/ls_blowfish.c
         src/ls_crypt.c
         src/ls_lib.c
@@ -39,7 +39,7 @@ add_executable(
 add_executable(
         game_server
         src/linux/game_server/main.c
-        src/linux/os_socket.c # Todo: Should be set depending on OS
+        src/linux/os_io.c # Todo: Should be set depending on OS
 )
 
 add_library(

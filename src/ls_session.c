@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/config.h"
-#include "include/os_socket.h"
+#include "include/os_io.h"
 #include "include/ls_blowfish.h"
 #include "include/ls_rsa.h"
 #include "include/ls_session.h"
@@ -9,7 +9,7 @@
 static ls_session_t sessions[MAX_CLIENTS] = { 0 };
 static size_t session_count               = 0;
 
-ls_session_t *ls_session_new(os_socket_t *socket)
+ls_session_t *ls_session_new(os_io_t *socket)
 {
         ls_session_t *session = 0;
 
@@ -30,7 +30,7 @@ ls_session_t *ls_session_new(os_socket_t *socket)
         return session;
 }
 
-ls_session_t *ls_session_find(os_socket_t *socket)
+ls_session_t *ls_session_find(os_io_t *socket)
 {
         assert(socket);
 

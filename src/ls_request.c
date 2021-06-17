@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "include/os_socket.h"
+#include "include/os_io.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/conn.h"
@@ -97,7 +97,7 @@ static void handle_login_server(ls_session_t *session)
         conn_send_packet(session->socket, response);
 }
 
-void ls_request_new_conn(os_socket_t *socket)
+void ls_request_new_conn(os_io_t *socket)
 {
         static packet_t response[256] = { 0 };
         static byte_t modulus[128]    = { 0 };
@@ -121,7 +121,7 @@ void ls_request_new_conn(os_socket_t *socket)
         conn_send_packet(socket, response);
 }
 
-void ls_request(os_socket_t *socket, byte_t *buf, size_t n)
+void ls_request(os_io_t *socket, byte_t *buf, size_t n)
 {
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
@@ -168,7 +168,7 @@ void ls_request(os_socket_t *socket, byte_t *buf, size_t n)
         }
 }
 
-void ls_request_disconnect(os_socket_t *socket)
+void ls_request_disconnect(os_io_t *socket)
 {
         assert(socket);
 }

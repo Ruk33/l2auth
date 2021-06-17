@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
-#include "include/os_socket.h"
+#include "include/os_io.h"
 #include "include/l2_string.h"
 #include "include/gs_crypt.h"
 #include "include/gs_packet_auth_request.h"
@@ -17,7 +17,7 @@ void gs_session_set(gs_session_t *src, size_t *count)
         session_count = count;
 }
 
-gs_session_t *gs_session_new(os_socket_t *socket)
+gs_session_t *gs_session_new(os_io_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         gs_session_t *new_session = 0;
@@ -40,7 +40,7 @@ gs_session_t *gs_session_new(os_socket_t *socket)
         return new_session;
 }
 
-gs_session_t *gs_session_find(os_socket_t *socket)
+gs_session_t *gs_session_find(os_io_t *socket)
 {
         assert(socket);
 

@@ -8,7 +8,7 @@
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
-#include "../../include/os_socket.h"
+#include "../../include/os_io.h"
 #include "../../include/gs_lib.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
@@ -16,9 +16,9 @@
 static void *handle = 0;
 static void (*on_load)(gs_lib_t *);
 static void (*on_unload)(void);
-static void (*on_new_conn)(os_socket_t *);
-static void (*on_new_req)(os_socket_t *, unsigned char *, size_t);
-static void (*on_disconnect)(os_socket_t *);
+static void (*on_new_conn)(os_io_t *);
+static void (*on_new_req)(os_io_t *, void *, size_t);
+static void (*on_disconnect)(os_io_t *);
 
 static gs_lib_t *gs_lib = 0;
 
@@ -43,10 +43,9 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void
-internal_send_response(os_socket_t *socket, unsigned char *buf, size_t n)
+static void internal_send_response(os_io_t *io, void *buf, size_t n)
 {
-        os_socket_send(socket, buf, n);
+        os_io_write(io, buf, n);
 }
 
 static int init_gs_lib(void)
@@ -93,11 +92,8 @@ static int init_gs_lib(void)
 // When a new request arrives, the parent process will spawn
 // a child to handle the request. This way, if the request fails
 // or crashes, the server will keep running.
-static void child_handle_request(
-        os_socket_t *socket,
-        socket_ev_t ev,
-        unsigned char *buf,
-        size_t n)
+static void
+child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 {
         // Required?
         gs_lib->send_response = internal_send_response;
@@ -107,21 +103,24 @@ static void child_handle_request(
                 exit(EXIT_FAILURE);
         }
 
-        switch (ev) {
-        case CONN:
+        switch (event) {
+        case OS_IO_SOCKET_CONNECTION:
                 printf("new connection.\n");
                 on_new_conn(socket);
                 break;
-        case REQ:
+        case OS_IO_SOCKET_REQUEST:
                 printf("new request.\n");
                 on_new_req(socket, buf, n);
                 break;
-        case CLOSED:
+        case OS_IO_SOCKET_DISCONNECTED:
                 printf("disconnect.\n");
                 on_disconnect(socket);
                 // Todo: closing the socket here indeeds closes it
                 // but also terminates the server. Investigate.
                 // os_socket_close(socket);
+                break;
+        case OS_IO_TIMER_TICK:
+                // printf("timer tick.\n");
                 break;
         default:
                 break;
@@ -131,11 +130,8 @@ static void child_handle_request(
         exit(EXIT_SUCCESS);
 }
 
-static void parent_handle_request(
-        os_socket_t *socket,
-        socket_ev_t ev,
-        unsigned char *buf,
-        size_t n)
+static void
+parent_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 {
         pid_t pid   = 0;
         int wstatus = 0;
@@ -147,8 +143,8 @@ static void parent_handle_request(
                 printf("spawn process failed.\n");
                 exit(EXIT_FAILURE);
         case 0: // child
-                printf("spawned child process. pid: %d.\n", pid);
-                child_handle_request(socket, ev, buf, n);
+                // printf("spawned child process. pid: %d.\n", pid);
+                child_io_event(socket, event, buf, n);
                 break;
         default: // parent
                 if (waitpid(pid, &wstatus, 0) == -1) {
@@ -164,7 +160,7 @@ static void parent_handle_request(
                 // the request crashed?
 
                 printf("child died unexpectedly, closing client connection.\n");
-                child_handle_request(socket, CLOSED, buf, n);
+                child_io_event(socket, OS_IO_SOCKET_DISCONNECTED, buf, n);
 
                 // Todo: Doesn't work as expected. Investigate.
                 // os_socket_close(socket);
@@ -173,7 +169,8 @@ static void parent_handle_request(
 
 int main(/* int argc, char **argv */)
 {
-        os_socket_t *socket = 0;
+        os_io_t *timer  = 0;
+        os_io_t *socket = 0;
 
         // Will be shared across child proccesses.
         gs_lib =
@@ -184,20 +181,32 @@ int main(/* int argc, char **argv */)
                      -1,
                      0);
 
-        socket = os_socket_create(7777);
+        timer  = os_io_timer(1);
+        socket = os_io_socket_create(7777, 30);
+
+        if (!timer) {
+                printf("game server timer couldn't be created.\n");
+                os_io_close(timer);
+                os_io_close(socket);
+                return EXIT_FAILURE;
+        }
 
         if (!socket) {
                 printf("game server socket couldn't be created.\n");
+                os_io_close(timer);
+                os_io_close(socket);
                 return EXIT_FAILURE;
         }
 
-        if (!os_socket_handle_requests(socket, parent_handle_request)) {
-                os_socket_close(socket);
+        if (!os_io_listen(parent_io_event)) {
                 printf("game server request can't be handled.\n");
+                os_io_close(timer);
+                os_io_close(socket);
                 return EXIT_FAILURE;
         }
 
-        os_socket_close(socket);
+        os_io_close(timer);
+        os_io_close(socket);
 
         return EXIT_SUCCESS;
 }

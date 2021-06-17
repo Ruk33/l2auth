@@ -2,7 +2,7 @@
 #include "include/util.h"
 #include "include/conn.h"
 #include "include/log.h"
-#include "include/os_socket.h"
+#include "include/os_io.h"
 #include "include/gs_session.h"
 #include "include/gs_character.h"
 #include "include/gs_request.h"
@@ -23,13 +23,13 @@ void gs_lib_unload(void)
 {
 }
 
-void gs_lib_new_conn(os_socket_t *socket)
+void gs_lib_new_conn(os_io_t *socket)
 {
         assert(socket);
         gs_request_new_conn(socket);
 }
 
-void gs_lib_new_req(os_socket_t *socket, byte_t *buf, size_t n)
+void gs_lib_new_req(os_io_t *socket, void *buf, size_t n)
 {
         if (!socket) {
                 return;
@@ -38,7 +38,7 @@ void gs_lib_new_req(os_socket_t *socket, byte_t *buf, size_t n)
         gs_request(socket, buf, n);
 }
 
-void gs_lib_disconnect(os_socket_t *socket)
+void gs_lib_disconnect(os_io_t *socket)
 {
         log("client disconnected.");
 

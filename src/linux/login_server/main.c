@@ -1,25 +1,25 @@
 #include <stdio.h>
-#include "../../include/os_socket.h"
+#include "../../include/os_io.h"
 #include "../../include/ls_lib.h"
 
-static void send_response(os_socket_t *socket, unsigned char *buf, size_t n)
+static void send_response(os_io_t *socket, void *buf, size_t n)
 {
-        os_socket_send(socket, buf, n);
+        os_io_write(socket, buf, n);
 }
 
 static void
-on_request(os_socket_t *socket, socket_ev_t ev, unsigned char *buf, size_t n)
+on_request(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 {
-        switch (ev) {
-        case CONN:
+        switch (event) {
+        case OS_IO_SOCKET_CONNECTION:
                 printf("New connection.\n");
                 ls_lib_new_conn(socket);
                 break;
-        case REQ:
+        case OS_IO_SOCKET_REQUEST:
                 printf("New request.\n");
                 ls_lib_new_req(socket, buf, n);
                 break;
-        case CLOSED:
+        case OS_IO_SOCKET_DISCONNECTED:
                 printf("Disconnect.\n");
                 ls_lib_disconnect(socket);
                 break;
@@ -32,23 +32,23 @@ on_request(os_socket_t *socket, socket_ev_t ev, unsigned char *buf, size_t n)
 
 int main(/* int argc, char **argv */)
 {
-        os_socket_t *socket = 0;
+        os_io_t *socket = 0;
 
-        socket = os_socket_create(2106);
+        socket = os_io_socket_create(2106, 30);
 
         if (!socket) {
-                printf("Login server socket couldn't be created.\n");
+                printf("login server socket couldn't be created.\n");
                 return 1;
         }
 
         ls_lib_load(send_response);
 
-        if (!os_socket_handle_requests(socket, on_request)) {
-                printf("Login server request can't be handled.\n");
+        if (!os_io_listen(on_request)) {
+                printf("login server request can't be handled.\n");
                 return 1;
         }
 
-        printf("Login server listening for requests.\n");
+        printf("login server listening for requests.\n");
 
         return 0;
 }
