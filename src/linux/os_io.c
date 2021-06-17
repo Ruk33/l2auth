@@ -1,18 +1,15 @@
-// Required for CLOCK_REALTIME to be defined.
+// Required for CLOCK_MONOTONIC to be defined.
 #ifndef _DEFAULT_SOURCE
 #define _DEFAULT_SOURCE
 #endif
 
-#include <assert.h>
-#include <stddef.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <sys/epoll.h>
-#include <sys/timerfd.h>
-#include <netinet/in.h>
+#include <assert.h>      // assert
+#include <unistd.h>      // close
+#include <fcntl.h>       // fcbtk, O_NONBLOCK, etc
+#include <sys/socket.h>  // socket
+#include <sys/epoll.h>   // epoll
+#include <sys/timerfd.h> // timerfd
+#include <netinet/in.h>  // sockaddr, htons, etc.
 #include "../include/util.h"
 #include "../include/os_io.h"
 
@@ -27,10 +24,13 @@ typedef struct {
         io_type_t type;
 } io_t;
 
-static io_t ios[30]    = { 0 };
-static size_t io_count = 0;
+#define MAX_CONN 1024
+#define READ_BUF_SIZE 524288
 
-static struct epoll_event events[30] = { 0 };
+static io_t ios[MAX_CONN] = { 0 };
+static size_t io_count    = 0;
+
+static struct epoll_event events[MAX_CONN] = { 0 };
 
 static int get_fd(os_io_t *src)
 {
@@ -119,6 +119,8 @@ os_io_t *os_io_socket_create(u16_t port, size_t max_conn)
         struct sockaddr_in address = { 0 };
         struct sockaddr *address_p = 0;
 
+        assert(max_conn < MAX_CONN);
+
         new_socket = socket(AF_INET, SOCK_STREAM, 0);
 
         if (new_socket == -1) {
@@ -179,7 +181,7 @@ os_io_t *os_io_timer(double timeout)
 
 int os_io_listen(os_io_cb cb)
 {
-        static byte_t buf[65535] = { 0 };
+        static byte_t buf[READ_BUF_SIZE] = { 0 };
 
         int epoll_fd = 0;
         int ev_count = 0;
@@ -234,7 +236,7 @@ int os_io_listen(os_io_cb cb)
                                                 epoll_fd,
                                                 EPOLL_CTL_DEL,
                                                 io->fd,
-                                                NULL);
+                                                0);
                                         break;
                                 default:
                                         cb(io, OS_IO_SOCKET_REQUEST, buf, read);
@@ -244,9 +246,6 @@ int os_io_listen(os_io_cb cb)
                         case TIMER:
                                 timerfd_gettime(io->fd, &utmr);
                                 cb(io, OS_IO_TIMER_TICK, 0, 0);
-                                // printf("interval %ld, value %ld\n",
-                                //        utmr.it_interval.tv_sec,
-                                //        utmr.it_value.tv_sec);
                                 break;
                         default:
                                 break;
