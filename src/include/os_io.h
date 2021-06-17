@@ -5,6 +5,7 @@
 
 typedef enum {
         OS_IO_SOCKET_CONNECTION,
+        OS_IO_SOCKET_READ_ERROR,
         OS_IO_SOCKET_REQUEST,
         OS_IO_SOCKET_DISCONNECTED,
         OS_IO_TIMER_TICK,

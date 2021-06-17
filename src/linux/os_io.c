@@ -20,12 +20,17 @@ typedef enum {
 } io_type_t;
 
 typedef struct {
+        size_t instance;
         int fd;
         io_type_t type;
 } io_t;
 
 #define MAX_CONN 1024
 #define READ_BUF_SIZE 524288
+
+// Instances to be used.
+// instances[0] = free instance to be used.
+static size_t instances[MAX_CONN] = { 0 };
 
 static io_t ios[MAX_CONN] = { 0 };
 static size_t io_count    = 0;
@@ -51,14 +56,32 @@ static io_t *find_io(int fd)
 
 static os_io_t *add_io(int fd, io_type_t type)
 {
+        size_t instance = 0;
+
         assert(io_count < sizeof(ios));
 
-        ios[io_count].fd   = fd;
-        ios[io_count].type = type;
+        instance = instances[0];
 
-        io_count += 1;
+        if (instances[instance]) {
+                instances[0] = instances[instance];
+        } else {
+                instances[0] = instance + 1;
+                io_count += 1;
+        }
 
-        return &ios[io_count - 1];
+        ios[instance].instance = instance;
+        ios[instance].fd       = fd;
+        ios[instance].type     = type;
+
+        return &ios[instance];
+}
+
+static void remove_io(io_t *io)
+{
+        assert(io);
+        io->fd                  = -1;
+        instances[io->instance] = instances[0];
+        instances[0]            = io->instance;
 }
 
 static int add_to_epoll(int epoll_fd, int fd)
@@ -73,6 +96,11 @@ static int add_to_epoll(int epoll_fd, int fd)
         }
 
         return 1;
+}
+
+static void remove_epoll(int epoll_fd, int fd)
+{
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, 0);
 }
 
 static void socket_set_non_blocking(int fd)
@@ -148,9 +176,14 @@ os_io_t *os_io_socket_create(u16_t port, size_t max_conn)
 
 int os_io_close(os_io_t *io)
 {
+        int fd = 0;
+
         assert(io);
-        // Todo: remove from ios
-        return close(get_fd(io));
+
+        fd = get_fd(io);
+
+        remove_io((io_t *) io);
+        return close(fd);
 }
 
 ssize_t os_io_write(os_io_t *io, void *buf, size_t n)
@@ -228,15 +261,12 @@ int os_io_listen(os_io_cb cb)
 
                                 switch (read) {
                                 case -1:
-                                        // Todo: Something went wrong.
+                                        cb(io, OS_IO_SOCKET_READ_ERROR, 0, 0);
                                         break;
                                 case 0:
                                         cb(io, OS_IO_SOCKET_DISCONNECTED, 0, 0);
-                                        epoll_ctl(
-                                                epoll_fd,
-                                                EPOLL_CTL_DEL,
-                                                io->fd,
-                                                0);
+                                        remove_epoll(epoll_fd, io->fd);
+                                        remove_io(io);
                                         break;
                                 default:
                                         cb(io, OS_IO_SOCKET_REQUEST, buf, read);
@@ -244,6 +274,7 @@ int os_io_listen(os_io_cb cb)
                                 }
                                 break;
                         case TIMER:
+                                // Calling timerfd_gettime repeats the timer...
                                 timerfd_gettime(io->fd, &utmr);
                                 cb(io, OS_IO_TIMER_TICK, 0, 0);
                                 break;
