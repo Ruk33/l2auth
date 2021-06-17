@@ -11,6 +11,7 @@
 #include <sys/timerfd.h> // timerfd
 #include <netinet/in.h>  // sockaddr, htons, etc.
 #include "../include/util.h"
+#include "../include/recycle_id.h"
 #include "../include/os_io.h"
 
 typedef enum {
@@ -28,8 +29,6 @@ typedef struct {
 #define MAX_CONN 1024
 #define READ_BUF_SIZE 524288
 
-// Instances to be used.
-// instances[0] = free instance to be used.
 static size_t instances[MAX_CONN] = { 0 };
 
 static io_t ios[MAX_CONN] = { 0 };
@@ -60,14 +59,7 @@ static os_io_t *add_io(int fd, io_type_t type)
 
         assert(io_count < sizeof(ios));
 
-        instance = instances[0];
-
-        if (instances[instance]) {
-                instances[0] = instances[instance];
-        } else {
-                instances[0] = instance + 1;
-                io_count += 1;
-        }
+        io_count += recycle_id_get(&instance, instances);
 
         ios[instance].instance = instance;
         ios[instance].fd       = fd;
@@ -79,9 +71,8 @@ static os_io_t *add_io(int fd, io_type_t type)
 static void remove_io(io_t *io)
 {
         assert(io);
-        io->fd                  = -1;
-        instances[io->instance] = instances[0];
-        instances[0]            = io->instance;
+        io->fd = -1;
+        recycle_id(instances, io->instance);
 }
 
 static int add_to_epoll(int epoll_fd, int fd)
@@ -178,7 +169,9 @@ int os_io_close(os_io_t *io)
 {
         int fd = 0;
 
-        assert(io);
+        if (!io) {
+                return 0;
+        }
 
         fd = get_fd(io);
 

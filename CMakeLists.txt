@@ -32,12 +32,14 @@ add_executable(
         src/ls_session.c
         src/conn.c
         src/packet.c
+        src/recycle_id.c
         src/server.c
         src/util.c
 )
 
 add_executable(
         game_server
+        src/recycle_id.c
         src/linux/game_server/main.c
         src/linux/os_io.c # Todo: Should be set depending on OS
 )
