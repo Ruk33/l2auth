@@ -78,6 +78,8 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Correctly handle multiple packets at once
 - [x] See other players
 - [x] Spawn random orc (spawned when trying to restart :D)
+- [x] Timers
+- [x] Basic AI (select target, attack if close enough, otherwise walk and attack)
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way

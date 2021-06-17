@@ -10,4 +10,6 @@ void gs_request(os_io_t *socket, byte_t *buf, size_t n);
 
 void gs_request_disconnect(os_io_t *socket);
 
+void gs_request_tick(double delta);
+
 #endif

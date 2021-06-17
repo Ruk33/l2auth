@@ -49,3 +49,8 @@ void gs_lib_disconnect(os_io_t *socket)
 
         gs_request_disconnect(socket);
 }
+
+void gs_lib_tick(double delta)
+{
+        gs_request_tick(delta);
+}

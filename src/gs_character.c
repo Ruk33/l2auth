@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include "include/config.h"
 #include "include/util.h"
 #include "include/log.h"
@@ -31,6 +32,22 @@ static int is_npc(gs_character_t *src)
         return src->session ? 0 : 1;
 }
 
+static double distance(gs_character_t *a, gs_character_t *b)
+{
+        double dx = 0;
+        double dy = 0;
+        double dz = 0;
+
+        assert(a);
+        assert(b);
+
+        dx = b->x - a->x;
+        dy = b->y - a->y;
+        dz = b->z - a->z;
+
+        return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
 static gs_character_t *find_by_id(u32_t id)
 {
         for (size_t i = 0; i < *character_count; i += 1) {
@@ -55,19 +72,16 @@ static void encrypt_and_send_packet(gs_character_t *from, packet_t *packet)
         conn_send_packet(from->session->socket, packet);
 }
 
-static void handle_move_request(gs_character_t *character, packet_t *packet)
+static void move(gs_character_t *character, i32_t x, i32_t y, i32_t z)
 {
-        gs_packet_move_request_t move_request = { 0 };
-        gs_packet_move_t move_response        = { 0 };
+        gs_packet_move_t move_response = { 0 };
 
         assert(character);
-        assert(packet);
 
-        gs_packet_move_request_unpack(&move_request, packet);
-
-        character->target_x = move_request.x;
-        character->target_y = move_request.y;
-        character->target_z = move_request.z;
+        character->target_x = x;
+        character->target_y = y;
+        character->target_z = z;
+        character->state    = MOVING;
 
         gs_packet_move(&move_response, character);
 
@@ -78,8 +92,74 @@ static void handle_move_request(gs_character_t *character, packet_t *packet)
         }
 }
 
-static void
-handle_validate_position_request(gs_character_t *character, packet_t *packet)
+static void attack(gs_character_t *attacker, gs_character_t *target)
+{
+        gs_packet_auto_attack_t auto_attack = { 0 };
+
+        gs_packet_attack_t attack  = { 0 };
+        gs_packet_attack_hit_t hit = { 0 };
+
+        assert(attacker);
+        assert(target);
+
+        attacker->target_id = target->id;
+
+        if (100 < distance(attacker, target)) {
+                move(attacker, target->x, target->y, target->z);
+                return;
+        }
+
+        attacker->target_id = 0; // Testing, reset attack.
+        attacker->state     = IDLE;
+
+        auto_attack.target_id = target->id;
+        hit.damage            = 42;
+        hit.target_id         = target->id;
+
+        gs_packet_attack_set_attacker(&attack, attacker);
+        gs_packet_attack_add_hit(&attack, &hit);
+
+        for (size_t i = 0; i < *character_count; i += 1) {
+                bytes_zero(response, sizeof(response));
+                gs_packet_auto_attack_pack(response, &auto_attack);
+                encrypt_and_send_packet(&characters[i], response);
+
+                bytes_zero(response, sizeof(response));
+                gs_packet_attack_pack(response, &attack);
+                encrypt_and_send_packet(&characters[i], response);
+        }
+}
+
+static void select_target(gs_character_t *character, gs_character_t *target)
+{
+        gs_packet_target_selected_t selected = { 0 };
+
+        assert(character);
+        assert(target);
+
+        character->target_id = target->id;
+        character->state     = TARGET_SELECTED;
+
+        selected.target_id = target->id;
+        selected.color     = 0;
+
+        bytes_zero(response, sizeof(response));
+        gs_packet_target_selected_pack(response, &selected);
+        encrypt_and_send_packet(character, response);
+}
+
+static void handle_move_request(gs_character_t *character, packet_t *packet)
+{
+        gs_packet_move_request_t move_request = { 0 };
+
+        assert(character);
+        assert(packet);
+
+        gs_packet_move_request_unpack(&move_request, packet);
+        move(character, move_request.x, move_request.y, move_request.z);
+}
+
+static void handle_val_pos_request(gs_character_t *character, packet_t *packet)
 {
         gs_packet_validate_pos_request_t validate_request = { 0 };
         gs_packet_validate_pos_t validate_response        = { 0 };
@@ -108,14 +188,6 @@ static void handle_action_request(gs_character_t *character, packet_t *packet)
 {
         gs_packet_action_request_t action = { 0 };
 
-        gs_packet_target_selected_t selected = { 0 };
-
-        gs_packet_auto_attack_t auto_attack = { 0 };
-
-        gs_packet_attack_t attack = { 0 };
-
-        gs_packet_attack_hit_t hit = { 0 };
-
         gs_character_t *target = 0;
 
         assert(character);
@@ -130,34 +202,48 @@ static void handle_action_request(gs_character_t *character, packet_t *packet)
                 return;
         }
 
-        bytes_zero(response, sizeof(response));
+        select_target(character, target);
+}
 
-        // If already selected, attack!
-        if (character->target_id == action.target_id) {
-                // Todo: needs to be broadcasted.
-                auto_attack.target_id = action.target_id;
-                hit.damage            = 42;
-                hit.target_id         = action.target_id;
+static void handle_attack_request(gs_character_t *character, packet_t *packet)
+{
+        gs_packet_action_request_t action = { 0 };
 
-                gs_packet_auto_attack_pack(response, &auto_attack);
-                encrypt_and_send_packet(character, response);
+        gs_character_t *target = 0;
 
-                bytes_zero(response, sizeof(response));
-                gs_packet_attack_set_attacker(&attack, character);
-                gs_packet_attack_add_hit(&attack, &hit);
-                gs_packet_attack_pack(response, &attack);
-                encrypt_and_send_packet(character, response);
+        assert(character);
+        assert(packet);
 
+        gs_packet_action_request_unpack(&action, packet);
+
+        target = find_by_id(action.target_id);
+
+        if (!target) {
+                log("attacking %d not found, ignoring", action.target_id);
                 return;
         }
 
-        character->target_id = action.target_id;
+        attack(character, target);
+}
 
-        selected.target_id = action.target_id;
-        selected.color     = 0;
+static void handle_tick(gs_character_t *character, double delta)
+{
+        gs_character_t *target = 0;
 
-        gs_packet_target_selected_pack(response, &selected);
-        encrypt_and_send_packet(character, response);
+        assert(character);
+        PREVENT_UNUSED_WARNING(delta);
+
+        if (!character->target_id) {
+                return;
+        }
+
+        target = find_by_id(character->target_id);
+
+        if (!target) {
+                return;
+        }
+
+        attack(character, target);
 }
 
 static void spawn_random_orc(void)
@@ -184,7 +270,7 @@ static void spawn_random_orc(void)
         gs_character_spawn(&orc);
 }
 
-static void spawn_state(gs_character_t *character, packet_t *packet)
+static void idle_state(gs_character_t *character, packet_t *packet)
 {
         assert(character);
         assert(packet);
@@ -207,13 +293,28 @@ static void spawn_state(gs_character_t *character, packet_t *packet)
                 spawn_random_orc();
                 break;
         case 0x48: // Validate position.
-                handle_validate_position_request(character, packet);
+                handle_val_pos_request(character, packet);
                 break;
         case 0xcd: // Show map.
                 log("TODO: Show map");
                 break;
         default:
-                log("Can't handle packet from in world state.");
+                log("can't handle packet from in world state.");
+                break;
+        }
+}
+
+static void target_selected_state(gs_character_t *character, packet_t *packet)
+{
+        assert(character);
+        assert(packet);
+
+        switch (packet_type(packet)) {
+        case 0x04: // Action.
+                handle_attack_request(character, packet);
+                break;
+        default:
+                idle_state(character, packet);
                 break;
         }
 }
@@ -347,15 +448,26 @@ gs_character_t *gs_character_from_session(gs_session_t *session)
         return 0;
 }
 
+void gs_character_tick(double delta)
+{
+        for (size_t i = 0; i < *character_count; i += 1) {
+                handle_tick(&characters[i], delta);
+        }
+}
+
 void gs_character_request(gs_character_t *character, packet_t *packet)
 {
+        assert(character);
+        assert(packet);
+
         switch (character->state) {
         case SPAWN:
-                spawn_state(character, packet);
-                break;
         case IDLE:
-                break;
         case MOVING:
+                idle_state(character, packet);
+                break;
+        case TARGET_SELECTED:
+                target_selected_state(character, packet);
                 break;
         default:
                 break;

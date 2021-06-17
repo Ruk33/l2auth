@@ -28,4 +28,6 @@ void gs_lib_new_req(os_io_t *socket, void *buf, size_t n);
 
 void gs_lib_disconnect(os_io_t *socket);
 
+void gs_lib_tick(double delta);
+
 #endif

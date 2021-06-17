@@ -401,3 +401,8 @@ void gs_request_disconnect(os_io_t *socket)
         gs_session_encrypt(session, response, response);
         conn_send_packet(session->socket, response);
 }
+
+void gs_request_tick(double delta)
+{
+        gs_character_tick(delta);
+}

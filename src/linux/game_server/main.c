@@ -19,6 +19,7 @@ static void (*on_unload)(void);
 static void (*on_new_conn)(os_io_t *);
 static void (*on_new_req)(os_io_t *, void *, size_t);
 static void (*on_disconnect)(os_io_t *);
+static void (*on_tick)(double);
 
 static gs_lib_t *gs_lib = 0;
 
@@ -75,10 +76,11 @@ static int init_gs_lib(void)
         *(void **) (&on_new_conn)   = load_lib_function("gs_lib_new_conn");
         *(void **) (&on_new_req)    = load_lib_function("gs_lib_new_req");
         *(void **) (&on_disconnect) = load_lib_function("gs_lib_disconnect");
+        *(void **) (&on_tick)       = load_lib_function("gs_lib_tick");
 
         all_load =
                 (handle && on_load && on_unload && on_new_conn && on_new_req &&
-                 on_disconnect);
+                 on_disconnect && on_tick);
 
         if (!all_load) {
                 return 0;
@@ -120,7 +122,7 @@ child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
                 // os_socket_close(socket);
                 break;
         case OS_IO_TIMER_TICK:
-                // printf("timer tick.\n");
+                on_tick(0);
                 break;
         default:
                 break;

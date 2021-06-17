@@ -14,6 +14,8 @@ typedef enum {
         SPAWN,
         IDLE,
         MOVING,
+        TARGET_SELECTED,
+        ATTACKING,
 } gs_character_state_t;
 
 typedef struct {
@@ -88,6 +90,8 @@ void gs_character_from_request(
 void gs_character_spawn(gs_character_t *src);
 
 gs_character_t *gs_character_from_session(gs_session_t *session);
+
+void gs_character_tick(double delta);
 
 void gs_character_request(gs_character_t *character, packet_t *packet);
 
