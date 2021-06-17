@@ -32,20 +32,26 @@ static int is_npc(gs_character_t *src)
         return src->session ? 0 : 1;
 }
 
-static double distance(gs_character_t *a, gs_character_t *b)
+static double distance_from_point(gs_character_t *a, i32_t x, i32_t y, i32_t z)
 {
         double dx = 0;
         double dy = 0;
         double dz = 0;
 
         assert(a);
-        assert(b);
 
-        dx = b->x - a->x;
-        dy = b->y - a->y;
-        dz = b->z - a->z;
+        dx = x - a->x;
+        dy = y - a->y;
+        dz = z - a->z;
 
         return sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+static double distance(gs_character_t *a, gs_character_t *b)
+{
+        assert(a);
+        assert(b);
+        return distance_from_point(a, b->x, b->y, b->z);
 }
 
 static gs_character_t *find_by_id(u32_t id)
@@ -58,6 +64,15 @@ static gs_character_t *find_by_id(u32_t id)
 
         return 0;
 }
+
+// static void queue_state(gs_character_t *character, gs_character_state_t
+// state)
+// {
+//         assert(character);
+
+//         character->states[character->state_count % 10] = state;
+//         character->state_count += 1;
+// }
 
 static void encrypt_and_send_packet(gs_character_t *from, packet_t *packet)
 {
@@ -99,18 +114,40 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
         gs_packet_attack_t attack  = { 0 };
         gs_packet_attack_hit_t hit = { 0 };
 
+        double d = 0;
+        double a = 0;
+        i32_t x  = 0;
+        i32_t y  = 0;
+
         assert(attacker);
-        assert(target);
 
-        attacker->target_id = target->id;
-
-        if (100 < distance(attacker, target)) {
-                move(attacker, target->x, target->y, target->z);
+        if (!target) {
                 return;
         }
 
-        attacker->target_id = 0; // Testing, reset attack.
-        attacker->state     = IDLE;
+        attacker->target_id = target->id;
+        attacker->state     = ATTACKING;
+
+        d = distance(attacker, target);
+        log("distance from attacking target %f", d);
+
+        if (d > 80) {
+                a = atan2(target->y - attacker->y, target->x - attacker->x);
+                x = target->x - 60 * cos(a);
+                y = target->y - 60 * sin(a);
+                move(attacker, x, y, target->z);
+                attacker->state = MOVING_TO_ATTACK;
+                return;
+        }
+
+        log("attack cd: %d", attacker->attack_cd);
+
+        if (attacker->attack_cd > 0) {
+                return;
+        }
+
+        log("attacking!");
+        attacker->attack_cd = 2;
 
         auto_attack.target_id = target->id;
         hit.damage            = 42;
@@ -177,10 +214,8 @@ static void handle_val_pos_request(gs_character_t *character, packet_t *packet)
         character->heading = validate_request.heading;
 
         bytes_zero(response, sizeof(response));
-
         gs_packet_validate_pos(&validate_response, character);
         gs_packet_validate_pos_pack(response, &validate_response);
-
         encrypt_and_send_packet(character, response);
 }
 
@@ -230,20 +265,56 @@ static void handle_tick(gs_character_t *character, double delta)
 {
         gs_character_t *target = 0;
 
+        double d = 0;
+
         assert(character);
         PREVENT_UNUSED_WARNING(delta);
 
-        if (!character->target_id) {
+        if (is_npc(character)) {
                 return;
         }
 
-        target = find_by_id(character->target_id);
+        character->attack_cd -= character->attack_cd ? 1 : 0;
 
-        if (!target) {
-                return;
+        if (character->target_id) {
+                target = find_by_id(character->target_id);
         }
 
-        attack(character, target);
+        switch (character->state) {
+        case SPAWN:
+                log("tick: spawn state");
+                break;
+        case IDLE:
+                log("tick: idle state");
+                break;
+        case MOVING:
+                d = distance_from_point(
+                        character,
+                        character->target_x,
+                        character->target_y,
+                        character->target_z);
+                log("moving, distance: %f", d);
+
+                if (d <= 30) {
+                        character->state = IDLE;
+                }
+
+                log("tick: moving state");
+                break;
+        case TARGET_SELECTED:
+                log("tick: selected target");
+                break;
+        case ATTACKING:
+                log("tick: attacking state");
+                attack(character, target);
+                break;
+        case MOVING_TO_ATTACK:
+                log("tick: moving to attack state");
+                attack(character, target);
+                break;
+        default:
+                break;
+        }
 }
 
 static void spawn_random_orc(void)
@@ -467,6 +538,8 @@ void gs_character_request(gs_character_t *character, packet_t *packet)
                 idle_state(character, packet);
                 break;
         case TARGET_SELECTED:
+        case ATTACKING:
+        case MOVING_TO_ATTACK:
                 target_selected_state(character, packet);
                 break;
         default:

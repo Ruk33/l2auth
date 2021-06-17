@@ -107,15 +107,15 @@ child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 
         switch (event) {
         case OS_IO_SOCKET_CONNECTION:
-                printf("new connection.\n");
+                // printf("new connection.\n");
                 on_new_conn(socket);
                 break;
         case OS_IO_SOCKET_REQUEST:
-                printf("new request.\n");
+                // printf("new request.\n");
                 on_new_req(socket, buf, n);
                 break;
         case OS_IO_SOCKET_DISCONNECTED:
-                printf("disconnect.\n");
+                // printf("disconnect.\n");
                 on_disconnect(socket);
                 // Todo: closing the socket here indeeds closes it
                 // but also terminates the server. Investigate.
@@ -154,7 +154,7 @@ parent_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
                         exit(EXIT_FAILURE);
                 }
                 if (WIFEXITED(wstatus)) {
-                        printf("child stopped successfully.\n");
+                        // printf("child stopped successfully.\n");
                         return;
                 }
 

@@ -15,6 +15,7 @@ typedef enum {
         IDLE,
         MOVING,
         TARGET_SELECTED,
+        MOVING_TO_ATTACK,
         ATTACKING,
 } gs_character_state_t;
 
@@ -29,6 +30,7 @@ typedef struct {
         i32_t heading;
 
         u32_t target_id;
+        u32_t attack_cd;
 
         // Fields bellow these line will be saved in database.
         char name[32];
