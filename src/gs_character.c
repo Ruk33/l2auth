@@ -65,15 +65,6 @@ static gs_character_t *find_by_id(u32_t id)
         return 0;
 }
 
-// static void queue_state(gs_character_t *character, gs_character_state_t
-// state)
-// {
-//         assert(character);
-
-//         character->states[character->state_count % 10] = state;
-//         character->state_count += 1;
-// }
-
 static void encrypt_and_send_packet(gs_character_t *from, packet_t *packet)
 {
         assert(from);
@@ -107,6 +98,15 @@ static void move(gs_character_t *character, i32_t x, i32_t y, i32_t z)
         }
 }
 
+static void on_npc_attacked(gs_character_t *npc, gs_character_t *attacker)
+{
+        assert(npc);
+        assert(attacker);
+
+        npc->state     = ATTACKING;
+        npc->target_id = attacker->id;
+}
+
 static void attack(gs_character_t *attacker, gs_character_t *target)
 {
         gs_packet_auto_attack_t auto_attack = { 0 };
@@ -122,6 +122,8 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
         assert(attacker);
 
         if (!target) {
+                attacker->target_id = 0;
+                attacker->state     = IDLE;
                 return;
         }
 
@@ -129,7 +131,6 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
         attacker->state     = ATTACKING;
 
         d = distance(attacker, target);
-        log("distance from attacking target %f", d);
 
         if (d > 30) {
                 a = atan2(target->y - attacker->y, target->x - attacker->x);
@@ -140,13 +141,14 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
                 return;
         }
 
-        log("attack cd: %d", attacker->attack_cd);
-
         if (attacker->attack_cd > 0) {
                 return;
         }
 
-        log("attacking!");
+        if (is_npc(target)) {
+                on_npc_attacked(target, attacker);
+        }
+
         attacker->attack_cd = 2;
 
         auto_attack.target_id = target->id;
@@ -270,10 +272,6 @@ static void handle_tick(gs_character_t *character, double delta)
         assert(character);
         PREVENT_UNUSED_WARNING(delta);
 
-        if (is_npc(character)) {
-                return;
-        }
-
         character->attack_cd -= character->attack_cd ? 1 : 0;
 
         if (character->target_id) {
@@ -295,7 +293,7 @@ static void handle_tick(gs_character_t *character, double delta)
                         character->target_z);
                 log("moving, distance: %f", d);
 
-                if (d <= 30) {
+                if (d < 20) {
                         character->state = IDLE;
                 }
 
@@ -323,17 +321,31 @@ static void spawn_random_orc(void)
 
         gs_random_id(&orc.id);
 
-        orc.x                         = -84023;
-        orc.y                         = 244598;
-        orc.z                         = -3730;
-        orc.heading                   = 2;
-        orc.m_attack_speed            = 1;
-        orc.p_attack_speed            = 1;
-        orc.run_speed                 = 200;
-        orc.walk_speed                = 100;
-        orc.movement_speed_multiplier = 1;
-        orc.collision_radius          = 14;
-        orc.collision_height          = 25;
+        orc.x                = -84023;
+        orc.y                = 244598;
+        orc.z                = -3730;
+        orc.collision_radius = 14;
+        orc.collision_height = 25;
+        orc.level            = 8;
+        orc.sex              = 0;
+        orc.hp               = 197;
+        orc.mp               = 102;
+        orc.str              = 40;
+        orc.con              = 43;
+        orc.dex              = 30;
+        orc._int             = 21;
+        orc.wit              = 20;
+        orc.men              = 10;
+        orc.exp              = 293;
+        orc.sp               = 10;
+        orc.p_attack         = 41;
+        orc.p_def            = 55;
+        orc.m_attack         = 6;
+        orc.m_def            = 45;
+        orc.p_attack_speed   = 249;
+        orc.m_attack_speed   = 227;
+        orc.walk_speed       = 45;
+        orc.run_speed        = 110;
 
         bytes_cpy_str(orc.name, "Orc", sizeof(orc.name) - 1);
         bytes_cpy_str(orc.title, "Archer", sizeof(orc.title) - 1);

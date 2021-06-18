@@ -79,7 +79,11 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] See other players
 - [x] Spawn random orc (spawned when trying to restart :D)
 - [x] Timers
-- [x] Basic AI (select target, attack if close enough, otherwise walk and attack)
+- [x] Basic attack AI
+        - if target is too far, move closer to it
+        - if in reach, attack
+- [x] Basic NPC AI
+        - if attacked, attack!
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
