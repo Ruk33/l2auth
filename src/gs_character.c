@@ -131,10 +131,10 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
         d = distance(attacker, target);
         log("distance from attacking target %f", d);
 
-        if (d > 80) {
+        if (d > 30) {
                 a = atan2(target->y - attacker->y, target->x - attacker->x);
-                x = target->x - 60 * cos(a);
-                y = target->y - 60 * sin(a);
+                x = target->x - 20 * cos(a);
+                y = target->y - 20 * sin(a);
                 move(attacker, x, y, target->z);
                 attacker->state = MOVING_TO_ATTACK;
                 return;
@@ -150,9 +150,9 @@ static void attack(gs_character_t *attacker, gs_character_t *target)
         attacker->attack_cd = 2;
 
         auto_attack.target_id = target->id;
-        hit.damage            = 42;
-        hit.target_id         = target->id;
 
+        hit.damage    = attacker->p_attack;
+        hit.target_id = target->id;
         gs_packet_attack_set_attacker(&attack, attacker);
         gs_packet_attack_add_hit(&attack, &hit);
 

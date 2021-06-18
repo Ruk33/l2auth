@@ -8,7 +8,7 @@
 typedef struct {
         u32_t target_id;
         u32_t damage;
-        u32_t flags;
+        u8_t flags;
 } gs_packet_attack_hit_t;
 
 typedef struct {
