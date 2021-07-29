@@ -2,24 +2,24 @@
 #include "include/util.h"
 #include "include/recycle_id.h"
 
-int recycle_id_get(size_t *dest, size_t *instances)
+int recycle_id_get(size_t *dest, size_t *src)
 {
-        assert(instances);
+        assert(src);
 
-        *dest = instances[0];
+        *dest = src[0];
 
-        if (instances[*dest]) {
-                instances[0] = instances[*dest];
+        if (src[*dest]) {
+                src[0] = src[*dest];
                 return 0;
         }
 
-        instances[0] = *dest + 1;
+        src[0] = *dest + 1;
         return 1;
 }
 
-void recycle_id(size_t *instances, size_t id)
+void recycle_id(size_t *src, size_t id)
 {
-        assert(instances);
-        instances[id] = instances[0];
-        instances[0]  = id;
+        assert(src);
+        src[id] = src[0];
+        src[0]  = id;
 }

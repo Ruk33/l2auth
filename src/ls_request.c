@@ -58,18 +58,18 @@ static void handle_request_server_list(ls_session_t *session)
 
         static ls_packet_server_list_t server_list = { 0 };
 
-        server_t *servers = 0;
+        server_t *gs_servers = 0;
 
         assert(session);
 
-        servers = server_all();
-        assert(servers);
+        gs_servers = server_all();
+        assert(gs_servers);
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &server_list, sizeof(server_list));
 
         for (size_t i = 0, max = server_all_count(); i < max; i += 1) {
-                ls_packet_server_list_add(&server_list, &servers[i]);
+                ls_packet_server_list_add(&server_list, &gs_servers[i]);
         }
 
         ls_packet_server_list_pack(response, &server_list);

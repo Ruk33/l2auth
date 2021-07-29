@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include "../../include/os_io.h"
-#include "../../include/ls_lib.h"
+#include "../os_io.c"
+#include "../../ls_lib.c"
 
-static void send_response(os_io_t *socket, void *buf, size_t n)
+static void _send_response(os_io_t *socket, void *buf, size_t n)
 {
         os_io_write(socket, buf, n);
 }
@@ -41,7 +41,7 @@ int main(/* int argc, char **argv */)
                 return 1;
         }
 
-        ls_lib_load(send_response);
+        ls_lib_load(_send_response);
 
         if (!os_io_listen(on_request)) {
                 printf("login server request can't be handled.\n");

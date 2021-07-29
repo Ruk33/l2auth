@@ -21,7 +21,7 @@ os_io_t *os_io_timer(double timeout);
 
 int os_io_close(os_io_t *io);
 
-ssize_t os_io_write(os_io_t *io, void *buf, size_t n);
+long os_io_write(os_io_t *io, void *buf, size_t n);
 
 // Will block the current executing thread and listen
 // for any event from sockets or timers. When a new

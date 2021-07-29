@@ -203,17 +203,29 @@ static void handle_val_pos_request(gs_character_t *character, packet_t *packet)
         gs_packet_validate_pos_request_t validate_request = { 0 };
         gs_packet_validate_pos_t validate_response        = { 0 };
 
+        double a = 0;
+
         assert(character);
         assert(packet);
 
         gs_packet_validate_pos_request_unpack(&validate_request, packet);
 
-        // Todo: Perform basic validation.
+        a =
+                atan2(character->target_y - character->y,
+                      character->target_x - character->x);
+        log("old x: %d - old y: %d", character->x, character->y);
+        log("new x: %d - new y: %d", validate_request.x, validate_request.y);
+        log("my  x: %d - my y : %d",
+            (i32_t)(character->x + 120 * sin(a)),
+            (i32_t)(character->y + 120 * cos(a)));
+
         // If it's close enough to current location, update. If not, don't.
-        character->x       = validate_request.x;
-        character->y       = validate_request.y;
-        character->z       = validate_request.z;
-        character->heading = validate_request.heading;
+        // character->x = validate_request.x;
+        // character->y = validate_request.y;
+
+        // todo: can we calculate z ourselves without relying on the client?
+        character->z = validate_request.z;
+        // character->heading = validate_request.heading;
 
         bytes_zero(response, sizeof(response));
         gs_packet_validate_pos(&validate_response, character);
@@ -269,6 +281,13 @@ static void handle_tick(gs_character_t *character, double delta)
 
         double d = 0;
 
+        double dx            = 0;
+        double dy            = 0;
+        double _sin          = 0;
+        double _cos          = 0;
+        double x_speed_ticks = 0;
+        double y_speed_ticks = 0;
+
         assert(character);
         PREVENT_UNUSED_WARNING(delta);
 
@@ -280,34 +299,70 @@ static void handle_tick(gs_character_t *character, double delta)
 
         switch (character->state) {
         case SPAWN:
-                log("tick: spawn state");
+                // log("tick: spawn state");
                 break;
         case IDLE:
-                log("tick: idle state");
+                // log("tick: idle state");
                 break;
         case MOVING:
-                d = distance_from_point(
-                        character,
-                        character->target_x,
-                        character->target_y,
-                        character->target_z);
-                log("moving, distance: %f", d);
+                dx            = character->target_x - character->x;
+                dy            = character->target_y - character->y;
+                d             = sqrt(dx * dx + dy * dy);
+                _cos          = dx / d;
+                _sin          = dy / d;
+                x_speed_ticks = _cos * 60;
+                y_speed_ticks = _sin * 60;
+
+                character->heading =
+                        atan2(-_sin, -_cos) * 10430.378350470452724949566316381;
+                character->heading += 32768;
+                character->x += x_speed_ticks;
+                character->y += y_speed_ticks;
+
+                // a =
+                //         atan2(character->target_y - character->y,
+                //               character->target_x - character->x);
+                // character->x = character->x + 60 * cos(a);
+                // character->y = character->y + 60 * sin(a);
+
+                // d = distance_from_point(
+                //         character,
+                //         character->target_x,
+                //         character->target_y,
+                //         character->target_z);
+                // log("moving, distance: %f", d);
 
                 if (d < 20) {
+                        character->x     = character->target_x;
+                        character->y     = character->target_y;
                         character->state = IDLE;
                 }
 
-                log("tick: moving state");
+                // log("tick: moving state");
                 break;
         case TARGET_SELECTED:
-                log("tick: selected target");
+                // log("tick: selected target");
                 break;
         case ATTACKING:
-                log("tick: attacking state");
+                // log("tick: attacking state");
                 attack(character, target);
                 break;
         case MOVING_TO_ATTACK:
-                log("tick: moving to attack state");
+                dx            = character->target_x - character->x;
+                dy            = character->target_y - character->y;
+                d             = sqrt(dx * dx + dy * dy);
+                _cos          = dx / d;
+                _sin          = dy / d;
+                x_speed_ticks = _cos * 60;
+                y_speed_ticks = _sin * 60;
+
+                character->heading =
+                        atan2(-_sin, -_cos) * 10430.378350470452724949566316381;
+                character->heading += 32768;
+                character->x += x_speed_ticks;
+                character->y += y_speed_ticks;
+
+                // log("tick: moving to attack state");
                 attack(character, target);
                 break;
         default:

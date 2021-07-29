@@ -1,9 +1,21 @@
 #include <assert.h>
-#include <arpa/inet.h>
 #include "include/os_io.h"
-#include "include/server.h"
-#include "include/conn.h"
-#include "include/ls_request.h"
+
+#include "util.c"
+#include "recycle_id.c"
+#include "server.c"
+#include "conn.c"
+#include "packet.c"
+#include "ls_request.c"
+#include "ls_crypt.c"
+#include "ls_blowfish.c"
+#include "ls_rsa.c"
+#include "ls_session.c"
+#include "ls_packet_gg_auth.c"
+#include "ls_packet_init.c"
+#include "ls_packet_ok.c"
+#include "ls_packet_play_ok.c"
+#include "ls_packet_server_list.c"
 #include "include/ls_lib.h"
 
 void ls_lib_load(conn_send_response_cb cb)
@@ -14,8 +26,12 @@ void ls_lib_load(conn_send_response_cb cb)
 
         assert(cb);
 
-        bartz.id = 1;
-        inet_pton(AF_INET, "127.0.0.1", bartz.ip);
+        bartz.id    = 1;
+        bartz.ip[0] = 127;
+        bartz.ip[1] = 0;
+        bartz.ip[2] = 0;
+        bartz.ip[3] = 1;
+        // inet_pton(AF_INET, "127.0.0.1", bartz.ip);
         bartz.port        = 7777;
         bartz.age_limit   = 0x0f;
         bartz.pvp         = 0;
@@ -26,7 +42,11 @@ void ls_lib_load(conn_send_response_cb cb)
         bartz.brackets    = 0x00;
 
         sieghardt.id = 2;
-        inet_pton(AF_INET, "0.0.0.0", sieghardt.ip);
+        // inet_pton(AF_INET, "0.0.0.0", sieghardt.ip);
+        sieghardt.ip[0]       = 0;
+        sieghardt.ip[1]       = 0;
+        sieghardt.ip[2]       = 0;
+        sieghardt.ip[3]       = 0;
         sieghardt.port        = 7778;
         sieghardt.age_limit   = 0x0f;
         sieghardt.pvp         = 0;

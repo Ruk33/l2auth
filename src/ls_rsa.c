@@ -10,8 +10,8 @@ typedef struct {
         RSA *key;
 } rsa_pack_t;
 
-static rsa_pack_t keys[MAX_CLIENTS] = { 0 };
-static size_t key_count             = 0;
+static rsa_pack_t rsa_keys[MAX_CLIENTS] = { 0 };
+static size_t rsa_key_count             = 0;
 
 static void rsa_scramble_modulo(byte_t *n)
 {
@@ -47,9 +47,9 @@ ls_rsa_t *ls_rsa_new()
 {
         rsa_pack_t *instance = 0;
 
-        assert(key_count < arr_size(keys));
+        assert(rsa_key_count < arr_size(rsa_keys));
 
-        instance = &keys[key_count];
+        instance = &rsa_keys[rsa_key_count];
 
         instance->e   = BN_new();
         instance->key = RSA_new();
@@ -60,7 +60,7 @@ ls_rsa_t *ls_rsa_new()
         BN_dec2bn(&instance->e, "65537");
         RSA_generate_key_ex(instance->key, 1024, instance->e, NULL);
 
-        key_count += 1;
+        rsa_key_count += 1;
 
         return (ls_rsa_t *) instance;
 }

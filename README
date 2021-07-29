@@ -10,6 +10,10 @@ Because it's fun; because I like Lineage 2 (at least until C4 and Interlude
 chronicles) and because I like the C programming language and I thought this 
 is an excellent project to work with it.
 
+== Compile login server
+cd l2auth/src/linux/login_server
+gcc main.c -lcrypto
+
 == Dependencies
 - cmake
 - make
@@ -67,6 +71,16 @@ Other than the first packet, all the login server packets are encrypted with
 blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
+- [ ] Remove/deprecate cmake, it's not worth it.
+- [ ] Add build/makefile to rebuild project and database if required.
+- [ ] Check work flow. For some reason, I delete the database and needs
+      to be recreated.
+- [ ] Double check the game server when a client gets disconnected
+      The requests are not being handled correctly.
+- [ ] I think I need to tick every 0.1 seconds instead of 1 second.
+- [ ] Fix the movement. Even though now the position is kinda updated,
+      it needs to be more precise.
+- [ ] Fix orc ai, it drops the brain on each step.
 - [x] Hotcode reload
 - [x] Display terms of service view
 - [x] Display server list

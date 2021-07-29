@@ -19,9 +19,9 @@
 #endif
 
 // Absolute value
-#ifndef abs
-#define abs(a) ((a) < 0 ? -(a) : (a))
-#endif
+// #ifndef abs
+// #define abs(a) ((a) < 0 ? -(a) : (a))
+// #endif
 
 // Ensures x is higher/equal than low and lower/equal than high.
 #ifndef clamp

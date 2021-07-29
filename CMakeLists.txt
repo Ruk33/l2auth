@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-project(login_server)
+# project(login_server)
 project(game_server)
 project(game_server_lib)
 
@@ -14,28 +14,6 @@ include(FindSQLite3)
 
 find_package(OpenSSL REQUIRED)
 find_package(SQLite3 REQUIRED)
-
-add_executable(
-        login_server
-        src/linux/login_server/main.c
-        src/linux/os_io.c # Todo: Should be set depending on OS
-        src/ls_blowfish.c
-        src/ls_crypt.c
-        src/ls_lib.c
-        src/ls_packet_gg_auth.c
-        src/ls_packet_init.c
-        src/ls_packet_ok.c
-        src/ls_packet_play_ok.c
-        src/ls_packet_server_list.c
-        src/ls_request.c
-        src/ls_rsa.c
-        src/ls_session.c
-        src/conn.c
-        src/packet.c
-        src/recycle_id.c
-        src/server.c
-        src/util.c
-)
 
 add_executable(
         game_server
@@ -82,9 +60,6 @@ add_library(
         src/packet.c
         src/util.c
 )
-
-# Blowfish and RSA
-target_link_libraries(login_server OpenSSL::Crypto)
 
 # dlopen, dlclose, etc. functions
 target_link_libraries(game_server ${CMAKE_DL_LIBS})
