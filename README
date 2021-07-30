@@ -10,27 +10,27 @@ Because it's fun; because I like Lineage 2 (at least until C4 and Interlude
 chronicles) and because I like the C programming language and I thought this 
 is an excellent project to work with it.
 
-== Compile login server
-cd l2auth/src/linux/login_server
-gcc main.c -lcrypto
+== Compile
+Create a "build" folder.
+Run make. Don't forget to also run make migrations to run sqlite migrations
+and create database.
+
+== Start login server
+Run build/login_server. The login server will listen for connections to
+localhost using port 2106.
+
+== Start game server
+Run build/game_server. The game server will listen for connection to
+localhost using port 7777.
 
 == Dependencies
-- cmake
-- make
 - openssl
 - sqlite3
+- make (optional)
 
 == Additional notes
 This project is intended to be ran on Linux, Ubuntu and on little endian machines.
 You can use Windows WSL for the Linux layer (that's what I do).
-
-== Build & run
-- Run make in the root folder.
-- Start login server by running build/login_server.
-- Start game server by running build/game_server.
-- Create database tables using the migration files:
-        - sqlite3 build/db < migrations/sqlite/00_create_characters_table.sql
-        - repeat with all the files in migrations
 
 == Game and login server
 This project divides the login server (from where the user can authenticate
@@ -71,9 +71,9 @@ Other than the first packet, all the login server packets are encrypted with
 blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
-- [ ] Remove/deprecate cmake, it's not worth it.
-- [ ] Add build/makefile to rebuild project and database if required.
-- [ ] Check work flow. For some reason, I delete the database and needs
+- [x] Remove/deprecate cmake, it's not worth it.
+- [x] Add build/makefile to rebuild project and database if required.
+- [x] Check work flow. For some reason, I delete the database and needs
       to be recreated.
 - [ ] Double check the game server when a client gets disconnected
       The requests are not being handled correctly.

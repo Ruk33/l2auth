@@ -23,7 +23,7 @@
 #include "include/gs_packet_leave_world.h"
 #include "include/gs_request.h"
 
-static packet_t response[65536] = { 0 };
+static packet_t gs_response[65536] = { 0 };
 
 static void handle_protocol_version(gs_session_t *session)
 {
@@ -31,11 +31,11 @@ static void handle_protocol_version(gs_session_t *session)
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
+        bytes_zero(gs_response, sizeof(gs_response));
         gs_packet_protocol_version(&protocol_version);
-        gs_packet_protocol_version_pack(response, &protocol_version);
+        gs_packet_protocol_version_pack(gs_response, &protocol_version);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void handle_enter_world(gs_session_t *session)
@@ -59,12 +59,12 @@ static void handle_enter_world(gs_session_t *session)
 
         gs_character_spawn(&character);
 
-        bytes_zero(response, sizeof(response));
+        bytes_zero(gs_response, sizeof(gs_response));
         gs_packet_user_info_set_char(&user_info, &character);
-        gs_packet_user_info_pack(response, &user_info);
+        gs_packet_user_info_pack(gs_response, &user_info);
 
-        gs_session_encrypt(session, response, response);
-        conn_send_packet(session->socket, response);
+        gs_session_encrypt(session, gs_response, gs_response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 // If packet is not NULL, the session will be updated and characters fetched.
@@ -99,11 +99,11 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
                 gs_packet_auth_login_add_character(&auth_login, &characters[i]);
         }
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_auth_login_pack(response, &auth_login);
-        gs_session_encrypt(session, response, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_auth_login_pack(gs_response, &auth_login);
+        gs_session_encrypt(session, gs_response, gs_response);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void handle_new_character(gs_session_t *session)
@@ -125,11 +125,11 @@ static void handle_new_character(gs_session_t *session)
                 gs_packet_new_char_add_template(&new_char, &templates[i]);
         }
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_new_char_pack(response, &new_char);
-        gs_session_encrypt(session, response, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_new_char_pack(gs_response, &new_char);
+        gs_session_encrypt(session, gs_response, gs_response);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void handle_create_character(gs_session_t *session, packet_t *packet)
@@ -149,11 +149,11 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
         create_char.response =
                 storage_create_character(session->username, &character);
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_create_char_pack(response, &create_char);
-        gs_session_encrypt(session, response, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_create_char_pack(gs_response, &create_char);
+        gs_session_encrypt(session, gs_response, gs_response);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 
         // Refetch characters.
         handle_auth_login(session, 0);
@@ -179,16 +179,16 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
                 return;
         }
 
-        bytes_zero(response, sizeof(response));
+        bytes_zero(gs_response, sizeof(gs_response));
 
         character.session = session;
 
         gs_packet_char_select_set_char(&char_select, &character);
         gs_packet_char_select_set_playok(&char_select, session->playOK1);
-        gs_packet_char_select_pack(response, &char_select);
+        gs_packet_char_select_pack(gs_response, &char_select);
 
-        gs_session_encrypt(session, response, response);
-        conn_send_packet(session->socket, response);
+        gs_session_encrypt(session, gs_response, gs_response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void handle_quest_list(gs_session_t *session)
@@ -197,11 +197,11 @@ static void handle_quest_list(gs_session_t *session)
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_quest_list_pack(response, &quest_list);
-        gs_session_encrypt(session, response, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_quest_list_pack(gs_response, &quest_list);
+        gs_session_encrypt(session, gs_response, gs_response);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void handle_auto_ss_bsps(gs_session_t *session)
@@ -210,11 +210,11 @@ static void handle_auto_ss_bsps(gs_session_t *session)
 
         assert(session);
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_d0_pack(response, &d0);
-        gs_session_encrypt(session, response, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_d0_pack(gs_response, &d0);
+        gs_session_encrypt(session, gs_response, gs_response);
 
-        conn_send_packet(session->socket, response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 static void protocol_version_state(gs_session_t *session, packet_t *packet)
@@ -396,10 +396,10 @@ void gs_request_disconnect(os_io_t *socket)
 
         log("sending disconnect packet.");
 
-        bytes_zero(response, sizeof(response));
-        gs_packet_leave_world_pack(response, &leave_world);
-        gs_session_encrypt(session, response, response);
-        conn_send_packet(session->socket, response);
+        bytes_zero(gs_response, sizeof(gs_response));
+        gs_packet_leave_world_pack(gs_response, &leave_world);
+        gs_session_encrypt(session, gs_response, gs_response);
+        conn_send_packet(session->socket, gs_response);
 }
 
 void gs_request_tick(double delta)

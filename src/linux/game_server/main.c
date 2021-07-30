@@ -8,7 +8,11 @@
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
-#include "../../include/os_io.h"
+
+#include "../os_io.c"
+#include "../../util.c"
+#include "../../recycle_id.c"
+
 #include "../../include/gs_lib.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
