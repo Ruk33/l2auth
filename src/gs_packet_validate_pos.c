@@ -1,18 +1,20 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
-#include "include/gs_character.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_validate_pos.h"
 
-void gs_packet_validate_pos(gs_packet_validate_pos_t *dest, gs_character_t *src)
+void gs_packet_validate_pos(
+        gs_packet_validate_pos_t *dest,
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);
 
         dest->id      = src->id;
-        dest->x       = src->x;
-        dest->y       = src->y;
-        dest->z       = src->z;
+        dest->x       = src->position.x;
+        dest->y       = src->position.y;
+        dest->z       = src->position.z;
         dest->heading = src->heading;
 }
 

@@ -6,8 +6,10 @@
 #include "include/log.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
-#include "include/gs_session.h"
+#include "include/gs_types.h"
 #include "include/gs_character.h"
+#include "include/gs_session.h"
+#include "include/gs_ai.h"
 #include "include/gs_character_template.h"
 #include "include/gs_packet_protocol_version.h"
 #include "include/gs_packet_auth_login.h"
@@ -25,7 +27,7 @@
 
 static packet_t gs_response[65536] = { 0 };
 
-static void handle_protocol_version(gs_session_t *session)
+static void handle_protocol_version(struct gs_session *session)
 {
         gs_packet_protocol_version_t protocol_version = { 0 };
 
@@ -38,11 +40,11 @@ static void handle_protocol_version(gs_session_t *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_enter_world(gs_session_t *session)
+static void handle_enter_world(struct gs_session *session)
 {
         static gs_packet_user_info_t user_info = { 0 };
 
-        gs_character_t character = { 0 };
+        struct gs_character character = { 0 };
 
         assert(session);
 
@@ -69,11 +71,11 @@ static void handle_enter_world(gs_session_t *session)
 
 // If packet is not NULL, the session will be updated and characters fetched.
 // If packet is NULL, only the characters will be fetch (no session update).
-static void handle_auth_login(gs_session_t *session, packet_t *packet)
+static void handle_auth_login(struct gs_session *session, packet_t *packet)
 {
         static gs_packet_auth_login_t auth_login = { 0 };
 
-        static gs_character_t characters[10] = { 0 };
+        static struct gs_character characters[10] = { 0 };
 
         gs_packet_auth_request_t auth_request = { 0 };
 
@@ -106,11 +108,11 @@ static void handle_auth_login(gs_session_t *session, packet_t *packet)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_new_character(gs_session_t *session)
+static void handle_new_character(struct gs_session *session)
 {
         static gs_packet_new_char_t new_char = { 0 };
 
-        gs_character_template_t *templates = 0;
+        struct gs_character_template *templates = 0;
 
         size_t template_count = 0;
 
@@ -132,13 +134,14 @@ static void handle_new_character(gs_session_t *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_create_character(gs_session_t *session, packet_t *packet)
+static void
+handle_create_character(struct gs_session *session, packet_t *packet)
 {
         gs_packet_create_char_request_t create_char_request = { 0 };
 
         gs_packet_create_char_t create_char = { 0 };
 
-        gs_character_t character = { 0 };
+        struct gs_character character = { 0 };
 
         assert(session);
         assert(packet);
@@ -159,13 +162,14 @@ static void handle_create_character(gs_session_t *session, packet_t *packet)
         handle_auth_login(session, 0);
 }
 
-static void handle_selected_character(gs_session_t *session, packet_t *packet)
+static void
+handle_selected_character(struct gs_session *session, packet_t *packet)
 {
         static gs_packet_char_select_t char_select = { 0 };
 
         gs_packet_char_select_request_t char_select_request = { 0 };
 
-        gs_character_t character = { 0 };
+        struct gs_character character = { 0 };
 
         assert(session);
         assert(packet);
@@ -191,7 +195,7 @@ static void handle_selected_character(gs_session_t *session, packet_t *packet)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_quest_list(gs_session_t *session)
+static void handle_quest_list(struct gs_session *session)
 {
         gs_packet_quest_list_t quest_list = { 0 };
 
@@ -204,7 +208,7 @@ static void handle_quest_list(gs_session_t *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_auto_ss_bsps(gs_session_t *session)
+static void handle_auto_ss_bsps(struct gs_session *session)
 {
         gs_packet_d0_t d0 = { 0 };
 
@@ -217,7 +221,7 @@ static void handle_auto_ss_bsps(gs_session_t *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void protocol_version_state(gs_session_t *session, packet_t *packet)
+static void protocol_version_state(struct gs_session *session, packet_t *packet)
 {
         switch (packet_type(packet)) {
         case 0x00: // Protocol version
@@ -230,7 +234,7 @@ static void protocol_version_state(gs_session_t *session, packet_t *packet)
         }
 }
 
-static void auth_request_state(gs_session_t *session, packet_t *packet)
+static void auth_request_state(struct gs_session *session, packet_t *packet)
 {
         switch (packet_type(packet)) {
         case 0x08: // Auth request
@@ -243,7 +247,8 @@ static void auth_request_state(gs_session_t *session, packet_t *packet)
         }
 }
 
-static void character_selection_state(gs_session_t *session, packet_t *packet)
+static void
+character_selection_state(struct gs_session *session, packet_t *packet)
 {
         switch (packet_type(packet)) {
         case 0x0d: // Selected char.
@@ -260,7 +265,8 @@ static void character_selection_state(gs_session_t *session, packet_t *packet)
         }
 }
 
-static void creating_character_state(gs_session_t *session, packet_t *packet)
+static void
+creating_character_state(struct gs_session *session, packet_t *packet)
 {
         switch (packet_type(packet)) {
         case 0x0b: // Create character
@@ -280,7 +286,7 @@ static void creating_character_state(gs_session_t *session, packet_t *packet)
         }
 }
 
-static void entering_world_state(gs_session_t *session, packet_t *packet)
+static void entering_world_state(struct gs_session *session, packet_t *packet)
 {
         switch (packet_type(packet)) {
         case 0x03: // Enter world.
@@ -299,9 +305,9 @@ static void entering_world_state(gs_session_t *session, packet_t *packet)
         }
 }
 
-static void in_world_state(gs_session_t *session, packet_t *packet)
+static void in_world_state(struct gs_session *session, packet_t *packet)
 {
-        gs_character_t *character = 0;
+        struct gs_character *character = 0;
 
         assert(session);
         assert(packet);
@@ -313,12 +319,12 @@ static void in_world_state(gs_session_t *session, packet_t *packet)
                 return;
         }
 
-        gs_character_request(character, packet);
+        gs_ai_handle_request(character, packet);
 }
 
 void gs_request_new_conn(os_io_t *socket)
 {
-        gs_session_t *session = 0;
+        struct gs_session *session = 0;
 
         assert(socket);
 
@@ -331,7 +337,7 @@ void gs_request(os_io_t *socket, byte_t *buf, size_t n)
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
 
-        gs_session_t *session = 0;
+        struct gs_session *session = 0;
 
         u16_t size = 0;
 
@@ -385,7 +391,7 @@ void gs_request_disconnect(os_io_t *socket)
 {
         gs_packet_leave_world_t leave_world = { 0 };
 
-        gs_session_t *session = 0;
+        struct gs_session *session = 0;
 
         session = gs_session_find(socket);
 
@@ -404,5 +410,11 @@ void gs_request_disconnect(os_io_t *socket)
 
 void gs_request_tick(double delta)
 {
-        gs_character_tick(delta);
+        struct gs_character *characters = 0;
+
+        characters = gs_character_all();
+
+        for (size_t i = 0, max = gs_character_all_count(); i < max; i += 1) {
+                gs_ai_tick(&characters[i], delta);
+        }
 }

@@ -3,6 +3,7 @@
 
 #include "storage/sqlite.c"
 #include "conn.c"
+#include "gs_ai.c"
 #include "gs_character_template.c"
 #include "gs_character.c"
 #include "gs_crypt.c"
@@ -37,15 +38,6 @@
 #include "util.c"
 
 #include "include/gs_lib.h"
-
-// include "include/util.h"
-// include "include/conn.h"
-// include "include/log.h"
-// include "include/os_io.h"
-// include "include/gs_session.h"
-// include "include/gs_character.h"
-// include "include/gs_request.h"
-// include "include/gs_lib.h"
 
 void gs_lib_load(gs_lib_t *gs_lib)
 {

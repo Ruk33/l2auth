@@ -2,7 +2,7 @@
 #define INCLUDE_GS_PACKET_NEW_CHAR_H
 
 #include "packet.h"
-#include "gs_character_template.h"
+#include "gs_types.h"
 
 typedef struct {
         int separator_0a[6];
@@ -24,7 +24,7 @@ typedef struct {
 
 void gs_packet_new_char_add_template(
         gs_packet_new_char_t *dest,
-        gs_character_template_t *src);
+        struct gs_character_template *src);
 
 void gs_packet_new_char_pack(packet_t *dest, gs_packet_new_char_t *src);
 

@@ -197,8 +197,8 @@ os_io_t *os_io_timer(double timeout)
                 return 0;
         }
 
-        utmr.it_value.tv_sec    = timeout;
-        utmr.it_interval.tv_sec = timeout;
+        utmr.it_value.tv_nsec    = timeout * 1000000000;
+        utmr.it_interval.tv_nsec = timeout * 1000000000;
 
         timerfd_settime(timer, 0, &utmr, 0);
 

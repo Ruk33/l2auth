@@ -1,18 +1,20 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
-#include "include/gs_character.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_attack.h"
 
-void gs_packet_attack_set_attacker(gs_packet_attack_t *dest, gs_character_t *src)
+void gs_packet_attack_set_attacker(
+        gs_packet_attack_t *dest,
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);
 
         dest->attacker_id = src->id;
-        dest->attacker_x  = src->x;
-        dest->attacker_y  = src->y;
-        dest->attacker_z  = src->z;
+        dest->attacker_x  = src->position.x;
+        dest->attacker_y  = src->position.y;
+        dest->attacker_z  = src->position.z;
 }
 
 void gs_packet_attack_add_hit(

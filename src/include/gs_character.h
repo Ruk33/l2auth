@@ -2,99 +2,76 @@
 #define INCLUDE_GS_CHARACTER_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "gs_session.h"
 #include "gs_packet_create_char_request.h"
 
-/*
- * Same as gs_session, these values represent
- * the states in which a character can be.
- * Keep these in order.
- */
-typedef enum {
-        SPAWN,
-        IDLE,
-        MOVING,
-        TARGET_SELECTED,
-        MOVING_TO_ATTACK,
-        ATTACKING,
-} gs_character_state_t;
+// Check if the character is a non playable character.
+// Players are characters too, the difference is, a player
+// is controller by a person.
+static int gs_character_is_npc(struct gs_character *src);
 
-typedef struct {
-        u32_t id;
-        gs_session_t *session;
-        gs_character_state_t state;
+static double
+gs_character_angle_to_point(struct gs_character *src, struct gs_point *p);
 
-        i32_t target_x;
-        i32_t target_y;
-        i32_t target_z;
-        i32_t heading;
+// Get distance between a character and a point.
+static double
+gs_character_distance_from_point(struct gs_character *src, struct gs_point *p);
 
-        u32_t target_id;
-        u32_t attack_cd;
+// Get distance between two players.
+static double
+gs_character_distance(struct gs_character *a, struct gs_character *b);
 
-        // Fields bellow these line will be saved in database.
-        char name[32];
-        char title[32];
-        u32_t race;
-        u32_t sex;
-        u32_t _class;
-        i32_t _int;
-        i32_t str;
-        i32_t con;
-        i32_t men;
-        i32_t dex;
-        i32_t wit;
-        u32_t hair_style;
-        u32_t hair_color;
-        u32_t face;
-        u32_t level;
-        u32_t exp;
-        u32_t sp;
-        u32_t hp;
-        u32_t mp;
-        u32_t cp;
-        u32_t max_hp;
-        u32_t max_mp;
-        u32_t max_cp;
-        u32_t p_attack;
-        u32_t m_attack;
-        u32_t p_def;
-        u32_t m_def;
-        u32_t evasion_rate;
-        u32_t accuracy;
-        u32_t critical_hit;
-        u32_t run_speed;
-        u32_t walk_speed;
-        u32_t p_attack_speed;
-        u32_t m_attack_speed;
-        double movement_speed_multiplier;
-        double attack_speed_multiplier;
-        double collision_radius;
-        double collision_height;
-        u32_t name_color;
-        i32_t max_load;
-        i32_t x;
-        i32_t y;
-        i32_t z;
-} gs_character_t;
+// Get character by id.
+// If not found, NULL is returned.
+static struct gs_character *gs_character_find_by_id(u32_t id);
 
-void gs_character_set(gs_character_t *characters, size_t *count);
+// Move character to a point.
+// The movement gets broadcasted to all players.
+// Todo: make sure the packet gets broadcasted only to close players.
+static void
+gs_character_move(struct gs_character *character, struct gs_point *p);
 
-// Fill character d from client request (made when
-// creating a new character).
-void gs_character_from_request(
-        gs_character_t *dest,
+// Attack and broadcast packet to all players.
+// Todo: make sure the packet gets broadcasted only to close players.
+static void
+gs_character_attack(struct gs_character *attacker, struct gs_character *target);
+
+// Selects a target (sending a packet to client).
+static void gs_character_select_target(
+        struct gs_character *character,
+        struct gs_character *target);
+
+// Sends the correct position of a character to the client.
+static void gs_character_validate_position(struct gs_character *character);
+
+// Set in memory characters. Used by gs_lib when the library
+// gets reloaded (this way we don't lose the information).
+// The game server is implemented as a library. This allows us
+// to make changes, recompile and see updates live without
+// having to shutdown the server and restart.
+// Todo: deprecate
+static void gs_character_set(struct gs_character *src, size_t *count);
+
+// Todo: deprecate
+static struct gs_character *gs_character_all(void);
+
+// Todo: deprecate
+static size_t gs_character_all_count(void);
+
+// Utility function that fills dest character using
+// parameters/values sent by the client (through src packet).
+static void gs_character_from_request(
+        struct gs_character *dest,
         gs_packet_create_char_request_t *src);
 
-// Spawn character in the world and notify close players.
-// If player, the session must be previously assigned, otherwise, it will
-// be threated as a NPC.
-void gs_character_spawn(gs_character_t *src);
+// Spawn new character (npc or playable) and broadcast packet to all players.
+// Todo: make sure the packet is broadcasted only to close players.
+static void gs_character_spawn(struct gs_character *src);
 
-gs_character_t *gs_character_from_session(gs_session_t *session);
-
-void gs_character_tick(double delta);
-
-void gs_character_request(gs_character_t *character, packet_t *packet);
+// Get character from session.
+// If not found, NULL is returned.
+static struct gs_character *
+gs_character_from_session(struct gs_session *session);
 
 #endif

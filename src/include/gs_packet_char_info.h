@@ -2,9 +2,9 @@
 #define INCLUDE_GS_PACKET_CHAR_INFO_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "packet.h"
 #include "l2_string.h"
-#include "gs_character.h"
 
 typedef struct {
         i32_t x;
@@ -60,7 +60,7 @@ typedef struct {
         u32_t name_color;
 } gs_packet_char_info_t;
 
-void gs_packet_char_info(gs_packet_char_info_t *dest, gs_character_t *src);
+void gs_packet_char_info(gs_packet_char_info_t *dest, struct gs_character *src);
 
 void gs_packet_char_info_pack(packet_t *dest, gs_packet_char_info_t *src);
 

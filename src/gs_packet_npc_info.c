@@ -2,10 +2,10 @@
 #include "include/util.h"
 #include "include/packet.h"
 #include "include/l2_string.h"
-#include "include/gs_character.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_npc_info.h"
 
-void gs_packet_npc_info(gs_packet_npc_info_t *dest, gs_character_t *src)
+void gs_packet_npc_info(gs_packet_npc_info_t *dest, struct gs_character *src)
 {
         assert(dest);
         assert(src);
@@ -16,20 +16,20 @@ void gs_packet_npc_info(gs_packet_npc_info_t *dest, gs_character_t *src)
         dest->id                  = src->id;
         dest->template_id         = 6 + 1000000; // orc
         dest->attackable          = 1;
-        dest->x                   = src->x;
-        dest->y                   = src->y;
-        dest->z                   = src->z;
+        dest->x                   = src->position.x;
+        dest->y                   = src->position.y;
+        dest->z                   = src->position.z;
         dest->heading             = src->heading;
-        dest->m_attack_speed      = src->m_attack_speed;
-        dest->p_attack_speed      = src->p_attack_speed;
-        dest->run_speed           = src->run_speed;
-        dest->walk_speed          = src->walk_speed;
-        dest->swim_run_speed      = src->run_speed;
-        dest->swim_walk_speed     = src->walk_speed;
-        dest->fly_run_speed       = src->run_speed;
-        dest->fly_walk_speed      = src->walk_speed;
+        dest->m_attack_speed      = src->stats.m_attack_speed;
+        dest->p_attack_speed      = src->stats.p_attack_speed;
+        dest->run_speed           = src->stats.run_speed;
+        dest->walk_speed          = src->stats.walk_speed;
+        dest->swim_run_speed      = src->stats.run_speed;
+        dest->swim_walk_speed     = src->stats.walk_speed;
+        dest->fly_run_speed       = src->stats.run_speed;
+        dest->fly_walk_speed      = src->stats.walk_speed;
         dest->magic_multiplier    = 1;
-        dest->movement_multiplier = src->movement_speed_multiplier;
+        dest->movement_multiplier = src->stats.movement_speed_multiplier;
         dest->collision_radius    = src->collision_radius;
         dest->collision_height    = src->collision_height;
         dest->r_hand              = 0;

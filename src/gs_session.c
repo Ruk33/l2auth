@@ -3,24 +3,25 @@
 #include "include/util.h"
 #include "include/os_io.h"
 #include "include/l2_string.h"
+#include "include/gs_types.h"
 #include "include/gs_crypt.h"
 #include "include/gs_packet_auth_request.h"
 #include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
-static gs_session_t *sessions = 0;
-static size_t *session_count  = 0;
+static struct gs_session *sessions = 0;
+static size_t *session_count       = 0;
 
-void gs_session_set(gs_session_t *src, size_t *count)
+void gs_session_set(struct gs_session *src, size_t *count)
 {
         sessions      = src;
         session_count = count;
 }
 
-gs_session_t *gs_session_new(os_io_t *socket)
+struct gs_session *gs_session_new(os_io_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
-        gs_session_t *new_session = 0;
+        struct gs_session *new_session = 0;
 
         assert(socket);
         assert(*session_count < MAX_CLIENTS);
@@ -40,7 +41,7 @@ gs_session_t *gs_session_new(os_io_t *socket)
         return new_session;
 }
 
-gs_session_t *gs_session_find(os_io_t *socket)
+struct gs_session *gs_session_find(os_io_t *socket)
 {
         assert(socket);
 
@@ -53,13 +54,15 @@ gs_session_t *gs_session_find(os_io_t *socket)
         return 0;
 }
 
-void gs_session_encrypt_conn(gs_session_t *session)
+void gs_session_encrypt_conn(struct gs_session *session)
 {
         assert(session);
         session->conn_encrypted = 1;
 }
 
-void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src)
+void gs_session_update_auth(
+        struct gs_session *dest,
+        gs_packet_auth_request_t *src)
 {
         size_t max_username_size = 0;
 
@@ -75,7 +78,7 @@ void gs_session_update_auth(gs_session_t *dest, gs_packet_auth_request_t *src)
         dest->playOK2  = src->playOK2;
 }
 
-void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src)
+void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
 {
         assert(session);
         assert(dest);
@@ -83,7 +86,7 @@ void gs_session_encrypt(gs_session_t *session, byte_t *dest, packet_t *src)
         gs_encrypt(session->encrypt_key, dest, src);
 }
 
-void gs_session_decrypt(gs_session_t *session, packet_t *dest, byte_t *src)
+void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
 {
         assert(session);
         assert(dest);

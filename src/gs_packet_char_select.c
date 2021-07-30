@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
+#include "include/gs_types.h"
 #include "include/l2_string.h"
 #include "include/gs_packet_char_select.h"
 
@@ -12,7 +13,7 @@ void gs_packet_char_select_set_playok(gs_packet_char_select_t *dest, int playOK1
 
 void gs_packet_char_select_set_char(
         gs_packet_char_select_t *dest,
-        gs_character_t *src)
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);
@@ -28,18 +29,18 @@ void gs_packet_char_select_set_char(
         dest->exp       = src->exp;
         dest->sp        = src->sp;
         dest->level     = src->level;
-        dest->hp        = src->hp;
-        dest->mp        = src->mp;
-        dest->con       = src->con;
-        dest->dex       = src->dex;
-        dest->men       = src->men;
-        dest->str       = src->str;
-        dest->wit       = src->wit;
-        dest->_int      = src->_int;
+        dest->hp        = src->stats.hp;
+        dest->mp        = src->stats.mp;
+        dest->con       = src->stats.con;
+        dest->dex       = src->stats.dex;
+        dest->men       = src->stats.men;
+        dest->str       = src->stats.str;
+        dest->wit       = src->stats.wit;
+        dest->_int      = src->stats._int;
         dest->sex       = src->sex;
-        dest->x         = src->x;
-        dest->y         = src->y;
-        dest->z         = src->z;
+        dest->x         = src->position.x;
+        dest->y         = src->position.y;
+        dest->z         = src->position.z;
         dest->game_time = 42;
 }
 

@@ -1,20 +1,21 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_move.h"
 
-void gs_packet_move(gs_packet_move_t *dest, gs_character_t *src)
+void gs_packet_move(gs_packet_move_t *dest, struct gs_character *src)
 {
         assert(dest);
         assert(src);
 
         dest->id     = src->id;
-        dest->prev_x = src->x;
-        dest->prev_y = src->y;
-        dest->prev_z = src->z;
-        dest->new_x  = src->target_x;
-        dest->new_y  = src->target_y;
-        dest->new_z  = src->target_z;
+        dest->prev_x = src->position.x;
+        dest->prev_y = src->position.y;
+        dest->prev_z = src->position.z;
+        dest->new_x  = src->ai.moving_to.x;
+        dest->new_y  = src->ai.moving_to.y;
+        dest->new_z  = src->ai.moving_to.z;
 }
 
 void gs_packet_move_pack(packet_t *dest, gs_packet_move_t *src)

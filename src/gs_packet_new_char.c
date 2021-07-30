@@ -1,12 +1,12 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
-#include "include/gs_character_template.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_new_char.h"
 
 void gs_packet_new_char_add_template(
         gs_packet_new_char_t *dest,
-        gs_character_template_t *src)
+        struct gs_character_template *src)
 {
         assert(dest);
         assert(src);
@@ -14,12 +14,12 @@ void gs_packet_new_char_add_template(
 
         dest->templates[dest->count].race   = src->race;
         dest->templates[dest->count]._class = src->_class;
-        dest->templates[dest->count].con    = src->con;
-        dest->templates[dest->count].dex    = src->dex;
-        dest->templates[dest->count].men    = src->men;
-        dest->templates[dest->count].str    = src->str;
-        dest->templates[dest->count].wit    = src->wit;
-        dest->templates[dest->count]._int   = src->_int;
+        dest->templates[dest->count].con    = src->stats.con;
+        dest->templates[dest->count].dex    = src->stats.dex;
+        dest->templates[dest->count].men    = src->stats.men;
+        dest->templates[dest->count].str    = src->stats.str;
+        dest->templates[dest->count].wit    = src->stats.wit;
+        dest->templates[dest->count]._int   = src->stats._int;
 
         dest->count += 1;
 }

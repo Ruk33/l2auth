@@ -2,9 +2,9 @@
 #define INCLUDE_GS_PACKET_AUTH_LOGIN_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "packet.h"
 #include "l2_string.h"
-#include "gs_character.h"
 
 typedef struct {
         int empty[10];
@@ -78,7 +78,7 @@ typedef struct {
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src);
+        struct gs_character *src);
 
 void gs_packet_auth_login_pack(packet_t *dest, gs_packet_auth_login_t *src);
 

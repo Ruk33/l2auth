@@ -2,9 +2,9 @@
 #define INCLUDE_GS_PACKET_NPC_INFO_T
 
 #include "util.h"
+#include "gs_types.h"
 #include "packet.h"
 #include "l2_string.h"
-#include "gs_character.h"
 
 typedef struct {
         u32_t id;
@@ -40,7 +40,7 @@ typedef struct {
         u8_t team_circle;
 } gs_packet_npc_info_t;
 
-void gs_packet_npc_info(gs_packet_npc_info_t *dest, gs_character_t *src);
+void gs_packet_npc_info(gs_packet_npc_info_t *dest, struct gs_character *src);
 
 void gs_packet_npc_info_pack(packet_t *dest, gs_packet_npc_info_t *src);
 

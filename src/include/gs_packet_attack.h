@@ -2,8 +2,8 @@
 #define INCLUDE_GS_PACKET_ATTACK_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "packet.h"
-#include "gs_character.h"
 
 typedef struct {
         u32_t target_id;
@@ -22,7 +22,7 @@ typedef struct {
 
 void gs_packet_attack_set_attacker(
         gs_packet_attack_t *dest,
-        gs_character_t *src);
+        struct gs_character *src);
 
 void gs_packet_attack_add_hit(
         gs_packet_attack_t *dest,

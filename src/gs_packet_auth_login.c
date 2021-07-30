@@ -1,12 +1,12 @@
 #include <assert.h>
 #include "include/util.h"
 #include "include/packet.h"
-#include "include/gs_character.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_auth_login.h"
 
 void gs_packet_auth_login_add_character(
         gs_packet_auth_login_t *dest,
-        gs_character_t *src)
+        struct gs_character *src)
 {
         gs_packet_auth_login_char_t *character = 0;
 
@@ -30,17 +30,17 @@ void gs_packet_auth_login_add_character(
         character->face          = src->face;
         character->hair_color_id = src->hair_color;
         character->hair_style_id = src->hair_style;
-        character->hp            = src->hp;
+        character->hp            = src->stats.hp;
 
         character->id     = src->session->id;
         character->level  = src->level;
-        character->max_hp = src->max_hp;
-        character->max_mp = src->max_mp;
-        character->mp     = src->mp;
+        character->max_hp = src->stats.max_hp;
+        character->max_mp = src->stats.max_mp;
+        character->mp     = src->stats.mp;
         character->sex    = src->sex;
-        character->x      = src->x;
-        character->y      = src->y;
-        character->z      = src->z;
+        character->x      = src->position.x;
+        character->y      = src->position.y;
+        character->z      = src->position.z;
         character->sp     = src->sp;
         character->exp    = src->exp;
 

@@ -2,9 +2,9 @@
 #define INCLUDE_GS_PACKET_USER_INFO_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "l2_string.h"
 #include "packet.h"
-#include "gs_character.h"
 
 typedef struct {
         i32_t x;
@@ -113,7 +113,7 @@ typedef struct {
 
 void gs_packet_user_info_set_char(
         gs_packet_user_info_t *dest,
-        gs_character_t *src);
+        struct gs_character *src);
 
 void gs_packet_user_info_pack(packet_t *dest, gs_packet_user_info_t *src);
 

@@ -126,7 +126,7 @@ child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
                 // os_socket_close(socket);
                 break;
         case OS_IO_TIMER_TICK:
-                on_tick(0);
+                on_tick(0.1);
                 break;
         default:
                 break;
@@ -187,7 +187,7 @@ int main(/* int argc, char **argv */)
                      -1,
                      0);
 
-        timer  = os_io_timer(1);
+        timer  = os_io_timer(0.1);
         socket = os_io_socket_create(7777, 30);
 
         if (!timer) {

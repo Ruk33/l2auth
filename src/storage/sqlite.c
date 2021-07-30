@@ -1,7 +1,7 @@
 #include <sqlite3.h>
 #include "../include/util.h"
 #include "../include/log.h"
-#include "../include/gs_character.h"
+#include "../include/gs_types.h"
 #include "../include/storage.h"
 
 // Log if operation didn't executed well.
@@ -115,56 +115,56 @@
 
 static sqlite3 *conn = 0;
 
-static void sqlite_to_character(gs_character_t *dest, sqlite3_stmt *stmt)
+static void sqlite_to_character(struct gs_character *dest, sqlite3_stmt *stmt)
 {
         int col = 0;
 
         col = 1;
 
         sqlite_cpy_text((byte_t *) (dest->name), stmt, col++);
-        dest->race           = sqlite3_column_int(stmt, col++);
-        dest->sex            = sqlite3_column_int(stmt, col++);
-        dest->_class         = sqlite3_column_int(stmt, col++);
-        dest->_int           = sqlite3_column_int(stmt, col++);
-        dest->str            = sqlite3_column_int(stmt, col++);
-        dest->con            = sqlite3_column_int(stmt, col++);
-        dest->men            = sqlite3_column_int(stmt, col++);
-        dest->dex            = sqlite3_column_int(stmt, col++);
-        dest->wit            = sqlite3_column_int(stmt, col++);
-        dest->hair_style     = sqlite3_column_int(stmt, col++);
-        dest->hair_color     = sqlite3_column_int(stmt, col++);
-        dest->face           = sqlite3_column_int(stmt, col++);
-        dest->level          = sqlite3_column_int(stmt, col++);
-        dest->exp            = sqlite3_column_int(stmt, col++);
-        dest->sp             = sqlite3_column_int(stmt, col++);
-        dest->hp             = sqlite3_column_int(stmt, col++);
-        dest->mp             = sqlite3_column_int(stmt, col++);
-        dest->cp             = sqlite3_column_int(stmt, col++);
-        dest->max_hp         = sqlite3_column_int(stmt, col++);
-        dest->max_mp         = sqlite3_column_int(stmt, col++);
-        dest->max_cp         = sqlite3_column_int(stmt, col++);
-        dest->p_attack       = sqlite3_column_int(stmt, col++);
-        dest->m_attack       = sqlite3_column_int(stmt, col++);
-        dest->p_def          = sqlite3_column_int(stmt, col++);
-        dest->m_def          = sqlite3_column_int(stmt, col++);
-        dest->evasion_rate   = sqlite3_column_int(stmt, col++);
-        dest->accuracy       = sqlite3_column_int(stmt, col++);
-        dest->critical_hit   = sqlite3_column_int(stmt, col++);
-        dest->run_speed      = sqlite3_column_int(stmt, col++);
-        dest->walk_speed     = sqlite3_column_int(stmt, col++);
-        dest->p_attack_speed = sqlite3_column_int(stmt, col++);
-        dest->m_attack_speed = sqlite3_column_int(stmt, col++);
+        dest->race                 = sqlite3_column_int(stmt, col++);
+        dest->sex                  = sqlite3_column_int(stmt, col++);
+        dest->_class               = sqlite3_column_int(stmt, col++);
+        dest->stats._int           = sqlite3_column_int(stmt, col++);
+        dest->stats.str            = sqlite3_column_int(stmt, col++);
+        dest->stats.con            = sqlite3_column_int(stmt, col++);
+        dest->stats.men            = sqlite3_column_int(stmt, col++);
+        dest->stats.dex            = sqlite3_column_int(stmt, col++);
+        dest->stats.wit            = sqlite3_column_int(stmt, col++);
+        dest->hair_style           = sqlite3_column_int(stmt, col++);
+        dest->hair_color           = sqlite3_column_int(stmt, col++);
+        dest->face                 = sqlite3_column_int(stmt, col++);
+        dest->level                = sqlite3_column_int(stmt, col++);
+        dest->exp                  = sqlite3_column_int(stmt, col++);
+        dest->sp                   = sqlite3_column_int(stmt, col++);
+        dest->stats.hp             = sqlite3_column_int(stmt, col++);
+        dest->stats.mp             = sqlite3_column_int(stmt, col++);
+        dest->stats.cp             = sqlite3_column_int(stmt, col++);
+        dest->stats.max_hp         = sqlite3_column_int(stmt, col++);
+        dest->stats.max_mp         = sqlite3_column_int(stmt, col++);
+        dest->stats.max_cp         = sqlite3_column_int(stmt, col++);
+        dest->stats.p_attack       = sqlite3_column_int(stmt, col++);
+        dest->stats.m_attack       = sqlite3_column_int(stmt, col++);
+        dest->stats.p_def          = sqlite3_column_int(stmt, col++);
+        dest->stats.m_def          = sqlite3_column_int(stmt, col++);
+        dest->stats.evasion_rate   = sqlite3_column_int(stmt, col++);
+        dest->stats.accuracy       = sqlite3_column_int(stmt, col++);
+        dest->stats.critical_hit   = sqlite3_column_int(stmt, col++);
+        dest->stats.run_speed      = sqlite3_column_int(stmt, col++);
+        dest->stats.walk_speed     = sqlite3_column_int(stmt, col++);
+        dest->stats.p_attack_speed = sqlite3_column_int(stmt, col++);
+        dest->stats.m_attack_speed = sqlite3_column_int(stmt, col++);
 
-        dest->movement_speed_multiplier = sqlite3_column_int(stmt, col++);
-        dest->attack_speed_multiplier   = sqlite3_column_int(stmt, col++);
+        dest->stats.movement_speed_multiplier = sqlite3_column_int(stmt, col++);
+        dest->stats.attack_speed_multiplier   = sqlite3_column_int(stmt, col++);
 
         dest->collision_radius = sqlite3_column_int(stmt, col++);
         dest->collision_height = sqlite3_column_int(stmt, col++);
         dest->name_color       = sqlite3_column_int(stmt, col++);
         dest->max_load         = sqlite3_column_int(stmt, col++);
-        dest->x                = sqlite3_column_int(stmt, col++);
-        dest->y                = sqlite3_column_int(stmt, col++);
-        dest->z                = sqlite3_column_int(stmt, col++);
+        dest->position.x       = sqlite3_column_int(stmt, col++);
+        dest->position.y       = sqlite3_column_int(stmt, col++);
+        dest->position.z       = sqlite3_column_int(stmt, col++);
 }
 
 static void conn_open(void)
@@ -177,7 +177,8 @@ static void conn_close(void)
         sqlite3_close(conn);
 }
 
-size_t storage_get_characters(gs_character_t *dest, char *username, size_t max)
+size_t
+storage_get_characters(struct gs_character *dest, char *username, size_t max)
 {
         sqlite3_stmt *stmt = 0;
 
@@ -200,7 +201,7 @@ size_t storage_get_characters(gs_character_t *dest, char *username, size_t max)
         return found;
 }
 
-int storage_create_character(char *username, gs_character_t *src)
+int storage_create_character(char *username, struct gs_character *src)
 {
         sqlite3_stmt *stmt = 0;
 
@@ -215,44 +216,44 @@ int storage_create_character(char *username, gs_character_t *src)
         bind_int_attr(stmt, src, race);
         bind_int_attr(stmt, src, sex);
         bind_int_attr(stmt, src, _class);
-        bind_int_attr(stmt, src, _int);
-        bind_int_attr(stmt, src, str);
-        bind_int_attr(stmt, src, con);
-        bind_int_attr(stmt, src, men);
-        bind_int_attr(stmt, src, dex);
-        bind_int_attr(stmt, src, wit);
+        bind_int_attr(stmt, src, stats._int);
+        bind_int_attr(stmt, src, stats.str);
+        bind_int_attr(stmt, src, stats.con);
+        bind_int_attr(stmt, src, stats.men);
+        bind_int_attr(stmt, src, stats.dex);
+        bind_int_attr(stmt, src, stats.wit);
         bind_int_attr(stmt, src, hair_style);
         bind_int_attr(stmt, src, hair_color);
         bind_int_attr(stmt, src, face);
         bind_int_attr(stmt, src, level);
         bind_int_attr(stmt, src, exp);
         bind_int_attr(stmt, src, sp);
-        bind_int_attr(stmt, src, hp);
-        bind_int_attr(stmt, src, mp);
-        bind_int_attr(stmt, src, cp);
-        bind_int_attr(stmt, src, max_hp);
-        bind_int_attr(stmt, src, max_mp);
-        bind_int_attr(stmt, src, max_cp);
-        bind_int_attr(stmt, src, p_attack);
-        bind_int_attr(stmt, src, m_attack);
-        bind_int_attr(stmt, src, p_def);
-        bind_int_attr(stmt, src, m_def);
-        bind_int_attr(stmt, src, evasion_rate);
-        bind_int_attr(stmt, src, accuracy);
-        bind_int_attr(stmt, src, critical_hit);
-        bind_int_attr(stmt, src, run_speed);
-        bind_int_attr(stmt, src, walk_speed);
-        bind_int_attr(stmt, src, p_attack_speed);
-        bind_int_attr(stmt, src, m_attack_speed);
-        bind_int_attr(stmt, src, movement_speed_multiplier);
-        bind_int_attr(stmt, src, attack_speed_multiplier);
+        bind_int_attr(stmt, src, stats.hp);
+        bind_int_attr(stmt, src, stats.mp);
+        bind_int_attr(stmt, src, stats.cp);
+        bind_int_attr(stmt, src, stats.max_hp);
+        bind_int_attr(stmt, src, stats.max_mp);
+        bind_int_attr(stmt, src, stats.max_cp);
+        bind_int_attr(stmt, src, stats.p_attack);
+        bind_int_attr(stmt, src, stats.m_attack);
+        bind_int_attr(stmt, src, stats.p_def);
+        bind_int_attr(stmt, src, stats.m_def);
+        bind_int_attr(stmt, src, stats.evasion_rate);
+        bind_int_attr(stmt, src, stats.accuracy);
+        bind_int_attr(stmt, src, stats.critical_hit);
+        bind_int_attr(stmt, src, stats.run_speed);
+        bind_int_attr(stmt, src, stats.walk_speed);
+        bind_int_attr(stmt, src, stats.p_attack_speed);
+        bind_int_attr(stmt, src, stats.m_attack_speed);
+        bind_int_attr(stmt, src, stats.movement_speed_multiplier);
+        bind_int_attr(stmt, src, stats.attack_speed_multiplier);
         bind_int_attr(stmt, src, collision_radius);
         bind_int_attr(stmt, src, collision_height);
         bind_int_attr(stmt, src, name_color);
         bind_int_attr(stmt, src, max_load);
-        bind_int_attr(stmt, src, x);
-        bind_int_attr(stmt, src, y);
-        bind_int_attr(stmt, src, z);
+        bind_int_attr(stmt, src, position.x);
+        bind_int_attr(stmt, src, position.y);
+        bind_int_attr(stmt, src, position.z);
 
         sqlite_step_and_finalize(stmt);
 

@@ -2,19 +2,19 @@
 #define INCLUDE_GS_LIB_H
 
 #include "util.h"
+#include "gs_types.h"
 #include "config.h"
 #include "conn.h"
 #include "os_io.h"
-#include "gs_session.h"
 #include "gs_character.h"
 
 typedef struct {
         conn_send_response_cb send_response;
 
-        gs_session_t sessions[MAX_CLIENTS];
+        struct gs_session sessions[MAX_CLIENTS];
         size_t session_count;
 
-        gs_character_t characters[MAX_CLIENTS];
+        struct gs_character characters[MAX_CLIENTS];
         size_t character_count;
 } gs_lib_t;
 

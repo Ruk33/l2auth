@@ -2,12 +2,12 @@
 #include "include/util.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
-#include "include/gs_character.h"
+#include "include/gs_types.h"
 #include "include/gs_packet_user_info.h"
 
 void gs_packet_user_info_set_char(
         gs_packet_user_info_t *dest,
-        gs_character_t *src)
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);
@@ -15,49 +15,49 @@ void gs_packet_user_info_set_char(
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
 
         dest->heading       = src->heading;
-        dest->x             = src->x;
-        dest->y             = src->y;
-        dest->z             = src->z;
+        dest->x             = src->position.x;
+        dest->y             = src->position.y;
+        dest->z             = src->position.z;
         dest->id            = src->session->id;
         dest->race_id       = src->race;
         dest->sex           = src->sex;
         dest->class_id      = src->_class;
         dest->level         = src->level;
         dest->exp           = src->exp;
-        dest->str           = src->str;
-        dest->dex           = src->dex;
-        dest->con           = src->con;
-        dest->_int          = src->_int;
-        dest->wit           = src->wit;
-        dest->men           = src->men;
-        dest->hp            = src->hp;
-        dest->mp            = src->mp;
-        dest->max_hp        = src->max_hp;
-        dest->max_mp        = src->max_mp;
-        dest->cp            = src->cp;
-        dest->max_cp        = src->max_cp;
+        dest->str           = src->stats.str;
+        dest->dex           = src->stats.dex;
+        dest->con           = src->stats.con;
+        dest->_int          = src->stats._int;
+        dest->wit           = src->stats.wit;
+        dest->men           = src->stats.men;
+        dest->hp            = src->stats.hp;
+        dest->mp            = src->stats.mp;
+        dest->max_hp        = src->stats.max_hp;
+        dest->max_mp        = src->stats.max_mp;
+        dest->cp            = src->stats.cp;
+        dest->max_cp        = src->stats.max_cp;
         dest->sp            = src->sp;
         dest->exp           = src->exp;
         dest->sp            = src->sp;
-        dest->p_attack      = src->p_attack;
-        dest->m_attack      = src->m_attack;
-        dest->p_def         = src->p_def;
-        dest->m_def         = src->m_def;
-        dest->evasion_rate  = src->evasion_rate;
-        dest->accuracy      = src->accuracy;
-        dest->critical_hit  = src->critical_hit;
+        dest->p_attack      = src->stats.p_attack;
+        dest->m_attack      = src->stats.m_attack;
+        dest->p_def         = src->stats.p_def;
+        dest->m_def         = src->stats.m_def;
+        dest->evasion_rate  = src->stats.evasion_rate;
+        dest->accuracy      = src->stats.accuracy;
+        dest->critical_hit  = src->stats.critical_hit;
         dest->hair_style_id = src->hair_style;
         dest->hair_color_id = src->hair_color;
         dest->face          = src->face;
         // dest->access_level    = 1;
         dest->inventory_limit = 42;
 
-        dest->run_speed                 = src->run_speed;
-        dest->walk_speed                = src->walk_speed;
-        dest->p_attack_speed            = src->p_attack_speed;
-        dest->m_attack_speed            = src->m_attack_speed;
-        dest->movement_speed_multiplier = src->movement_speed_multiplier;
-        dest->attack_speed_multiplier   = src->attack_speed_multiplier;
+        dest->run_speed                 = src->stats.run_speed;
+        dest->walk_speed                = src->stats.walk_speed;
+        dest->p_attack_speed            = src->stats.p_attack_speed;
+        dest->m_attack_speed            = src->stats.m_attack_speed;
+        dest->movement_speed_multiplier = src->stats.movement_speed_multiplier;
+        dest->attack_speed_multiplier   = src->stats.attack_speed_multiplier;
         dest->collision_radius          = src->collision_radius;
         dest->collision_height          = src->collision_height;
         dest->name_color                = src->name_color;
