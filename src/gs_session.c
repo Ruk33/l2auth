@@ -9,24 +9,16 @@
 #include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
-static struct gs_session *sessions = 0;
-static size_t *session_count       = 0;
-
-void gs_session_set(struct gs_session *src, size_t *count)
-{
-        sessions      = src;
-        session_count = count;
-}
-
-struct gs_session *gs_session_new(os_io_t *socket)
+struct gs_session *gs_session_new(struct gs_state *state, os_io_t *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
         struct gs_session *new_session = 0;
 
         assert(socket);
-        assert(*session_count < MAX_CLIENTS);
+        assert(state);
+        assert(state->session_count < MAX_CLIENTS);
 
-        new_session = &sessions[*session_count];
+        new_session = &state->sessions[state->session_count];
 
         bytes_zero((byte_t *) new_session, sizeof(*new_session));
 
@@ -36,16 +28,21 @@ struct gs_session *gs_session_new(os_io_t *socket)
         bytes_cpy(new_session->encrypt_key, key, sizeof(key));
         bytes_cpy(new_session->decrypt_key, key, sizeof(key));
 
-        *session_count += 1;
+        state->session_count += 1;
 
         return new_session;
 }
 
-struct gs_session *gs_session_find(os_io_t *socket)
+struct gs_session *gs_session_find(struct gs_state *state, os_io_t *socket)
 {
+        struct gs_session *sessions = 0;
+
+        assert(state);
         assert(socket);
 
-        for (size_t i = 0; i < *session_count; i += 1) {
+        sessions = state->sessions;
+
+        for (size_t i = 0, max = state->session_count; i < max; i += 1) {
                 if (sessions[i].socket == socket) {
                         return &sessions[i];
                 }

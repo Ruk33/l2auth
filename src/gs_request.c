@@ -25,6 +25,7 @@
 #include "include/gs_packet_leave_world.h"
 #include "include/gs_request.h"
 
+// Todo: do we really need this?
 static packet_t gs_response[65536] = { 0 };
 
 static void handle_protocol_version(struct gs_session *session)
@@ -40,12 +41,14 @@ static void handle_protocol_version(struct gs_session *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void handle_enter_world(struct gs_session *session)
+static void
+handle_enter_world(struct gs_state *state, struct gs_session *session)
 {
         static gs_packet_user_info_t user_info = { 0 };
 
         struct gs_character character = { 0 };
 
+        assert(state);
         assert(session);
 
         bytes_zero((byte_t *) &user_info, sizeof(user_info));
@@ -59,7 +62,7 @@ static void handle_enter_world(struct gs_session *session)
         character.session = session;
         character.id      = session->id;
 
-        gs_character_spawn(&character);
+        gs_character_spawn(state, &character);
 
         bytes_zero(gs_response, sizeof(gs_response));
         gs_packet_user_info_set_char(&user_info, &character);
@@ -221,8 +224,15 @@ static void handle_auto_ss_bsps(struct gs_session *session)
         conn_send_packet(session->socket, gs_response);
 }
 
-static void protocol_version_state(struct gs_session *session, packet_t *packet)
+static void protocol_version_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
+        assert(state);
+        assert(session);
+        assert(packet);
+
         switch (packet_type(packet)) {
         case 0x00: // Protocol version
                 handle_protocol_version(session);
@@ -234,8 +244,15 @@ static void protocol_version_state(struct gs_session *session, packet_t *packet)
         }
 }
 
-static void auth_request_state(struct gs_session *session, packet_t *packet)
+static void auth_request_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
+        assert(state);
+        assert(session);
+        assert(packet);
+
         switch (packet_type(packet)) {
         case 0x08: // Auth request
                 handle_auth_login(session, packet);
@@ -247,9 +264,15 @@ static void auth_request_state(struct gs_session *session, packet_t *packet)
         }
 }
 
-static void
-character_selection_state(struct gs_session *session, packet_t *packet)
+static void character_selection_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
+        assert(state);
+        assert(session);
+        assert(packet);
+
         switch (packet_type(packet)) {
         case 0x0d: // Selected char.
                 handle_selected_character(session, packet);
@@ -265,9 +288,15 @@ character_selection_state(struct gs_session *session, packet_t *packet)
         }
 }
 
-static void
-creating_character_state(struct gs_session *session, packet_t *packet)
+static void creating_character_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
+        assert(state);
+        assert(session);
+        assert(packet);
+
         switch (packet_type(packet)) {
         case 0x0b: // Create character
                 handle_create_character(session, packet);
@@ -281,16 +310,23 @@ creating_character_state(struct gs_session *session, packet_t *packet)
                  * accept states from character selection.
                  */
                 log("packet delegated from creating character to character selection.");
-                character_selection_state(session, packet);
+                character_selection_state(state, session, packet);
                 break;
         }
 }
 
-static void entering_world_state(struct gs_session *session, packet_t *packet)
+static void entering_world_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
+        assert(state);
+        assert(session);
+        assert(packet);
+
         switch (packet_type(packet)) {
         case 0x03: // Enter world.
-                handle_enter_world(session);
+                handle_enter_world(state, session);
                 session->state = IN_WORLD;
                 break;
         case 0x63: // Quest list.
@@ -305,34 +341,39 @@ static void entering_world_state(struct gs_session *session, packet_t *packet)
         }
 }
 
-static void in_world_state(struct gs_session *session, packet_t *packet)
+static void in_world_state(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
         struct gs_character *character = 0;
 
+        assert(state);
         assert(session);
         assert(packet);
 
-        character = gs_character_from_session(session);
+        character = gs_character_from_session(state, session);
 
         if (!character) {
                 log("no character found for session. Disconnect?");
                 return;
         }
 
-        gs_ai_handle_request(character, packet);
+        gs_ai_handle_request(state, character, packet);
 }
 
-void gs_request_new_conn(os_io_t *socket)
+void gs_request_new_conn(struct gs_state *state, os_io_t *socket)
 {
         struct gs_session *session = 0;
 
+        assert(state);
         assert(socket);
 
-        session = gs_session_new(socket);
+        session = gs_session_new(state, socket);
         log("new game session with id %d generated.", session->id);
 }
 
-void gs_request(os_io_t *socket, byte_t *buf, size_t n)
+void gs_request(struct gs_state *state, os_io_t *socket, byte_t *buf, size_t n)
 {
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
@@ -341,9 +382,10 @@ void gs_request(os_io_t *socket, byte_t *buf, size_t n)
 
         u16_t size = 0;
 
+        assert(state);
         assert(socket);
 
-        session = gs_session_find(socket);
+        session = gs_session_find(state, socket);
 
         if (!session) {
                 log("game server, no session found for request. Ignoring.");
@@ -357,22 +399,22 @@ void gs_request(os_io_t *socket, byte_t *buf, size_t n)
 
         switch (session->state) {
         case PROTOCOL_VERSION:
-                protocol_version_state(session, packet);
+                protocol_version_state(state, session, packet);
                 break;
         case AUTH_REQUEST:
-                auth_request_state(session, packet);
+                auth_request_state(state, session, packet);
                 break;
         case CHARACTER_SELECTION:
-                character_selection_state(session, packet);
+                character_selection_state(state, session, packet);
                 break;
         case CREATING_CHARACTER:
-                creating_character_state(session, packet);
+                creating_character_state(state, session, packet);
                 break;
         case ENTERING_WORLD:
-                entering_world_state(session, packet);
+                entering_world_state(state, session, packet);
                 break;
         case IN_WORLD:
-                in_world_state(session, packet);
+                in_world_state(state, session, packet);
                 break;
         default:
                 log("session in invalid state. Disconnect?");
@@ -383,17 +425,19 @@ void gs_request(os_io_t *socket, byte_t *buf, size_t n)
 
         // There can be multiple packets inside of buf.
         if (size < n) {
-                gs_request(socket, buf + size, n - size);
+                gs_request(state, socket, buf + size, n - size);
         }
 }
 
-void gs_request_disconnect(os_io_t *socket)
+void gs_request_disconnect(struct gs_state *state, os_io_t *socket)
 {
         gs_packet_leave_world_t leave_world = { 0 };
 
         struct gs_session *session = 0;
 
-        session = gs_session_find(socket);
+        assert(state);
+
+        session = gs_session_find(state, socket);
 
         if (!session) {
                 log("disconnected client had no session, ignoring.");
@@ -408,13 +452,15 @@ void gs_request_disconnect(os_io_t *socket)
         conn_send_packet(session->socket, gs_response);
 }
 
-void gs_request_tick(double delta)
+void gs_request_tick(struct gs_state *state, double delta)
 {
         struct gs_character *characters = 0;
 
-        characters = gs_character_all();
+        assert(state);
 
-        for (size_t i = 0, max = gs_character_all_count(); i < max; i += 1) {
-                gs_ai_tick(&characters[i], delta);
+        characters = state->characters;
+
+        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
+                gs_ai_tick(state, &characters[i], delta);
         }
 }

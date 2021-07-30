@@ -1,6 +1,8 @@
 #ifndef INCLUDE_GS_TYPES_H
 #define INCLUDE_GS_TYPES_H
 
+#include <time.h>
+
 #include "config.h"
 #include "util.h"
 #include "os_io.h"
@@ -59,10 +61,24 @@ struct gs_point {
         i32_t z;
 };
 
+// TODO: Refactor, find our own way.
+// Thanks to L2J project for providing this first iteration.
+struct gs_move_data {
+        u64_t move_timestamp;
+        struct gs_point destination;
+        struct gs_point origin;
+        i32_t heading;
+        u64_t move_start_time;
+        u32_t ticks_to_move;
+        double x_speed_ticks;
+        double y_speed_ticks;
+};
+
 struct gs_ai {
         enum gs_ai_state state;
         u32_t target_id;
         struct gs_point moving_to;
+        struct gs_move_data move_data;
         double attack_cd;
 };
 
@@ -122,6 +138,17 @@ struct gs_character {
         u32_t max_load;
         double collision_radius;
         double collision_height;
+};
+
+struct gs_state {
+        struct gs_session sessions[MAX_CLIENTS];
+        size_t session_count;
+
+        struct gs_character characters[MAX_CHARACTERS];
+        size_t character_count;
+
+        u64_t game_ticks;
+        time_t game_start_time;
 };
 
 #endif

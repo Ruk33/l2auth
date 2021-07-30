@@ -19,9 +19,7 @@
 #include "include/gs_packet_attack.h"
 #include "include/gs_character.h"
 
-static struct gs_character *characters = 0;
-static size_t *character_count         = 0;
-
+// Todo: do we really need this one?
 static packet_t response[65536] = { 0 };
 
 static int gs_character_is_npc(struct gs_character *src)
@@ -63,9 +61,16 @@ gs_character_distance(struct gs_character *a, struct gs_character *b)
         return gs_character_distance_to_point(a, &b->position);
 }
 
-static struct gs_character *gs_character_find_by_id(u32_t id)
+static struct gs_character *
+gs_character_find_by_id(struct gs_state *state, u32_t id)
 {
-        for (size_t i = 0; i < *character_count; i += 1) {
+        struct gs_character *characters = 0;
+
+        assert(state);
+
+        characters = state->characters;
+
+        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
                 if (characters[i].id == id) {
                         return &characters[i];
                 }
@@ -88,36 +93,48 @@ gs_character_encrypt_and_send_packet(struct gs_character *from, packet_t *packet
         conn_send_packet(from->session->socket, packet);
 }
 
-static void
-gs_character_broadcast_packet(struct gs_character *from, packet_t *packet)
+static void gs_character_broadcast_packet(
+        struct gs_state *state,
+        struct gs_character *from,
+        packet_t *packet)
 {
+        struct gs_character *characters = 0;
+
+        assert(state);
         assert(from);
         assert(packet);
 
-        for (size_t i = 0; i < *character_count; i += 1) {
+        characters = state->characters;
+
+        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
                 bytes_zero(response, sizeof(response));
                 bytes_cpy(response, packet, (size_t) packet_size(packet));
                 gs_character_encrypt_and_send_packet(&characters[i], response);
         }
 }
 
-static void
-gs_character_move(struct gs_character *character, struct gs_point *p)
+static void gs_character_move(
+        struct gs_state *state,
+        struct gs_character *character,
+        struct gs_point *p)
 {
         gs_packet_move_t move_response = { 0 };
 
         packet_t packet[32] = { 0 };
 
+        assert(state);
         assert(character);
         assert(p);
 
         gs_packet_move(&move_response, character);
         gs_packet_move_pack(packet, &move_response);
-        gs_character_broadcast_packet(character, packet);
+        gs_character_broadcast_packet(state, character, packet);
 }
 
-static void
-gs_character_attack(struct gs_character *attacker, struct gs_character *target)
+static void gs_character_attack(
+        struct gs_state *state,
+        struct gs_character *attacker,
+        struct gs_character *target)
 {
         gs_packet_auto_attack_t auto_attack = { 0 };
 
@@ -132,6 +149,7 @@ gs_character_attack(struct gs_character *attacker, struct gs_character *target)
         i32_t x  = 0;
         i32_t y  = 0;
 
+        assert(state);
         assert(attacker);
         assert(target);
 
@@ -144,8 +162,8 @@ gs_character_attack(struct gs_character *attacker, struct gs_character *target)
         gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
         gs_packet_attack_pack(attack_packet, &attack);
 
-        gs_character_broadcast_packet(attacker, auto_attack_packet);
-        gs_character_broadcast_packet(attacker, attack_packet);
+        gs_character_broadcast_packet(state, attacker, auto_attack_packet);
+        gs_character_broadcast_packet(state, attacker, attack_packet);
 }
 
 static void gs_character_select_target(
@@ -177,9 +195,11 @@ static void gs_character_validate_position(struct gs_character *character)
         gs_character_encrypt_and_send_packet(character, response);
 }
 
-static void gs_character_spawn_random_orc(void)
+static void gs_character_spawn_random_orc(struct gs_state *state)
 {
         struct gs_character orc = { 0 };
+
+        assert(state);
 
         gs_random_id(&orc.id);
 
@@ -212,24 +232,7 @@ static void gs_character_spawn_random_orc(void)
         bytes_cpy_str(orc.name, "Orc", sizeof(orc.name) - 1);
         bytes_cpy_str(orc.title, "Archer", sizeof(orc.title) - 1);
 
-        gs_character_spawn(&orc);
-}
-
-// Todo: deprecate
-static void gs_character_set(struct gs_character *src, size_t *count)
-{
-        characters      = src;
-        character_count = count;
-}
-
-static struct gs_character *gs_character_all(void)
-{
-        return characters;
-}
-
-static size_t gs_character_all_count(void)
-{
-        return *character_count;
+        gs_character_spawn(state, &orc);
 }
 
 static void gs_character_from_request(
@@ -287,17 +290,22 @@ static void gs_character_from_request(
         dest->name_color                      = 0xFFFFFF;
 }
 
-static void gs_character_spawn(struct gs_character *src)
+static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
 {
         static gs_packet_char_info_t char_info = { 0 };
         static gs_packet_npc_info_t npc_info   = { 0 };
 
+        struct gs_character *characters = 0;
+
+        assert(state);
         assert(src);
         assert(src->id);
 
+        characters = state->characters;
+
         log("Spawning and notifying close players.");
 
-        for (size_t i = 0; i < *character_count; i += 1) {
+        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
                 // Notify player in the world of the new spawning character.
                 bytes_zero(response, sizeof(response));
 
@@ -334,16 +342,21 @@ static void gs_character_spawn(struct gs_character *src)
                 gs_character_encrypt_and_send_packet(src, response);
         }
 
-        characters[*character_count] = *src;
-        *character_count += 1;
+        characters[state->character_count] = *src;
+        state->character_count += 1;
 }
 
 static struct gs_character *
-gs_character_from_session(struct gs_session *session)
+gs_character_from_session(struct gs_state *state, struct gs_session *session)
 {
+        struct gs_character *characters = 0;
+
+        assert(state);
         assert(session);
 
-        for (size_t i = 0; i < *character_count; i += 1) {
+        characters = state->characters;
+
+        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
                 if (characters[i].session == session) {
                         return &characters[i];
                 }

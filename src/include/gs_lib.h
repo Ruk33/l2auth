@@ -10,12 +10,7 @@
 
 typedef struct {
         conn_send_response_cb send_response;
-
-        struct gs_session sessions[MAX_CLIENTS];
-        size_t session_count;
-
-        struct gs_character characters[MAX_CLIENTS];
-        size_t character_count;
+        struct gs_state state;
 } gs_lib_t;
 
 void gs_lib_load(gs_lib_t *gs_lib);

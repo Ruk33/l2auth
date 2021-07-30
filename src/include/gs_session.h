@@ -8,11 +8,9 @@
 #include "os_io.h"
 #include "gs_packet_auth_request.h"
 
-void gs_session_set(struct gs_session *sessions, size_t *count);
+struct gs_session *gs_session_new(struct gs_state *state, os_io_t *socket);
 
-struct gs_session *gs_session_new(os_io_t *socket);
-
-struct gs_session *gs_session_find(os_io_t *socket);
+struct gs_session *gs_session_find(struct gs_state *state, os_io_t *socket);
 
 // Mark the connection as encrypted.
 // This function AFFECTS gs_session_decrypt.

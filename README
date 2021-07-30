@@ -23,6 +23,12 @@ localhost using port 2106.
 Run build/game_server. The game server will listen for connection to
 localhost using port 7777.
 
+== Live changes
+The game server supports changes without having to shutdown or restart
+the server itself.
+Just run the game server, make a change, and run make gslib. The new changes
+will be live.
+
 == Dependencies
 - openssl
 - sqlite3
@@ -71,16 +77,21 @@ Other than the first packet, all the login server packets are encrypted with
 blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == To do
+- [ ] Deprecate fork/process for each request.
+- [ ] Check precision using time vs function returning milliseconds.
+- [ ] Find a way to upload system folder.
+- [ ] Check what's the error when creating a new character (column index out of range)
+- [ ] Implement damage
+- [ ] Double check the game server when a client gets disconnected
+      The requests are not being handled correctly.
 - [x] Remove/deprecate cmake, it's not worth it.
 - [x] Add build/makefile to rebuild project and database if required.
 - [x] Check work flow. For some reason, I delete the database and needs
       to be recreated.
-- [ ] Double check the game server when a client gets disconnected
-      The requests are not being handled correctly.
-- [ ] I think I need to tick every 0.1 seconds instead of 1 second.
-- [ ] Fix the movement. Even though now the position is kinda updated,
+- [x] I think I need to tick every 0.1 seconds instead of 1 second.
+- [x] Fix the movement. Even though now the position is kinda updated,
       it needs to be more precise.
-- [ ] Fix orc ai, it drops the brain on each step.
+- [x] Fix orc ai, it drops the brain on each step.
 - [x] Hotcode reload
 - [x] Display terms of service view
 - [x] Display server list
@@ -113,6 +124,7 @@ A few rules for contributors:
 - Only 1 storage/database connection is used for the server
 - Only game_server/main.c and login_server/main.c are allowed to spawn threads
 - Variables exceeding 100 bytes, must be static and zeroed before used
+- The code should be robust enough to handle either bad and good requests without crashing
 - Have fun
 
 Changes will be accepted through patches. Currently I'm using Fossil for 
