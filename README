@@ -93,7 +93,7 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 == To do
 - [ ] Deprecate fork/process for each request.
 - [ ] Check precision using time vs function returning milliseconds.
-- [ ] Find a way to upload system folder.
+- [x] Find a way to upload system folder.
 - [ ] Check what's the error when creating a new character (column index out of range)
 - [ ] Implement damage
 - [ ] Double check the game server when a client gets disconnected
