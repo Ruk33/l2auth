@@ -1,6 +1,20 @@
 == L2 Auth
 Simple Lineage 2 C4 server emulator written in C as a learning exercise.
 
+== System in Windows 10
+I have uploaded my system folder that works fine in Windows 10. Remember, this
+is for Lineage 2 Chronicle 4.
+
+https://drive.google.com/file/d/18SFuJkZB7y7JlIaxoD4goPjfVwmYhutK/view?usp=sharing
+
+The only update required is to change your hosts file.
+Add the following line:
+
+127.0.0.1 l2authd.lineage2.com
+
+In Windows, the host file can be found in \Windows\System32\drivers\etc\hosts.
+In Linux, the host file can be found in /etc/hosts.
+
 == Streaming
 If you would like to follow the project's progress, I stream 
 on https://www.twitch.tv/franco_montenegro.
