@@ -95,14 +95,10 @@ static int init_gs_lib(void)
         return 1;
 }
 
-// When a new request arrives, the parent process will spawn
-// a child to handle the request. This way, if the request fails
-// or crashes, the server will keep running.
 static void
-child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
+on_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 {
-        // Required?
-        gs_lib->send_response = internal_send_response;
+        assert(gs_lib->send_response);
 
         if (!init_gs_lib()) {
                 printf("unable to load game server library.\n");
@@ -133,44 +129,6 @@ child_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
         }
 
         fflush(stdout);
-        exit(EXIT_SUCCESS);
-}
-
-static void
-parent_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
-{
-        pid_t pid   = 0;
-        int wstatus = 0;
-
-        pid = fork();
-
-        switch (pid) {
-        case -1:
-                printf("spawn process failed.\n");
-                exit(EXIT_FAILURE);
-        case 0: // child
-                // printf("spawned child process. pid: %d.\n", pid);
-                child_io_event(socket, event, buf, n);
-                break;
-        default: // parent
-                if (waitpid(pid, &wstatus, 0) == -1) {
-                        printf("failed to wait for child process.\n");
-                        exit(EXIT_FAILURE);
-                }
-                if (WIFEXITED(wstatus)) {
-                        // printf("child stopped successfully.\n");
-                        return;
-                }
-
-                // Note: Should we back the game state before
-                // the request crashed?
-
-                printf("child died unexpectedly, closing client connection.\n");
-                child_io_event(socket, OS_IO_SOCKET_DISCONNECTED, buf, n);
-
-                // Todo: Doesn't work as expected. Investigate.
-                // os_socket_close(socket);
-        }
 }
 
 int main(/* int argc, char **argv */)
@@ -186,6 +144,8 @@ int main(/* int argc, char **argv */)
                      MAP_SHARED | MAP_ANONYMOUS,
                      -1,
                      0);
+
+        gs_lib->send_response = internal_send_response;
 
         timer  = os_io_timer(0.1);
         socket = os_io_socket_create(7777, 30);
@@ -204,7 +164,7 @@ int main(/* int argc, char **argv */)
                 return EXIT_FAILURE;
         }
 
-        if (!os_io_listen(parent_io_event)) {
+        if (!os_io_listen(on_io_event)) {
                 printf("game server request can't be handled.\n");
                 os_io_close(timer);
                 os_io_close(socket);

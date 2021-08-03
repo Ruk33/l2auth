@@ -65,6 +65,10 @@ static void gs_character_from_request(
 static void
 gs_character_spawn(struct gs_state *state, struct gs_character *src);
 
+// Todo: make sure we broadcast this message!
+static void
+gs_character_restart(struct gs_state *state, struct gs_character *character);
+
 // Get character from session.
 // If not found, NULL is returned.
 static struct gs_character *

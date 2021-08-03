@@ -355,11 +355,17 @@ static void in_world_state(
         character = gs_character_from_session(state, session);
 
         if (!character) {
-                log("no character found for session. Disconnect?");
+                log("no character found for session. disconnect?");
                 return;
         }
 
         gs_ai_handle_request(state, character, packet);
+
+        // restart packet
+        if (packet_type(packet) == 0x46) {
+                handle_auth_login(session, 0);
+                session->state = CHARACTER_SELECTION;
+        }
 }
 
 void gs_request_new_conn(struct gs_state *state, os_io_t *socket)

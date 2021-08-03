@@ -17,6 +17,7 @@
 #include "include/gs_packet_target_selected.h"
 #include "include/gs_packet_auto_attack.h"
 #include "include/gs_packet_attack.h"
+#include "include/gs_packet_restart.h"
 #include "include/gs_character.h"
 
 // Todo: do we really need this one?
@@ -303,7 +304,7 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
 
         characters = state->characters;
 
-        log("Spawning and notifying close players.");
+        log("spawning and notifying close players.");
 
         for (size_t i = 0, max = state->character_count; i < max; i += 1) {
                 // Notify player in the world of the new spawning character.
@@ -344,6 +345,23 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
 
         characters[state->character_count] = *src;
         state->character_count += 1;
+}
+
+static void
+gs_character_restart(struct gs_state *state, struct gs_character *character)
+{
+        gs_packet_restart_t restart = { 0 };
+
+        assert(state);
+        assert(character);
+
+        restart.response = 0x01; // ok!
+
+        bytes_zero(response, sizeof(response));
+        gs_packet_restart_pack(response, &restart);
+        gs_character_encrypt_and_send_packet(character, response);
+
+        state->character_count -= 1;
 }
 
 static struct gs_character *

@@ -8,6 +8,7 @@
 #include "include/gs_packet_action_request.h"
 #include "include/gs_packet_validate_pos_request.h"
 #include "include/gs_packet_move_request.h"
+#include "include/gs_packet_restart.h"
 #include "include/gs_ai.h"
 
 static void
@@ -227,6 +228,15 @@ static void gs_ai_handle_attack_request(
         gs_ai_attack(state, character, target);
 }
 
+static void gs_ai_handle_restart_request(
+        struct gs_state *state,
+        struct gs_character *character)
+{
+        assert(state);
+        assert(character);
+        gs_character_restart(state, character);
+}
+
 static void gs_ai_idle_state(
         struct gs_state *state,
         struct gs_character *character,
@@ -250,7 +260,8 @@ static void gs_ai_idle_state(
                 log("Say, todo");
                 break;
         case 0x46: // Restart.
-                gs_character_spawn_random_orc(state);
+                // gs_character_spawn_random_orc(state);
+                gs_ai_handle_restart_request(state, character);
                 break;
         case 0x48: // Validate position.
                 gs_ai_handle_val_pos_request(character, request);
