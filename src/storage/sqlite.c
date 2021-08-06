@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sqlite3.h>
 #include "../include/util.h"
 #include "../include/log.h"
@@ -6,7 +7,7 @@
 
 // Log if operation didn't executed well.
 #define sqlite_ok_or_log(op)                              \
-        if (op != SQLITE_OK) {                            \
+        if ((op) != SQLITE_OK) {                          \
                 log("%s", (char *) sqlite3_errmsg(conn)); \
         }
 
@@ -103,6 +104,10 @@
         "select " CHARACTERS_COLUMNS \
         " from characters where username = :username limit :limit;"
 
+#define CHARACTERS_BY_USERNAME_AND_INDEX_QUERY \
+        "select " CHARACTERS_COLUMNS           \
+        " from characters where username = :username limit 1 offset :index;"
+
 #define CHARACTERS_CREATE_QUERY                                                                   \
         "insert into characters (" CHARACTERS_COLUMNS                                             \
         ") values (:username, :name, :race, :sex, :_class, :_int, :str, "                         \
@@ -118,6 +123,9 @@ static sqlite3 *conn = 0;
 static void sqlite_to_character(struct gs_character *dest, sqlite3_stmt *stmt)
 {
         int col = 0;
+
+        assert(dest);
+        assert(stmt);
 
         col = 1;
 
@@ -184,6 +192,9 @@ storage_get_characters(struct gs_character *dest, char *username, size_t max)
 
         size_t found = 0;
 
+        assert(dest);
+        assert(username);
+
         conn_open();
 
         sqlite_query(stmt, CHARACTERS_BY_USERNAME_QUERY);
@@ -196,9 +207,34 @@ storage_get_characters(struct gs_character *dest, char *username, size_t max)
                 found += 1;
         }
 
+        sqlite_ok_or_log(sqlite3_finalize(stmt));
         conn_close();
 
         return found;
+}
+
+void storage_get_character(
+        struct gs_character *dest,
+        char *username,
+        size_t index)
+{
+        sqlite3_stmt *stmt = 0;
+
+        assert(dest);
+        assert(username);
+
+        conn_open();
+
+        sqlite_query(stmt, CHARACTERS_BY_USERNAME_AND_INDEX_QUERY);
+
+        sqlite_bind_text(stmt, ":username", username);
+        sqlite_bind_int(stmt, ":index", (int) index);
+
+        sqlite_ok_or_log(sqlite3_step(stmt));
+        sqlite_to_character(dest, stmt);
+        sqlite_ok_or_log(sqlite3_finalize(stmt));
+
+        conn_close();
 }
 
 int storage_create_character(char *username, struct gs_character *src)
@@ -222,12 +258,6 @@ int storage_create_character(char *username, struct gs_character *src)
         sqlite_bind_int(stmt, ":men", src->stats.men);
         sqlite_bind_int(stmt, ":dex", src->stats.dex);
         sqlite_bind_int(stmt, ":wit", src->stats.wit);
-        // bind_int_attr(stmt, src, stats._int);
-        // bind_int_attr(stmt, src, stats.str);
-        // bind_int_attr(stmt, src, stats.con);
-        // bind_int_attr(stmt, src, stats.men);
-        // bind_int_attr(stmt, src, stats.dex);
-        // bind_int_attr(stmt, src, stats.wit);
         bind_int_attr(stmt, src, hair_style);
         bind_int_attr(stmt, src, hair_color);
         bind_int_attr(stmt, src, face);
@@ -258,25 +288,6 @@ int storage_create_character(char *username, struct gs_character *src)
                 stmt,
                 ":attack_speed_multiplier",
                 src->stats.attack_speed_multiplier);
-        // bind_int_attr(stmt, src, stats.hp);
-        // bind_int_attr(stmt, src, stats.mp);
-        // bind_int_attr(stmt, src, stats.cp);
-        // bind_int_attr(stmt, src, stats.max_hp);
-        // bind_int_attr(stmt, src, stats.max_mp);
-        // bind_int_attr(stmt, src, stats.max_cp);
-        // bind_int_attr(stmt, src, stats.p_attack);
-        // bind_int_attr(stmt, src, stats.m_attack);
-        // bind_int_attr(stmt, src, stats.p_def);
-        // bind_int_attr(stmt, src, stats.m_def);
-        // bind_int_attr(stmt, src, stats.evasion_rate);
-        // bind_int_attr(stmt, src, stats.accuracy);
-        // bind_int_attr(stmt, src, stats.critical_hit);
-        // bind_int_attr(stmt, src, stats.run_speed);
-        // bind_int_attr(stmt, src, stats.walk_speed);
-        // bind_int_attr(stmt, src, stats.p_attack_speed);
-        // bind_int_attr(stmt, src, stats.m_attack_speed);
-        // bind_int_attr(stmt, src, stats.movement_speed_multiplier);
-        // bind_int_attr(stmt, src, stats.attack_speed_multiplier);
         bind_int_attr(stmt, src, collision_radius);
         bind_int_attr(stmt, src, collision_height);
         bind_int_attr(stmt, src, name_color);
@@ -284,9 +295,6 @@ int storage_create_character(char *username, struct gs_character *src)
         sqlite_bind_int(stmt, ":x", src->position.x);
         sqlite_bind_int(stmt, ":y", src->position.y);
         sqlite_bind_int(stmt, ":z", src->position.z);
-        // bind_int_attr(stmt, src, position.x);
-        // bind_int_attr(stmt, src, position.y);
-        // bind_int_attr(stmt, src, position.z);
 
         sqlite_step_and_finalize(stmt);
 

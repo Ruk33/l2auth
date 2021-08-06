@@ -1,6 +1,7 @@
 // Required for MAP_ANONYMOUS to be defined.
 #define _DEFAULT_SOURCE
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,9 +21,9 @@
 static void *handle = 0;
 static void (*on_load)(gs_lib_t *);
 static void (*on_unload)(void);
-static void (*on_new_conn)(os_io_t *);
-static void (*on_new_req)(os_io_t *, void *, size_t);
-static void (*on_disconnect)(os_io_t *);
+static void (*on_new_conn)(struct os_io *);
+static void (*on_new_req)(struct os_io *, void *, size_t);
+static void (*on_disconnect)(struct os_io *);
 static void (*on_tick)(double);
 
 static gs_lib_t *gs_lib = 0;
@@ -32,6 +33,8 @@ static gs_lib_t *gs_lib = 0;
 static void *load_lib_function(char *name)
 {
         void *function = 0;
+
+        assert(name);
 
         if (!handle) {
                 return 0;
@@ -48,8 +51,9 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void internal_send_response(os_io_t *io, void *buf, size_t n)
+static void internal_send_response(struct os_io *io, void *buf, size_t n)
 {
+        assert(io);
         os_io_write(io, buf, n);
 }
 
@@ -96,13 +100,19 @@ static int init_gs_lib(void)
 }
 
 static void
-on_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
+on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
 {
         assert(gs_lib->send_response);
 
+        if (!socket) {
+                printf("no socket? ignoring request.\n");
+                return;
+        }
+
         if (!init_gs_lib()) {
                 printf("unable to load game server library.\n");
-                exit(EXIT_FAILURE);
+                printf("ignoring request.\n");
+                return;
         }
 
         switch (event) {
@@ -133,17 +143,10 @@ on_io_event(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 
 int main(/* int argc, char **argv */)
 {
-        os_io_t *timer  = 0;
-        os_io_t *socket = 0;
+        struct os_io *timer  = 0;
+        struct os_io *socket = 0;
 
-        // Will be shared across child proccesses.
-        gs_lib =
-                mmap(NULL,
-                     sizeof(*gs_lib),
-                     PROT_READ | PROT_WRITE,
-                     MAP_SHARED | MAP_ANONYMOUS,
-                     -1,
-                     0);
+        gs_lib = calloc(1, sizeof(*gs_lib));
 
         gs_lib->send_response = internal_send_response;
 
@@ -173,6 +176,8 @@ int main(/* int argc, char **argv */)
 
         os_io_close(timer);
         os_io_close(socket);
+
+        printf("shuting down.\n");
 
         return EXIT_SUCCESS;
 }

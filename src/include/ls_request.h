@@ -4,10 +4,10 @@
 #include "util.h"
 #include "os_io.h"
 
-void ls_request_new_conn(os_io_t *socket);
+void ls_request_new_conn(struct os_io *socket);
 
-void ls_request(os_io_t *socket, byte_t *buf, size_t n);
+void ls_request(struct os_io *socket, byte_t *buf, size_t n);
 
-void ls_request_disconnect(os_io_t *socket);
+void ls_request_disconnect(struct os_io *socket);
 
 #endif

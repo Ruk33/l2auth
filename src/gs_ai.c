@@ -254,10 +254,10 @@ static void gs_ai_idle_state(
                 gs_ai_handle_action_request(state, character, request);
                 break;
         case 0x09: // Logout.
-                log("Logout, todo");
+                log("logout, todo");
                 break;
         case 0x38: // Say.
-                log("Say, todo");
+                log("say, todo");
                 break;
         case 0x46: // Restart.
                 // gs_character_spawn_random_orc(state);
@@ -267,10 +267,11 @@ static void gs_ai_idle_state(
                 gs_ai_handle_val_pos_request(character, request);
                 break;
         case 0xcd: // Show map.
-                log("Show map, todo");
+                log("show map, todo");
+                gs_character_spawn_random_orc(state);
                 break;
         default:
-                log("Unable to handle packet.");
+                log("unable to handle packet.");
                 break;
         }
 }

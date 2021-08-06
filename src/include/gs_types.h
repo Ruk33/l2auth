@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "util.h"
+#include "list.h"
 #include "os_io.h"
 
 /*
@@ -39,7 +40,7 @@ enum gs_ai_state {
 
 struct gs_session {
         u32_t id;
-        os_io_t *socket;
+        struct os_io *socket;
 
         enum gs_session_state state;
 
@@ -53,6 +54,7 @@ struct gs_session {
 
         char username[MAX_USERNAME_SIZE];
         int conn_encrypted;
+        int character_index;
 };
 
 struct gs_point {
@@ -142,10 +144,12 @@ struct gs_character {
 
 struct gs_state {
         struct gs_session sessions[MAX_CLIENTS];
-        size_t session_count;
+        struct list list_sessions[MAX_CLIENTS];
+        size_t recycled_sessions[MAX_CLIENTS];
 
         struct gs_character characters[MAX_CHARACTERS];
-        size_t character_count;
+        struct list list_characters[MAX_CHARACTERS];
+        size_t recycled_characters[MAX_CHARACTERS];
 
         u64_t game_ticks;
         time_t game_start_time;

@@ -12,8 +12,9 @@ void conn_set_cb(conn_send_response_cb cb)
         send_response = cb;
 }
 
-void conn_send_response(os_io_t *socket, void *buf, size_t n)
+void conn_send_response(struct os_io *socket, void *buf, size_t n)
 {
+        assert(socket);
         assert(send_response && "Send response callback is not set.");
         send_response(socket, buf, n);
 }

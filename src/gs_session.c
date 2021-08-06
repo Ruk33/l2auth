@@ -1,6 +1,8 @@
 #include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
+#include "include/list.h"
+#include "include/recycle_id.h"
 #include "include/os_io.h"
 #include "include/l2_string.h"
 #include "include/gs_types.h"
@@ -9,42 +11,47 @@
 #include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
-struct gs_session *gs_session_new(struct gs_state *state, os_io_t *socket)
+#define gs_session_each(session, state) \
+        list_each(struct gs_session, session, state->list_sessions)
+
+struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
+
+        size_t id = 0;
+
         struct gs_session *new_session = 0;
 
         assert(socket);
         assert(state);
-        assert(state->session_count < MAX_CLIENTS);
 
-        new_session = &state->sessions[state->session_count];
+        recycle_id_get(&id, state->recycled_sessions);
+        new_session = &state->sessions[id];
 
         bytes_zero((byte_t *) new_session, sizeof(*new_session));
 
+        new_session->id     = (u32_t)(id + 1);
         new_session->socket = socket;
 
-        gs_random_id(&new_session->id);
         bytes_cpy(new_session->encrypt_key, key, sizeof(key));
         bytes_cpy(new_session->decrypt_key, key, sizeof(key));
 
-        state->session_count += 1;
+        list_add(state->list_sessions, new_session);
 
         return new_session;
 }
 
-struct gs_session *gs_session_find(struct gs_state *state, os_io_t *socket)
+struct gs_session *gs_session_find(struct gs_state *state, struct os_io *socket)
 {
-        struct gs_session *sessions = 0;
+        struct gs_session *session = 0;
 
         assert(state);
         assert(socket);
 
-        sessions = state->sessions;
-
-        for (size_t i = 0, max = state->session_count; i < max; i += 1) {
-                if (sessions[i].socket == socket) {
-                        return &sessions[i];
+        gs_session_each(session, state)
+        {
+                if (session->socket == socket) {
+                        return session;
                 }
         }
 
@@ -95,4 +102,14 @@ void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
         }
 
         bytes_cpy(dest, src, (size_t) packet_size(src));
+}
+
+void gs_session_disconnect(struct gs_state *state, struct gs_session *session)
+{
+        assert(state);
+        assert(session);
+
+        recycle_id(state->recycled_sessions, (size_t)(session->id - 1));
+        list_remove(state->list_sessions, session);
+        *session = (struct gs_session){ 0 };
 }

@@ -14,6 +14,7 @@ int recycle_id_get(size_t *dest, size_t *src)
         }
 
         src[0] = *dest + 1;
+
         return 1;
 }
 

@@ -62,19 +62,19 @@ void ls_lib_load(conn_send_response_cb cb)
         conn_set_cb(cb);
 }
 
-void ls_lib_new_conn(os_io_t *socket)
+void ls_lib_new_conn(struct os_io *socket)
 {
         assert(socket);
         ls_request_new_conn(socket);
 }
 
-void ls_lib_new_req(os_io_t *socket, void *buf, size_t n)
+void ls_lib_new_req(struct os_io *socket, void *buf, size_t n)
 {
         assert(socket);
         ls_request(socket, buf, n);
 }
 
-void ls_lib_disconnect(os_io_t *socket)
+void ls_lib_disconnect(struct os_io *socket)
 {
         assert(socket);
         ls_request_disconnect(socket);

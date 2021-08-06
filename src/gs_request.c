@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "include/util.h"
+#include "include/list.h"
 #include "include/os_io.h"
 #include "include/conn.h"
 #include "include/storage.h"
@@ -53,14 +54,10 @@ handle_enter_world(struct gs_state *state, struct gs_session *session)
 
         bytes_zero((byte_t *) &user_info, sizeof(user_info));
 
-        // Todo check which character the client selected.
-        if (!storage_get_characters(&character, session->username, 1)) {
-                log("Character not found.");
-                return;
-        }
+        storage_get_character(
+                &character, session->username, session->character_index);
 
         character.session = session;
-        character.id      = session->id;
 
         gs_character_spawn(state, &character);
 
@@ -178,15 +175,16 @@ handle_selected_character(struct gs_session *session, packet_t *packet)
         assert(packet);
 
         bytes_zero((byte_t *) &char_select, sizeof(char_select));
+        bytes_zero(gs_response, sizeof(gs_response));
 
         gs_packet_char_select_request_unpack(&char_select_request, packet);
 
-        if (!storage_get_characters(&character, session->username, 1)) {
-                log("character not found");
-                return;
-        }
+        session->character_index = char_select_request.index;
 
-        bytes_zero(gs_response, sizeof(gs_response));
+        storage_get_character(
+                &character,
+                session->username,
+                (size_t) session->character_index);
 
         character.session = session;
 
@@ -368,7 +366,7 @@ static void in_world_state(
         }
 }
 
-void gs_request_new_conn(struct gs_state *state, os_io_t *socket)
+void gs_request_new_conn(struct gs_state *state, struct os_io *socket)
 {
         struct gs_session *session = 0;
 
@@ -379,7 +377,11 @@ void gs_request_new_conn(struct gs_state *state, os_io_t *socket)
         log("new game session with id %d generated.", session->id);
 }
 
-void gs_request(struct gs_state *state, os_io_t *socket, byte_t *buf, size_t n)
+void gs_request(
+        struct gs_state *state,
+        struct os_io *socket,
+        byte_t *buf,
+        size_t n)
 {
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
@@ -435,13 +437,14 @@ void gs_request(struct gs_state *state, os_io_t *socket, byte_t *buf, size_t n)
         }
 }
 
-void gs_request_disconnect(struct gs_state *state, os_io_t *socket)
+void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
 {
         gs_packet_leave_world_t leave_world = { 0 };
 
         struct gs_session *session = 0;
 
         assert(state);
+        assert(socket);
 
         session = gs_session_find(state, socket);
 
@@ -456,17 +459,18 @@ void gs_request_disconnect(struct gs_state *state, os_io_t *socket)
         gs_packet_leave_world_pack(gs_response, &leave_world);
         gs_session_encrypt(session, gs_response, gs_response);
         conn_send_packet(session->socket, gs_response);
+
+        gs_session_disconnect(state, session);
 }
 
 void gs_request_tick(struct gs_state *state, double delta)
 {
-        struct gs_character *characters = 0;
+        struct gs_character *character = 0;
 
         assert(state);
 
-        characters = state->characters;
-
-        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
-                gs_ai_tick(state, &characters[i], delta);
+        list_each(struct gs_character, character, state->list_characters)
+        {
+                gs_ai_tick(state, character, delta);
         }
 }

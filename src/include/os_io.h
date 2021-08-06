@@ -11,22 +11,23 @@ typedef enum {
         OS_IO_TIMER_TICK,
 } os_io_event_t;
 
-typedef void os_io_t;
+struct os_io;
 
-typedef void (*os_io_cb)(os_io_t *io, os_io_event_t event, void *buf, size_t n);
+typedef void
+os_io_cb(struct os_io *io, os_io_event_t event, void *buf, size_t n);
 
-os_io_t *os_io_socket_create(u16_t port, size_t max_conn);
+struct os_io *os_io_socket_create(u16_t port, size_t max_conn);
 
-os_io_t *os_io_timer(double timeout);
+struct os_io *os_io_timer(double timeout);
 
-int os_io_close(os_io_t *io);
+int os_io_close(struct os_io *io);
 
-long os_io_write(os_io_t *io, void *buf, size_t n);
+long os_io_write(struct os_io *io, void *buf, size_t n);
 
 // Will block the current executing thread and listen
 // for any event from sockets or timers. When a new
 // event arrives, cb will be called.
 // On error, the function will immediately return 0.
-int os_io_listen(os_io_cb cb);
+int os_io_listen(os_io_cb *cb);
 
 #endif

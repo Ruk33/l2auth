@@ -1,15 +1,19 @@
+#include <assert.h>
 #include <stdio.h>
 #include "../os_io.c"
 #include "../../ls_lib.c"
 
-static void _send_response(os_io_t *socket, void *buf, size_t n)
+static void _send_response(struct os_io *socket, void *buf, size_t n)
 {
+        assert(socket);
         os_io_write(socket, buf, n);
 }
 
 static void
-on_request(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
+on_request(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
 {
+        assert(socket);
+
         switch (event) {
         case OS_IO_SOCKET_CONNECTION:
                 printf("New connection.\n");
@@ -32,7 +36,7 @@ on_request(os_io_t *socket, os_io_event_t event, void *buf, size_t n)
 
 int main(/* int argc, char **argv */)
 {
-        os_io_t *socket = 0;
+        struct os_io *socket = 0;
 
         socket = os_io_socket_create(2106, 30);
 

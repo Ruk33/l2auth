@@ -2,6 +2,8 @@
 #include <math.h>
 #include "include/config.h"
 #include "include/util.h"
+#include "include/list.h"
+#include "include/recycle_id.h"
 #include "include/gs_types.h"
 #include "include/log.h"
 #include "include/packet.h"
@@ -20,8 +22,8 @@
 #include "include/gs_packet_restart.h"
 #include "include/gs_character.h"
 
-// Todo: do we really need this one?
-static packet_t response[65536] = { 0 };
+#define gs_character_each(character, state) \
+        list_each(struct gs_character, character, state->list_characters)
 
 static int gs_character_is_npc(struct gs_character *src)
 {
@@ -65,15 +67,14 @@ gs_character_distance(struct gs_character *a, struct gs_character *b)
 static struct gs_character *
 gs_character_find_by_id(struct gs_state *state, u32_t id)
 {
-        struct gs_character *characters = 0;
+        struct gs_character *character = 0;
 
         assert(state);
 
-        characters = state->characters;
-
-        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
-                if (characters[i].id == id) {
-                        return &characters[i];
+        gs_character_each(character, state)
+        {
+                if (character->id == id) {
+                        return character;
                 }
         }
 
@@ -94,23 +95,35 @@ gs_character_encrypt_and_send_packet(struct gs_character *from, packet_t *packet
         conn_send_packet(from->session->socket, packet);
 }
 
+// Todo: do we really need from?
 static void gs_character_broadcast_packet(
         struct gs_state *state,
         struct gs_character *from,
         packet_t *packet)
 {
-        struct gs_character *characters = 0;
+        static packet_t response[65536] = { 0 };
+
+        struct gs_character *character = 0;
+
+        u16_t safe_packet_size = 0;
 
         assert(state);
         assert(from);
         assert(packet);
 
-        characters = state->characters;
+        // This way maybe we can clear less space than what we really need.
+        safe_packet_size = packet_size(packet) * 2;
+        safe_packet_size = min(sizeof(response), safe_packet_size);
 
-        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
-                bytes_zero(response, sizeof(response));
+        gs_character_each(character, state)
+        {
+                if (gs_character_is_npc(character)) {
+                        continue;
+                }
+
+                bytes_zero(response, safe_packet_size);
                 bytes_cpy(response, packet, (size_t) packet_size(packet));
-                gs_character_encrypt_and_send_packet(&characters[i], response);
+                gs_character_encrypt_and_send_packet(character, response);
         }
 }
 
@@ -121,7 +134,7 @@ static void gs_character_move(
 {
         gs_packet_move_t move_response = { 0 };
 
-        packet_t packet[32] = { 0 };
+        packet_t packet[64] = { 0 };
 
         assert(state);
         assert(character);
@@ -173,13 +186,14 @@ static void gs_character_select_target(
 {
         gs_packet_target_selected_t selected = { 0 };
 
+        packet_t response[16] = { 0 };
+
         assert(character);
         assert(target);
 
         selected.target_id = target->id;
         selected.color     = 0;
 
-        bytes_zero(response, sizeof(response));
         gs_packet_target_selected_pack(response, &selected);
         gs_character_encrypt_and_send_packet(character, response);
 }
@@ -188,9 +202,10 @@ static void gs_character_validate_position(struct gs_character *character)
 {
         gs_packet_validate_pos_t validate_response = { 0 };
 
+        packet_t response[64] = { 0 };
+
         assert(character);
 
-        bytes_zero(response, sizeof(response));
         gs_packet_validate_pos(&validate_response, character);
         gs_packet_validate_pos_pack(response, &validate_response);
         gs_character_encrypt_and_send_packet(character, response);
@@ -201,8 +216,6 @@ static void gs_character_spawn_random_orc(struct gs_state *state)
         struct gs_character orc = { 0 };
 
         assert(state);
-
-        gs_random_id(&orc.id);
 
         orc.position.x           = -84023;
         orc.position.y           = 244598;
@@ -296,17 +309,22 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
         static gs_packet_char_info_t char_info = { 0 };
         static gs_packet_npc_info_t npc_info   = { 0 };
 
-        struct gs_character *characters = 0;
+        static packet_t response[512] = { 0 };
+
+        struct gs_character *character = 0;
+
+        size_t id = 0;
 
         assert(state);
         assert(src);
-        assert(src->id);
 
-        characters = state->characters;
+        recycle_id_get(&id, state->recycled_characters);
 
-        log("spawning and notifying close players.");
+        src->id = (u32_t)(id + 1);
+        log("spawning character with id %d. notifying close players.", src->id);
 
-        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
+        gs_character_each(character, state)
+        {
                 // Notify player in the world of the new spawning character.
                 bytes_zero(response, sizeof(response));
 
@@ -320,7 +338,7 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
-                gs_character_encrypt_and_send_packet(&characters[i], response);
+                gs_character_encrypt_and_send_packet(character, response);
 
                 // Notify the spawning character of characters already
                 // in the world (only if it's a player).
@@ -330,21 +348,21 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
 
                 bytes_zero(response, sizeof(response));
 
-                if (gs_character_is_npc(&characters[i])) {
+                if (gs_character_is_npc(character)) {
                         bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
-                        gs_packet_npc_info(&npc_info, &characters[i]);
+                        gs_packet_npc_info(&npc_info, character);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
                         bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                        gs_packet_char_info(&char_info, &characters[i]);
+                        gs_packet_char_info(&char_info, character);
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
                 gs_character_encrypt_and_send_packet(src, response);
         }
 
-        characters[state->character_count] = *src;
-        state->character_count += 1;
+        state->characters[id] = *src;
+        list_add(state->list_characters, &state->characters[id]);
 }
 
 static void
@@ -352,31 +370,33 @@ gs_character_restart(struct gs_state *state, struct gs_character *character)
 {
         gs_packet_restart_t restart = { 0 };
 
+        packet_t response[16] = { 0 };
+
         assert(state);
         assert(character);
 
         restart.response = 0x01; // ok!
 
-        bytes_zero(response, sizeof(response));
         gs_packet_restart_pack(response, &restart);
         gs_character_encrypt_and_send_packet(character, response);
 
-        state->character_count -= 1;
+        recycle_id(state->recycled_characters, (size_t)(character->id - 1));
+        list_remove(state->list_characters, character);
+        *character = (struct gs_character){ 0 };
 }
 
 static struct gs_character *
 gs_character_from_session(struct gs_state *state, struct gs_session *session)
 {
-        struct gs_character *characters = 0;
+        struct gs_character *character = 0;
 
         assert(state);
         assert(session);
 
-        characters = state->characters;
-
-        for (size_t i = 0, max = state->character_count; i < max; i += 1) {
-                if (characters[i].session == session) {
-                        return &characters[i];
+        gs_character_each(character, state)
+        {
+                if (character->session == session) {
+                        return character;
                 }
         }
 
