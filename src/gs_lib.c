@@ -42,12 +42,21 @@
 
 #include "include/config.h"
 #include "include/gs_lib.h"
+#include "include/log.h"
 
 static gs_lib_t *lib = 0;
 
 void gs_lib_load(gs_lib_t *gs_lib)
 {
-        assert(gs_lib);
+        if (!gs_lib) {
+                log("no gs lib passed to gs_lib_load. ignoring.");
+                return;
+        }
+
+        if (!gs_lib->send_response) {
+                log("gs lib without send_response cb. ignoring.");
+                return;
+        }
 
         lib = gs_lib;
 
@@ -65,17 +74,28 @@ void gs_lib_unload(void)
 
 void gs_lib_new_conn(struct os_io *socket)
 {
-        assert(lib);
-        assert(socket);
+        if (!lib) {
+                log("lib is not initialized. ignoring new con.");
+                return;
+        }
+
+        if (!socket) {
+                log("new conn without socket? ignoring.");
+                return;
+        }
+
         gs_request_new_conn(&lib->state, socket);
 }
 
 void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
 {
-        assert(lib);
-        assert(socket);
+        if (!lib) {
+                log("lib is not initialized. ignoring new request.");
+                return;
+        }
 
         if (!socket) {
+                log("new request without socket? ignoring.");
                 return;
         }
 
@@ -84,16 +104,17 @@ void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
 
 void gs_lib_disconnect(struct os_io *socket)
 {
-        assert(lib);
-        assert(socket);
-
-        log("client disconnected.");
-
-        if (!socket) {
-                log("disconnected client has no socket?");
+        if (!lib) {
+                log("lib is not initialized. ignoring disconnect.");
                 return;
         }
 
+        if (!socket) {
+                log("disconnect request without socket? ignoring.");
+                return;
+        }
+
+        log("client disconnected.");
         gs_request_disconnect(&lib->state, socket);
 }
 
@@ -102,7 +123,10 @@ void gs_lib_tick(double delta)
         u64_t old_ticks = 0;
         u64_t run_time  = 0;
 
-        assert(lib);
+        if (!lib) {
+                log("lib is not initialized. ignoring tick.");
+                return;
+        }
 
         /*
          * Todo: refactor

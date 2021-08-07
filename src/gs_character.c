@@ -304,7 +304,8 @@ static void gs_character_from_request(
         dest->name_color                      = 0xFFFFFF;
 }
 
-static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
+static void
+gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 {
         static gs_packet_char_info_t char_info = { 0 };
         static gs_packet_npc_info_t npc_info   = { 0 };
@@ -316,25 +317,26 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
         size_t id = 0;
 
         assert(state);
-        assert(src);
+        assert(spawning);
 
         recycle_id_get(&id, state->recycled_characters);
 
-        src->id = (u32_t)(id + 1);
-        log("spawning character with id %d. notifying close players.", src->id);
+        spawning->id = (u32_t)(id + 1);
+        log("spawning character with id %d. notifying close players.",
+            spawning->id);
 
         gs_character_each(character, state)
         {
                 // Notify player in the world of the new spawning character.
                 bytes_zero(response, sizeof(response));
 
-                if (gs_character_is_npc(src)) {
+                if (gs_character_is_npc(spawning)) {
                         bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
-                        gs_packet_npc_info(&npc_info, src);
+                        gs_packet_npc_info(&npc_info, spawning);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
                         bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                        gs_packet_char_info(&char_info, src);
+                        gs_packet_char_info(&char_info, spawning);
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
@@ -342,7 +344,7 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
 
                 // Notify the spawning character of characters already
                 // in the world (only if it's a player).
-                if (gs_character_is_npc(src)) {
+                if (gs_character_is_npc(spawning)) {
                         continue;
                 }
 
@@ -358,10 +360,10 @@ static void gs_character_spawn(struct gs_state *state, struct gs_character *src)
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
-                gs_character_encrypt_and_send_packet(src, response);
+                gs_character_encrypt_and_send_packet(spawning, response);
         }
 
-        state->characters[id] = *src;
+        state->characters[id] = *spawning;
         list_add(state->list_characters, &state->characters[id]);
 }
 

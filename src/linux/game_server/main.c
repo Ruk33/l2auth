@@ -1,14 +1,9 @@
-// Required for MAP_ANONYMOUS to be defined.
-#define _DEFAULT_SOURCE
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <dlfcn.h>
-#include <sys/mman.h>
-#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "../os_io.c"
 #include "../../util.c"
@@ -18,34 +13,36 @@
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
-static void *handle = 0;
-static void (*on_load)(gs_lib_t *);
-static void (*on_unload)(void);
-static void (*on_new_conn)(struct os_io *);
-static void (*on_new_req)(struct os_io *, void *, size_t);
-static void (*on_disconnect)(struct os_io *);
-static void (*on_tick)(double);
+struct lib {
+        void *handle;
+        time_t load_time;
+        void (*on_load)(gs_lib_t *);
+        void (*on_unload)(void);
+        void (*on_new_conn)(struct os_io *);
+        void (*on_new_req)(struct os_io *, void *, size_t);
+        void (*on_disconnect)(struct os_io *);
+        void (*on_tick)(double);
+};
 
-static gs_lib_t *gs_lib = 0;
+static struct lib lib = { 0 };
 
-// Load function from game server library.
-// On success, the function's handler is returned. On error 0.
+static gs_lib_t *game_server = 0;
+
 static void *load_lib_function(char *name)
 {
         void *function = 0;
 
         assert(name);
 
-        if (!handle) {
+        if (!lib.handle) {
                 return 0;
         }
 
-        function = dlsym(handle, name);
+        function = dlsym(lib.handle, name);
 
         if (!function) {
                 printf("failed to load function %s.\n", name);
                 printf("%s.\n", dlerror());
-                return 0;
         }
 
         return function;
@@ -53,48 +50,66 @@ static void *load_lib_function(char *name)
 
 static void internal_send_response(struct os_io *io, void *buf, size_t n)
 {
-        assert(io);
+        if (!io) {
+                printf("internal send response, no io? ignoring.\n");
+                return;
+        }
+
         os_io_write(io, buf, n);
 }
 
 static int init_gs_lib(void)
 {
+        struct stat lib_stat = { 0 };
+
         int all_load = 0;
 
-        if (on_unload) {
-                on_unload();
+        stat(GAME_SERVER_LIB_PATH, &lib_stat);
+
+        // Don't load if there are no changes in the lib.
+        if (lib.handle && lib_stat.st_mtime == lib.load_time) {
+                return 1;
         }
 
-        if (handle && dlclose(handle) != 0) {
-                printf("failed to unload game server library.\n");
-                printf("%s.\n", dlerror());
-                return 0;
+        if (lib.handle) {
+                lib.on_unload();
+
+                if (dlclose(lib.handle) != 0) {
+                        printf("failed to unload game server library.\n");
+                        printf("%s.\n", dlerror());
+                }
         }
 
-        handle = dlopen(GAME_SERVER_LIB_PATH, RTLD_LAZY);
+        lib = (struct lib){ 0 };
 
-        if (!handle) {
+        lib.handle = dlopen(GAME_SERVER_LIB_PATH, RTLD_LAZY);
+
+        if (!lib.handle) {
                 printf("failed to load game server library.\n");
                 printf("%s.\n", dlerror());
                 return 0;
         }
 
-        *(void **) (&on_load)       = load_lib_function("gs_lib_load");
-        *(void **) (&on_unload)     = load_lib_function("gs_lib_unload");
-        *(void **) (&on_new_conn)   = load_lib_function("gs_lib_new_conn");
-        *(void **) (&on_new_req)    = load_lib_function("gs_lib_new_req");
-        *(void **) (&on_disconnect) = load_lib_function("gs_lib_disconnect");
-        *(void **) (&on_tick)       = load_lib_function("gs_lib_tick");
+        *(void **) (&lib.on_load)     = load_lib_function("gs_lib_load");
+        *(void **) (&lib.on_unload)   = load_lib_function("gs_lib_unload");
+        *(void **) (&lib.on_new_conn) = load_lib_function("gs_lib_new_conn");
+        *(void **) (&lib.on_new_req)  = load_lib_function("gs_lib_new_req");
+        *(void **) (&lib.on_disconnect) =
+                load_lib_function("gs_lib_disconnect");
+        *(void **) (&lib.on_tick) = load_lib_function("gs_lib_tick");
 
         all_load =
-                (handle && on_load && on_unload && on_new_conn && on_new_req &&
-                 on_disconnect && on_tick);
+                (lib.handle && lib.on_load && lib.on_unload &&
+                 lib.on_new_conn && lib.on_new_req && lib.on_disconnect &&
+                 lib.on_tick);
 
         if (!all_load) {
+                lib = (struct lib){ 0 };
                 return 0;
         }
 
-        on_load(gs_lib);
+        lib.load_time = lib_stat.st_mtime;
+        lib.on_load(game_server);
 
         return 1;
 }
@@ -102,7 +117,7 @@ static int init_gs_lib(void)
 static void
 on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
 {
-        assert(gs_lib->send_response);
+        assert(game_server->send_response);
 
         if (!socket) {
                 printf("no socket? ignoring request.\n");
@@ -117,22 +132,19 @@ on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
 
         switch (event) {
         case OS_IO_SOCKET_CONNECTION:
-                // printf("new connection.\n");
-                on_new_conn(socket);
+                lib.on_new_conn(socket);
                 break;
         case OS_IO_SOCKET_REQUEST:
-                // printf("new request.\n");
-                on_new_req(socket, buf, n);
+                lib.on_new_req(socket, buf, n);
                 break;
         case OS_IO_SOCKET_DISCONNECTED:
-                // printf("disconnect.\n");
-                on_disconnect(socket);
+                lib.on_disconnect(socket);
                 // Todo: closing the socket here indeeds closes it
                 // but also terminates the server. Investigate.
                 // os_socket_close(socket);
                 break;
         case OS_IO_TIMER_TICK:
-                on_tick(0.1);
+                lib.on_tick(0.1);
                 break;
         default:
                 break;
@@ -146,9 +158,9 @@ int main(/* int argc, char **argv */)
         struct os_io *timer  = 0;
         struct os_io *socket = 0;
 
-        gs_lib = calloc(1, sizeof(*gs_lib));
+        game_server = calloc(1, sizeof(*game_server));
 
-        gs_lib->send_response = internal_send_response;
+        game_server->send_response = internal_send_response;
 
         timer  = os_io_timer(0.1);
         socket = os_io_socket_create(7777, 30);

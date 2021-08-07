@@ -81,6 +81,7 @@ static void gs_ai_attack(
         struct gs_character *target)
 {
         struct gs_point walk_to = { 0 };
+        double walk_angle       = 0;
 
         assert(state);
         assert(attacker);
@@ -94,14 +95,18 @@ static void gs_ai_attack(
         attacker->ai.target_id = target->id;
         attacker->ai.state     = AI_ATTACKING;
 
-        if (gs_character_distance(attacker, target) > 80) {
-                walk_to = target->position;
-                gs_ai_move(state, attacker, &walk_to);
-                attacker->ai.state = AI_MOVING_TO_ATTACK;
+        if (attacker->ai.attack_cd > 0) {
                 return;
         }
 
-        if (attacker->ai.attack_cd > 0) {
+        if (gs_character_distance(attacker, target) > 80) {
+                walk_angle = gs_character_angle_to_point(
+                        attacker, &target->position);
+                walk_to.x = target->position.x - 40 * cos(walk_angle);
+                walk_to.y = target->position.y - 40 * sin(walk_angle);
+                walk_to.z = target->position.z;
+                gs_ai_move(state, attacker, &walk_to);
+                attacker->ai.state = AI_MOVING_TO_ATTACK;
                 return;
         }
 
@@ -109,7 +114,7 @@ static void gs_ai_attack(
                 gs_ai_on_npc_attacked(target, attacker);
         }
 
-        attacker->ai.attack_cd = 30;
+        attacker->ai.attack_cd = 20;
         gs_character_attack(state, attacker, target);
 }
 
@@ -343,10 +348,11 @@ static void gs_ai_attacking_state(
         }
 }
 
-static void
-gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
+static void gs_ai_update_character_position(
+        struct gs_state *state,
+        struct gs_character *character,
+        double delta)
 {
-        struct gs_character *target    = 0;
         struct gs_move_data *move_data = 0;
 
         u64_t elapsed = 0;
@@ -354,77 +360,61 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
         assert(state);
         assert(character);
 
-        if (character->ai.attack_cd > 0) {
-                character->ai.attack_cd -= delta * 100;
+        move_data = &character->ai.move_data;
+
+        if (move_data->move_timestamp == state->game_ticks) {
+                return;
         }
 
-        if (character->ai.target_id) {
-                target =
-                        gs_character_find_by_id(state, character->ai.target_id);
+        elapsed = state->game_ticks - move_data->move_start_time;
+
+        if (elapsed >= move_data->ticks_to_move) {
+                move_data->move_timestamp = state->game_ticks;
+
+                character->position = move_data->destination;
+                character->ai.state = AI_IDLE;
+
+                return;
+        }
+
+        character->position.x = move_data->origin.x +
+                                (i32_t)(elapsed * move_data->x_speed_ticks);
+        character->position.y = move_data->origin.y +
+                                (i32_t)(elapsed * move_data->y_speed_ticks);
+
+        move_data->move_timestamp = state->game_ticks;
+}
+
+static void
+gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
+{
+        assert(state);
+        assert(character);
+
+        if (character->ai.attack_cd > 0) {
+                character->ai.attack_cd -= delta * 100;
         }
 
         switch (character->ai.state) {
         case AI_IDLE:
                 break;
         case AI_MOVING:
-                move_data = &character->ai.move_data;
-
-                if (move_data->move_timestamp == state->game_ticks) {
-                        return;
-                }
-
-                elapsed = state->game_ticks - move_data->move_start_time;
-
-                if (elapsed >= move_data->ticks_to_move) {
-                        move_data->move_timestamp = state->game_ticks;
-
-                        character->position = move_data->destination;
-                        character->ai.state = AI_IDLE;
-
-                        return;
-                }
-
-                character->position.x =
-                        move_data->origin.x +
-                        (i32_t)(elapsed * move_data->x_speed_ticks);
-                character->position.y =
-                        move_data->origin.y +
-                        (i32_t)(elapsed * move_data->y_speed_ticks);
-
-                move_data->move_timestamp = state->game_ticks;
+                gs_ai_update_character_position(state, character, delta);
                 break;
         case AI_TARGET_SELECTED:
                 break;
         case AI_ATTACKING:
-                gs_ai_attack(state, character, target);
+                gs_ai_attack(
+                        state,
+                        character,
+                        gs_character_find_by_id(state, character->ai.target_id));
                 break;
         case AI_MOVING_TO_ATTACK:
-                move_data = &character->ai.move_data;
-
-                if (move_data->move_timestamp == state->game_ticks) {
-                        return;
-                }
-
-                elapsed = state->game_ticks - move_data->move_start_time;
-
-                if (elapsed >= move_data->ticks_to_move) {
-                        move_data->move_timestamp = state->game_ticks;
-
-                        character->position = move_data->destination;
-                        gs_ai_attack(state, character, target);
-
-                        return;
-                }
-
-                character->position.x =
-                        move_data->origin.x +
-                        (i32_t)(elapsed * move_data->x_speed_ticks);
-                character->position.y =
-                        move_data->origin.y +
-                        (i32_t)(elapsed * move_data->y_speed_ticks);
-
-                move_data->move_timestamp = state->game_ticks;
-                gs_ai_attack(state, character, target);
+                gs_ai_update_character_position(state, character, delta);
+                gs_ai_attack(
+                        state,
+                        character,
+                        gs_character_find_by_id(state, character->ai.target_id));
                 break;
         default:
                 break;
