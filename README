@@ -94,10 +94,9 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Deprecate fork/process for each request.
 - [x] Find a way to upload system folder.
 - [x] Check what's the error when creating a new character (column index out of range)
-- [ ] Implement damage
+- [x] Implement damage
 - [ ] Double check the game server when a client gets disconnected
       The requests are not being handled correctly.
-- [ ] Check precision using time vs function returning milliseconds.
 - [x] Remove/deprecate cmake, it's not worth it.
 - [x] Add build/makefile to rebuild project and database if required.
 - [x] Check work flow. For some reason, I delete the database and needs
