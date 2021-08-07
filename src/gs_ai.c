@@ -128,6 +128,7 @@ gs_ai_select_target(struct gs_character *src, struct gs_character *target)
         src->ai.target_id = target->id;
 
         gs_character_select_target(src, target);
+        gs_character_send_status(target, src);
 }
 
 static void gs_ai_handle_move_request(
@@ -177,7 +178,9 @@ gs_ai_handle_val_pos_request(struct gs_character *character, packet_t *packet)
         // Do approximation. If the client position isn't too far
         // away from the server's position, just don't force the update.
         if (gs_character_distance(character, &client_position) < 100) {
-                gs_character_validate_position(&client_position);
+                // todo: double check.
+                // note: is it really required to send the confirmation?
+                // gs_character_validate_position(&client_position);
         } else {
                 gs_character_validate_position(character);
         }

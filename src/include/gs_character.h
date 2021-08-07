@@ -27,6 +27,11 @@ gs_character_distance(struct gs_character *a, struct gs_character *b);
 static struct gs_character *
 gs_character_find_by_id(struct gs_state *state, u32_t id);
 
+// Sends hp and max hp info of from to to character.
+// Todo: rename?
+static void
+gs_character_send_status(struct gs_character *from, struct gs_character *to);
+
 // Send move packet to client and broadcast it to all players.
 // THIS FUNCTION WON'T update the character's actual position!
 // Todo: make sure the packet gets broadcasted only to close players.

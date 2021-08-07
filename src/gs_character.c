@@ -19,6 +19,7 @@
 #include "include/gs_packet_target_selected.h"
 #include "include/gs_packet_auto_attack.h"
 #include "include/gs_packet_attack.h"
+#include "include/gs_packet_status.h"
 #include "include/gs_packet_restart.h"
 #include "include/gs_character.h"
 
@@ -127,6 +128,38 @@ static void gs_character_broadcast_packet(
         }
 }
 
+static void
+gs_character_send_status(struct gs_character *from, struct gs_character *to)
+{
+        static packet_t response[512] = { 0 };
+
+        struct gs_packet_status status = { 0 };
+
+        struct gs_packet_status_attr attr = { 0 };
+
+        assert(from);
+        assert(to);
+
+        if (gs_character_is_npc(to)) {
+                return;
+        }
+
+        bytes_zero(response, sizeof(response));
+
+        status.obj_id = from->id;
+
+        attr.type  = STATUS_CUR_HP;
+        attr.value = (i32_t) from->stats.hp;
+        gs_packet_status_add(&status, &attr);
+
+        attr.type  = STATUS_MAX_HP;
+        attr.value = (i32_t) from->stats.max_hp;
+        gs_packet_status_add(&status, &attr);
+
+        gs_packet_status_pack(response, &status);
+        gs_character_encrypt_and_send_packet(to, response);
+}
+
 static void gs_character_move(
         struct gs_state *state,
         struct gs_character *character,
@@ -170,6 +203,9 @@ static void gs_character_attack(
         hit.damage    = attacker->stats.p_attack;
         hit.target_id = target->id;
 
+        // todo: implement properly.
+        target->stats.hp -= 10;
+
         gs_packet_attack_set_attacker(&attack, attacker);
         gs_packet_attack_add_hit(&attack, &hit);
 
@@ -178,6 +214,12 @@ static void gs_character_attack(
 
         gs_character_broadcast_packet(state, attacker, auto_attack_packet);
         gs_character_broadcast_packet(state, attacker, attack_packet);
+
+        // When the life of the target gets modified
+        // make sure the attacker and the target
+        // are notified & updated.
+        gs_character_send_status(target, target);
+        gs_character_send_status(target, attacker);
 }
 
 static void gs_character_select_target(
@@ -225,6 +267,7 @@ static void gs_character_spawn_random_orc(struct gs_state *state)
         orc.level                = 8;
         orc.sex                  = 0;
         orc.stats.hp             = 197;
+        orc.stats.max_hp         = 197;
         orc.stats.mp             = 102;
         orc.stats.str            = 40;
         orc.stats.con            = 43;
