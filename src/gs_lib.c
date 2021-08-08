@@ -19,6 +19,7 @@
 #include "gs_packet_create_char_request.c"
 #include "gs_packet_create_char.c"
 #include "gs_packet_d0.c"
+#include "gs_packet_die.c"
 #include "gs_packet_leave_world.c"
 #include "gs_packet_move_request.c"
 #include "gs_packet_move.c"

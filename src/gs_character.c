@@ -21,6 +21,7 @@
 #include "include/gs_packet_attack.h"
 #include "include/gs_packet_status.h"
 #include "include/gs_packet_restart.h"
+#include "include/gs_packet_die.h"
 #include "include/gs_character.h"
 
 #define gs_character_each(character, state) \
@@ -178,6 +179,20 @@ static void gs_character_move(
         gs_character_broadcast_packet(state, character, packet);
 }
 
+static void gs_character_die(struct gs_state *state, struct gs_character *src)
+{
+        struct gs_packet_die die = { 0 };
+
+        packet_t response[32] = { 0 };
+
+        assert(state);
+        assert(src);
+
+        gs_packet_die_add_options(&die, src);
+        gs_packet_die_pack(response, &die);
+        gs_character_broadcast_packet(state, src, response);
+}
+
 static void gs_character_attack(
         struct gs_state *state,
         struct gs_character *attacker,
@@ -204,7 +219,7 @@ static void gs_character_attack(
         hit.target_id = target->id;
 
         // todo: implement properly.
-        target->stats.hp -= 10;
+        target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
 
         gs_packet_attack_set_attacker(&attack, attacker);
         gs_packet_attack_add_hit(&attack, &hit);
@@ -220,6 +235,10 @@ static void gs_character_attack(
         // are notified & updated.
         gs_character_send_status(target, target);
         gs_character_send_status(target, attacker);
+
+        if (target->stats.hp == 0) {
+                gs_character_die(state, target);
+        }
 }
 
 static void gs_character_select_target(

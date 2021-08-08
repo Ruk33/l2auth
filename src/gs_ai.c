@@ -20,6 +20,17 @@ gs_ai_on_npc_attacked(struct gs_character *npc, struct gs_character *attacker)
         npc->ai.target_id = attacker->id;
 }
 
+static void
+gs_ai_on_dead(struct gs_character *dead, struct gs_character *killer)
+{
+        dead->ai       = (struct gs_ai){ 0 };
+        dead->ai.state = AI_DEAD;
+
+        killer->ai.move_data = (struct gs_move_data){ 0 };
+        killer->ai.state     = AI_IDLE;
+        killer->ai.target_id = 0;
+}
+
 static void gs_ai_go_idle(struct gs_character *src)
 {
         assert(src);
@@ -123,6 +134,10 @@ static void gs_ai_attack(
 
         attacker->ai.attack_cd = 20;
         gs_character_attack(state, attacker, target);
+
+        if (target->stats.hp == 0) {
+                gs_ai_on_dead(target, attacker);
+        }
 }
 
 static void
@@ -414,8 +429,6 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
         assert(state);
         assert(character);
 
-        gs_ai_update_character_position(state, character, delta);
-
         if (character->ai.attack_cd > 0) {
                 character->ai.attack_cd -= delta * 100;
         }
@@ -429,14 +442,20 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
         case AI_IDLE:
                 break;
         case AI_MOVING:
+                gs_ai_update_character_position(state, character, delta);
                 break;
         case AI_TARGET_SELECTED:
+                gs_ai_update_character_position(state, character, delta);
                 break;
         case AI_ATTACKING:
+                gs_ai_update_character_position(state, character, delta);
                 gs_ai_attack(state, character, target);
                 break;
         case AI_MOVING_TO_ATTACK:
+                gs_ai_update_character_position(state, character, delta);
                 gs_ai_attack(state, character, target);
+                break;
+        case AI_DEAD:
                 break;
         default:
                 break;
@@ -467,6 +486,8 @@ static void gs_ai_handle_request(
                 break;
         case AI_ATTACKING:
                 gs_ai_attacking_state(state, character, request);
+                break;
+        case AI_DEAD:
                 break;
         default:
                 break;
