@@ -14,6 +14,19 @@
 #define gs_session_each(session, state) \
         list_each(struct gs_session, session, state->list_sessions)
 
+static size_t gs_session_get_free_id(struct gs_state *state)
+{
+        // Don't use id 0, it causes issues with packets
+        // sent to the client.
+        for (size_t i = 1, max = arr_size(state->sessions); i < max; i += 1) {
+                if (!state->sessions[i].id) {
+                        return i;
+                }
+        }
+
+        return 0;
+}
+
 struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
@@ -25,12 +38,13 @@ struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
         assert(socket);
         assert(state);
 
-        recycle_id_get(&id, state->recycled_sessions);
+        id = gs_session_get_free_id(state);
+
         new_session = &state->sessions[id];
 
         bytes_zero((byte_t *) new_session, sizeof(*new_session));
 
-        new_session->id     = (u32_t)(id + 1);
+        new_session->id     = (u32_t) id;
         new_session->socket = socket;
 
         bytes_cpy(new_session->encrypt_key, key, sizeof(key));
@@ -109,7 +123,6 @@ void gs_session_disconnect(struct gs_state *state, struct gs_session *session)
         assert(state);
         assert(session);
 
-        recycle_id(state->recycled_sessions, (size_t)(session->id - 1));
         list_remove(state->list_sessions, session);
         *session = (struct gs_session){ 0 };
 }

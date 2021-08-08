@@ -46,7 +46,7 @@ handle_enter_world(struct gs_state *state, struct gs_session *session)
 
         static packet_t response[1024] = { 0 };
 
-        struct gs_character character = { 0 };
+        struct gs_character *character = 0;
 
         assert(state);
         assert(session);
@@ -54,13 +54,16 @@ handle_enter_world(struct gs_state *state, struct gs_session *session)
         bytes_zero((byte_t *) &user_info, sizeof(user_info));
         bytes_zero(response, sizeof(response));
 
-        storage_get_character(
-                &character, session->username, session->character_index);
+        character = gs_character_from_session(state, session);
 
-        character.session = session;
-        gs_character_spawn(state, &character);
+        if (!character) {
+                log("entering world without a character? ignoring.");
+                return;
+        }
 
-        gs_packet_user_info_set_char(&user_info, &character);
+        gs_character_spawn(state, character);
+
+        gs_packet_user_info_set_char(&user_info, character);
         gs_packet_user_info_pack(response, &user_info);
 
         gs_session_encrypt(session, response, response);
@@ -170,8 +173,10 @@ handle_create_character(struct gs_session *session, packet_t *packet)
         handle_auth_login(session, 0);
 }
 
-static void
-handle_selected_character(struct gs_session *session, packet_t *packet)
+static void handle_selected_character(
+        struct gs_state *state,
+        struct gs_session *session,
+        packet_t *packet)
 {
         static gs_packet_char_select_t char_select = { 0 };
 
@@ -181,6 +186,7 @@ handle_selected_character(struct gs_session *session, packet_t *packet)
 
         struct gs_character character = { 0 };
 
+        assert(state);
         assert(session);
         assert(packet);
 
@@ -196,7 +202,14 @@ handle_selected_character(struct gs_session *session, packet_t *packet)
                 session->username,
                 (size_t) session->character_index);
 
+        character.id      = gs_character_get_free_id(state);
         character.session = session;
+
+        log("selecting character and assigning id %d with session %d",
+            character.id,
+            session->id);
+
+        gs_character_add(state, &character);
 
         gs_packet_char_select_set_char(&char_select, &character);
         gs_packet_char_select_set_playok(&char_select, session->playOK1);
@@ -283,7 +296,7 @@ static void character_selection_state(
 
         switch (packet_type(packet)) {
         case 0x0d: // Selected char.
-                handle_selected_character(session, packet);
+                handle_selected_character(state, session, packet);
                 session->state = ENTERING_WORLD;
                 break;
         case 0x0e: // New character
@@ -481,6 +494,8 @@ void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
 
         struct gs_session *session = 0;
 
+        struct gs_character *character = 0;
+
         if (!state) {
                 log("no state passed to gs_request_disconnect? ignoring request.");
                 return;
@@ -496,6 +511,12 @@ void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
         if (!session) {
                 log("disconnected client had no session, ignoring.");
                 return;
+        }
+
+        character = gs_character_from_session(state, session);
+
+        if (character) {
+                gs_character_disconnect(state, character);
         }
 
         log("sending disconnect packet.");

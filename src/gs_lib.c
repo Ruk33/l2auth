@@ -27,6 +27,8 @@
 #include "gs_packet_npc_info.c"
 #include "gs_packet_protocol_version.c"
 #include "gs_packet_quest_list.c"
+#include "gs_packet_revive_request.c"
+#include "gs_packet_revive.c"
 #include "gs_packet_status.c"
 #include "gs_packet_restart.c"
 #include "gs_packet_target_selected.c"

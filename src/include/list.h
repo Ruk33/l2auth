@@ -2,14 +2,14 @@
 #define INCLUDE_LIST_H
 
 #define list_each(type, name, arr)                                    \
-        for (struct list *list_iterator = (arr)->next;                \
+        for (struct list *list_iterator = (arr)->head;                \
              list_iterator && (name = (type *) list_iterator->value); \
              list_iterator = list_iterator->next)
 
 struct list {
-        void *value;
         struct list *next;
-        struct list *last;
+        struct list *head;
+        void *value;
 };
 
 void list_add(struct list *src, void *value);

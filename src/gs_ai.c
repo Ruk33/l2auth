@@ -8,7 +8,7 @@
 #include "include/gs_packet_action_request.h"
 #include "include/gs_packet_validate_pos_request.h"
 #include "include/gs_packet_move_request.h"
-#include "include/gs_packet_restart.h"
+#include "include/gs_packet_revive_request.h"
 #include "include/gs_ai.h"
 
 static void
@@ -23,12 +23,25 @@ gs_ai_on_npc_attacked(struct gs_character *npc, struct gs_character *attacker)
 static void
 gs_ai_on_dead(struct gs_character *dead, struct gs_character *killer)
 {
+        assert(dead);
+        assert(killer);
+
         dead->ai       = (struct gs_ai){ 0 };
         dead->ai.state = AI_DEAD;
 
         killer->ai.move_data = (struct gs_move_data){ 0 };
         killer->ai.state     = AI_IDLE;
         killer->ai.target_id = 0;
+}
+
+static void gs_ai_on_revive(struct gs_character *src)
+{
+        assert(src);
+
+        src->ai       = (struct gs_ai){ 0 };
+        src->stats.hp = src->stats.max_hp;
+
+        gs_character_send_status(src, src);
 }
 
 static void gs_ai_go_idle(struct gs_character *src)
@@ -249,6 +262,10 @@ static void gs_ai_handle_attack_request(
 
         gs_packet_action_request_unpack(&action, packet);
 
+        if (character->id == action.target_id) {
+                return;
+        }
+
         target = gs_character_find_by_id(state, action.target_id);
 
         if (!target) {
@@ -272,6 +289,22 @@ static void gs_ai_handle_restart_request(
         assert(state);
         assert(character);
         gs_character_restart(state, character);
+}
+
+static void gs_ai_handle_revive_request(
+        struct gs_state *state,
+        struct gs_character *character,
+        packet_t *request)
+{
+        struct gs_packet_revive_request revive_request = { 0 };
+
+        assert(state);
+        assert(character);
+        assert(request);
+
+        gs_packet_revive_request_unpack(&revive_request, request);
+        gs_character_revive(state, character, revive_request.option_chosen);
+        gs_ai_on_revive(character);
 }
 
 static void gs_ai_idle_state(
@@ -375,6 +408,24 @@ static void gs_ai_attacking_state(
         switch (packet_type(request)) {
         default:
                 gs_ai_idle_state(state, character, request);
+                break;
+        }
+}
+
+static void gs_ai_dead_state(
+        struct gs_state *state,
+        struct gs_character *character,
+        packet_t *request)
+{
+        assert(state);
+        assert(character);
+        assert(request);
+
+        switch (packet_type(request)) {
+        case 0x6d: // Revive
+                gs_ai_handle_revive_request(state, character, request);
+                break;
+        default:
                 break;
         }
 }
@@ -488,6 +539,7 @@ static void gs_ai_handle_request(
                 gs_ai_attacking_state(state, character, request);
                 break;
         case AI_DEAD:
+                gs_ai_dead_state(state, character, request);
                 break;
         default:
                 break;

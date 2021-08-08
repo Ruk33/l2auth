@@ -5,6 +5,7 @@
 #include "gs_types.h"
 #include "gs_session.h"
 #include "gs_packet_create_char_request.h"
+#include "gs_packet_revive_request.h"
 
 // Check if the character is a non playable character.
 // Players are characters too, the difference is, a player
@@ -31,6 +32,15 @@ gs_character_find_by_id(struct gs_state *state, u32_t id);
 // Todo: rename?
 static void
 gs_character_send_status(struct gs_character *from, struct gs_character *to);
+
+// Revive and teleport character using option sent by client.
+// Of course, this option has to be checked since
+// the player can be cheating.
+// By default, revive to village will be used.
+static void gs_character_revive(
+        struct gs_state *state,
+        struct gs_character *src,
+        enum gs_packet_revive_request_option where);
 
 // Send move packet to client and broadcast it to all players.
 // THIS FUNCTION WON'T update the character's actual position!
@@ -78,5 +88,17 @@ gs_character_restart(struct gs_state *state, struct gs_character *character);
 // If not found, NULL is returned.
 static struct gs_character *
 gs_character_from_session(struct gs_state *state, struct gs_session *session);
+
+static u32_t gs_character_get_free_id(struct gs_state *state);
+
+// "Add" a character to the list of in game characters
+// without broadcasting spawn packet.
+// Only used for players when entering the game so the proper
+// character id can be used for those initial packets
+// sent when entering the world.
+static void gs_character_add(struct gs_state *state, struct gs_character *src);
+
+static void
+gs_character_disconnect(struct gs_state *state, struct gs_character *src);
 
 #endif

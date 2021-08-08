@@ -146,11 +146,9 @@ struct gs_character {
 struct gs_state {
         struct gs_session sessions[MAX_CLIENTS];
         struct list list_sessions[MAX_CLIENTS];
-        size_t recycled_sessions[MAX_CLIENTS];
 
         struct gs_character characters[MAX_CHARACTERS];
         struct list list_characters[MAX_CHARACTERS];
-        size_t recycled_characters[MAX_CHARACTERS];
 
         u64_t game_ticks;
         time_t game_start_time;

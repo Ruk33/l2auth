@@ -3,9 +3,10 @@
 
 void list_add(struct list *src, void *value)
 {
+        struct list **head     = 0;
         struct list *free_node = 0;
 
-        src->last = src->last ? src->last : src;
+        head      = &src->head;
         free_node = src + 1;
 
         while (free_node->value) {
@@ -13,9 +14,8 @@ void list_add(struct list *src, void *value)
         }
 
         free_node->value = value;
-        free_node->next  = 0;
-        src->last->next  = free_node;
-        src->last        = free_node;
+        free_node->next  = *head;
+        *head            = free_node;
 }
 
 void list_remove(struct list *src, void *value)
@@ -23,9 +23,9 @@ void list_remove(struct list *src, void *value)
         struct list **match    = 0;
         struct list *to_remove = 0;
 
-        match = &src;
+        match = &src->head;
 
-        while (*match && (*match)->value != value) {
+        while ((*match)->value != value) {
                 match = &(*match)->next;
         }
 

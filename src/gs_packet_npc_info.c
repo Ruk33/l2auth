@@ -37,7 +37,7 @@ void gs_packet_npc_info(gs_packet_npc_info_t *dest, struct gs_character *src)
         dest->name_above_char     = 1;
         dest->running             = 1;
         dest->in_combat           = 0;
-        dest->alike_dead          = 0;
+        dest->alike_dead          = src->stats.hp == 0;
         dest->summoned            = 0;
         dest->karma               = 0;
         dest->abnormal_effect     = 0;

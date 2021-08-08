@@ -12,6 +12,7 @@
 #include "include/gs_session.h"
 #include "include/gs_random_id.h"
 #include "include/gs_packet_create_char_request.h"
+#include "include/gs_packet_revive_request.h"
 #include "include/gs_packet_move.h"
 #include "include/gs_packet_validate_pos.h"
 #include "include/gs_packet_char_info.h"
@@ -19,6 +20,7 @@
 #include "include/gs_packet_target_selected.h"
 #include "include/gs_packet_auto_attack.h"
 #include "include/gs_packet_attack.h"
+#include "include/gs_packet_revive.h"
 #include "include/gs_packet_status.h"
 #include "include/gs_packet_restart.h"
 #include "include/gs_packet_die.h"
@@ -161,6 +163,32 @@ gs_character_send_status(struct gs_character *from, struct gs_character *to)
         gs_character_encrypt_and_send_packet(to, response);
 }
 
+static void gs_character_revive(
+        struct gs_state *state,
+        struct gs_character *src,
+        enum gs_packet_revive_request_option where)
+{
+        struct gs_packet_revive revive = { 0 };
+
+        packet_t response[8] = { 0 };
+
+        assert(state);
+        assert(src);
+
+        revive.obj_id = src->id;
+        gs_packet_revive_pack(response, &revive);
+        gs_character_broadcast_packet(state, src, response);
+
+        switch (where) {
+        case REVIVE_IN_CLAN_HALL:
+        case REVIVE_IN_CASTLE:
+        case REVIVE_IN_SIEGE_HQ:
+        case REVIVE_IN_FIXED:
+        default:
+                break;
+        }
+}
+
 static void gs_character_move(
         struct gs_state *state,
         struct gs_character *character,
@@ -183,7 +211,7 @@ static void gs_character_die(struct gs_state *state, struct gs_character *src)
 {
         struct gs_packet_die die = { 0 };
 
-        packet_t response[32] = { 0 };
+        packet_t response[64] = { 0 };
 
         assert(state);
         assert(src);
@@ -211,6 +239,8 @@ static void gs_character_attack(
         i32_t x  = 0;
         i32_t y  = 0;
 
+        int was_already_dead = 0;
+
         assert(state);
         assert(attacker);
         assert(target);
@@ -219,6 +249,7 @@ static void gs_character_attack(
         hit.target_id = target->id;
 
         // todo: implement properly.
+        was_already_dead = target->stats.hp == 0;
         target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
 
         gs_packet_attack_set_attacker(&attack, attacker);
@@ -229,6 +260,13 @@ static void gs_character_attack(
 
         gs_character_broadcast_packet(state, attacker, auto_attack_packet);
         gs_character_broadcast_packet(state, attacker, attack_packet);
+
+        // Allow to hit dead bodies. But since they
+        // were already dead, we don't need to re-send
+        // the life or dead packet.
+        if (was_already_dead) {
+                return;
+        }
 
         // When the life of the target gets modified
         // make sure the attacker and the target
@@ -278,6 +316,7 @@ static void gs_character_spawn_random_orc(struct gs_state *state)
 
         assert(state);
 
+        orc.id                   = gs_character_get_free_id(state);
         orc.position.x           = -84023;
         orc.position.y           = 244598;
         orc.position.z           = -3730;
@@ -376,19 +415,25 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 
         struct gs_character *character = 0;
 
-        size_t id = 0;
+        u32_t id = 0;
+
+        int already_in_list = 0;
 
         assert(state);
         assert(spawning);
+        assert(spawning->id);
 
-        recycle_id_get(&id, state->recycled_characters);
+        id = spawning->id;
 
-        spawning->id = (u32_t)(id + 1);
-        log("spawning character with id %d. notifying close players.",
-            spawning->id);
+        log("spawning character with id %d. notifying close players.", id);
 
         gs_character_each(character, state)
         {
+                if (character->id == spawning->id) {
+                        already_in_list = 1;
+                        continue;
+                }
+
                 // Notify player in the world of the new spawning character.
                 bytes_zero(response, sizeof(response));
 
@@ -425,8 +470,11 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
                 gs_character_encrypt_and_send_packet(spawning, response);
         }
 
-        state->characters[id] = *spawning;
-        list_add(state->list_characters, &state->characters[id]);
+        if (already_in_list) {
+                return;
+        }
+
+        gs_character_add(state, spawning);
 }
 
 static void
@@ -444,9 +492,7 @@ gs_character_restart(struct gs_state *state, struct gs_character *character)
         gs_packet_restart_pack(response, &restart);
         gs_character_encrypt_and_send_packet(character, response);
 
-        recycle_id(state->recycled_characters, (size_t)(character->id - 1));
-        list_remove(state->list_characters, character);
-        *character = (struct gs_character){ 0 };
+        gs_character_disconnect(state, character);
 }
 
 static struct gs_character *
@@ -465,4 +511,39 @@ gs_character_from_session(struct gs_state *state, struct gs_session *session)
         }
 
         return 0;
+}
+
+static u32_t gs_character_get_free_id(struct gs_state *state)
+{
+        assert(state);
+
+        // Don't use id 0, it causes issues with packets
+        // sent to the client.
+        for (size_t i = 1, max = arr_size(state->characters); i < max; i += 1) {
+                if (!state->characters[i].id) {
+                        return (u32_t) i;
+                }
+        }
+
+        return 0;
+}
+
+static void gs_character_add(struct gs_state *state, struct gs_character *src)
+{
+        assert(state);
+        assert(src);
+        assert(src->id);
+
+        state->characters[src->id] = *src;
+        list_add(state->list_characters, &state->characters[src->id]);
+}
+
+static void
+gs_character_disconnect(struct gs_state *state, struct gs_character *src)
+{
+        assert(state);
+        assert(src);
+
+        list_remove(state->list_characters, src);
+        *src = (struct gs_character){ 0 };
 }
