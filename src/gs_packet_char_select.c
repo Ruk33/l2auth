@@ -17,12 +17,11 @@ void gs_packet_char_select_set_char(
 {
         assert(dest);
         assert(src);
-        assert(src->session);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
         l2_string_from_char(dest->title, src->title, sizeof(dest->title));
 
-        dest->id        = src->session->id;
+        dest->id        = src->id;
         dest->active    = 1;
         dest->race_id   = src->race;
         dest->class_id  = src->_class;

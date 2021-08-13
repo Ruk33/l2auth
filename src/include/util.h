@@ -9,14 +9,14 @@
 #define arr_size(a) (sizeof(a) / sizeof(a[0]))
 
 // Returns min number between a and b
-#ifndef min
-#define min(a, b) ((a) > (b) ? (b) : (a))
+#ifndef _min
+#define _min(a, b) ((a) > (b) ? (b) : (a))
 #endif
 
 // Returns highes number between a and b
-#ifndef max
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
+// #ifndef max
+// #define max(a, b) ((a) > (b) ? (a) : (b))
+// #endif
 
 // Absolute value
 // #ifndef abs

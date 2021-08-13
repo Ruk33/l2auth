@@ -115,9 +115,9 @@ static void handle_new_character(struct gs_session *session)
 {
         static gs_packet_new_char_t new_char = { 0 };
 
-        struct gs_character_template *templates = 0;
+        static packet_t response[1024] = { 0 };
 
-        packet_t response[1024] = { 0 };
+        struct gs_character_template *templates = 0;
 
         size_t template_count = 0;
 
@@ -223,7 +223,7 @@ static void handle_quest_list(struct gs_session *session)
 {
         gs_packet_quest_list_t quest_list = { 0 };
 
-        packet_t response[16] = { 0 };
+        packet_t response[32] = { 0 };
 
         assert(session);
 
@@ -236,7 +236,7 @@ static void handle_auto_ss_bsps(struct gs_session *session)
 {
         gs_packet_d0_t d0 = { 0 };
 
-        packet_t response[16] = { 0 };
+        packet_t response[32] = { 0 };
 
         assert(session);
 
@@ -347,13 +347,16 @@ static void entering_world_state(
 
         switch (packet_type(packet)) {
         case 0x03: // Enter world.
+                log("handling enter world.");
                 handle_enter_world(state, session);
                 session->state = IN_WORLD;
                 break;
         case 0x63: // Quest list.
+                log("handling quest list.");
                 handle_quest_list(session);
                 break;
         case 0xd0: // Auto ss bsps.
+                log("handling auto ss bsps.");
                 handle_auto_ss_bsps(session);
                 break;
         default:
@@ -448,7 +451,7 @@ void gs_request(
         // Not sure how useful this may be, but it
         // may help reducing the amount of bytes required to
         // be reset.
-        safe_packet_clean = min(sizeof(packet), n * 2);
+        safe_packet_clean = _min(sizeof(packet), n * 2);
         bytes_zero(packet, safe_packet_clean);
 
         gs_session_decrypt(session, packet, buf);
@@ -490,7 +493,7 @@ void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
 {
         gs_packet_leave_world_t leave_world = { 0 };
 
-        packet_t response[8] = { 0 };
+        packet_t response[32] = { 0 };
 
         struct gs_session *session = 0;
 

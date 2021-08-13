@@ -109,15 +109,15 @@ static void gs_character_broadcast_packet(
 
         struct gs_character *character = 0;
 
-        u16_t safe_packet_size = 0;
+        size_t safe_packet_size = 0;
 
         assert(state);
         assert(from);
         assert(packet);
 
         // This way maybe we can clear less space than what we really need.
-        safe_packet_size = packet_size(packet) * 2;
-        safe_packet_size = min(sizeof(response), safe_packet_size);
+        safe_packet_size = (size_t)(packet_size(packet) * 2);
+        safe_packet_size = _min(sizeof(response), safe_packet_size);
 
         gs_character_each(character, state)
         {
@@ -170,7 +170,7 @@ static void gs_character_revive(
 {
         struct gs_packet_revive revive = { 0 };
 
-        packet_t response[8] = { 0 };
+        packet_t response[32] = { 0 };
 
         assert(state);
         assert(src);
@@ -231,8 +231,8 @@ static void gs_character_attack(
         gs_packet_attack_t attack  = { 0 };
         gs_packet_attack_hit_t hit = { 0 };
 
-        packet_t auto_attack_packet[8] = { 0 };
-        packet_t attack_packet[256]    = { 0 };
+        packet_t auto_attack_packet[32] = { 0 };
+        packet_t attack_packet[256]     = { 0 };
 
         double d = 0;
         double a = 0;
@@ -285,7 +285,7 @@ static void gs_character_select_target(
 {
         gs_packet_target_selected_t selected = { 0 };
 
-        packet_t response[16] = { 0 };
+        packet_t response[32] = { 0 };
 
         assert(character);
         assert(target);
@@ -482,7 +482,7 @@ gs_character_restart(struct gs_state *state, struct gs_character *character)
 {
         gs_packet_restart_t restart = { 0 };
 
-        packet_t response[16] = { 0 };
+        packet_t response[32] = { 0 };
 
         assert(state);
         assert(character);

@@ -58,7 +58,7 @@ ls_rsa_t *ls_rsa_new()
         assert(instance->key);
 
         BN_dec2bn(&instance->e, "65537");
-        RSA_generate_key_ex(instance->key, 1024, instance->e, NULL);
+        RSA_generate_key_ex(instance->key, 1024, instance->e, 0);
 
         rsa_key_count += 1;
 
@@ -87,7 +87,7 @@ void ls_rsa_modulus(ls_rsa_t *rsa, byte_t *dest)
 
         instance = (rsa_pack_t *) rsa;
 
-        RSA_get0_key(instance->key, &n, NULL, NULL);
+        RSA_get0_key(instance->key, &n, 0, 0);
         BN_bn2bin(n, dest);
         rsa_scramble_modulo(dest);
 }

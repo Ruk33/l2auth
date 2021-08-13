@@ -264,6 +264,7 @@ int os_io_listen(os_io_cb *cb)
                                         cb(io, OS_IO_SOCKET_REQUEST, buf, read);
                                         break;
                                 }
+
                                 break;
                         case TIMER:
                                 // Calling timerfd_gettime repeats the timer...

@@ -80,13 +80,13 @@ static void handle_request_server_list(ls_session_t *session)
 
 static void handle_login_server(ls_session_t *session)
 {
-        packet_t response[16] = { 0 };
+        packet_t response[32] = { 0 };
 
         ls_packet_play_ok_t play_ok = { 0 };
 
         assert(session);
 
-        log("Player wants to log into game server.");
+        log("player wants to log into game server.");
 
         play_ok.playOK1 = session->playOK1;
         play_ok.playOK2 = session->playOK2;
@@ -135,7 +135,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
         session = ls_session_find(socket);
 
         if (!session) {
-                log("Session not found. Ignoring request.");
+                log("session not found. ignoring request.");
                 return;
         }
 
@@ -156,7 +156,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
                 handle_gg_auth(session);
                 break;
         default:
-                log("Ignoring unknown packet.");
+                log("ignoring unknown packet.");
                 break;
         }
 
@@ -171,4 +171,5 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
 void ls_request_disconnect(struct os_io *socket)
 {
         assert(socket);
+        log("client disconnected from login server.");
 }
