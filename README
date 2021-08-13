@@ -1,7 +1,19 @@
 == L2 Auth
 Simple Lineage 2 C4 server emulator written in C as a learning exercise.
 
-== System in Windows 10
+== Why does this project exist?
+Because it's fun; because I like Lineage 2 (at least until C4 and Interlude 
+chronicles) and because I like the C programming language and I thought this 
+is an excellent project to work with it.
+
+== Streaming
+If you would like to follow the project's progress, I stream 
+on https://www.twitch.tv/franco_montenegro.
+
+== Download
+You can download a release from https://github.com/Ruk33/l2auth/releases
+
+== System for Windows 10
 I have uploaded my system folder that works fine in Windows 10. Remember, this
 is for Lineage 2 Chronicle 4.
 
@@ -15,19 +27,22 @@ Add the following line:
 In Windows, the host file can be found in \Windows\System32\drivers\etc\hosts.
 In Linux, the host file can be found in /etc/hosts.
 
-== Streaming
-If you would like to follow the project's progress, I stream 
-on https://www.twitch.tv/franco_montenegro.
+== Compile in Linux
+- Create a "build" folder.
+- Run make.
+- Run migrations.
 
-== Why does this project exist?
-Because it's fun; because I like Lineage 2 (at least until C4 and Interlude 
-chronicles) and because I like the C programming language and I thought this 
-is an excellent project to work with it.
+== Compile in Windows
+- Create a "build" folder.
+- Open a CMD terminal
+- Run build.bat
+- Run migrations
 
-== Compile
-Create a "build" folder.
-Run make. Don't forget to also run make migrations to run sqlite migrations
-and create database.
+== Running migrations
+Open a terminal and run:
+sqlite3 build/db < migrations/sqlite/00_create_characters_table.sql
+
+This will create a database in build/db (if required) and run the migration.
 
 == Start login server
 Run build/login_server. The login server will listen for connections to
@@ -40,17 +55,20 @@ localhost using port 7777.
 == Live changes
 The game server supports changes without having to shutdown or restart
 the server itself.
-Just run the game server, make a change, and run make gslib. The new changes
-will be live.
 
-== Dependencies
+- Run the game server
+- Make a change
+- Re-build the project.
+
+The new changes will be live.
+
+== Linux Dependencies
 - openssl
 - sqlite3
 - make (optional)
 
-== Additional notes
-This project is intended to be ran on Linux, Ubuntu and on little endian machines.
-You can use Windows WSL for the Linux layer (that's what I do).
+== Windows dependencies
+- Microsoft Visual Studio (to get the compiler)
 
 == Game and login server
 This project divides the login server (from where the user can authenticate
@@ -95,7 +113,7 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 - [x] Find a way to upload system folder.
 - [x] Check what's the error when creating a new character (column index out of range)
 - [x] Implement damage
-- [ ] Double check the game server when a client gets disconnected
+- [x] Double check the game server when a client gets disconnected
       The requests are not being handled correctly.
 - [x] Remove/deprecate cmake, it's not worth it.
 - [x] Add build/makefile to rebuild project and database if required.
@@ -125,17 +143,17 @@ blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
 
 == Want to contribute?
 Awesome! Just open up an issue detailing what you will be working on, this way
-we can be more organized with the work. After that, just have fun working on it!
+we can be more organized with the work. After that, just have fun working on it.
 
 A few rules for contributors:
-- No dynamic memory allocation (only third party libs are allowed to do so)
+- No dynamic memory allocation. Exceptions:
+        - Third party libraries
+        - Platform specific code (win32, linux, etc. layers)
 - All variables must be initialized
 - No NULL, use 0 (shorter to write)
 - OS related stuff must be inside of the os folder (ie, src/linux)
 - Storage related stuff, must be inside of storage/name.c (ie, storage/sqlite.c)
 - Only 1 thread is used to handle requests
-- Only 1 storage/database connection is used for the server
-- Only game_server/main.c and login_server/main.c are allowed to spawn threads
 - Variables exceeding 100 bytes, must be static and zeroed before used
 - The code should be robust enough to handle either bad and good requests without crashing
 - Have fun
