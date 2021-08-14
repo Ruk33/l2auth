@@ -158,11 +158,6 @@ A few rules for contributors:
 - The code should be robust enough to handle either bad and good requests without crashing
 - Have fun
 
-Changes will be accepted through patches. Currently I'm using Fossil for 
-versioning and this is just a git mirror.
-
-Why? Because I'm trying new tools.
-
 == Credits
 - l2jserver (http://l2jserver.com/)
 - http://fursoffers.narod.ru/Packets.htm
