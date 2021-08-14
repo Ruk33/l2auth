@@ -16,6 +16,7 @@ set CFLAGS=/nologo /WL /O2 /MTd
 set CINCLUDES=
 set CLIBS=
 
+mkdir build
 del build\*.pdb
 
 @REM Game server library

@@ -28,12 +28,10 @@ In Windows, the host file can be found in \Windows\System32\drivers\etc\hosts.
 In Linux, the host file can be found in /etc/hosts.
 
 == Compile in Linux
-- Create a "build" folder.
-- Run make.
-- Run migrations.
+- Run sh build.sh
+- Run migrations
 
 == Compile in Windows
-- Create a "build" folder.
 - Open a CMD terminal
 - Run build.bat
 - Run migrations
