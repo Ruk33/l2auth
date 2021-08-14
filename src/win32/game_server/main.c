@@ -16,8 +16,8 @@
 
 #include "../../include/gs_lib.h"
 
-#define GAME_SERVER_LIB_PATH ("C:\\Users\\Franco\\linked_l2auth\\build\\game_server_lib.dll")
-#define GAME_SERVER_LIB_TMP_PATH ("C:\\Users\\Franco\\linked_l2auth\\build\\game_server_lib_2.dll")
+#define GAME_SERVER_LIB_PATH ("game_server_lib.dll")
+#define GAME_SERVER_LIB_TMP_PATH ("game_server_lib_2.dll")
 
 struct lib {
         HMODULE handle;

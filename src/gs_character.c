@@ -1,29 +1,18 @@
 #include <assert.h>
 #include <math.h>
+#include "include/log.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/list.h"
 #include "include/recycle_id.h"
 #include "include/gs_types.h"
-#include "include/log.h"
+#include "include/gs_server_packets.h"
+#include "include/gs_client_packets.h"
 #include "include/packet.h"
 #include "include/conn.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
 #include "include/gs_random_id.h"
-#include "include/gs_packet_create_char_request.h"
-#include "include/gs_packet_revive_request.h"
-#include "include/gs_packet_move.h"
-#include "include/gs_packet_validate_pos.h"
-#include "include/gs_packet_char_info.h"
-#include "include/gs_packet_npc_info.h"
-#include "include/gs_packet_target_selected.h"
-#include "include/gs_packet_auto_attack.h"
-#include "include/gs_packet_attack.h"
-#include "include/gs_packet_revive.h"
-#include "include/gs_packet_status.h"
-#include "include/gs_packet_restart.h"
-#include "include/gs_packet_die.h"
 #include "include/gs_character.h"
 
 #define gs_character_each(character, state) \
@@ -153,11 +142,13 @@ gs_character_send_status(struct gs_character *from, struct gs_character *to)
 
         attr.type  = STATUS_CUR_HP;
         attr.value = (i32_t) from->stats.hp;
-        gs_packet_status_add(&status, &attr);
+        status.attributes[0] = attr;
 
         attr.type  = STATUS_MAX_HP;
         attr.value = (i32_t) from->stats.max_hp;
-        gs_packet_status_add(&status, &attr);
+        status.attributes[1] = attr;
+
+        status.count = 2;
 
         gs_packet_status_pack(response, &status);
         gs_character_encrypt_and_send_packet(to, response);
@@ -194,7 +185,7 @@ static void gs_character_move(
         struct gs_character *character,
         struct gs_point *p)
 {
-        gs_packet_move_t move_response = { 0 };
+        struct gs_packet_move move_response = { 0 };
 
         packet_t packet[64] = { 0 };
 
@@ -202,7 +193,14 @@ static void gs_character_move(
         assert(character);
         assert(p);
 
-        gs_packet_move(&move_response, character);
+        move_response.id     = character->id;
+        move_response.prev_x = character->position.x;
+        move_response.prev_y = character->position.y;
+        move_response.prev_z = character->position.z;
+        move_response.new_x  = character->ai.moving_to.x;
+        move_response.new_y  = character->ai.moving_to.y;
+        move_response.new_z  = character->ai.moving_to.z;
+
         gs_packet_move_pack(packet, &move_response);
         gs_character_broadcast_packet(state, character, packet);
 }
@@ -216,7 +214,10 @@ static void gs_character_die(struct gs_state *state, struct gs_character *src)
         assert(state);
         assert(src);
 
-        gs_packet_die_add_options(&die, src);
+        die.obj_id     = src->id;
+        die.to_village = 1;
+        die.to_fixed   = 1;
+
         gs_packet_die_pack(response, &die);
         gs_character_broadcast_packet(state, src, response);
 }
@@ -226,10 +227,10 @@ static void gs_character_attack(
         struct gs_character *attacker,
         struct gs_character *target)
 {
-        gs_packet_auto_attack_t auto_attack = { 0 };
+        struct gs_packet_auto_attack auto_attack = { 0 };
 
-        gs_packet_attack_t attack  = { 0 };
-        gs_packet_attack_hit_t hit = { 0 };
+        struct gs_packet_attack attack  = { 0 };
+        struct gs_packet_attack_hit hit = { 0 };
 
         packet_t auto_attack_packet[32] = { 0 };
         packet_t attack_packet[256]     = { 0 };
@@ -245,15 +246,21 @@ static void gs_character_attack(
         assert(attacker);
         assert(target);
 
+        auto_attack.target_id = target->id;
+
         hit.damage    = attacker->stats.p_attack;
         hit.target_id = target->id;
+
+        attack.attacker_id = attacker->id;
+        attack.attacker_x  = attacker->position.x;
+        attack.attacker_y  = attacker->position.y;
+        attack.attacker_z  = attacker->position.z;
+        attack.hit_count   = 1;
+        attack.hits[0]     = hit;
 
         // todo: implement properly.
         was_already_dead = target->stats.hp == 0;
         target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
-
-        gs_packet_attack_set_attacker(&attack, attacker);
-        gs_packet_attack_add_hit(&attack, &hit);
 
         gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
         gs_packet_attack_pack(attack_packet, &attack);
@@ -283,7 +290,7 @@ static void gs_character_select_target(
         struct gs_character *character,
         struct gs_character *target)
 {
-        gs_packet_target_selected_t selected = { 0 };
+        struct gs_packet_target_selected selected = { 0 };
 
         packet_t response[32] = { 0 };
 
@@ -299,13 +306,18 @@ static void gs_character_select_target(
 
 static void gs_character_validate_position(struct gs_character *character)
 {
-        gs_packet_validate_pos_t validate_response = { 0 };
+        struct gs_packet_validate_pos validate_response = { 0 };
 
         packet_t response[64] = { 0 };
 
         assert(character);
 
-        gs_packet_validate_pos(&validate_response, character);
+        validate_response.id      = character->id;
+        validate_response.heading = character->heading;
+        validate_response.x       = character->position.x;
+        validate_response.y       = character->position.y;
+        validate_response.z       = character->position.z;
+
         gs_packet_validate_pos_pack(response, &validate_response);
         gs_character_encrypt_and_send_packet(character, response);
 }
@@ -352,7 +364,7 @@ static void gs_character_spawn_random_orc(struct gs_state *state)
 
 static void gs_character_from_request(
         struct gs_character *dest,
-        gs_packet_create_char_request_t *src)
+        struct gs_packet_create_char_request *src)
 {
         assert(dest);
         assert(src);
@@ -405,11 +417,109 @@ static void gs_character_from_request(
         dest->name_color                      = 0xFFFFFF;
 }
 
+static void gs_character_set_npc_info(struct gs_packet_npc_info *dest, struct gs_character *src)
+{
+        assert(dest);
+        assert(src);
+
+        l2_string_from_char(dest->name, src->name, sizeof(dest->name));
+        l2_string_from_char(dest->title, src->title, sizeof(dest->title));
+
+        dest->id                  = src->id;
+        dest->template_id         = 6 + 1000000; // orc
+        dest->attackable          = 1;
+        dest->x                   = src->position.x;
+        dest->y                   = src->position.y;
+        dest->z                   = src->position.z;
+        dest->heading             = src->heading;
+        dest->m_attack_speed      = src->stats.m_attack_speed;
+        dest->p_attack_speed      = src->stats.p_attack_speed;
+        dest->run_speed           = src->stats.run_speed;
+        dest->walk_speed          = src->stats.walk_speed;
+        dest->swim_run_speed      = src->stats.run_speed;
+        dest->swim_walk_speed     = src->stats.walk_speed;
+        dest->fly_run_speed       = src->stats.run_speed;
+        dest->fly_walk_speed      = src->stats.walk_speed;
+        dest->magic_multiplier    = 1;
+        dest->movement_multiplier = src->stats.movement_speed_multiplier;
+        dest->collision_radius    = src->collision_radius;
+        dest->collision_height    = src->collision_height;
+        dest->r_hand              = 0;
+        dest->l_hand              = 0;
+        dest->name_above_char     = 1;
+        dest->running             = 1;
+        dest->in_combat           = 0;
+        dest->alike_dead          = src->stats.hp == 0;
+        dest->summoned            = 0;
+        dest->karma               = 25;
+        dest->abnormal_effect     = 0;
+        dest->team_circle         = 0;
+}
+
+static void gs_character_set_player_info(struct gs_packet_char_info *dest, struct gs_character *src)
+{
+        assert(dest);
+        assert(src);
+
+        bytes_zero(dest->name, sizeof(dest->name));
+        bytes_zero(dest->title, sizeof(dest->title));
+
+        l2_string_from_char(dest->name, src->name, sizeof(dest->name));
+        l2_string_from_char(dest->title, src->title, sizeof(dest->title));
+
+        dest->x                       = src->position.x;
+        dest->y                       = src->position.y;
+        dest->z                       = src->position.z;
+        dest->heading                 = src->heading;
+        dest->id                      = src->id;
+        dest->race_id                 = src->race;
+        dest->sex                     = src->sex;
+        dest->class_id                = src->_class;
+        dest->pvp_flag                = 0;
+        dest->karma                   = 0;
+        dest->m_attack_speed          = src->stats.m_attack_speed;
+        dest->p_attack_speed          = src->stats.p_attack_speed;
+        dest->run_speed               = src->stats.run_speed;
+        dest->walk_speed              = src->stats.walk_speed;
+        dest->swim_run_speed          = src->stats.run_speed;
+        dest->swim_walk_speed         = src->stats.walk_speed;
+        dest->fly_run_speed           = src->stats.run_speed;
+        dest->fly_walk_speed          = src->stats.walk_speed;
+        dest->movement_multiplier     = src->stats.movement_speed_multiplier;
+        dest->attack_speed_multiplier = src->stats.attack_speed_multiplier;
+        dest->collision_radius        = src->collision_radius;
+        dest->collision_height        = src->collision_height;
+        dest->hair_style              = src->hair_style;
+        dest->hair_color              = src->hair_color;
+        dest->face                    = src->face;
+        dest->clan_id                 = 0;
+        dest->clan_crest_id           = 0;
+        dest->ally_id                 = 0;
+        dest->ally_crest_id           = 0;
+        dest->standing                = 1;
+        dest->running                 = 1;
+        dest->in_combat               = 0;
+        dest->alike_dead              = 0;
+        dest->invisible               = 0;
+        dest->mount_type              = 0;
+        dest->private_store_type      = 0;
+        dest->cubics                  = 0;
+        dest->find_party_member       = 0;
+        dest->abnormal_effect         = 0;
+        dest->recommendations_left    = 0;
+        dest->mounted                 = 0;
+        dest->clan_crest_large_id     = 0;
+        dest->hero_symbol             = 0;
+        dest->hero_aura               = 0;
+        dest->fishing                 = 0;
+        dest->name_color              = 0xFFFFFF;
+}
+
 static void
 gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 {
-        static gs_packet_char_info_t char_info = { 0 };
-        static gs_packet_npc_info_t npc_info   = { 0 };
+        static struct gs_packet_char_info char_info = { 0 };
+        static struct gs_packet_npc_info npc_info   = { 0 };
 
         static packet_t response[512] = { 0 };
 
@@ -439,11 +549,11 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 
                 if (gs_character_is_npc(spawning)) {
                         bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
-                        gs_packet_npc_info(&npc_info, spawning);
+                        gs_character_set_npc_info(&npc_info, spawning);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
                         bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                        gs_packet_char_info(&char_info, spawning);
+                        gs_character_set_player_info(&char_info, spawning);
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
@@ -459,11 +569,11 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 
                 if (gs_character_is_npc(character)) {
                         bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
-                        gs_packet_npc_info(&npc_info, character);
+                        gs_character_set_npc_info(&npc_info, character);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
                         bytes_zero((byte_t *) &char_info, sizeof(char_info));
-                        gs_packet_char_info(&char_info, character);
+                        gs_character_set_player_info(&char_info, character);
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
@@ -480,7 +590,7 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 static void
 gs_character_restart(struct gs_state *state, struct gs_character *character)
 {
-        gs_packet_restart_t restart = { 0 };
+        struct gs_packet_restart restart = { 0 };
 
         packet_t response[32] = { 0 };
 

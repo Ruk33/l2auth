@@ -4,6 +4,17 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+typedef unsigned char byte_t;
+
+typedef int8_t i8_t;
+typedef int16_t i16_t;
+typedef int32_t i32_t;
+typedef int64_t i64_t;
+typedef uint8_t u8_t;
+typedef uint16_t u16_t;
+typedef uint32_t u32_t;
+typedef uint64_t u64_t;
+
 #define PREVENT_UNUSED_WARNING(var) var = var
 
 #define arr_size(a) (sizeof(a) / sizeof(a[0]))
@@ -41,19 +52,7 @@
 #define byte_read_val(dest, src) byte_read_n(&(dest), src, sizeof(dest))
 
 #define bytes_cpy_str(dest, src, n) \
-        bytes_cpy_until(            \
-                (unsigned char *) (dest), (unsigned char *) (src), 0, n);
-
-typedef unsigned char byte_t;
-
-typedef int8_t i8_t;
-typedef int16_t i16_t;
-typedef int32_t i32_t;
-typedef int64_t i64_t;
-typedef uint8_t u8_t;
-typedef uint16_t u16_t;
-typedef uint32_t u32_t;
-typedef uint64_t u64_t;
+        bytes_cpy_until((byte_t *) (dest), (byte_t *) (src), 0, n);
 
 // Copy n bytes from src to dest.
 void bytes_cpy(byte_t *dest, byte_t *src, size_t n);

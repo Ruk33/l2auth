@@ -48,14 +48,14 @@ struct gs_session {
         byte_t encrypt_key[8];
         byte_t decrypt_key[8];
 
-        int playOK1;
-        int playOK2;
-        int loginOK1;
-        int loginOK2;
+        i32_t playOK1;
+        i32_t playOK2;
+        i32_t loginOK1;
+        i32_t loginOK2;
 
         char username[MAX_USERNAME_SIZE];
         int conn_encrypted;
-        int character_index;
+        size_t character_index;
 };
 
 struct gs_point {

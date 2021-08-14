@@ -4,8 +4,7 @@
 #include "util.h"
 #include "gs_types.h"
 #include "gs_session.h"
-#include "gs_packet_create_char_request.h"
-#include "gs_packet_revive_request.h"
+#include "gs_client_packets.h"
 
 // Check if the character is a non playable character.
 // Players are characters too, the difference is, a player
@@ -73,7 +72,7 @@ static void gs_character_spawn_random_orc(struct gs_state *state);
 // parameters/values sent by the client (through src packet).
 static void gs_character_from_request(
         struct gs_character *dest,
-        gs_packet_create_char_request_t *src);
+        struct gs_packet_create_char_request *src);
 
 // Spawn new character (npc or playable) and broadcast packet to all players.
 // Todo: make sure the packet is broadcasted only to close players.

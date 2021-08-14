@@ -27,7 +27,6 @@ void ls_blowfish_encrypt(ls_blowfish_t *key, byte_t *dest, byte_t *src, size_t n
 
         for (size_t i = 0, iters = (n + 7) & (~7); i < iters; i += 8) {
                 // Blowfish uses big endian
-                // Todo: Convert based on current platform.
                 encode32be(dest + i, decode32le(src + i));
                 encode32be(dest + i + 4, decode32le(src + i + 4));
 
@@ -47,7 +46,6 @@ void ls_blowfish_decrypt(ls_blowfish_t *key, byte_t *dest, byte_t *src, size_t n
 
         for (size_t i = 0, iters = (n + 7) & (~7); i < iters; i += 8) {
                 // Blowfish uses big endian
-                // Todo: Convert based on current platform.
                 encode32be(dest + i, decode32le(src + i));
                 encode32be(dest + i + 4, decode32le(src + i + 4));
 

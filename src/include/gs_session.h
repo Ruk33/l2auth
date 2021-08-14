@@ -6,7 +6,7 @@
 #include "gs_types.h"
 #include "packet.h"
 #include "os_io.h"
-#include "gs_packet_auth_request.h"
+#include "gs_client_packets.h"
 
 struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket);
 
@@ -19,7 +19,7 @@ void gs_session_encrypt_conn(struct gs_session *session);
 
 void gs_session_update_auth(
         struct gs_session *dest,
-        gs_packet_auth_request_t *src);
+        struct gs_packet_auth_request *src);
 
 void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src);
 

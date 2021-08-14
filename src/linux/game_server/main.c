@@ -139,9 +139,7 @@ on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
                 break;
         case OS_IO_SOCKET_DISCONNECTED:
                 lib.on_disconnect(socket);
-                // Todo: closing the socket here indeeds closes it
-                // but also terminates the server. Investigate.
-                // os_socket_close(socket);
+                os_io_close(socket);
                 break;
         case OS_IO_TIMER_TICK:
                 lib.on_tick(0.1);

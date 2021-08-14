@@ -7,7 +7,7 @@
 #include "include/l2_string.h"
 #include "include/gs_types.h"
 #include "include/gs_crypt.h"
-#include "include/gs_packet_auth_request.h"
+#include "include/gs_client_packets.h"
 #include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
@@ -80,7 +80,7 @@ void gs_session_encrypt_conn(struct gs_session *session)
 
 void gs_session_update_auth(
         struct gs_session *dest,
-        gs_packet_auth_request_t *src)
+        struct gs_packet_auth_request *src)
 {
         size_t max_username_size = 0;
 

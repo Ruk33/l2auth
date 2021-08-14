@@ -5,10 +5,7 @@
 #include "include/packet.h"
 #include "include/gs_types.h"
 #include "include/gs_character.h"
-#include "include/gs_packet_action_request.h"
-#include "include/gs_packet_validate_pos_request.h"
-#include "include/gs_packet_move_request.h"
-#include "include/gs_packet_revive_request.h"
+#include "include/gs_client_packets.h"
 #include "include/gs_ai.h"
 
 static void
@@ -171,7 +168,7 @@ static void gs_ai_handle_move_request(
         struct gs_character *character,
         packet_t *packet)
 {
-        gs_packet_move_request_t move_request = { 0 };
+        struct gs_packet_move_request move_request = { 0 };
 
         struct gs_point point = { 0 };
 
@@ -191,7 +188,7 @@ static void gs_ai_handle_move_request(
 static void
 gs_ai_handle_val_pos_request(struct gs_character *character, packet_t *packet)
 {
-        gs_packet_validate_pos_request_t validate_request = { 0 };
+        struct gs_packet_validate_pos_request validate_request = { 0 };
 
         struct gs_character client_position = { 0 };
 
@@ -226,7 +223,7 @@ static void gs_ai_handle_action_request(
         struct gs_character *character,
         packet_t *packet)
 {
-        gs_packet_action_request_t action = { 0 };
+        struct gs_packet_action_request action = { 0 };
 
         struct gs_character *target = 0;
 
@@ -252,7 +249,7 @@ static void gs_ai_handle_attack_request(
         struct gs_character *character,
         packet_t *packet)
 {
-        gs_packet_action_request_t action = { 0 };
+        struct gs_packet_action_request action = { 0 };
 
         struct gs_character *target = 0;
 
