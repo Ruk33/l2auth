@@ -11,11 +11,7 @@
 #include "ls_blowfish.c"
 #include "ls_rsa.c"
 #include "ls_session.c"
-#include "ls_packet_gg_auth.c"
-#include "ls_packet_init.c"
-#include "ls_packet_ok.c"
-#include "ls_packet_play_ok.c"
-#include "ls_packet_server_list.c"
+#include "ls_server_packets.c"
 #include "include/ls_lib.h"
 
 void ls_lib_load(conn_send_response_cb cb)

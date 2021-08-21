@@ -32,12 +32,12 @@ In Linux, the host file can be found in /etc/hosts.
 
 == Compile in Linux
 - Run sh build.sh
-- Run migrations
+- Run migrations (see Running migrations)
 
 == Compile in Windows
 - Open a CMD terminal
 - Run build.bat
-- Run migrations
+- Run migrations (see Running migrations)
 
 == Running migrations
 Open a terminal and run:
@@ -66,10 +66,9 @@ The new changes will be live.
 == Linux Dependencies
 - openssl
 - sqlite3
-- make (optional)
 
 == Windows dependencies
-- Microsoft Visual Studio (to get the compiler)
+- Microsoft Visual Studio (C compiler)
 
 == Game and login server
 This project divides the login server (from where the user can authenticate

@@ -9,18 +9,14 @@
 #include "include/ls_rsa.h"
 #include "include/ls_session.h"
 #include "include/ls_crypt.h"
-#include "include/ls_packet_init.h"
-#include "include/ls_packet_gg_auth.h"
-#include "include/ls_packet_ok.h"
-#include "include/ls_packet_server_list.h"
-#include "include/ls_packet_play_ok.h"
+#include "include/ls_server_packets.h"
 #include "include/ls_request.h"
 
 static void handle_gg_auth(ls_session_t *session)
 {
         packet_t response[16] = { 0 };
 
-        ls_packet_gg_auth_t gg_auth = { 0 };
+        struct ls_packet_gg_auth gg_auth = { 0 };
 
         assert(session);
 
@@ -36,7 +32,7 @@ static void handle_auth_login(ls_session_t *session)
 {
         packet_t response[64] = { 0 };
 
-        ls_packet_ok_t ok = { 0 };
+        struct ls_packet_ok ok = { 0 };
 
         assert(session);
 
@@ -56,7 +52,7 @@ static void handle_request_server_list(ls_session_t *session)
 {
         static packet_t response[512] = { 0 };
 
-        static ls_packet_server_list_t server_list = { 0 };
+        static struct ls_packet_server_list server_list = { 0 };
 
         server_t *gs_servers = 0;
 
@@ -68,8 +64,11 @@ static void handle_request_server_list(ls_session_t *session)
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &server_list, sizeof(server_list));
 
-        for (size_t i = 0, max = server_all_count(); i < max; i += 1) {
-                ls_packet_server_list_add(&server_list, &gs_servers[i]);
+        server_list.count = server_all_count();
+        assert(server_list.count <= arr_size(server_list.servers));
+
+        for (u8_t i = 0; i < server_list.count; i += 1) {
+                server_list.servers[i] = gs_servers[i];
         }
 
         ls_packet_server_list_pack(response, &server_list);
@@ -82,7 +81,7 @@ static void handle_login_server(ls_session_t *session)
 {
         packet_t response[32] = { 0 };
 
-        ls_packet_play_ok_t play_ok = { 0 };
+        struct ls_packet_play_ok play_ok = { 0 };
 
         assert(session);
 
@@ -100,22 +99,28 @@ static void handle_login_server(ls_session_t *session)
 void ls_request_new_conn(struct os_io *socket)
 {
         static packet_t response[256] = { 0 };
-        static byte_t modulus[128]    = { 0 };
-        static ls_packet_init_t init  = { 0 };
+        static struct ls_packet_init init  = { 0 };
+
+        // Todo: re-check from where does this session id comes from.
+        byte_t session_id[] = { 0xfd, 0x8a, 0x22, 0x00 };
+
+        // Chronicle 4 protocol only :)
+        byte_t protocol[]   = { 0x5a, 0x78, 0x00, 0x00 };
 
         ls_session_t *session = 0;
 
         assert(socket);
 
         bytes_zero(response, sizeof(response));
-        bytes_zero(modulus, sizeof(modulus));
         bytes_zero((byte_t *) &init, sizeof(init));
 
         session = ls_session_new(socket);
         assert(session);
 
-        ls_rsa_modulus(session->rsa, modulus);
-        ls_packet_init(&init, modulus);
+        bytes_cpy(init.session_id, session_id, sizeof(init.session_id));
+        bytes_cpy(init.protocol, protocol, sizeof(init.protocol));
+        ls_rsa_modulus(session->rsa, init.modulus);
+
         ls_packet_init_pack(response, &init);
 
         conn_send_packet(socket, response);
@@ -123,8 +128,7 @@ void ls_request_new_conn(struct os_io *socket)
 
 void ls_request(struct os_io *socket, byte_t *buf, size_t n)
 {
-        // 65536 being the limit for a single packet.
-        static packet_t packet[65536] = { 0 };
+        static packet_t packet[2048] = { 0 };
 
         ls_session_t *session = 0;
 
