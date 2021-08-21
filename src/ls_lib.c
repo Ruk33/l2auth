@@ -7,9 +7,6 @@
 #include "conn.c"
 #include "packet.c"
 #include "ls_request.c"
-#include "ls_crypt.c"
-#include "ls_blowfish.c"
-#include "ls_rsa.c"
 #include "ls_session.c"
 #include "ls_server_packets.c"
 #include "include/ls_lib.h"
@@ -60,7 +57,7 @@ void ls_lib_load(conn_send_response_cb cb)
 
 void ls_lib_new_conn(struct os_io *socket)
 {
-        if(!socket) {
+        if (!socket) {
                 return;
         }
         ls_request_new_conn(socket);

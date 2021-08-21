@@ -3,19 +3,34 @@
 
 #include "util.h"
 #include "os_io.h"
-#include "ls_blowfish.h"
-#include "ls_rsa.h"
+#include "packet.h"
 
-typedef struct {
+struct ls_rsa;
+
+struct ls_blowfish;
+
+struct ls_session {
         struct os_io *socket;
-        ls_blowfish_t *blowfish;
-        ls_rsa_t *rsa;
+        struct ls_blowfish *blowfish;
+        struct ls_rsa *rsa;
         i32_t playOK1;
         i32_t playOK2;
-} ls_session_t;
+};
 
-ls_session_t *ls_session_new(struct os_io *socket);
+struct ls_session *ls_session_new(struct os_io *socket);
 
-ls_session_t *ls_session_find(struct os_io *socket);
+struct ls_session *ls_session_find(struct os_io *socket);
+
+void ls_session_rsa_modulus(struct ls_session *session, byte_t *dest);
+
+void ls_session_encrypt_packet(
+        struct ls_session *session,
+        byte_t *dest,
+        packet_t *src);
+
+void ls_session_decrypt_packet(
+        struct ls_session *session,
+        packet_t *dest,
+        byte_t *src);
 
 #endif

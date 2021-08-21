@@ -6,13 +6,11 @@
 #include "include/log.h"
 #include "include/packet.h"
 #include "include/server.h"
-#include "include/ls_rsa.h"
 #include "include/ls_session.h"
-#include "include/ls_crypt.h"
 #include "include/ls_server_packets.h"
 #include "include/ls_request.h"
 
-static void handle_gg_auth(ls_session_t *session)
+static void handle_gg_auth(struct ls_session *session)
 {
         packet_t response[16] = { 0 };
 
@@ -23,12 +21,12 @@ static void handle_gg_auth(ls_session_t *session)
         gg_auth.response = PACKET_GG_AUTH_RESPONSE_SKIP;
 
         ls_packet_gg_auth_pack(response, &gg_auth);
-        ls_encrypt(session->blowfish, response, response);
+        ls_session_encrypt_packet(session, response, response);
 
         conn_send_packet(session->socket, response);
 }
 
-static void handle_auth_login(ls_session_t *session)
+static void handle_auth_login(struct ls_session *session)
 {
         packet_t response[64] = { 0 };
 
@@ -43,12 +41,12 @@ static void handle_auth_login(ls_session_t *session)
         ok.loginOK2      = session->playOK2;
 
         ls_packet_ok_pack(response, &ok);
-        ls_encrypt(session->blowfish, response, response);
+        ls_session_encrypt_packet(session, response, response);
 
         conn_send_packet(session->socket, response);
 }
 
-static void handle_request_server_list(ls_session_t *session)
+static void handle_request_server_list(struct ls_session *session)
 {
         static packet_t response[512] = { 0 };
 
@@ -72,12 +70,12 @@ static void handle_request_server_list(ls_session_t *session)
         }
 
         ls_packet_server_list_pack(response, &server_list);
-        ls_encrypt(session->blowfish, response, response);
+        ls_session_encrypt_packet(session, response, response);
 
         conn_send_packet(session->socket, response);
 }
 
-static void handle_login_server(ls_session_t *session)
+static void handle_login_server(struct ls_session *session)
 {
         packet_t response[32] = { 0 };
 
@@ -91,23 +89,23 @@ static void handle_login_server(ls_session_t *session)
         play_ok.playOK2 = session->playOK2;
 
         ls_packet_play_ok_pack(response, &play_ok);
-        ls_encrypt(session->blowfish, response, response);
+        ls_session_encrypt_packet(session, response, response);
 
         conn_send_packet(session->socket, response);
 }
 
 void ls_request_new_conn(struct os_io *socket)
 {
-        static packet_t response[256] = { 0 };
-        static struct ls_packet_init init  = { 0 };
+        static packet_t response[256]     = { 0 };
+        static struct ls_packet_init init = { 0 };
 
         // Todo: re-check from where does this session id comes from.
         byte_t session_id[] = { 0xfd, 0x8a, 0x22, 0x00 };
 
         // Chronicle 4 protocol only :)
-        byte_t protocol[]   = { 0x5a, 0x78, 0x00, 0x00 };
+        byte_t protocol[] = { 0x5a, 0x78, 0x00, 0x00 };
 
-        ls_session_t *session = 0;
+        struct ls_session *session = 0;
 
         assert(socket);
 
@@ -119,7 +117,7 @@ void ls_request_new_conn(struct os_io *socket)
 
         bytes_cpy(init.session_id, session_id, sizeof(init.session_id));
         bytes_cpy(init.protocol, protocol, sizeof(init.protocol));
-        ls_rsa_modulus(session->rsa, init.modulus);
+        ls_session_rsa_modulus(session, init.modulus);
 
         ls_packet_init_pack(response, &init);
 
@@ -130,7 +128,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
 {
         static packet_t packet[2048] = { 0 };
 
-        ls_session_t *session = 0;
+        struct ls_session *session = 0;
 
         u16_t size = 0;
 
@@ -144,7 +142,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
         }
 
         bytes_zero(packet, sizeof(packet));
-        ls_decrypt(session->blowfish, packet, buf);
+        ls_session_decrypt_packet(session, packet, buf);
 
         switch (packet_type(packet)) {
         case 0x00: // Auth login
