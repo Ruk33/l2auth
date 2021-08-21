@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 #include <math.h>
 #include "include/config.h"
 #include "include/log.h"
@@ -7,6 +8,11 @@
 #include "include/gs_character.h"
 #include "include/gs_client_packets.h"
 #include "include/gs_ai.h"
+
+static i32_t gs_ai_random_number(i32_t a, i32_t b)
+{
+        return rand() % (b + 1 - a) + a;
+}
 
 static void
 gs_ai_on_npc_attacked(struct gs_character *npc, struct gs_character *attacker)
@@ -334,7 +340,7 @@ static void gs_ai_idle_state(
                 break;
         case 0xcd: // Show map.
                 log("show map, todo");
-                gs_character_spawn_random_orc(state);
+                gs_character_spawn_random_orc(state, &character->position);
                 break;
         default:
                 log("unable to handle packet.");
@@ -457,6 +463,7 @@ static void gs_ai_update_character_position(
 
                 character->position     = move_data->destination;
                 character->ai.move_data = (struct gs_move_data){ 0 };
+                character->ai.state     = AI_IDLE;
 
                 return;
         }
@@ -467,6 +474,39 @@ static void gs_ai_update_character_position(
                                 (i32_t)(elapsed * move_data->y_speed_ticks);
 
         move_data->move_timestamp = state->game_ticks;
+}
+
+static void
+gs_ai_npc_initiate_idle_walk(struct gs_state *state, struct gs_character *npc)
+{
+        struct gs_point random_point = { 0 };
+
+        assert(state);
+        assert(npc);
+
+        if (!gs_character_is_npc(npc)) {
+                return;
+        }
+
+        if (npc->ai.idle_cd > 0) {
+                return;
+        }
+
+        npc->ai.idle_cd = 120;
+
+        if (gs_ai_random_number(1, 100) <= 33) {
+                return;
+        }
+
+        // For npcs the heading is only set when
+        // moving. For some reason, it works quite
+        // well for "calculating" a random position.
+        // It may be a good idea to double check
+        // why that's the case.
+        random_point.x = npc->position.x - (60) * cos(npc->heading);
+        random_point.y = npc->position.y - (60) * sin(npc->heading);
+        random_point.z = npc->position.z;
+        gs_ai_move(state, npc, &random_point);
 }
 
 static void
@@ -481,6 +521,10 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
                 character->ai.attack_cd -= delta * 100;
         }
 
+        if (character->ai.idle_cd > 0) {
+                character->ai.idle_cd -= delta * 100;
+        }
+
         if (character->ai.target_id) {
                 target =
                         gs_character_find_by_id(state, character->ai.target_id);
@@ -488,6 +532,7 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
 
         switch (character->ai.state) {
         case AI_IDLE:
+                gs_ai_npc_initiate_idle_walk(state, character);
                 break;
         case AI_MOVING:
                 gs_ai_update_character_position(state, character, delta);

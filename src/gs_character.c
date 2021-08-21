@@ -140,12 +140,12 @@ gs_character_send_status(struct gs_character *from, struct gs_character *to)
 
         status.obj_id = from->id;
 
-        attr.type  = STATUS_CUR_HP;
-        attr.value = (i32_t) from->stats.hp;
+        attr.type            = STATUS_CUR_HP;
+        attr.value           = (i32_t) from->stats.hp;
         status.attributes[0] = attr;
 
-        attr.type  = STATUS_MAX_HP;
-        attr.value = (i32_t) from->stats.max_hp;
+        attr.type            = STATUS_MAX_HP;
+        attr.value           = (i32_t) from->stats.max_hp;
         status.attributes[1] = attr;
 
         status.count = 2;
@@ -322,16 +322,18 @@ static void gs_character_validate_position(struct gs_character *character)
         gs_character_encrypt_and_send_packet(character, response);
 }
 
-static void gs_character_spawn_random_orc(struct gs_state *state)
+static void
+gs_character_spawn_random_orc(struct gs_state *state, struct gs_point *location)
 {
         struct gs_character orc = { 0 };
 
         assert(state);
+        assert(location);
 
         orc.id                   = gs_character_get_free_id(state);
-        orc.position.x           = -84023;
-        orc.position.y           = 244598;
-        orc.position.z           = -3730;
+        orc.position.x           = location->x;
+        orc.position.y           = location->y;
+        orc.position.z           = location->z;
         orc.collision_radius     = 14;
         orc.collision_height     = 25;
         orc.level                = 8;
@@ -417,7 +419,9 @@ static void gs_character_from_request(
         dest->name_color                      = 0xFFFFFF;
 }
 
-static void gs_character_set_npc_info(struct gs_packet_npc_info *dest, struct gs_character *src)
+static void gs_character_set_npc_info(
+        struct gs_packet_npc_info *dest,
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);
@@ -456,7 +460,9 @@ static void gs_character_set_npc_info(struct gs_packet_npc_info *dest, struct gs
         dest->team_circle         = 0;
 }
 
-static void gs_character_set_player_info(struct gs_packet_char_info *dest, struct gs_character *src)
+static void gs_character_set_player_info(
+        struct gs_packet_char_info *dest,
+        struct gs_character *src)
 {
         assert(dest);
         assert(src);

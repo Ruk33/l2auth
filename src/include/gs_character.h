@@ -66,7 +66,8 @@ static void gs_character_select_target(
 static void gs_character_validate_position(struct gs_character *character);
 
 // Todo: remove function or move it to fun.c file?
-static void gs_character_spawn_random_orc(struct gs_state *state);
+static void
+gs_character_spawn_random_orc(struct gs_state *state, struct gs_point *location);
 
 // Utility function that fills dest character using
 // parameters/values sent by the client (through src packet).
