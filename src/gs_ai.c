@@ -250,6 +250,27 @@ static void gs_ai_handle_action_request(
         gs_ai_select_target(character, target);
 }
 
+static void gs_ai_handle_say(
+        struct gs_state *state,
+        struct gs_character *character,
+        packet_t *packet)
+{
+        // Todo: double check max message's length.
+        static char message[256] = { 0 };
+
+        struct gs_packet_say_request say = { 0 };
+
+        assert(state);
+        assert(character);
+        assert(packet);
+
+        bytes_zero((byte_t *) message, sizeof(message));
+
+        gs_packet_say_request_unpack(&say, packet);
+        l2_string_to_char(message, say.message, sizeof(message));
+        gs_character_say(state, character, message);
+}
+
 static void gs_ai_handle_attack_request(
         struct gs_state *state,
         struct gs_character *character,
@@ -330,7 +351,7 @@ static void gs_ai_idle_state(
                 log("logout, todo");
                 break;
         case 0x38: // Say.
-                log("say, todo");
+                gs_ai_handle_say(state, character, request);
                 break;
         case 0x46: // Restart.
                 gs_ai_handle_restart_request(state, character);

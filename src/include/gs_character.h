@@ -27,6 +27,13 @@ gs_character_distance(struct gs_character *a, struct gs_character *b);
 static struct gs_character *
 gs_character_find_by_id(struct gs_state *state, u32_t id);
 
+// Broadcast a chat message.
+// Todo: make sure packet is only broadcasted to close players.
+static void gs_character_say(
+        struct gs_state *state,
+        struct gs_character *from,
+        char *message);
+
 // Sends hp and max hp info of from to to character.
 // Todo: rename?
 static void

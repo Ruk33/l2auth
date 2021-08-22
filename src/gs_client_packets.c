@@ -156,3 +156,18 @@ void gs_packet_validate_pos_request_unpack(
         byte_read_val(dest->z, body);
         byte_read_val(dest->heading, body);
 }
+
+void gs_packet_say_request_unpack(
+        struct gs_packet_say_request *dest,
+        packet_t *src)
+{
+        byte_t *body = 0;
+
+        assert(dest);
+        assert(src);
+
+        body = gs_packet_body_without_type(src);
+
+        dest->message = body;
+        dest->len     = l2_string_len(dest->message);
+}

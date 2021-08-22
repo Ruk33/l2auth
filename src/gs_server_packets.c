@@ -749,3 +749,20 @@ void gs_packet_enter_world_pack(
         packet_append_val(dest, src->fish_z);
         packet_append_val(dest, src->name_color);
 }
+
+void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src)
+{
+        byte_t type = 0x00;
+
+        assert(dest);
+        assert(src);
+        assert(src->character_id);
+
+        type = 0x4a;
+
+        packet_append_val(dest, type);
+        packet_append_val(dest, src->character_id);
+        packet_append_val(dest, src->type);
+        packet_append_n(dest, src->name, l2_string_bytes(src->name));
+        packet_append_n(dest, src->message, l2_string_bytes(src->message));
+}

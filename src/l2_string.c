@@ -21,6 +21,10 @@ void l2_string_to_char(char *dest, l2_string_t *src, size_t n)
                 src += 2;
                 n -= 1;
         }
+
+        if (dest) {
+                *dest = 0;
+        }
 }
 
 void l2_string_from_char(l2_string_t *dest, char *src, size_t n)
@@ -32,6 +36,10 @@ void l2_string_from_char(l2_string_t *dest, char *src, size_t n)
                 dest += 2;
                 src += 1;
                 n -= 1;
+        }
+
+        if (dest) {
+                *dest = 0;
         }
 }
 

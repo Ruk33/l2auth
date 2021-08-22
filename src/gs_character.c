@@ -120,6 +120,30 @@ static void gs_character_broadcast_packet(
         }
 }
 
+static void gs_character_say(
+        struct gs_state *state,
+        struct gs_character *from,
+        char *message)
+{
+        static struct gs_packet_say say = { 0 };
+        static packet_t response[256]   = { 0 };
+
+        assert(state);
+        assert(from);
+        assert(message);
+
+        bytes_zero((byte_t *) &say, sizeof(say));
+        bytes_zero(response, sizeof(response));
+
+        say.character_id = from->id;
+
+        l2_string_from_char(say.name, from->name, sizeof(say.name));
+        l2_string_from_char(say.message, message, sizeof(say.message));
+
+        gs_packet_say_pack(response, &say);
+        gs_character_broadcast_packet(state, from, response);
+}
+
 static void
 gs_character_send_status(struct gs_character *from, struct gs_character *to)
 {

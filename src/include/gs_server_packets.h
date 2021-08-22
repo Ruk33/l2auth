@@ -449,6 +449,14 @@ struct gs_packet_enter_world {
         u32_t name_color;
 };
 
+struct gs_packet_say {
+        u32_t character_id;
+        u32_t type;
+        // Todo: double check name and message limits.
+        l2_string_t name[28];
+        l2_string_t message[256];
+};
+
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src);
 
 void gs_packet_auto_attack_pack(
@@ -502,5 +510,7 @@ void gs_packet_status_pack(packet_t *dest, struct gs_packet_status *src);
 void gs_packet_enter_world_pack(
         packet_t *dest,
         struct gs_packet_enter_world *src);
+
+void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src);
 
 #endif
