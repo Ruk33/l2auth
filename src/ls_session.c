@@ -122,21 +122,16 @@ static void ls_session_rsa_init(struct ls_rsa *dest)
         RSA_generate_key_ex(dest->key, 1024, dest->e, 0);
 }
 
-static size_t ls_session_rsa_size(struct ls_rsa *src)
-{
-        assert(src);
-        return (size_t) RSA_size(src->key);
-}
-
 static int ls_session_rsa_decrypt(struct ls_rsa *rsa, byte_t *dest, byte_t *src)
 {
         int size = 0;
 
         assert(rsa);
+        assert(rsa->key);
         assert(dest);
         assert(src);
 
-        size = (int) ls_session_rsa_size(rsa);
+        size = RSA_size(rsa->key);
 
         return RSA_private_decrypt(size, src, dest, rsa->key, RSA_NO_PADDING);
 }
@@ -153,6 +148,7 @@ struct ls_session *ls_session_new(struct os_io *socket)
         session_count += recycle_id_get(&id, session_instances);
         session = &sessions[id];
 
+        session->id       = id;
         session->socket   = socket;
         session->blowfish = &blowfish_keys[id];
         session->rsa      = &rsa_keys[id];
@@ -161,6 +157,20 @@ struct ls_session *ls_session_new(struct os_io *socket)
         ls_session_rsa_init(session->rsa);
 
         return session;
+}
+
+void ls_session_free(struct ls_session *session)
+{
+        assert(session);
+
+        RSA_free(session->rsa->key);
+        BN_free(session->rsa->e);
+
+        recycle_id(session_instances, session->id);
+
+        *session->rsa      = (struct ls_rsa){ 0 };
+        *session->blowfish = (struct ls_blowfish){ 0 };
+        *session           = (struct ls_session){ 0 };
 }
 
 struct ls_session *ls_session_find(struct os_io *socket)
@@ -215,16 +225,26 @@ void ls_session_decrypt_packet(
         packet_t *dest,
         byte_t *src)
 {
-        u16_t src_size = 0;
+        u16_t src_size      = 0;
+        packet_t *src_body  = 0;
+        packet_t *dest_body = 0;
 
         assert(session);
         assert(session->blowfish);
         assert(dest);
         assert(src);
 
-        src_size = packet_size(src);
+        // Packet size without header size (2 bytes).
+        src_size  = packet_size(src) - 2;
+        src_body  = packet_body(src);
+        dest_body = packet_body(dest);
 
+        // Copy packet size.
         bytes_cpy(dest, src, 2);
+
+        // Copy decrypted packet body.
         ls_session_blowfish_decrypt(
-                session->blowfish, dest + 2, src + 2, src_size - 2);
+                session->blowfish, dest_body, src_body, src_size);
+        // Copy decrypted content (ignoring byte containing packet type).
+        ls_session_rsa_decrypt(session->rsa, dest_body + 1, dest_body + 1);
 }

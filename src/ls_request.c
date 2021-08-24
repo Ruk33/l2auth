@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 #include "include/os_io.h"
 #include "include/config.h"
 #include "include/util.h"
@@ -26,17 +28,27 @@ static void handle_gg_auth(struct ls_session *session)
         conn_send_packet(session->socket, response);
 }
 
-static void handle_auth_login(struct ls_session *session)
+static void handle_auth_login(struct ls_session *session, packet_t *request)
 {
         packet_t response[64] = { 0 };
+
+        // packet_t *body = 0;
+
+        // char username[14] = { 0 };
+        // char password[16] = { 0 };
 
         struct ls_packet_ok ok = { 0 };
 
         assert(session);
 
-        // Todo: Generate these values randomly.
-        session->playOK1 = 42;
-        session->playOK2 = 24;
+        // Ignore byte containing packet type.
+        // body = packet_body(request) + 1;
+
+        // memcpy(username, body + 0x62, sizeof(username));
+        // memcpy(password, body + 0x70, sizeof(password));
+
+        session->playOK1 = rand();
+        session->playOK2 = rand();
         ok.loginOK1      = session->playOK1;
         ok.loginOK2      = session->playOK2;
 
@@ -146,7 +158,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
 
         switch (packet_type(packet)) {
         case 0x00: // Auth login
-                handle_auth_login(session);
+                handle_auth_login(session, packet);
                 break;
         case 0x02: // Login server
                 handle_login_server(session);
@@ -172,6 +184,16 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
 
 void ls_request_disconnect(struct os_io *socket)
 {
+        struct ls_session *session = 0;
+
         assert(socket);
+
+        session = ls_session_find(socket);
+
+        if (!session) {
+                return;
+        }
+
         log("client disconnected from login server.");
+        ls_session_free(session);
 }

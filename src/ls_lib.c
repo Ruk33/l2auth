@@ -11,13 +11,15 @@
 #include "ls_server_packets.c"
 #include "include/ls_lib.h"
 
-void ls_lib_load(conn_send_response_cb cb)
+void ls_lib_load(struct ls_lib *ls)
 {
         // Todo: Get these servers from a database.
         server_t bartz     = { 0 };
         server_t sieghardt = { 0 };
 
-        assert(cb);
+        assert(ls);
+        assert(ls->send_response);
+        assert(ls->disconnect);
 
         bartz.id    = 1;
         bartz.ip[0] = 127;
@@ -52,7 +54,8 @@ void ls_lib_load(conn_send_response_cb cb)
         server_add(&bartz);
         server_add(&sieghardt);
 
-        conn_set_cb(cb);
+        conn_set_send_response(ls->send_response);
+        conn_set_disconnect(ls->disconnect);
 }
 
 void ls_lib_new_conn(struct os_io *socket)

@@ -10,6 +10,7 @@ struct ls_rsa;
 struct ls_blowfish;
 
 struct ls_session {
+        size_t id;
         struct os_io *socket;
         struct ls_blowfish *blowfish;
         struct ls_rsa *rsa;
@@ -18,6 +19,8 @@ struct ls_session {
 };
 
 struct ls_session *ls_session_new(struct os_io *socket);
+
+void ls_session_free(struct ls_session *session);
 
 struct ls_session *ls_session_find(struct os_io *socket);
 

@@ -175,6 +175,7 @@ int os_io_close(struct os_io *io)
 {
         assert(io);
         io_remove(io);
+        shutdown(io->fd, SHUT_RDWR);
         return close(io->fd);
 }
 

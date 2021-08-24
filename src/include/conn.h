@@ -9,9 +9,14 @@
         conn_send_response(socket, packet, (size_t) packet_size(packet))
 
 typedef void (*conn_send_response_cb)(struct os_io *socket, void *buf, size_t n);
+typedef void (*conn_disconnect_cb)(struct os_io *socket);
 
-void conn_set_cb(conn_send_response_cb cb);
+void conn_set_send_response(conn_send_response_cb cb);
+
+void conn_set_disconnect(conn_disconnect_cb cb);
 
 void conn_send_response(struct os_io *socket, void *buf, size_t n);
+
+void conn_disconnect(struct os_io *socket);
 
 #endif

@@ -10,7 +10,6 @@
 #include "gs_client_packets.c"
 #include "gs_crypt.c"
 #include "gs_server_packets.c"
-#include "gs_random_id.c"
 #include "gs_request.c"
 #include "gs_session.c"
 #include "l2_string.c"
@@ -44,7 +43,7 @@ void gs_lib_load(gs_lib_t *gs_lib)
                 lib->state.game_start_time = time(0) * 1000 - 3600000;
         }
 
-        conn_set_cb(gs_lib->send_response);
+        conn_set_send_response(gs_lib->send_response);
 }
 
 void gs_lib_unload(void)
