@@ -3,6 +3,15 @@
 
 #include "util.h"
 #include "gs_types.h"
+#include "ls_types.h"
+
+// Get account from username and encrypted password.
+// Returns 1 if found, 0 otherwise.
+int storage_get_account(struct ls_account *dest, char *username);
+
+// Create new account.
+// Returns 1 on success, 0 otherwise.
+int storage_create_account(struct ls_account *src);
 
 // Get up to max characters owned by username and store it on dest.
 // Return the amount of found characters.

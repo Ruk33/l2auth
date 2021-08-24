@@ -6,6 +6,7 @@
 #include "server.c"
 #include "conn.c"
 #include "packet.c"
+#include "storage/sqlite.c"
 #include "ls_request.c"
 #include "ls_session.c"
 #include "ls_server_packets.c"

@@ -4,19 +4,7 @@
 #include "util.h"
 #include "os_io.h"
 #include "packet.h"
-
-struct ls_rsa;
-
-struct ls_blowfish;
-
-struct ls_session {
-        size_t id;
-        struct os_io *socket;
-        struct ls_blowfish *blowfish;
-        struct ls_rsa *rsa;
-        i32_t playOK1;
-        i32_t playOK2;
-};
+#include "ls_types.h"
 
 struct ls_session *ls_session_new(struct os_io *socket);
 

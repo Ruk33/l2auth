@@ -3,6 +3,7 @@
 #include "../include/util.h"
 #include "../include/log.h"
 #include "../include/gs_types.h"
+#include "../include/ls_types.h"
 #include "../include/storage.h"
 
 // Log if operation didn't executed well.
@@ -91,6 +92,12 @@
                 dest,                                      \
                 (byte_t *) sqlite3_column_text(stmt, col), \
                 sizeof(dest) - 1)
+
+#define ACCOUNT_FROM_USERNAME_QUERY \
+        "select username, encrypted_password from accounts where username = :username limit 1;"
+
+#define ACCOUNT_CREATE_QUERY \
+        "insert into accounts(username, encrypted_password) values (:username, :encrypted_password);"
 
 #define CHARACTERS_COLUMNS                                                                     \
         "username, name, race, sex, _class, _int, str, con, men, dex, "                        \
@@ -183,6 +190,58 @@ static void conn_open(void)
 static void conn_close(void)
 {
         sqlite3_close(conn);
+}
+
+int storage_get_account(struct ls_account *dest, char *username)
+{
+        sqlite3_stmt *stmt = 0;
+
+        int result = 0;
+
+        assert(dest);
+        assert(username);
+
+        conn_open();
+        sqlite_query(stmt, ACCOUNT_FROM_USERNAME_QUERY);
+
+        sqlite_bind_text(stmt, ":username", username);
+
+        result = sqlite3_step(stmt) == SQLITE_ROW;
+
+        if (result) {
+                sqlite_cpy_text(dest->username, stmt, 0);
+                bytes_cpy(
+                        dest->encrypted_password,
+                        (byte_t *) sqlite3_column_blob(stmt, 1),
+                        sizeof(dest->encrypted_password));
+        }
+
+        sqlite3_finalize(stmt);
+        conn_close();
+
+        return result;
+}
+
+int storage_create_account(struct ls_account *src)
+{
+        sqlite3_stmt *stmt = 0;
+
+        int result = 0;
+
+        assert(src);
+
+        conn_open();
+        sqlite_query(stmt, ACCOUNT_CREATE_QUERY);
+
+        sqlite_bind_text(stmt, ":username", src->username);
+        sqlite_bind_bytes(stmt, ":encrypted_password", src->encrypted_password);
+
+        result = sqlite3_step(stmt) == SQLITE_DONE;
+
+        sqlite3_finalize(stmt);
+        conn_close();
+
+        return result;
 }
 
 size_t

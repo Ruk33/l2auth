@@ -1,13 +1,17 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include "include/os_io.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/conn.h"
 #include "include/log.h"
+#include "include/storage.h"
 #include "include/packet.h"
 #include "include/server.h"
+#include "include/ls_types.h"
 #include "include/ls_session.h"
 #include "include/ls_server_packets.h"
 #include "include/ls_request.h"
@@ -32,20 +36,67 @@ static void handle_auth_login(struct ls_session *session, packet_t *request)
 {
         packet_t response[64] = { 0 };
 
-        // packet_t *body = 0;
+        packet_t *body = 0;
 
-        // char username[14] = { 0 };
-        // char password[16] = { 0 };
+        char username[14] = { 0 };
+        char password[16] = { 0 };
+
+        char *salt = "somethign!";
+
+        byte_t encrypted_password[64] = { 0 };
 
         struct ls_packet_ok ok = { 0 };
 
+        struct ls_account account = { 0 };
+
+        int account_exists = 0;
+        int valid_password = 0;
+
         assert(session);
 
-        // Ignore byte containing packet type.
-        // body = packet_body(request) + 1;
+        // Small little check for invalid or questionable request...
+        // Todo: improve.
+        if (packet_size(request) < 128) {
+                conn_disconnect(session->socket);
+                return;
+        }
 
-        // memcpy(username, body + 0x62, sizeof(username));
-        // memcpy(password, body + 0x70, sizeof(password));
+        // Ignore byte containing packet type.
+        body = packet_body(request) + 1;
+
+        memcpy(username, body + 0x62, sizeof(username));
+        memcpy(password, body + 0x70, sizeof(password));
+
+        account_exists = storage_get_account(&account, username);
+
+        PKCS5_PBKDF2_HMAC(
+                password,
+                strnlen(password, sizeof(password)),
+                (unsigned char *) salt,
+                strlen(salt),
+                1000,
+                EVP_sha512(),
+                64,
+                encrypted_password);
+
+        if (account_exists) {
+                valid_password = CRYPTO_memcmp(
+                                         account.encrypted_password,
+                                         encrypted_password,
+                                         64) == 0;
+
+                if (!valid_password) {
+                        conn_disconnect(session->socket);
+                        return;
+                }
+        } else {
+                memcpy(account.username, username, sizeof(account.username));
+                memcpy(account.encrypted_password, encrypted_password, 64);
+                if (!storage_create_account(&account)) {
+                        conn_disconnect(session->socket);
+                        return;
+                }
+        }
 
         session->playOK1 = rand();
         session->playOK2 = rand();
