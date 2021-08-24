@@ -41,7 +41,7 @@ In Linux, the host file can be found in /etc/hosts.
 
 == Running migrations
 Open a terminal and run:
-sqlite3 build/db < migrations/sqlite/00_create_characters_table.sql
+bash migrations/sqlite/run.sh <path/to/db>
 
 This will create a database in build/db (if required) and run the migration.
 

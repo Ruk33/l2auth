@@ -81,3 +81,5 @@ infer-out
 log/
 login_server
 game_server
+schema.txt
+release.bat
