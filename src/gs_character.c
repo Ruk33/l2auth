@@ -12,7 +12,6 @@
 #include "include/conn.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
-#include "include/gs_random_id.h"
 #include "include/gs_character.h"
 
 #define gs_character_each(character, state) \

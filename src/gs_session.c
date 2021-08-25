@@ -8,7 +8,6 @@
 #include "include/gs_types.h"
 #include "include/gs_crypt.h"
 #include "include/gs_client_packets.h"
-#include "include/gs_random_id.h"
 #include "include/gs_session.h"
 
 #define gs_session_each(session, state) \
