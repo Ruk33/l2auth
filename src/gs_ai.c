@@ -533,8 +533,10 @@ gs_ai_npc_initiate_idle_walk(struct gs_state *gs, struct gs_character *npc)
         gs_ai_move(gs, npc, &random_point);
 }
 
-static void
-gs_ai_tick(struct gs_state *gs, struct gs_character *character, double delta)
+void gs_ai_tick(
+        struct gs_state *gs,
+        struct gs_character *character,
+        double delta)
 {
         struct gs_character *target = 0;
 
@@ -578,7 +580,7 @@ gs_ai_tick(struct gs_state *gs, struct gs_character *character, double delta)
         }
 }
 
-static void gs_ai_handle_request(
+void gs_ai_handle_request(
         struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)

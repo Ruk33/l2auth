@@ -12,7 +12,6 @@
 
 #include "../os_io.c"
 #include "../../util.c"
-#include "../../recycle_id.c"
 
 #include "../../include/gs_lib.h"
 
@@ -75,7 +74,8 @@ static int init_gs_lib(void)
 
         int all_load = 0;
 
-        GetFileAttributesExA(GAME_SERVER_LIB_PATH, GetFileExInfoStandard, &data);
+        GetFileAttributesExA(
+                GAME_SERVER_LIB_PATH, GetFileExInfoStandard, &data);
         file_time = data.ftLastWriteTime;
 
         // Don't load if there are no changes in the lib.

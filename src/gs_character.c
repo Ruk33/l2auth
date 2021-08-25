@@ -3,7 +3,6 @@
 #include "include/config.h"
 #include "include/util.h"
 #include "include/list.h"
-#include "include/recycle_id.h"
 #include "include/gs_types.h"
 #include "include/gs_server_packets.h"
 #include "include/gs_client_packets.h"
@@ -15,21 +14,20 @@
 #define gs_character_each(character, state) \
         list_each(struct gs_character, character, state->list_characters)
 
-static int gs_character_is_npc(struct gs_character *src)
+int gs_character_is_npc(struct gs_character *src)
 {
         assert(src);
         return src->session ? 0 : 1;
 }
 
-static double
-gs_character_angle_to_point(struct gs_character *src, struct gs_point *p)
+double gs_character_angle_to_point(struct gs_character *src, struct gs_point *p)
 {
         assert(src);
         assert(p);
         return atan2(p->y - src->position.y, p->x - src->position.x);
 }
 
-static double
+double
 gs_character_distance_to_point(struct gs_character *src, struct gs_point *p)
 {
         double dx = 0;
@@ -46,16 +44,14 @@ gs_character_distance_to_point(struct gs_character *src, struct gs_point *p)
         return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-static double
-gs_character_distance(struct gs_character *a, struct gs_character *b)
+double gs_character_distance(struct gs_character *a, struct gs_character *b)
 {
         assert(a);
         assert(b);
         return gs_character_distance_to_point(a, &b->position);
 }
 
-static struct gs_character *
-gs_character_find_by_id(struct gs_state *gs, u32_t id)
+struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 {
         struct gs_character *character = 0;
 
@@ -120,8 +116,10 @@ static void gs_character_broadcast_packet(
         }
 }
 
-static void
-gs_character_say(struct gs_state *gs, struct gs_character *from, char *message)
+void gs_character_say(
+        struct gs_state *gs,
+        struct gs_character *from,
+        char *message)
 {
         static struct gs_packet_say say = { 0 };
         static packet_t response[256]   = { 0 };
@@ -142,7 +140,7 @@ gs_character_say(struct gs_state *gs, struct gs_character *from, char *message)
         gs_character_broadcast_packet(gs, from, response);
 }
 
-static void gs_character_send_status(
+void gs_character_send_status(
         struct gs_state *gs,
         struct gs_character *from,
         struct gs_character *to)
@@ -179,7 +177,7 @@ static void gs_character_send_status(
         gs_character_encrypt_and_send_packet(gs, to, response);
 }
 
-static void gs_character_revive(
+void gs_character_revive(
         struct gs_state *gs,
         struct gs_character *src,
         enum gs_packet_revive_request_option where)
@@ -205,7 +203,7 @@ static void gs_character_revive(
         }
 }
 
-static void gs_character_move(
+void gs_character_move(
         struct gs_state *gs,
         struct gs_character *character,
         struct gs_point *p)
@@ -230,7 +228,7 @@ static void gs_character_move(
         gs_character_broadcast_packet(gs, character, packet);
 }
 
-static void gs_character_die(struct gs_state *gs, struct gs_character *src)
+void gs_character_die(struct gs_state *gs, struct gs_character *src)
 {
         struct gs_packet_die die = { 0 };
 
@@ -247,7 +245,7 @@ static void gs_character_die(struct gs_state *gs, struct gs_character *src)
         gs_character_broadcast_packet(gs, src, response);
 }
 
-static void gs_character_attack(
+void gs_character_attack(
         struct gs_state *gs,
         struct gs_character *attacker,
         struct gs_character *target)
@@ -311,7 +309,7 @@ static void gs_character_attack(
         }
 }
 
-static void gs_character_select_target(
+void gs_character_select_target(
         struct gs_state *gs,
         struct gs_character *character,
         struct gs_character *target)
@@ -331,7 +329,7 @@ static void gs_character_select_target(
         gs_character_encrypt_and_send_packet(gs, character, response);
 }
 
-static void gs_character_validate_position(
+void gs_character_validate_position(
         struct gs_state *gs,
         struct gs_character *character)
 {
@@ -352,8 +350,9 @@ static void gs_character_validate_position(
         gs_character_encrypt_and_send_packet(gs, character, response);
 }
 
-static void
-gs_character_spawn_random_orc(struct gs_state *gs, struct gs_point *location)
+void gs_character_spawn_random_orc(
+        struct gs_state *gs,
+        struct gs_point *location)
 {
         struct gs_character orc = { 0 };
 
@@ -394,7 +393,7 @@ gs_character_spawn_random_orc(struct gs_state *gs, struct gs_point *location)
         gs_character_spawn(gs, &orc);
 }
 
-static void gs_character_from_request(
+void gs_character_from_request(
         struct gs_character *dest,
         struct gs_packet_create_char_request *src)
 {
@@ -551,8 +550,7 @@ static void gs_character_set_player_info(
         dest->name_color              = 0xFFFFFF;
 }
 
-static void
-gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
+void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
 {
         static struct gs_packet_char_info char_info = { 0 };
         static struct gs_packet_npc_info npc_info   = { 0 };
@@ -624,8 +622,7 @@ gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
         gs_character_add(gs, spawning);
 }
 
-static void
-gs_character_restart(struct gs_state *gs, struct gs_character *character)
+void gs_character_restart(struct gs_state *gs, struct gs_character *character)
 {
         struct gs_packet_restart restart = { 0 };
 
@@ -642,7 +639,7 @@ gs_character_restart(struct gs_state *gs, struct gs_character *character)
         gs_character_disconnect(gs, character);
 }
 
-static struct gs_character *
+struct gs_character *
 gs_character_from_session(struct gs_state *gs, struct gs_session *session)
 {
         struct gs_character *character = 0;
@@ -660,7 +657,7 @@ gs_character_from_session(struct gs_state *gs, struct gs_session *session)
         return 0;
 }
 
-static u32_t gs_character_get_free_id(struct gs_state *gs)
+u32_t gs_character_get_free_id(struct gs_state *gs)
 {
         assert(gs);
 
@@ -675,7 +672,7 @@ static u32_t gs_character_get_free_id(struct gs_state *gs)
         return 0;
 }
 
-static void gs_character_add(struct gs_state *gs, struct gs_character *src)
+void gs_character_add(struct gs_state *gs, struct gs_character *src)
 {
         assert(gs);
         assert(src);
@@ -685,8 +682,7 @@ static void gs_character_add(struct gs_state *gs, struct gs_character *src)
         list_add(gs->list_characters, &gs->characters[src->id]);
 }
 
-static void
-gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
+void gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
 {
         assert(gs);
         assert(src);

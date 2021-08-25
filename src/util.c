@@ -61,3 +61,26 @@ void encode32be(byte_t *buf, u32_t val)
         buf[1] = (byte_t)(val >> 16);
         buf[0] = (byte_t)(val >> 24);
 }
+
+int recycle_id_get(size_t *dest, size_t *src)
+{
+        assert(src);
+
+        *dest = src[0];
+
+        if (src[*dest]) {
+                src[0] = src[*dest];
+                return 0;
+        }
+
+        src[0] = *dest + 1;
+
+        return 1;
+}
+
+void recycle_id(size_t *src, size_t id)
+{
+        assert(src);
+        src[id] = src[0];
+        src[0]  = id;
+}

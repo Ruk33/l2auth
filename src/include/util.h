@@ -17,9 +17,7 @@ typedef uint16_t u16_t;
 typedef uint32_t u32_t;
 typedef uint64_t u64_t;
 
-#define PREVENT_UNUSED_WARNING(var) var = var
-
-#define arr_size(a) (sizeof(a) / sizeof(a[0]))
+#define arr_size(a) (sizeof(a) / sizeof((a)[0]))
 
 #define log_normal(...)                                                      \
         {                                                                    \
@@ -36,25 +34,11 @@ typedef uint64_t u64_t;
         }
 
 // Returns min number between a and b
-#ifndef _min
 #define _min(a, b) ((a) > (b) ? (b) : (a))
-#endif
-
-// Returns highes number between a and b
-// #ifndef max
-// #define max(a, b) ((a) > (b) ? (a) : (b))
-// #endif
-
-// Absolute value
-// #ifndef abs
-// #define abs(a) ((a) < 0 ? -(a) : (a))
-// #endif
 
 // Ensures x is higher/equal than low and lower/equal than high.
-#ifndef clamp
 #define clamp(x, low, high) \
         (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-#endif
 
 // Copy n bytes from src to dest and advance src.
 #define byte_read_n(dest, src, n)                                  \
@@ -79,12 +63,35 @@ void bytes_cpy_until(byte_t *dest, byte_t *src, byte_t c, size_t n);
 // Zero n bytes from dest.
 void bytes_zero(byte_t *dest, size_t n);
 
+// Decode little endian.
 u32_t decode32le(byte_t *buf);
 
+// Decode big endian.
 u32_t decode32be(byte_t *buf);
 
+// Encode little endian.
 void encode32le(byte_t *buf, u32_t val);
 
+// Encode big endian.
 void encode32be(byte_t *buf, u32_t val);
+
+// Returns a usable id/index from an array of instances.
+//
+// Example:
+// size_t instances[30] = { 0 };
+// struct foo[30] = { 0 };
+// size_t foo_count = 0;
+//
+// size_t instance = 0;
+//
+// foo_count += recycled_id(&instance, instances);
+// foo[instance] = free instance to be used.
+// recycle_id(instances, instance);
+int recycle_id_get(size_t *dest, size_t *instances);
+
+// Mark id/index to be reusable/recycled.
+// Next time recycle_id_get is called, the
+// recycled instances will be returned.
+void recycle_id(size_t *instances, size_t id);
 
 #endif

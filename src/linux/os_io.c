@@ -12,7 +12,6 @@
 #include <netinet/in.h>  // sockaddr, htons, etc.
 #include <arpa/inet.h>   // inet_pton
 #include "../include/util.h"
-#include "../include/recycle_id.h"
 #include "../include/os_io.h"
 
 #define MAX_CONN 1024
