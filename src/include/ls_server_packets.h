@@ -4,7 +4,7 @@
 #include "config.h"
 #include "util.h"
 #include "packet.h"
-#include "server.h"
+#include "ls_types.h"
 
 struct ls_packet_init {
         byte_t session_id[4];
@@ -34,7 +34,7 @@ struct ls_packet_play_ok {
 struct ls_packet_server_list {
         u8_t count;
         byte_t reserved; // Unknown
-        server_t servers[MAX_SERVERS];
+        struct ls_server servers[MAX_SERVERS];
 };
 
 void ls_packet_init_pack(packet_t *dest, struct ls_packet_init *src);
@@ -45,6 +45,8 @@ void ls_packet_ok_pack(packet_t *dest, struct ls_packet_ok *src);
 
 void ls_packet_play_ok_pack(packet_t *dest, struct ls_packet_play_ok *src);
 
-void ls_packet_server_list_pack(packet_t *dest, struct ls_packet_server_list *src);
+void ls_packet_server_list_pack(
+        packet_t *dest,
+        struct ls_packet_server_list *src);
 
 #endif

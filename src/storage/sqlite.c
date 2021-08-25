@@ -99,6 +99,9 @@
 #define ACCOUNT_CREATE_QUERY \
         "insert into accounts(username, encrypted_password) values (:username, :encrypted_password);"
 
+#define SERVERS_QUERY \
+        "select id, ip, port, age_limit, pvp, players, max_players, status, extra, brackets from servers limit :limit;"
+
 #define CHARACTERS_COLUMNS                                                                     \
         "username, name, race, sex, _class, _int, str, con, men, dex, "                        \
         "wit, hair_style, hair_color, face, level, exp, sp, hp, mp, "                          \
@@ -242,6 +245,40 @@ int storage_create_account(struct ls_account *src)
         conn_close();
 
         return result;
+}
+
+size_t storage_get_servers(struct ls_server *dest, size_t max)
+{
+        sqlite3_stmt *stmt = 0;
+
+        size_t found = 0;
+
+        assert(dest);
+
+        conn_open();
+        sqlite_query(stmt, SERVERS_QUERY);
+
+        sqlite_bind_int(stmt, ":limit", (int) max);
+
+        while (found < max && sqlite3_step(stmt) == SQLITE_ROW) {
+                dest[found].id = sqlite3_column_int(stmt, 0);
+                sqlite_cpy_text((byte_t *) (dest[found].text_ip), stmt, 1);
+                dest[found].port        = sqlite3_column_int(stmt, 2);
+                dest[found].age_limit   = sqlite3_column_int(stmt, 3);
+                dest[found].pvp         = sqlite3_column_int(stmt, 4);
+                dest[found].players     = sqlite3_column_int(stmt, 5);
+                dest[found].max_players = sqlite3_column_int(stmt, 6);
+                dest[found].status      = sqlite3_column_int(stmt, 7);
+                dest[found].extra       = sqlite3_column_int(stmt, 8);
+                dest[found].brackets    = sqlite3_column_int(stmt, 9);
+
+                found += 1;
+        }
+
+        sqlite_ok_or_log(sqlite3_finalize(stmt));
+        conn_close();
+
+        return found;
 }
 
 size_t

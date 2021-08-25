@@ -30,4 +30,6 @@ long os_io_write(struct os_io *io, void *buf, size_t n);
 // On error, the function will immediately return 0.
 int os_io_listen(os_io_cb *cb);
 
+u32_t os_io_ip_text_to_u32(char *ip);
+
 #endif

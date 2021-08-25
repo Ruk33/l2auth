@@ -10,6 +10,7 @@
 #include <sys/epoll.h>   // epoll
 #include <sys/timerfd.h> // timerfd
 #include <netinet/in.h>  // sockaddr, htons, etc.
+#include <arpa/inet.h>   // inet_pton
 #include "../include/util.h"
 #include "../include/recycle_id.h"
 #include "../include/os_io.h"
@@ -279,4 +280,12 @@ int os_io_listen(os_io_cb *cb)
         }
 
         return 1;
+}
+
+u32_t os_io_ip_text_to_u32(char *ip)
+{
+        struct sockaddr_in sa = { 0 };
+        assert(ip);
+        inet_pton(AF_INET, ip, &(sa.sin_addr));
+        return (u32_t) sa.sin_addr.s_addr;
 }

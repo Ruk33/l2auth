@@ -62,8 +62,9 @@ int main(/* int argc, char **argv */)
                 return 1;
         }
 
-        ls.send_response = _send_response;
-        ls.disconnect    = _disconnect;
+        ls.send_response  = _send_response;
+        ls.disconnect     = _disconnect;
+        ls.text_ip_to_u32 = os_io_ip_text_to_u32;
 
         ls_lib_load(&ls);
 

@@ -16,7 +16,6 @@ void ls_packet_init_pack(packet_t *dest, struct ls_packet_init *src)
         packet_append(dest, src->modulus);
 }
 
-
 void ls_packet_gg_auth_pack(packet_t *dest, struct ls_packet_gg_auth *src)
 {
         byte_t type = 0x00;
@@ -81,7 +80,9 @@ void ls_packet_play_ok_pack(packet_t *dest, struct ls_packet_play_ok *src)
         packet_append_val(dest, src->playOK2);
 }
 
-void ls_packet_server_list_pack(packet_t *dest, struct ls_packet_server_list *src)
+void ls_packet_server_list_pack(
+        packet_t *dest,
+        struct ls_packet_server_list *src)
 {
         byte_t type = 0;
 
@@ -96,7 +97,7 @@ void ls_packet_server_list_pack(packet_t *dest, struct ls_packet_server_list *sr
 
         for (u8_t i = 0; i < src->count; i += 1) {
                 packet_append_val(dest, src->servers[i].id);
-                packet_append(dest, src->servers[i].ip);
+                packet_append_val(dest, src->servers[i].ip);
                 packet_append_val(dest, src->servers[i].port);
                 packet_append_val(dest, src->servers[i].age_limit);
                 packet_append_val(dest, src->servers[i].pvp);

@@ -10,7 +10,6 @@
 #include "include/log.h"
 #include "include/storage.h"
 #include "include/packet.h"
-#include "include/server.h"
 #include "include/ls_types.h"
 #include "include/ls_session.h"
 #include "include/ls_server_packets.h"
@@ -115,21 +114,17 @@ static void handle_request_server_list(struct ls_session *session)
 
         static struct ls_packet_server_list server_list = { 0 };
 
-        server_t *gs_servers = 0;
-
         assert(session);
-
-        gs_servers = server_all();
-        assert(gs_servers);
 
         bytes_zero(response, sizeof(response));
         bytes_zero((byte_t *) &server_list, sizeof(server_list));
 
-        server_list.count = server_all_count();
-        assert(server_list.count <= arr_size(server_list.servers));
+        server_list.count = storage_get_servers(
+                server_list.servers, arr_size(server_list.servers));
 
-        for (u8_t i = 0; i < server_list.count; i += 1) {
-                server_list.servers[i] = gs_servers[i];
+        for (size_t i = 0; i < server_list.count; i += 1) {
+                server_list.servers[i].ip =
+                        conn_text_ip_to_u32(server_list.servers[i].text_ip);
         }
 
         ls_packet_server_list_pack(response, &server_list);

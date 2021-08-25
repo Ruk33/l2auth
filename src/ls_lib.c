@@ -3,7 +3,6 @@
 
 #include "util.c"
 #include "recycle_id.c"
-#include "server.c"
 #include "conn.c"
 #include "packet.c"
 #include "storage/sqlite.c"
@@ -14,49 +13,14 @@
 
 void ls_lib_load(struct ls_lib *ls)
 {
-        // Todo: Get these servers from a database.
-        server_t bartz     = { 0 };
-        server_t sieghardt = { 0 };
-
         assert(ls);
         assert(ls->send_response);
         assert(ls->disconnect);
-
-        bartz.id    = 1;
-        bartz.ip[0] = 127;
-        bartz.ip[1] = 0;
-        bartz.ip[2] = 0;
-        bartz.ip[3] = 1;
-        // inet_pton(AF_INET, "127.0.0.1", bartz.ip);
-        bartz.port        = 7777;
-        bartz.age_limit   = 0x0f;
-        bartz.pvp         = 0;
-        bartz.players     = 0;
-        bartz.max_players = 650;
-        bartz.status      = 0x01;
-        bartz.extra       = 0x00;
-        bartz.brackets    = 0x00;
-
-        sieghardt.id = 2;
-        // inet_pton(AF_INET, "0.0.0.0", sieghardt.ip);
-        sieghardt.ip[0]       = 0;
-        sieghardt.ip[1]       = 0;
-        sieghardt.ip[2]       = 0;
-        sieghardt.ip[3]       = 0;
-        sieghardt.port        = 7778;
-        sieghardt.age_limit   = 0x0f;
-        sieghardt.pvp         = 0;
-        sieghardt.players     = 0;
-        sieghardt.max_players = 650;
-        sieghardt.status      = 0x01;
-        sieghardt.extra       = 0x00;
-        sieghardt.brackets    = 0x00;
-
-        server_add(&bartz);
-        server_add(&sieghardt);
+        assert(ls->text_ip_to_u32);
 
         conn_set_send_response(ls->send_response);
         conn_set_disconnect(ls->disconnect);
+        conn_set_text_ip_to_u32(ls->text_ip_to_u32);
 }
 
 void ls_lib_new_conn(struct os_io *socket)

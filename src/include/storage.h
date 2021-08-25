@@ -13,6 +13,8 @@ int storage_get_account(struct ls_account *dest, char *username);
 // Returns 1 on success, 0 otherwise.
 int storage_create_account(struct ls_account *src);
 
+size_t storage_get_servers(struct ls_server *dest, size_t max);
+
 // Get up to max characters owned by username and store it on dest.
 // Return the amount of found characters.
 size_t
