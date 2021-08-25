@@ -4,7 +4,6 @@
 #include "include/os_io.h"
 #include "include/conn.h"
 #include "include/storage.h"
-#include "include/log.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
 #include "include/gs_types.h"
@@ -45,7 +44,7 @@ handle_enter_world(struct gs_state *state, struct gs_session *session)
         character = gs_character_from_session(state, session);
 
         if (!character) {
-                log("entering world without a character? ignoring.");
+                log_normal("entering world without a character? ignoring.");
                 return;
         }
 
@@ -290,9 +289,10 @@ static void handle_selected_character(
         character.id      = gs_character_get_free_id(state);
         character.session = session;
 
-        log("selecting character and assigning id %d with session %d",
-            character.id,
-            session->id);
+        log_normal(
+                "selecting character and assigning id %d with session %d",
+                character.id,
+                session->id);
 
         gs_character_add(state, &character);
 
@@ -370,7 +370,7 @@ static void protocol_version_state(
                 session->state = AUTH_REQUEST;
                 break;
         default:
-                log("can't handle packet from protocol version state.");
+                log_normal("can't handle packet from protocol version state.");
                 break;
         }
 }
@@ -390,7 +390,7 @@ static void auth_request_state(
                 session->state = CHARACTER_SELECTION;
                 break;
         default:
-                log("can't handle packet from auth request state.");
+                log_normal("can't handle packet from auth request state.");
                 break;
         }
 }
@@ -414,7 +414,8 @@ static void character_selection_state(
                 session->state = CREATING_CHARACTER;
                 break;
         default:
-                log("can't handle packet from character selection state.");
+                log_normal(
+                        "can't handle packet from character selection state.");
                 break;
         }
 }
@@ -440,7 +441,8 @@ static void creating_character_state(
                  * packet will be sent. This is why we also need to
                  * accept states from character selection.
                  */
-                log("packet delegated from creating character to character selection.");
+                log_normal(
+                        "packet delegated from creating character to character selection.");
                 character_selection_state(state, session, packet);
                 break;
         }
@@ -457,20 +459,20 @@ static void entering_world_state(
 
         switch (packet_type(packet)) {
         case 0x03: // Enter world.
-                log("handling enter world.");
+                log_normal("handling enter world.");
                 handle_enter_world(state, session);
                 session->state = IN_WORLD;
                 break;
         case 0x63: // Quest list.
-                log("handling quest list.");
+                log_normal("handling quest list.");
                 handle_quest_list(session);
                 break;
         case 0xd0: // Auto ss bsps.
-                log("handling auto ss bsps.");
+                log_normal("handling auto ss bsps.");
                 handle_auto_ss_bsps(session);
                 break;
         default:
-                log("can't handle packet from entering world state.");
+                log_normal("can't handle packet from entering world state.");
                 break;
         }
 }
@@ -489,7 +491,7 @@ static void in_world_state(
         character = gs_character_from_session(state, session);
 
         if (!character) {
-                log("no character found for session. disconnect?");
+                log_normal("no character found for session. disconnect?");
                 return;
         }
 
@@ -508,17 +510,19 @@ void gs_request_new_conn(struct gs_state *state, struct os_io *socket)
         struct gs_session *session = 0;
 
         if (!state) {
-                log("no state passed to gs_request_new_conn? ignoring request.");
+                log_normal(
+                        "no state passed to gs_request_new_conn? ignoring request.");
                 return;
         }
 
         if (!socket) {
-                log("no socket passed to gs_request_new_conn? ignoring request.");
+                log_normal(
+                        "no socket passed to gs_request_new_conn? ignoring request.");
                 return;
         }
 
         session = gs_session_new(state, socket);
-        log("new game session with id %d generated.", session->id);
+        log_normal("new game session with id %d generated.", session->id);
 }
 
 void gs_request(
@@ -537,24 +541,25 @@ void gs_request(
         u16_t size = 0;
 
         if (!state) {
-                log("no state passed to gs_request? ignoring request.");
+                log_normal("no state passed to gs_request? ignoring request.");
                 return;
         }
 
         if (!socket) {
-                log("no socket passed to gs_request? ignoring request.");
+                log_normal("no socket passed to gs_request? ignoring request.");
                 return;
         }
 
         if (!buf || !n) {
-                log("empty request? ignoring.");
+                log_normal("empty request? ignoring.");
                 return;
         }
 
         session = gs_session_find(state, socket);
 
         if (!session) {
-                log("game server, no session found for request. ignoring.");
+                log_normal(
+                        "game server, no session found for request. ignoring.");
                 return;
         }
 
@@ -587,7 +592,7 @@ void gs_request(
                 in_world_state(state, session, packet);
                 break;
         default:
-                log("session in invalid state. disconnect?");
+                log_normal("session in invalid state. disconnect?");
                 break;
         }
 
@@ -610,19 +615,21 @@ void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
         struct gs_character *character = 0;
 
         if (!state) {
-                log("no state passed to gs_request_disconnect? ignoring request.");
+                log_normal(
+                        "no state passed to gs_request_disconnect? ignoring request.");
                 return;
         }
 
         if (!socket) {
-                log("no socket passed to gs_request_disconnect? ignoring request.");
+                log_normal(
+                        "no socket passed to gs_request_disconnect? ignoring request.");
                 return;
         }
 
         session = gs_session_find(state, socket);
 
         if (!session) {
-                log("disconnected client had no session, ignoring.");
+                log_normal("disconnected client had no session, ignoring.");
                 return;
         }
 
@@ -632,7 +639,7 @@ void gs_request_disconnect(struct gs_state *state, struct os_io *socket)
                 gs_character_disconnect(state, character);
         }
 
-        log("sending disconnect packet.");
+        log_normal("sending disconnect packet.");
 
         gs_packet_leave_world_pack(response, &leave_world);
         gs_session_encrypt(session, response, response);
@@ -646,7 +653,7 @@ void gs_request_tick(struct gs_state *state, double delta)
         struct gs_character *character = 0;
 
         if (!state) {
-                log("no state for gs_request_tick? ignoring.");
+                log_normal("no state for gs_request_tick? ignoring.");
                 return;
         }
 

@@ -1,6 +1,5 @@
 #include <assert.h>
 #include "include/util.h"
-#include "include/log.h"
 #include "include/os_io.h"
 #include "include/conn.h"
 

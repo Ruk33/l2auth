@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <math.h>
-#include "include/log.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/list.h"
@@ -564,7 +563,8 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 
         id = spawning->id;
 
-        log("spawning character with id %d. notifying close players.", id);
+        log_normal(
+                "spawning character with id %d. notifying close players.", id);
 
         gs_character_each(character, state)
         {

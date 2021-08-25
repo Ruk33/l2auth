@@ -7,7 +7,6 @@
 #include "include/config.h"
 #include "include/util.h"
 #include "include/conn.h"
-#include "include/log.h"
 #include "include/storage.h"
 #include "include/packet.h"
 #include "include/ls_types.h"
@@ -141,7 +140,7 @@ static void handle_login_server(struct ls_session *session)
 
         assert(session);
 
-        log("player wants to log into game server.");
+        log_normal("player wants to log into game server.");
 
         play_ok.playOK1 = session->playOK1;
         play_ok.playOK2 = session->playOK2;
@@ -195,7 +194,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
         session = ls_session_find(socket);
 
         if (!session) {
-                log("session not found. ignoring request.");
+                log_normal("session not found. ignoring request.");
                 return;
         }
 
@@ -216,7 +215,7 @@ void ls_request(struct os_io *socket, byte_t *buf, size_t n)
                 handle_gg_auth(session);
                 break;
         default:
-                log("ignoring unknown packet.");
+                log_normal("ignoring unknown packet.");
                 break;
         }
 
@@ -240,6 +239,6 @@ void ls_request_disconnect(struct os_io *socket)
                 return;
         }
 
-        log("client disconnected from login server.");
+        log_normal("client disconnected from login server.");
         ls_session_free(session);
 }

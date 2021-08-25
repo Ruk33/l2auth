@@ -1,8 +1,10 @@
 #ifndef INCLUDE_UTIL_H
 #define INCLUDE_UTIL_H
 
-#include <sys/types.h>
+#include <stdio.h>
+#include <time.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 typedef unsigned char byte_t;
 
@@ -18,6 +20,20 @@ typedef uint64_t u64_t;
 #define PREVENT_UNUSED_WARNING(var) var = var
 
 #define arr_size(a) (sizeof(a) / sizeof(a[0]))
+
+#define log_normal(...)                                                      \
+        {                                                                    \
+                time_t timer       = 0;                                      \
+                char buffer[32]    = { 0 };                                  \
+                struct tm *tm_info = 0;                                      \
+                timer              = time(0);                                \
+                tm_info            = localtime(&timer);                      \
+                strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M", tm_info); \
+                printf("[%s] ", buffer);                                     \
+                printf(__VA_ARGS__);                                         \
+                printf("\n");                                                \
+                fflush(stdout);                                              \
+        }
 
 // Returns min number between a and b
 #ifndef _min

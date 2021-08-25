@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "include/config.h"
-#include "include/log.h"
 #include "include/packet.h"
 #include "include/gs_types.h"
 #include "include/gs_character.h"
@@ -348,7 +347,7 @@ static void gs_ai_idle_state(
                 gs_ai_handle_action_request(state, character, request);
                 break;
         case 0x09: // Logout.
-                log("logout, todo");
+                log_normal("logout, todo");
                 break;
         case 0x38: // Say.
                 gs_ai_handle_say(state, character, request);
@@ -360,11 +359,11 @@ static void gs_ai_idle_state(
                 gs_ai_handle_val_pos_request(character, request);
                 break;
         case 0xcd: // Show map.
-                log("show map, todo");
+                log_normal("show map, todo");
                 gs_character_spawn_random_orc(state, &character->position);
                 break;
         default:
-                log("unable to handle packet.");
+                log_normal("unable to handle packet.");
                 break;
         }
 }

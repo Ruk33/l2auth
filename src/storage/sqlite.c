@@ -1,15 +1,14 @@
 #include <assert.h>
 #include <sqlite3.h>
 #include "../include/util.h"
-#include "../include/log.h"
 #include "../include/gs_types.h"
 #include "../include/ls_types.h"
 #include "../include/storage.h"
 
 // Log if operation didn't executed well.
-#define sqlite_ok_or_log(op)                              \
-        if ((op) != SQLITE_OK) {                          \
-                log("%s", (char *) sqlite3_errmsg(conn)); \
+#define sqlite_ok_or_log(op)                                     \
+        if ((op) != SQLITE_OK) {                                 \
+                log_normal("%s", (char *) sqlite3_errmsg(conn)); \
         }
 
 /**
@@ -50,14 +49,14 @@
                 sqlite3_bind_parameter_index(stmt, key), \
                 value,                                   \
                 sizeof(value),                           \
-                NULL)
+                0)
 
 /**
  * Bind n bytes from text.
  */
 #define sqlite_bind_n_text(stmt, key, value, n) \
         sqlite_ok_or_log(sqlite3_bind_text(     \
-                stmt, sqlite3_bind_parameter_index(stmt, key), value, n, NULL))
+                stmt, sqlite3_bind_parameter_index(stmt, key), value, n, 0))
 
 /**
  * Bind safe null string terminated to key from query.

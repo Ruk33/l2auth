@@ -20,19 +20,18 @@
 
 #include "include/config.h"
 #include "include/gs_lib.h"
-#include "include/log.h"
 
 static gs_lib_t *lib = 0;
 
 void gs_lib_load(gs_lib_t *gs_lib)
 {
         if (!gs_lib) {
-                log("no gs lib passed to gs_lib_load. ignoring.");
+                log_normal("no gs lib passed to gs_lib_load. ignoring.");
                 return;
         }
 
         if (!gs_lib->send_response) {
-                log("gs lib without send_response cb. ignoring.");
+                log_normal("gs lib without send_response cb. ignoring.");
                 return;
         }
 
@@ -53,12 +52,12 @@ void gs_lib_unload(void)
 void gs_lib_new_conn(struct os_io *socket)
 {
         if (!lib) {
-                log("lib is not initialized. ignoring new con.");
+                log_normal("lib is not initialized. ignoring new con.");
                 return;
         }
 
         if (!socket) {
-                log("new conn without socket? ignoring.");
+                log_normal("new conn without socket? ignoring.");
                 return;
         }
 
@@ -68,12 +67,12 @@ void gs_lib_new_conn(struct os_io *socket)
 void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
 {
         if (!lib) {
-                log("lib is not initialized. ignoring new request.");
+                log_normal("lib is not initialized. ignoring new request.");
                 return;
         }
 
         if (!socket) {
-                log("new request without socket? ignoring.");
+                log_normal("new request without socket? ignoring.");
                 return;
         }
 
@@ -83,16 +82,16 @@ void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
 void gs_lib_disconnect(struct os_io *socket)
 {
         if (!lib) {
-                log("lib is not initialized. ignoring disconnect.");
+                log_normal("lib is not initialized. ignoring disconnect.");
                 return;
         }
 
         if (!socket) {
-                log("disconnect request without socket? ignoring.");
+                log_normal("disconnect request without socket? ignoring.");
                 return;
         }
 
-        log("client disconnected.");
+        log_normal("client disconnected.");
         gs_request_disconnect(&lib->state, socket);
 }
 
@@ -102,7 +101,7 @@ void gs_lib_tick(double delta)
         u64_t run_time  = 0;
 
         if (!lib) {
-                log("lib is not initialized. ignoring tick.");
+                log_normal("lib is not initialized. ignoring tick.");
                 return;
         }
 
