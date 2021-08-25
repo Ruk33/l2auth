@@ -21,11 +21,18 @@ void gs_session_update_auth(
         struct gs_session *dest,
         struct gs_packet_auth_request *src);
 
+void gs_session_send_packet(
+        struct gs_state *gs,
+        struct gs_session *session,
+        packet_t *src);
+
 void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src);
 
 // Decrypt packet if connection is encrypted.
 // If not encrypted, src gets copied to dest.
 void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src);
+
+void gs_session_disconnected(struct gs_state *gs, struct gs_session *session);
 
 void gs_session_disconnect(struct gs_state *state, struct gs_session *session);
 

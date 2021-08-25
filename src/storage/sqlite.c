@@ -88,7 +88,7 @@
  */
 #define sqlite_cpy_text(dest, stmt, col)                   \
         bytes_cpy_str(                                     \
-                dest,                                      \
+                (byte_t *) dest,                           \
                 (byte_t *) sqlite3_column_text(stmt, col), \
                 sizeof(dest) - 1)
 
@@ -261,7 +261,7 @@ size_t storage_get_servers(struct ls_server *dest, size_t max)
 
         while (found < max && sqlite3_step(stmt) == SQLITE_ROW) {
                 dest[found].id = sqlite3_column_int(stmt, 0);
-                sqlite_cpy_text((byte_t *) (dest[found].text_ip), stmt, 1);
+                sqlite_cpy_text(dest[found].text_ip, stmt, 1);
                 dest[found].port        = sqlite3_column_int(stmt, 2);
                 dest[found].age_limit   = sqlite3_column_int(stmt, 3);
                 dest[found].pvp         = sqlite3_column_int(stmt, 4);

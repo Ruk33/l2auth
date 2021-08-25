@@ -3,14 +3,9 @@
 
 #include "util.h"
 #include "os_io.h"
+#include "ls_types.h"
 
-struct ls_lib {
-        void (*send_response)(struct os_io *socket, void *buf, size_t n);
-        void (*disconnect)(struct os_io *socket);
-        u32_t (*text_ip_to_u32)(char *ip);
-};
-
-void ls_lib_load(struct ls_lib *ls);
+void ls_lib_load(struct ls_state *ls);
 
 void ls_lib_new_conn(struct os_io *socket);
 

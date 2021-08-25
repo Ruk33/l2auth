@@ -8,7 +8,6 @@
 #include "include/gs_server_packets.h"
 #include "include/gs_client_packets.h"
 #include "include/packet.h"
-#include "include/conn.h"
 #include "include/l2_string.h"
 #include "include/gs_session.h"
 #include "include/gs_character.h"
@@ -56,13 +55,13 @@ gs_character_distance(struct gs_character *a, struct gs_character *b)
 }
 
 static struct gs_character *
-gs_character_find_by_id(struct gs_state *state, u32_t id)
+gs_character_find_by_id(struct gs_state *gs, u32_t id)
 {
         struct gs_character *character = 0;
 
-        assert(state);
+        assert(gs);
 
-        gs_character_each(character, state)
+        gs_character_each(character, gs)
         {
                 if (character->id == id) {
                         return character;
@@ -72,9 +71,12 @@ gs_character_find_by_id(struct gs_state *state, u32_t id)
         return 0;
 }
 
-static void
-gs_character_encrypt_and_send_packet(struct gs_character *from, packet_t *packet)
+static void gs_character_encrypt_and_send_packet(
+        struct gs_state *gs,
+        struct gs_character *from,
+        packet_t *packet)
 {
+        assert(gs);
         assert(from);
         assert(packet);
 
@@ -83,12 +85,12 @@ gs_character_encrypt_and_send_packet(struct gs_character *from, packet_t *packet
         }
 
         gs_session_encrypt(from->session, packet, packet);
-        conn_send_packet(from->session->socket, packet);
+        gs_session_send_packet(gs, from->session, packet);
 }
 
 // Todo: do we really need from?
 static void gs_character_broadcast_packet(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *from,
         packet_t *packet)
 {
@@ -98,7 +100,7 @@ static void gs_character_broadcast_packet(
 
         size_t safe_packet_size = 0;
 
-        assert(state);
+        assert(gs);
         assert(from);
         assert(packet);
 
@@ -106,7 +108,7 @@ static void gs_character_broadcast_packet(
         safe_packet_size = (size_t)(packet_size(packet) * 2);
         safe_packet_size = _min(sizeof(response), safe_packet_size);
 
-        gs_character_each(character, state)
+        gs_character_each(character, gs)
         {
                 if (gs_character_is_npc(character)) {
                         continue;
@@ -114,19 +116,17 @@ static void gs_character_broadcast_packet(
 
                 bytes_zero(response, safe_packet_size);
                 bytes_cpy(response, packet, (size_t) packet_size(packet));
-                gs_character_encrypt_and_send_packet(character, response);
+                gs_character_encrypt_and_send_packet(gs, character, response);
         }
 }
 
-static void gs_character_say(
-        struct gs_state *state,
-        struct gs_character *from,
-        char *message)
+static void
+gs_character_say(struct gs_state *gs, struct gs_character *from, char *message)
 {
         static struct gs_packet_say say = { 0 };
         static packet_t response[256]   = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(from);
         assert(message);
 
@@ -139,11 +139,13 @@ static void gs_character_say(
         l2_string_from_char(say.message, message, sizeof(say.message));
 
         gs_packet_say_pack(response, &say);
-        gs_character_broadcast_packet(state, from, response);
+        gs_character_broadcast_packet(gs, from, response);
 }
 
-static void
-gs_character_send_status(struct gs_character *from, struct gs_character *to)
+static void gs_character_send_status(
+        struct gs_state *gs,
+        struct gs_character *from,
+        struct gs_character *to)
 {
         static packet_t response[512] = { 0 };
 
@@ -151,6 +153,7 @@ gs_character_send_status(struct gs_character *from, struct gs_character *to)
 
         struct gs_packet_status_attr attr = { 0 };
 
+        assert(gs);
         assert(from);
         assert(to);
 
@@ -173,11 +176,11 @@ gs_character_send_status(struct gs_character *from, struct gs_character *to)
         status.count = 2;
 
         gs_packet_status_pack(response, &status);
-        gs_character_encrypt_and_send_packet(to, response);
+        gs_character_encrypt_and_send_packet(gs, to, response);
 }
 
 static void gs_character_revive(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *src,
         enum gs_packet_revive_request_option where)
 {
@@ -185,12 +188,12 @@ static void gs_character_revive(
 
         packet_t response[32] = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(src);
 
         revive.obj_id = src->id;
         gs_packet_revive_pack(response, &revive);
-        gs_character_broadcast_packet(state, src, response);
+        gs_character_broadcast_packet(gs, src, response);
 
         switch (where) {
         case REVIVE_IN_CLAN_HALL:
@@ -203,7 +206,7 @@ static void gs_character_revive(
 }
 
 static void gs_character_move(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         struct gs_point *p)
 {
@@ -211,7 +214,7 @@ static void gs_character_move(
 
         packet_t packet[64] = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(p);
 
@@ -224,16 +227,16 @@ static void gs_character_move(
         move_response.new_z  = character->ai.moving_to.z;
 
         gs_packet_move_pack(packet, &move_response);
-        gs_character_broadcast_packet(state, character, packet);
+        gs_character_broadcast_packet(gs, character, packet);
 }
 
-static void gs_character_die(struct gs_state *state, struct gs_character *src)
+static void gs_character_die(struct gs_state *gs, struct gs_character *src)
 {
         struct gs_packet_die die = { 0 };
 
         packet_t response[64] = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(src);
 
         die.obj_id     = src->id;
@@ -241,11 +244,11 @@ static void gs_character_die(struct gs_state *state, struct gs_character *src)
         die.to_fixed   = 1;
 
         gs_packet_die_pack(response, &die);
-        gs_character_broadcast_packet(state, src, response);
+        gs_character_broadcast_packet(gs, src, response);
 }
 
 static void gs_character_attack(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *attacker,
         struct gs_character *target)
 {
@@ -264,7 +267,7 @@ static void gs_character_attack(
 
         int was_already_dead = 0;
 
-        assert(state);
+        assert(gs);
         assert(attacker);
         assert(target);
 
@@ -287,8 +290,8 @@ static void gs_character_attack(
         gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
         gs_packet_attack_pack(attack_packet, &attack);
 
-        gs_character_broadcast_packet(state, attacker, auto_attack_packet);
-        gs_character_broadcast_packet(state, attacker, attack_packet);
+        gs_character_broadcast_packet(gs, attacker, auto_attack_packet);
+        gs_character_broadcast_packet(gs, attacker, attack_packet);
 
         // Allow to hit dead bodies. But since they
         // were already dead, we don't need to re-send
@@ -300,15 +303,16 @@ static void gs_character_attack(
         // When the life of the target gets modified
         // make sure the attacker and the target
         // are notified & updated.
-        gs_character_send_status(target, target);
-        gs_character_send_status(target, attacker);
+        gs_character_send_status(gs, target, target);
+        gs_character_send_status(gs, target, attacker);
 
         if (target->stats.hp == 0) {
-                gs_character_die(state, target);
+                gs_character_die(gs, target);
         }
 }
 
 static void gs_character_select_target(
+        struct gs_state *gs,
         struct gs_character *character,
         struct gs_character *target)
 {
@@ -316,6 +320,7 @@ static void gs_character_select_target(
 
         packet_t response[32] = { 0 };
 
+        assert(gs);
         assert(character);
         assert(target);
 
@@ -323,15 +328,18 @@ static void gs_character_select_target(
         selected.color     = 0;
 
         gs_packet_target_selected_pack(response, &selected);
-        gs_character_encrypt_and_send_packet(character, response);
+        gs_character_encrypt_and_send_packet(gs, character, response);
 }
 
-static void gs_character_validate_position(struct gs_character *character)
+static void gs_character_validate_position(
+        struct gs_state *gs,
+        struct gs_character *character)
 {
         struct gs_packet_validate_pos validate_response = { 0 };
 
         packet_t response[64] = { 0 };
 
+        assert(gs);
         assert(character);
 
         validate_response.id      = character->id;
@@ -341,18 +349,18 @@ static void gs_character_validate_position(struct gs_character *character)
         validate_response.z       = character->position.z;
 
         gs_packet_validate_pos_pack(response, &validate_response);
-        gs_character_encrypt_and_send_packet(character, response);
+        gs_character_encrypt_and_send_packet(gs, character, response);
 }
 
 static void
-gs_character_spawn_random_orc(struct gs_state *state, struct gs_point *location)
+gs_character_spawn_random_orc(struct gs_state *gs, struct gs_point *location)
 {
         struct gs_character orc = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(location);
 
-        orc.id                   = gs_character_get_free_id(state);
+        orc.id                   = gs_character_get_free_id(gs);
         orc.position.x           = location->x;
         orc.position.y           = location->y;
         orc.position.z           = location->z;
@@ -383,7 +391,7 @@ gs_character_spawn_random_orc(struct gs_state *state, struct gs_point *location)
         bytes_cpy_str(orc.name, "Orc", sizeof(orc.name) - 1);
         bytes_cpy_str(orc.title, "Archer", sizeof(orc.title) - 1);
 
-        gs_character_spawn(state, &orc);
+        gs_character_spawn(gs, &orc);
 }
 
 static void gs_character_from_request(
@@ -544,7 +552,7 @@ static void gs_character_set_player_info(
 }
 
 static void
-gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
+gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
 {
         static struct gs_packet_char_info char_info = { 0 };
         static struct gs_packet_npc_info npc_info   = { 0 };
@@ -557,7 +565,7 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
 
         int already_in_list = 0;
 
-        assert(state);
+        assert(gs);
         assert(spawning);
         assert(spawning->id);
 
@@ -566,7 +574,7 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
         log_normal(
                 "spawning character with id %d. notifying close players.", id);
 
-        gs_character_each(character, state)
+        gs_character_each(character, gs)
         {
                 if (character->id == spawning->id) {
                         already_in_list = 1;
@@ -586,7 +594,7 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
-                gs_character_encrypt_and_send_packet(character, response);
+                gs_character_encrypt_and_send_packet(gs, character, response);
 
                 // Notify the spawning character of characters already
                 // in the world (only if it's a player).
@@ -606,43 +614,43 @@ gs_character_spawn(struct gs_state *state, struct gs_character *spawning)
                         gs_packet_char_info_pack(response, &char_info);
                 }
 
-                gs_character_encrypt_and_send_packet(spawning, response);
+                gs_character_encrypt_and_send_packet(gs, spawning, response);
         }
 
         if (already_in_list) {
                 return;
         }
 
-        gs_character_add(state, spawning);
+        gs_character_add(gs, spawning);
 }
 
 static void
-gs_character_restart(struct gs_state *state, struct gs_character *character)
+gs_character_restart(struct gs_state *gs, struct gs_character *character)
 {
         struct gs_packet_restart restart = { 0 };
 
         packet_t response[32] = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(character);
 
         restart.response = 0x01; // ok!
 
         gs_packet_restart_pack(response, &restart);
-        gs_character_encrypt_and_send_packet(character, response);
+        gs_character_encrypt_and_send_packet(gs, character, response);
 
-        gs_character_disconnect(state, character);
+        gs_character_disconnect(gs, character);
 }
 
 static struct gs_character *
-gs_character_from_session(struct gs_state *state, struct gs_session *session)
+gs_character_from_session(struct gs_state *gs, struct gs_session *session)
 {
         struct gs_character *character = 0;
 
-        assert(state);
+        assert(gs);
         assert(session);
 
-        gs_character_each(character, state)
+        gs_character_each(character, gs)
         {
                 if (character->session == session) {
                         return character;
@@ -652,14 +660,14 @@ gs_character_from_session(struct gs_state *state, struct gs_session *session)
         return 0;
 }
 
-static u32_t gs_character_get_free_id(struct gs_state *state)
+static u32_t gs_character_get_free_id(struct gs_state *gs)
 {
-        assert(state);
+        assert(gs);
 
         // Don't use id 0, it causes issues with packets
         // sent to the client.
-        for (size_t i = 1, max = arr_size(state->characters); i < max; i += 1) {
-                if (!state->characters[i].id) {
+        for (size_t i = 1, max = arr_size(gs->characters); i < max; i += 1) {
+                if (!gs->characters[i].id) {
                         return (u32_t) i;
                 }
         }
@@ -667,22 +675,22 @@ static u32_t gs_character_get_free_id(struct gs_state *state)
         return 0;
 }
 
-static void gs_character_add(struct gs_state *state, struct gs_character *src)
+static void gs_character_add(struct gs_state *gs, struct gs_character *src)
 {
-        assert(state);
+        assert(gs);
         assert(src);
         assert(src->id);
 
-        state->characters[src->id] = *src;
-        list_add(state->list_characters, &state->characters[src->id]);
+        gs->characters[src->id] = *src;
+        list_add(gs->list_characters, &gs->characters[src->id]);
 }
 
 static void
-gs_character_disconnect(struct gs_state *state, struct gs_character *src)
+gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
 {
-        assert(state);
+        assert(gs);
         assert(src);
 
-        list_remove(state->list_characters, src);
+        list_remove(gs->list_characters, src);
         *src = (struct gs_character){ 0 };
 }

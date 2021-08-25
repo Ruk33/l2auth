@@ -17,12 +17,8 @@ struct ls_blowfish {
         BF_KEY key;
 };
 
-static struct ls_session sessions[MAX_CLIENTS]       = { 0 };
 static struct ls_rsa rsa_keys[MAX_CLIENTS]           = { 0 };
 static struct ls_blowfish blowfish_keys[MAX_CLIENTS] = { 0 };
-
-static size_t session_instances[MAX_CLIENTS] = { 0 };
-static size_t session_count                  = 0;
 
 static void ls_session_blowfish_init(struct ls_blowfish *dest)
 {
@@ -136,17 +132,18 @@ static int ls_session_rsa_decrypt(struct ls_rsa *rsa, byte_t *dest, byte_t *src)
         return RSA_private_decrypt(size, src, dest, rsa->key, RSA_NO_PADDING);
 }
 
-struct ls_session *ls_session_new(struct os_io *socket)
+struct ls_session *ls_session_new(struct ls_state *ls, struct os_io *socket)
 {
         struct ls_session *session = 0;
 
         size_t id = 0;
 
+        assert(ls);
         assert(socket);
-        assert(session_count < arr_size(sessions));
+        assert(ls->session_count < arr_size(ls->sessions));
 
-        session_count += recycle_id_get(&id, session_instances);
-        session = &sessions[id];
+        ls->session_count += recycle_id_get(&id, ls->session_instances);
+        session = &ls->sessions[id];
 
         session->id       = id;
         session->socket   = socket;
@@ -159,27 +156,29 @@ struct ls_session *ls_session_new(struct os_io *socket)
         return session;
 }
 
-void ls_session_free(struct ls_session *session)
+void ls_session_free(struct ls_state *ls, struct ls_session *session)
 {
+        assert(ls);
         assert(session);
 
         RSA_free(session->rsa->key);
         BN_free(session->rsa->e);
 
-        recycle_id(session_instances, session->id);
+        recycle_id(ls->session_instances, session->id);
 
         *session->rsa      = (struct ls_rsa){ 0 };
         *session->blowfish = (struct ls_blowfish){ 0 };
         *session           = (struct ls_session){ 0 };
 }
 
-struct ls_session *ls_session_find(struct os_io *socket)
+struct ls_session *ls_session_find(struct ls_state *ls, struct os_io *socket)
 {
+        assert(ls);
         assert(socket);
 
-        for (size_t i = 0; i < session_count; i += 1) {
-                if (sessions[i].socket == socket) {
-                        return &sessions[i];
+        for (size_t i = 0; i < ls->session_count; i += 1) {
+                if (ls->sessions[i].socket == socket) {
+                        return &ls->sessions[i];
                 }
         }
 
@@ -197,6 +196,37 @@ void ls_session_rsa_modulus(struct ls_session *session, byte_t *dest)
         RSA_get0_key(session->rsa->key, &n, 0, 0);
         BN_bn2bin(n, dest);
         ls_session_rsa_scramble_modulo(dest);
+}
+
+void ls_session_send_packet(
+        struct ls_state *ls,
+        struct ls_session *session,
+        packet_t *src)
+{
+        assert(ls);
+        assert(ls->send_response);
+        assert(session);
+        assert(session->socket);
+        assert(src);
+        ls->send_response(session->socket, src, (size_t) packet_size(src));
+}
+
+void ls_session_disconnected(struct ls_state *ls, struct ls_session *session)
+{
+        assert(ls);
+        assert(session);
+        ls_session_free(ls, session);
+}
+
+void ls_session_disconnect(struct ls_state *ls, struct ls_session *session)
+{
+        assert(ls);
+        assert(ls->disconnect);
+        assert(session);
+        assert(session->socket);
+
+        ls->disconnect(session->socket);
+        ls_session_disconnected(ls, session);
 }
 
 void ls_session_encrypt_packet(

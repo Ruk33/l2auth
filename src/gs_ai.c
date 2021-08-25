@@ -36,14 +36,15 @@ gs_ai_on_dead(struct gs_character *dead, struct gs_character *killer)
         killer->ai.target_id = 0;
 }
 
-static void gs_ai_on_revive(struct gs_character *src)
+static void gs_ai_on_revive(struct gs_state *gs, struct gs_character *src)
 {
+        assert(gs);
         assert(src);
 
         src->ai       = (struct gs_ai){ 0 };
         src->stats.hp = src->stats.max_hp;
 
-        gs_character_send_status(src, src);
+        gs_character_send_status(gs, src, src);
 }
 
 static void gs_ai_go_idle(struct gs_character *src)
@@ -53,10 +54,8 @@ static void gs_ai_go_idle(struct gs_character *src)
         src->ai.state     = AI_IDLE;
 }
 
-static void gs_ai_move(
-        struct gs_state *state,
-        struct gs_character *src,
-        struct gs_point *where)
+static void
+gs_ai_move(struct gs_state *gs, struct gs_character *src, struct gs_point *where)
 {
         double dx = 0;
         double dy = 0;
@@ -65,7 +64,7 @@ static void gs_ai_move(
         double _sin = 0;
         double _cos = 0;
 
-        assert(state);
+        assert(gs);
         assert(src);
         assert(where);
 
@@ -93,7 +92,7 @@ static void gs_ai_move(
                 _cos * /* speed */ 120 / TICKS_PER_SECOND;
         src->ai.move_data.y_speed_ticks =
                 _sin * /* speed */ 120 / TICKS_PER_SECOND;
-        src->ai.move_data.move_start_time = state->game_ticks;
+        src->ai.move_data.move_start_time = gs->game_ticks;
 
         src->ai.move_data.origin = src->position;
 
@@ -105,18 +104,18 @@ static void gs_ai_move(
                 atan2(-_sin, -_cos) * 10430.378350470452724949566316381);
         src->heading += 32768;
 
-        gs_character_move(state, src, where);
+        gs_character_move(gs, src, where);
 }
 
 static void gs_ai_attack(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *attacker,
         struct gs_character *target)
 {
         struct gs_point walk_to = { 0 };
         double walk_angle       = 0;
 
-        assert(state);
+        assert(gs);
         assert(attacker);
 
         if (!target) {
@@ -138,7 +137,7 @@ static void gs_ai_attack(
                 walk_to.x = target->position.x - 40 * cos(walk_angle);
                 walk_to.y = target->position.y - 40 * sin(walk_angle);
                 walk_to.z = target->position.z;
-                gs_ai_move(state, attacker, &walk_to);
+                gs_ai_move(gs, attacker, &walk_to);
                 attacker->ai.state = AI_MOVING_TO_ATTACK;
                 return;
         }
@@ -148,28 +147,31 @@ static void gs_ai_attack(
         }
 
         attacker->ai.attack_cd = 20;
-        gs_character_attack(state, attacker, target);
+        gs_character_attack(gs, attacker, target);
 
         if (target->stats.hp == 0) {
                 gs_ai_on_dead(target, attacker);
         }
 }
 
-static void
-gs_ai_select_target(struct gs_character *src, struct gs_character *target)
+static void gs_ai_select_target(
+        struct gs_state *gs,
+        struct gs_character *src,
+        struct gs_character *target)
 {
+        assert(gs);
         assert(src);
         assert(target);
 
         src->ai.state     = AI_TARGET_SELECTED;
         src->ai.target_id = target->id;
 
-        gs_character_select_target(src, target);
-        gs_character_send_status(target, src);
+        gs_character_select_target(gs, src, target);
+        gs_character_send_status(gs, target, src);
 }
 
 static void gs_ai_handle_move_request(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *packet)
 {
@@ -177,7 +179,7 @@ static void gs_ai_handle_move_request(
 
         struct gs_point point = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(packet);
 
@@ -187,16 +189,19 @@ static void gs_ai_handle_move_request(
         point.y = move_request.y;
         point.z = move_request.z;
 
-        gs_ai_move(state, character, &point);
+        gs_ai_move(gs, character, &point);
 }
 
-static void
-gs_ai_handle_val_pos_request(struct gs_character *character, packet_t *packet)
+static void gs_ai_handle_val_pos_request(
+        struct gs_state *gs,
+        struct gs_character *character,
+        packet_t *packet)
 {
         struct gs_packet_validate_pos_request validate_request = { 0 };
 
         struct gs_character client_position = { 0 };
 
+        assert(gs);
         assert(character);
         assert(packet);
 
@@ -219,12 +224,12 @@ gs_ai_handle_val_pos_request(struct gs_character *character, packet_t *packet)
                 // note: is it really required to send the confirmation?
                 // gs_character_validate_position(&client_position);
         } else {
-                gs_character_validate_position(character);
+                gs_character_validate_position(gs, character);
         }
 }
 
 static void gs_ai_handle_action_request(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *packet)
 {
@@ -232,13 +237,13 @@ static void gs_ai_handle_action_request(
 
         struct gs_character *target = 0;
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(packet);
 
         gs_packet_action_request_unpack(&action, packet);
 
-        target = gs_character_find_by_id(state, action.target_id);
+        target = gs_character_find_by_id(gs, action.target_id);
 
         if (!target) {
                 character->ai.target_id = 0;
@@ -246,11 +251,11 @@ static void gs_ai_handle_action_request(
                 return;
         }
 
-        gs_ai_select_target(character, target);
+        gs_ai_select_target(gs, character, target);
 }
 
 static void gs_ai_handle_say(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *packet)
 {
@@ -259,7 +264,7 @@ static void gs_ai_handle_say(
 
         struct gs_packet_say_request say = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(packet);
 
@@ -267,11 +272,11 @@ static void gs_ai_handle_say(
 
         gs_packet_say_request_unpack(&say, packet);
         l2_string_to_char(message, say.message, sizeof(message));
-        gs_character_say(state, character, message);
+        gs_character_say(gs, character, message);
 }
 
 static void gs_ai_handle_attack_request(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *packet)
 {
@@ -279,7 +284,7 @@ static void gs_ai_handle_attack_request(
 
         struct gs_character *target = 0;
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(packet);
 
@@ -289,7 +294,7 @@ static void gs_ai_handle_attack_request(
                 return;
         }
 
-        target = gs_character_find_by_id(state, action.target_id);
+        target = gs_character_find_by_id(gs, action.target_id);
 
         if (!target) {
                 character->ai.target_id = 0;
@@ -298,69 +303,68 @@ static void gs_ai_handle_attack_request(
         }
 
         if (character->ai.target_id == target->id) {
-                gs_ai_attack(state, character, target);
+                gs_ai_attack(gs, character, target);
                 return;
         }
 
-        gs_ai_select_target(character, target);
+        gs_ai_select_target(gs, character, target);
 }
 
-static void gs_ai_handle_restart_request(
-        struct gs_state *state,
-        struct gs_character *character)
+static void
+gs_ai_handle_restart_request(struct gs_state *gs, struct gs_character *character)
 {
-        assert(state);
+        assert(gs);
         assert(character);
-        gs_character_restart(state, character);
+        gs_character_restart(gs, character);
 }
 
 static void gs_ai_handle_revive_request(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
         struct gs_packet_revive_request revive_request = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         gs_packet_revive_request_unpack(&revive_request, request);
-        gs_character_revive(state, character, revive_request.option_chosen);
-        gs_ai_on_revive(character);
+        gs_character_revive(gs, character, revive_request.option_chosen);
+        gs_ai_on_revive(gs, character);
 }
 
 static void gs_ai_idle_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         case 0x01: // Moving
-                gs_ai_handle_move_request(state, character, request);
+                gs_ai_handle_move_request(gs, character, request);
                 break;
         case 0x04: // Action.
-                gs_ai_handle_action_request(state, character, request);
+                gs_ai_handle_action_request(gs, character, request);
                 break;
         case 0x09: // Logout.
                 log_normal("logout, todo");
                 break;
         case 0x38: // Say.
-                gs_ai_handle_say(state, character, request);
+                gs_ai_handle_say(gs, character, request);
                 break;
         case 0x46: // Restart.
-                gs_ai_handle_restart_request(state, character);
+                gs_ai_handle_restart_request(gs, character);
                 break;
         case 0x48: // Validate position.
-                gs_ai_handle_val_pos_request(character, request);
+                gs_ai_handle_val_pos_request(gs, character, request);
                 break;
         case 0xcd: // Show map.
                 log_normal("show map, todo");
-                gs_character_spawn_random_orc(state, &character->position);
+                gs_character_spawn_random_orc(gs, &character->position);
                 break;
         default:
                 log_normal("unable to handle packet.");
@@ -369,84 +373,84 @@ static void gs_ai_idle_state(
 }
 
 static void gs_ai_moving_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         default:
-                gs_ai_idle_state(state, character, request);
+                gs_ai_idle_state(gs, character, request);
                 break;
         }
 }
 
 static void gs_ai_target_selected_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         case 0x04:
-                gs_ai_handle_attack_request(state, character, request);
+                gs_ai_handle_attack_request(gs, character, request);
                 break;
         default:
-                gs_ai_idle_state(state, character, request);
+                gs_ai_idle_state(gs, character, request);
                 break;
         }
 }
 
 static void gs_ai_moving_to_attack_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         default:
-                gs_ai_idle_state(state, character, request);
+                gs_ai_idle_state(gs, character, request);
                 break;
         }
 }
 
 static void gs_ai_attacking_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         default:
-                gs_ai_idle_state(state, character, request);
+                gs_ai_idle_state(gs, character, request);
                 break;
         }
 }
 
 static void gs_ai_dead_state(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (packet_type(request)) {
         case 0x6d: // Revive
-                gs_ai_handle_revive_request(state, character, request);
+                gs_ai_handle_revive_request(gs, character, request);
                 break;
         default:
                 break;
@@ -454,7 +458,7 @@ static void gs_ai_dead_state(
 }
 
 static void gs_ai_update_character_position(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         double delta)
 {
@@ -462,7 +466,7 @@ static void gs_ai_update_character_position(
 
         u64_t elapsed = 0;
 
-        assert(state);
+        assert(gs);
         assert(character);
 
         move_data = &character->ai.move_data;
@@ -472,14 +476,14 @@ static void gs_ai_update_character_position(
                 return;
         }
 
-        if (move_data->move_timestamp == state->game_ticks) {
+        if (move_data->move_timestamp == gs->game_ticks) {
                 return;
         }
 
-        elapsed = state->game_ticks - move_data->move_start_time;
+        elapsed = gs->game_ticks - move_data->move_start_time;
 
         if (elapsed >= move_data->ticks_to_move) {
-                move_data->move_timestamp = state->game_ticks;
+                move_data->move_timestamp = gs->game_ticks;
 
                 character->position     = move_data->destination;
                 character->ai.move_data = (struct gs_move_data){ 0 };
@@ -493,15 +497,15 @@ static void gs_ai_update_character_position(
         character->position.y = move_data->origin.y +
                                 (i32_t)(elapsed * move_data->y_speed_ticks);
 
-        move_data->move_timestamp = state->game_ticks;
+        move_data->move_timestamp = gs->game_ticks;
 }
 
 static void
-gs_ai_npc_initiate_idle_walk(struct gs_state *state, struct gs_character *npc)
+gs_ai_npc_initiate_idle_walk(struct gs_state *gs, struct gs_character *npc)
 {
         struct gs_point random_point = { 0 };
 
-        assert(state);
+        assert(gs);
         assert(npc);
 
         if (!gs_character_is_npc(npc)) {
@@ -526,15 +530,15 @@ gs_ai_npc_initiate_idle_walk(struct gs_state *state, struct gs_character *npc)
         random_point.x = npc->position.x - (60) * cos(npc->heading);
         random_point.y = npc->position.y - (60) * sin(npc->heading);
         random_point.z = npc->position.z;
-        gs_ai_move(state, npc, &random_point);
+        gs_ai_move(gs, npc, &random_point);
 }
 
 static void
-gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
+gs_ai_tick(struct gs_state *gs, struct gs_character *character, double delta)
 {
         struct gs_character *target = 0;
 
-        assert(state);
+        assert(gs);
         assert(character);
 
         if (character->ai.attack_cd > 0) {
@@ -546,27 +550,26 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
         }
 
         if (character->ai.target_id) {
-                target =
-                        gs_character_find_by_id(state, character->ai.target_id);
+                target = gs_character_find_by_id(gs, character->ai.target_id);
         }
 
         switch (character->ai.state) {
         case AI_IDLE:
-                gs_ai_npc_initiate_idle_walk(state, character);
+                gs_ai_npc_initiate_idle_walk(gs, character);
                 break;
         case AI_MOVING:
-                gs_ai_update_character_position(state, character, delta);
+                gs_ai_update_character_position(gs, character, delta);
                 break;
         case AI_TARGET_SELECTED:
-                gs_ai_update_character_position(state, character, delta);
+                gs_ai_update_character_position(gs, character, delta);
                 break;
         case AI_ATTACKING:
-                gs_ai_update_character_position(state, character, delta);
-                gs_ai_attack(state, character, target);
+                gs_ai_update_character_position(gs, character, delta);
+                gs_ai_attack(gs, character, target);
                 break;
         case AI_MOVING_TO_ATTACK:
-                gs_ai_update_character_position(state, character, delta);
-                gs_ai_attack(state, character, target);
+                gs_ai_update_character_position(gs, character, delta);
+                gs_ai_attack(gs, character, target);
                 break;
         case AI_DEAD:
                 break;
@@ -576,32 +579,32 @@ gs_ai_tick(struct gs_state *state, struct gs_character *character, double delta)
 }
 
 static void gs_ai_handle_request(
-        struct gs_state *state,
+        struct gs_state *gs,
         struct gs_character *character,
         packet_t *request)
 {
-        assert(state);
+        assert(gs);
         assert(character);
         assert(request);
 
         switch (character->ai.state) {
         case AI_IDLE:
-                gs_ai_idle_state(state, character, request);
+                gs_ai_idle_state(gs, character, request);
                 break;
         case AI_MOVING:
-                gs_ai_moving_state(state, character, request);
+                gs_ai_moving_state(gs, character, request);
                 break;
         case AI_TARGET_SELECTED:
-                gs_ai_target_selected_state(state, character, request);
+                gs_ai_target_selected_state(gs, character, request);
                 break;
         case AI_MOVING_TO_ATTACK:
-                gs_ai_moving_to_attack_state(state, character, request);
+                gs_ai_moving_to_attack_state(gs, character, request);
                 break;
         case AI_ATTACKING:
-                gs_ai_attacking_state(state, character, request);
+                gs_ai_attacking_state(gs, character, request);
                 break;
         case AI_DEAD:
-                gs_ai_dead_state(state, character, request);
+                gs_ai_dead_state(gs, character, request);
                 break;
         default:
                 break;

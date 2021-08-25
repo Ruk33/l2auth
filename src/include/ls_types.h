@@ -1,6 +1,8 @@
 #ifndef INCLUDE_LS_TYPES_H
 #define INCLUDE_LS_TYPES_H
 
+#include "util.h"
+
 struct ls_rsa;
 
 struct ls_blowfish;
@@ -21,10 +23,10 @@ struct ls_account {
 
 struct ls_server {
         u8_t id;
-        // ipv4 + null terminator, example: 255.255.255.255
+        // ipv4, example: 255.255.255.255
         // We store the text ip in the database to make it easier to read from.
         // We could simply store an int, but it's harder to read and inspect.
-        char text_ip[16];
+        char text_ip[32];
         u32_t ip;
         u32_t port;
         u8_t age_limit;
@@ -34,6 +36,16 @@ struct ls_server {
         u8_t status;
         u32_t extra;
         u8_t brackets;
+};
+
+struct ls_state {
+        struct ls_session sessions[MAX_CLIENTS];
+        size_t session_instances[MAX_CLIENTS];
+        size_t session_count;
+
+        void (*send_response)(struct os_io *socket, void *buf, size_t n);
+        void (*disconnect)(struct os_io *socket);
+        u32_t (*text_ip_to_u32)(char *ip);
 };
 
 #endif

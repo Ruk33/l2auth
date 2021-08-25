@@ -4,16 +4,10 @@
 #include "util.h"
 #include "gs_types.h"
 #include "config.h"
-#include "conn.h"
 #include "os_io.h"
 #include "gs_character.h"
 
-typedef struct {
-        conn_send_response_cb send_response;
-        struct gs_state state;
-} gs_lib_t;
-
-void gs_lib_load(gs_lib_t *gs_lib);
+void gs_lib_load(struct gs_state *gs);
 
 void gs_lib_unload(void);
 

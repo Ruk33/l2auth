@@ -153,6 +153,9 @@ struct gs_state {
 
         u64_t game_ticks;
         time_t game_start_time;
+
+        void (*send_response)(struct os_io *socket, void *buf, size_t n);
+        void (*disconnect)(struct os_io *socket);
 };
 
 #endif

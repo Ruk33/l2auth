@@ -10,14 +10,14 @@
 #include "../../recycle_id.c"
 
 #include "../../include/config.h"
-#include "../../include/gs_lib.h"
+#include "../../include/gs_types.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
 
 struct lib {
         void *handle;
         time_t load_time;
-        void (*on_load)(gs_lib_t *);
+        void (*on_load)(struct gs_state *);
         void (*on_unload)(void);
         void (*on_new_conn)(struct os_io *);
         void (*on_new_req)(struct os_io *, void *, size_t);
@@ -27,7 +27,7 @@ struct lib {
 
 static struct lib lib = { 0 };
 
-static gs_lib_t *game_server = 0;
+static struct gs_state *game_server = 0;
 
 static void *load_lib_function(char *name)
 {
@@ -57,6 +57,15 @@ static void internal_send_response(struct os_io *io, void *buf, size_t n)
         }
 
         os_io_write(io, buf, n);
+}
+
+static void internal_disconnect(struct os_io *socket)
+{
+        if (!socket) {
+                return;
+        }
+        lib.on_disconnect(socket);
+        os_io_close(socket);
 }
 
 static int init_gs_lib(void)
@@ -118,7 +127,9 @@ static int init_gs_lib(void)
 static void
 on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
 {
+        assert(game_server);
         assert(game_server->send_response);
+        assert(game_server->disconnect);
 
         if (!socket) {
                 printf("no socket? ignoring request.\n");
@@ -140,7 +151,6 @@ on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
                 break;
         case OS_IO_SOCKET_DISCONNECTED:
                 lib.on_disconnect(socket);
-                os_io_close(socket);
                 break;
         case OS_IO_TIMER_TICK:
                 lib.on_tick(0.1);
@@ -160,6 +170,7 @@ int main(/* int argc, char **argv */)
         game_server = calloc(1, sizeof(*game_server));
 
         game_server->send_response = internal_send_response;
+        game_server->disconnect    = internal_disconnect;
 
         timer  = os_io_timer(0.1);
         socket = os_io_socket_create(7777, MAX_CLIENTS);
