@@ -9,6 +9,7 @@
 #include "../../util.c"
 #include "../../recycle_id.c"
 
+#include "../../include/config.h"
 #include "../../include/gs_lib.h"
 
 #define GAME_SERVER_LIB_PATH "./game_server_lib.so"
@@ -161,33 +162,32 @@ int main(/* int argc, char **argv */)
         game_server->send_response = internal_send_response;
 
         timer  = os_io_timer(0.1);
-        socket = os_io_socket_create(7777, 30);
+        socket = os_io_socket_create(7777, MAX_CLIENTS);
 
         if (!timer) {
                 printf("game server timer couldn't be created.\n");
-                os_io_close(timer);
-                os_io_close(socket);
-                return EXIT_FAILURE;
+                goto abort;
         }
 
         if (!socket) {
                 printf("game server socket couldn't be created.\n");
-                os_io_close(timer);
-                os_io_close(socket);
-                return EXIT_FAILURE;
+                goto abort;
         }
 
         if (!os_io_listen(on_io_event)) {
                 printf("game server request can't be handled.\n");
-                os_io_close(timer);
-                os_io_close(socket);
-                return EXIT_FAILURE;
+                goto abort;
         }
+
+        printf("shuting down.\n");
 
         os_io_close(timer);
         os_io_close(socket);
 
-        printf("shuting down.\n");
-
         return EXIT_SUCCESS;
+
+abort:
+        os_io_close(timer);
+        os_io_close(socket);
+        return EXIT_FAILURE;
 }

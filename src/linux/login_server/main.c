@@ -1,9 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include "../os_io.c"
+#include "../../include/config.h"
 #include "../../ls_lib.c"
-
-#include <openssl/evp.h>
 
 static void _send_response(struct os_io *socket, void *buf, size_t n)
 {
@@ -55,7 +54,7 @@ int main(/* int argc, char **argv */)
 
         struct os_io *socket = 0;
 
-        socket = os_io_socket_create(2106, 30);
+        socket = os_io_socket_create(2106, MAX_CLIENTS);
 
         if (!socket) {
                 printf("login server socket couldn't be created.\n");
