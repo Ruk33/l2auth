@@ -4,7 +4,6 @@
 
 #include "storage/sqlite.c"
 #include "gs_ai.c"
-#include "gs_character_template.c"
 #include "gs_character.c"
 #include "gs_client_packets.c"
 #include "gs_server_packets.c"

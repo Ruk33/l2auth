@@ -10,7 +10,7 @@ RUN_PATH="`dirname \"$0\"`"
 RUN_PATH="`( cd \"$RUN_PATH\" && pwd )`"
 
 for migration in $RUN_PATH/*.sql; do
-    echo "Running migration $migration"
+    echo "Running migration $migration."
 
     if [[ $migration == *_.sql ]]
     then
@@ -21,3 +21,4 @@ for migration in $RUN_PATH/*.sql; do
 done
 
 sqlite3 $1 '.schema' > schema.txt
+echo "Done."
