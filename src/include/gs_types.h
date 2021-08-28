@@ -122,6 +122,7 @@ struct gs_character_template {
 
 struct gs_character {
         u32_t id;
+        u32_t template_id;
         struct gs_session *session;
         struct gs_ai ai;
         struct gs_point position;

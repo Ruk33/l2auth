@@ -360,12 +360,13 @@ void gs_character_spawn_random_orc(
         assert(location);
 
         orc.id                   = gs_character_get_free_id(gs);
+        orc.template_id          = 7082;
         orc.position.x           = location->x;
         orc.position.y           = location->y;
         orc.position.z           = location->z;
-        orc.collision_radius     = 14;
+        orc.collision_radius     = 8;
         orc.collision_height     = 25;
-        orc.level                = 8;
+        orc.level                = 10;
         orc.sex                  = 0;
         orc.stats.hp             = 197;
         orc.stats.max_hp         = 197;
@@ -387,8 +388,8 @@ void gs_character_spawn_random_orc(
         orc.stats.walk_speed     = 45;
         orc.stats.run_speed      = 110;
 
-        bytes_cpy_str(orc.name, "Orc", sizeof(orc.name) - 1);
-        bytes_cpy_str(orc.title, "Archer", sizeof(orc.title) - 1);
+        bytes_cpy_str(orc.name, "Beti", sizeof(orc.name) - 1);
+        bytes_cpy_str(orc.title, "Merchant", sizeof(orc.title) - 1);
 
         gs_character_spawn(gs, &orc);
 }
@@ -454,12 +455,14 @@ static void gs_character_set_npc_info(
 {
         assert(dest);
         assert(src);
+        assert(src->id);
+        assert(src->template_id);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
         l2_string_from_char(dest->title, src->title, sizeof(dest->title));
 
         dest->id                  = src->id;
-        dest->template_id         = 6 + 1000000; // orc
+        dest->template_id         = src->template_id + 1000000;
         dest->attackable          = 1;
         dest->x                   = src->position.x;
         dest->y                   = src->position.y;
@@ -484,7 +487,7 @@ static void gs_character_set_npc_info(
         dest->in_combat           = 0;
         dest->alike_dead          = src->stats.hp == 0;
         dest->summoned            = 0;
-        dest->karma               = 25;
+        dest->karma               = 0;
         dest->abnormal_effect     = 0;
         dest->team_circle         = 0;
 }

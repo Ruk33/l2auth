@@ -752,7 +752,7 @@ void gs_request_disconnect(struct gs_state *gs, struct os_io *socket)
         gs_session_encrypt(session, response, response);
         gs_session_send_packet(gs, session, response);
 
-        gs_session_disconnect(gs, session);
+        gs_session_disconnected(gs, session);
 }
 
 void gs_request_tick(struct gs_state *gs, double delta)

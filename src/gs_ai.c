@@ -222,7 +222,7 @@ static void gs_ai_handle_val_pos_request(
         if (gs_character_distance(character, &client_position) < 100) {
                 // todo: double check.
                 // note: is it really required to send the confirmation?
-                // gs_character_validate_position(&client_position);
+                // gs_character_validate_position(gs, &client_position);
         } else {
                 gs_character_validate_position(gs, character);
         }
