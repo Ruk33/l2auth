@@ -814,3 +814,21 @@ void gs_packet_npc_html_message_pack(
         packet_append_val(dest, src->message_id);
         packet_append_n(dest, src->message, l2_string_bytes(src->message));
 }
+
+void gs_packet_change_move_type_pack(
+        packet_t *dest,
+        struct gs_packet_change_move_type *src)
+{
+        byte_t type = 0x00;
+
+        assert(dest);
+        assert(src);
+        assert(src->obj_id);
+
+        type = 0x2e;
+
+        packet_append_val(dest, type);
+        packet_append_val(dest, src->obj_id);
+        packet_append_val(dest, src->running);
+        packet_append_val(dest, src->empty);
+}

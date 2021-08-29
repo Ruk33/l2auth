@@ -64,6 +64,11 @@ void gs_character_attack(
         struct gs_character *attacker,
         struct gs_character *target);
 
+void gs_character_stop_auto_attack(
+        struct gs_state *gs,
+        struct gs_character *attacker,
+        struct gs_character *target);
+
 // Selects a target (sending a packet to client).
 void gs_character_select_target(
         struct gs_state *gs,
@@ -97,6 +102,12 @@ void gs_character_show_npc_html_message(
         struct gs_state *gs,
         struct gs_character *character,
         char *message);
+
+// Change character's movement type to be walking.
+void gs_character_walk(struct gs_state *gs, struct gs_character *src);
+
+// Change character's movement type to be running.
+void gs_character_run(struct gs_state *gs, struct gs_character *src);
 
 // Get character from session.
 // If not found, NULL is returned.

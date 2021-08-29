@@ -396,6 +396,7 @@ static void handle_selected_character(
 
         character.id      = gs_character_get_free_id(gs);
         character.session = session;
+        character.running = 1;
 
         log_normal(
                 "selecting character and assigning id %d with session %d",

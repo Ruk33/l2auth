@@ -469,6 +469,12 @@ struct gs_packet_npc_html_message {
         l2_string_t message[8192];
 };
 
+struct gs_packet_change_move_type {
+        u32_t obj_id;
+        u32_t running;
+        u32_t empty;
+};
+
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src);
 
 void gs_packet_auto_attack_pack(
@@ -534,5 +540,9 @@ void gs_packet_unselect_target_pack(
 void gs_packet_npc_html_message_pack(
         packet_t *dest,
         struct gs_packet_npc_html_message *src);
+
+void gs_packet_change_move_type_pack(
+        packet_t *dest,
+        struct gs_packet_change_move_type *src);
 
 #endif

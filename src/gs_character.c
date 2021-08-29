@@ -309,6 +309,25 @@ void gs_character_attack(
         }
 }
 
+void gs_character_stop_auto_attack(
+        struct gs_state *gs,
+        struct gs_character *attacker,
+        struct gs_character *target)
+{
+        struct gs_packet_auto_attack_stop auto_attack_stop = { 0 };
+
+        packet_t response[16] = { 0 };
+
+        assert(gs);
+        assert(attacker);
+        assert(target);
+
+        auto_attack_stop.target_id = target->id;
+
+        gs_packet_auto_attack_stop_pack(response, &auto_attack_stop);
+        gs_character_broadcast_packet(gs, attacker, response);
+}
+
 void gs_character_select_target(
         struct gs_state *gs,
         struct gs_character *character,
@@ -483,7 +502,7 @@ static void gs_character_set_npc_info(
         dest->r_hand              = 0;
         dest->l_hand              = 0;
         dest->name_above_char     = 1;
-        dest->running             = 1;
+        dest->running             = 0;
         dest->in_combat           = 0;
         dest->alike_dead          = src->stats.hp == 0;
         dest->summoned            = 0;
@@ -665,6 +684,39 @@ void gs_character_show_npc_html_message(
 
         gs_packet_npc_html_message_pack(response, &html_message);
         gs_character_encrypt_and_send_packet(gs, character, response);
+}
+
+static void
+gs_character_broadcast_move_type(struct gs_state *gs, struct gs_character *src)
+{
+        struct gs_packet_change_move_type move_type = { 0 };
+
+        packet_t response[32] = { 0 };
+
+        assert(gs);
+        assert(src);
+
+        move_type.obj_id  = src->id;
+        move_type.running = (u32_t) src->running;
+
+        gs_packet_change_move_type_pack(response, &move_type);
+        gs_character_broadcast_packet(gs, src, response);
+}
+
+void gs_character_walk(struct gs_state *gs, struct gs_character *src)
+{
+        assert(gs);
+        assert(src);
+        src->running = 0;
+        gs_character_broadcast_move_type(gs, src);
+}
+
+void gs_character_run(struct gs_state *gs, struct gs_character *src)
+{
+        assert(gs);
+        assert(src);
+        src->running = 1;
+        gs_character_broadcast_move_type(gs, src);
 }
 
 struct gs_character *

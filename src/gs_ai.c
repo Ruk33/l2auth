@@ -13,18 +13,27 @@ static i32_t gs_ai_random_number(i32_t a, i32_t b)
         return rand() % (b + 1 - a) + a;
 }
 
-static void
-gs_ai_on_npc_attacked(struct gs_character *npc, struct gs_character *attacker)
+static void gs_ai_on_npc_attacked(
+        struct gs_state *gs,
+        struct gs_character *npc,
+        struct gs_character *attacker)
 {
+        assert(gs);
         assert(npc);
         assert(attacker);
+
         npc->ai.state     = AI_ATTACKING;
         npc->ai.target_id = attacker->id;
+
+        gs_character_run(gs, npc);
 }
 
-static void
-gs_ai_on_dead(struct gs_character *dead, struct gs_character *killer)
+static void gs_ai_on_dead(
+        struct gs_state *gs,
+        struct gs_character *dead,
+        struct gs_character *killer)
 {
+        assert(gs);
         assert(dead);
         assert(killer);
 
@@ -34,6 +43,13 @@ gs_ai_on_dead(struct gs_character *dead, struct gs_character *killer)
         killer->ai.move_data = (struct gs_move_data){ 0 };
         killer->ai.state     = AI_IDLE;
         killer->ai.target_id = 0;
+
+        gs_character_stop_auto_attack(gs, killer, dead);
+        gs_character_stop_auto_attack(gs, dead, killer);
+
+        if (gs_character_is_npc(killer)) {
+                gs_character_walk(gs, killer);
+        }
 }
 
 static void gs_ai_on_revive(struct gs_state *gs, struct gs_character *src)
@@ -47,9 +63,11 @@ static void gs_ai_on_revive(struct gs_state *gs, struct gs_character *src)
         gs_character_send_status(gs, src, src);
 }
 
-static void gs_ai_go_idle(struct gs_character *src)
+static void gs_ai_go_idle(struct gs_state *gs, struct gs_character *src)
 {
+        assert(gs);
         assert(src);
+
         src->ai.move_data = (struct gs_move_data){ 0 };
         src->ai.state     = AI_IDLE;
 }
@@ -57,6 +75,8 @@ static void gs_ai_go_idle(struct gs_character *src)
 static void
 gs_ai_move(struct gs_state *gs, struct gs_character *src, struct gs_point *where)
 {
+        double speed = 0;
+
         double dx = 0;
         double dy = 0;
         double d  = 0;
@@ -75,6 +95,7 @@ gs_ai_move(struct gs_state *gs, struct gs_character *src, struct gs_point *where
          * Todo: refactor.
          * Thanks to l2j project to provide this first iteration of the code.
          */
+        speed = src->running ? src->stats.run_speed : src->stats.walk_speed;
 
         dx = where->x - src->position.x;
         dy = where->y - src->position.y;
@@ -84,14 +105,11 @@ gs_ai_move(struct gs_state *gs, struct gs_character *src, struct gs_point *where
         _cos = dx / d;
         d -= 10 /* 10 as offset */ - 5;
 
-        src->ai.move_data.heading     = 0;
-        src->ai.move_data.destination = *where;
-        src->ai.move_data.ticks_to_move =
-                (u32_t)(TICKS_PER_SECOND * d / /* speed */ 120);
-        src->ai.move_data.x_speed_ticks =
-                _cos * /* speed */ 120 / TICKS_PER_SECOND;
-        src->ai.move_data.y_speed_ticks =
-                _sin * /* speed */ 120 / TICKS_PER_SECOND;
+        src->ai.move_data.heading       = 0;
+        src->ai.move_data.destination   = *where;
+        src->ai.move_data.ticks_to_move = (u32_t)(TICKS_PER_SECOND * d / speed);
+        src->ai.move_data.x_speed_ticks = _cos * speed / TICKS_PER_SECOND;
+        src->ai.move_data.y_speed_ticks = _sin * speed / TICKS_PER_SECOND;
         src->ai.move_data.move_start_time = gs->game_ticks;
 
         src->ai.move_data.origin = src->position;
@@ -120,7 +138,7 @@ static void gs_ai_attack(
 
         if (!target) {
                 attacker->ai.target_id = 0;
-                gs_ai_go_idle(attacker);
+                gs_ai_go_idle(gs, attacker);
                 return;
         }
 
@@ -143,14 +161,14 @@ static void gs_ai_attack(
         }
 
         if (gs_character_is_npc(target)) {
-                gs_ai_on_npc_attacked(target, attacker);
+                gs_ai_on_npc_attacked(gs, target, attacker);
         }
 
         attacker->ai.attack_cd = 20;
         gs_character_attack(gs, attacker, target);
 
         if (target->stats.hp == 0) {
-                gs_ai_on_dead(target, attacker);
+                gs_ai_on_dead(gs, target, attacker);
         }
 }
 
@@ -247,7 +265,7 @@ static void gs_ai_handle_action_request(
 
         if (!target) {
                 character->ai.target_id = 0;
-                gs_ai_go_idle(character);
+                gs_ai_go_idle(gs, character);
                 return;
         }
 
@@ -298,7 +316,7 @@ static void gs_ai_handle_attack_request(
 
         if (!target) {
                 character->ai.target_id = 0;
-                gs_ai_go_idle(character);
+                gs_ai_go_idle(gs, character);
                 return;
         }
 

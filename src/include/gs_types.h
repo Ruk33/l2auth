@@ -143,6 +143,7 @@ struct gs_character {
         u32_t max_load;
         double collision_radius;
         double collision_height;
+        u8_t running;
 };
 
 struct gs_state {
