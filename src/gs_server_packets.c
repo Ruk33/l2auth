@@ -102,14 +102,11 @@ void gs_packet_die_pack(packet_t *dest, struct gs_packet_die *src)
         packet_append_val(dest, src->to_fixed);
 }
 
-void gs_packet_leave_world_pack(
-        packet_t *dest,
-        struct gs_packet_leave_world *src)
+void gs_packet_leave_world_pack(packet_t *dest)
 {
         byte_t type = 0x00;
 
         assert(dest);
-        assert(src);
 
         type = 0x7e;
         packet_append_val(dest, type);
@@ -764,5 +761,56 @@ void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src)
         packet_append_val(dest, src->character_id);
         packet_append_val(dest, src->type);
         packet_append_n(dest, src->name, l2_string_bytes(src->name));
+        packet_append_n(dest, src->message, l2_string_bytes(src->message));
+}
+
+void gs_packet_auto_attack_stop_pack(
+        packet_t *dest,
+        struct gs_packet_auto_attack_stop *src)
+{
+        byte_t type = 0x00;
+
+        assert(dest);
+        assert(src);
+        assert(src->target_id);
+
+        type = 0x2c;
+
+        packet_append_val(dest, type);
+        packet_append_val(dest, src->target_id);
+}
+
+void gs_packet_unselect_target_pack(
+        packet_t *dest,
+        struct gs_packet_unselect_target *src)
+{
+        byte_t type = 0x00;
+
+        assert(dest);
+        assert(src);
+        assert(src->target_id);
+
+        type = 0x2a;
+
+        packet_append_val(dest, type);
+        packet_append_val(dest, src->target_id);
+        packet_append_val(dest, src->target_x);
+        packet_append_val(dest, src->target_y);
+        packet_append_val(dest, src->target_z);
+}
+
+void gs_packet_npc_html_message_pack(
+        packet_t *dest,
+        struct gs_packet_npc_html_message *src)
+{
+        byte_t type = 0x00;
+
+        assert(dest);
+        assert(src);
+
+        type = 0x0f;
+
+        packet_append_val(dest, type);
+        packet_append_val(dest, src->message_id);
         packet_append_n(dest, src->message, l2_string_bytes(src->message));
 }

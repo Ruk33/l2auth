@@ -48,10 +48,6 @@ struct gs_packet_die {
         u32_t to_fixed;
 };
 
-struct gs_packet_leave_world {
-        byte_t type;
-};
-
 struct gs_packet_char_select {
         u32_t empty[54];
         l2_string_t name[28];
@@ -457,6 +453,22 @@ struct gs_packet_say {
         l2_string_t message[256];
 };
 
+struct gs_packet_auto_attack_stop {
+        u32_t target_id;
+};
+
+struct gs_packet_unselect_target {
+        u32_t target_id;
+        i32_t target_x;
+        i32_t target_y;
+        i32_t target_z;
+};
+
+struct gs_packet_npc_html_message {
+        u32_t message_id;
+        l2_string_t message[8192];
+};
+
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src);
 
 void gs_packet_auto_attack_pack(
@@ -471,9 +483,7 @@ void gs_packet_d0_pack(packet_t *dest, struct gs_packet_d0 *src);
 
 void gs_packet_die_pack(packet_t *dest, struct gs_packet_die *src);
 
-void gs_packet_leave_world_pack(
-        packet_t *dest,
-        struct gs_packet_leave_world *src);
+void gs_packet_leave_world_pack(packet_t *dest);
 
 void gs_packet_char_select_pack(
         packet_t *dest,
@@ -512,5 +522,17 @@ void gs_packet_enter_world_pack(
         struct gs_packet_enter_world *src);
 
 void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src);
+
+void gs_packet_auto_attack_stop_pack(
+        packet_t *dest,
+        struct gs_packet_auto_attack_stop *src);
+
+void gs_packet_unselect_target_pack(
+        packet_t *dest,
+        struct gs_packet_unselect_target *src);
+
+void gs_packet_npc_html_message_pack(
+        packet_t *dest,
+        struct gs_packet_npc_html_message *src);
 
 #endif

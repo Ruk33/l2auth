@@ -35,7 +35,7 @@ void l2_string_from_char(l2_string_t *dest, char *src, size_t n)
 
                 dest += 2;
                 src += 1;
-                n -= 1;
+                n -= 2;
         }
 
         if (dest) {

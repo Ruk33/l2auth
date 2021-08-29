@@ -712,8 +712,6 @@ void gs_request(struct gs_state *gs, struct os_io *socket, byte_t *buf, size_t n
 
 void gs_request_disconnect(struct gs_state *gs, struct os_io *socket)
 {
-        struct gs_packet_leave_world leave_world = { 0 };
-
         packet_t response[32] = { 0 };
 
         struct gs_session *session = 0;
@@ -747,7 +745,7 @@ void gs_request_disconnect(struct gs_state *gs, struct os_io *socket)
 
         log_normal("sending disconnect packet.");
 
-        gs_packet_leave_world_pack(response, &leave_world);
+        gs_packet_leave_world_pack(response);
 
         gs_session_encrypt(session, response, response);
         gs_session_send_packet(gs, session, response);

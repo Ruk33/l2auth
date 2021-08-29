@@ -93,6 +93,11 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *src);
 // Todo: make sure we broadcast this message!
 void gs_character_restart(struct gs_state *gs, struct gs_character *character);
 
+void gs_character_show_npc_html_message(
+        struct gs_state *gs,
+        struct gs_character *character,
+        char *message);
+
 // Get character from session.
 // If not found, NULL is returned.
 struct gs_character *

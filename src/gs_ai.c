@@ -364,6 +364,10 @@ static void gs_ai_idle_state(
                 break;
         case 0xcd: // Show map.
                 log_normal("show map, todo");
+                gs_character_show_npc_html_message(
+                        gs,
+                        character,
+                        "<html><body>And so... a chat window popped out.</body></html>");
                 gs_character_spawn_random_orc(gs, &character->position);
                 break;
         default:

@@ -642,6 +642,31 @@ void gs_character_restart(struct gs_state *gs, struct gs_character *character)
         gs_character_disconnect(gs, character);
 }
 
+void gs_character_show_npc_html_message(
+        struct gs_state *gs,
+        struct gs_character *character,
+        char *message)
+{
+        static struct gs_packet_npc_html_message html_message = { 0 };
+
+        static packet_t response[16384] = { 0 };
+
+        assert(gs);
+        assert(character);
+        assert(message);
+
+        bytes_zero((byte_t *) &html_message, sizeof(html_message));
+        bytes_zero(response, sizeof(response));
+
+        html_message.message_id = 1;
+
+        l2_string_from_char(
+                html_message.message, message, sizeof(html_message.message));
+
+        gs_packet_npc_html_message_pack(response, &html_message);
+        gs_character_encrypt_and_send_packet(gs, character, response);
+}
+
 struct gs_character *
 gs_character_from_session(struct gs_state *gs, struct gs_session *session)
 {
