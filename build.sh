@@ -2,7 +2,7 @@
 
 CFLAGS="-Wextra -Wall -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter"
 
-mkdir build
+mkdir -p build
 
 echo ""
 echo "- building game server library"

@@ -9,7 +9,7 @@
 @REM /FC    : use full path in messages
 
 @REM Flags
-set CFLAGS=/nologo /WL /O2 /MTd /FC
+set CFLAGS=/nologo /WL /MTd /FC
 set CINCLUDES=
 set CLIBS=
 
@@ -22,7 +22,7 @@ cl %CFLAGS% src/win32/deps/sqlite3/sqlite3.c src/gs_lib.c /Isrc/win32/deps/sqlit
 
 @REM Login server
 @echo - building login server
-cl %CFLAGS% src/win32/login_server/main.c /Isrc/win32/deps/openssl/include /link /LIBPATH:src/win32/deps/openssl/lib /incremental:no /OUT:build/login_server.exe libcrypto.dll.a
+cl %CFLAGS% src/win32/deps/sqlite3/sqlite3.c src/win32/login_server/main.c /Isrc/win32/deps/sqlite3 /Isrc/win32/deps/openssl/include /link /LIBPATH:src/win32/deps/openssl/lib /incremental:no /OUT:build/login_server.exe libcrypto.dll.a
 
 @REM Game server
 @echo - building game server
