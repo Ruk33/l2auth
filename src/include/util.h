@@ -17,6 +17,8 @@ typedef uint16_t u16_t;
 typedef uint32_t u32_t;
 typedef uint64_t u64_t;
 
+#define kb(x) ((x) *1024)
+
 #define arr_size(a) (sizeof(a) / sizeof((a)[0]))
 
 #define log_normal(...)                                                      \
@@ -51,8 +53,11 @@ typedef uint64_t u64_t;
 
 #define byte_read_val(dest, src) byte_read_n(&(dest), src, sizeof(dest))
 
-#define bytes_cpy_str(dest, src, n) \
-        bytes_cpy_until((byte_t *) (dest), (byte_t *) (src), 0, n);
+#define bytes_cpy_str(dest, src, n)                                         \
+        do {                                                                \
+                bytes_cpy_until((byte_t *) (dest), (byte_t *) (src), 0, n); \
+                (dest)[n - 1] = 0;                                          \
+        } while (0);
 
 // Copy n bytes from src to dest.
 void bytes_cpy(byte_t *dest, byte_t *src, size_t n);

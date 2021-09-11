@@ -90,7 +90,7 @@
         bytes_cpy_str(                                     \
                 (byte_t *) dest,                           \
                 (byte_t *) sqlite3_column_text(stmt, col), \
-                sizeof(dest) - 1)
+                sizeof(dest))
 
 #define ACCOUNT_FROM_USERNAME_QUERY \
         "select username, encrypted_password from accounts where username = :username limit 1;"

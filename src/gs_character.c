@@ -407,8 +407,8 @@ void gs_character_spawn_random_orc(
         orc.stats.walk_speed     = 45;
         orc.stats.run_speed      = 110;
 
-        bytes_cpy_str(orc.name, "Beti", sizeof(orc.name) - 1);
-        bytes_cpy_str(orc.title, "Merchant", sizeof(orc.title) - 1);
+        bytes_cpy_str(orc.name, "Beti", sizeof(orc.name));
+        bytes_cpy_str(orc.title, "Merchant", sizeof(orc.title));
 
         gs_character_spawn(gs, &orc);
 }

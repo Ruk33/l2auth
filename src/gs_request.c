@@ -169,6 +169,15 @@ static void handle_auth_login(
                 character->hair_style_id = characters[i].hair_style;
                 character->hp            = characters[i].stats.hp;
 
+                // (franco.montenegro) Blehman, thanks for noticing this value.
+                // The character will be auto selected in the character screen.
+                character->auto_select = i == chars_found - 1;
+
+                log_normal(
+                        "%s is auto select: %d",
+                        characters[i].name,
+                        character->auto_select);
+
                 // Todo: double check, why are we using the session's id for the
                 // character's id? Maybe this is why players are taking over
                 // orcs? (bug)
