@@ -352,6 +352,27 @@ static void gs_ai_handle_revive_request(
         gs_ai_on_revive(gs, character);
 }
 
+static void gs_ai_handle_bypass_request(
+        struct gs_state *gs,
+        struct gs_character *character,
+        packet_t *request)
+{
+        struct gs_packet_bypass_request bypass_request = { 0 };
+
+        // Todo: remove. This is just for testing.
+        char command[64] = { 0 };
+
+        assert(gs);
+        assert(character);
+        assert(request);
+
+        gs_packet_bypass_request_unpack(&bypass_request, request);
+
+        l2_string_to_char(command, bypass_request.command, sizeof(command));
+
+        log_normal("command is: %s", command);
+}
+
 static void gs_ai_idle_state(
         struct gs_state *gs,
         struct gs_character *character,
@@ -385,11 +406,18 @@ static void gs_ai_idle_state(
                 gs_character_show_npc_html_message(
                         gs,
                         character,
-                        "<html><body>And so... a chat window popped out.</body></html>");
+                        "<html><body>And so... a chat window popped out. <a action=\"bypass -h npc_42_support player\">Magic support</a></body></html>");
                 gs_character_spawn_random_orc(gs, &character->position);
                 break;
+        case 0x21: // Bypass.
+                gs_ai_handle_bypass_request(gs, character, request);
+                gs_character_show_npc_html_message(
+                        gs,
+                        character,
+                        "<html><body>It works! even though it breaks if you send more than 3kb of data!</body></html>");
+                break;
         default:
-                log_normal("unable to handle packet.");
+                log_normal("unable to handle packet %x.", packet_type(request));
                 break;
         }
 }

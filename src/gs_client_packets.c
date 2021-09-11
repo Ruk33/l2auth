@@ -171,3 +171,17 @@ void gs_packet_say_request_unpack(
         dest->message = body;
         dest->len     = l2_string_len(dest->message);
 }
+
+void gs_packet_bypass_request_unpack(
+        struct gs_packet_bypass_request *dest,
+        packet_t *src)
+{
+        byte_t *body = 0;
+
+        assert(dest);
+        assert(src);
+
+        body = gs_packet_body_without_type(src);
+
+        dest->command = (l2_string_t *) body;
+}

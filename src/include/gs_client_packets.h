@@ -70,6 +70,10 @@ struct gs_packet_say_request {
         size_t len;
 };
 
+struct gs_packet_bypass_request {
+        l2_string_t *command;
+};
+
 void gs_packet_action_request_unpack(
         struct gs_packet_action_request *dest,
         packet_t *src);
@@ -100,6 +104,10 @@ void gs_packet_validate_pos_request_unpack(
 
 void gs_packet_say_request_unpack(
         struct gs_packet_say_request *dest,
+        packet_t *src);
+
+void gs_packet_bypass_request_unpack(
+        struct gs_packet_bypass_request *dest,
         packet_t *src);
 
 #endif

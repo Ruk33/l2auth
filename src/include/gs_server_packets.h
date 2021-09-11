@@ -466,7 +466,11 @@ struct gs_packet_unselect_target {
 
 struct gs_packet_npc_html_message {
         u32_t message_id;
-        l2_string_t message[8192];
+        // (franco.montenegro) Blame kornez if this is not the right limit <3.
+        // If we pass more, the client will crash.
+        // (franco.montenegro) confirmed on stream, it was 4kb, I got scammed
+        // big time. Chat was wrong all the time.
+        l2_string_t message[kb(4)];
 };
 
 struct gs_packet_change_move_type {
