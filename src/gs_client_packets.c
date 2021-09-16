@@ -26,24 +26,27 @@ void gs_packet_action_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
-        byte_read_val(dest->target_id, body);
-        byte_read_val(dest->origin_x, body);
-        byte_read_val(dest->origin_y, body);
-        byte_read_val(dest->origin_z, body);
-        byte_read_val(dest->action, body);
+        UTIL_READ_BYTES_VAL(dest->target_id, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_x, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_y, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_z, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->action, &body, tail - body);
 }
 
 void gs_packet_auth_request_unpack(
         struct gs_packet_auth_request *dest,
         packet_t *src)
 {
-        byte_t *body = 0;
+        packet_t *body = 0;
+        packet_t *tail = 0;
 
         size_t max_username_size = 0;
 
@@ -51,6 +54,7 @@ void gs_packet_auth_request_unpack(
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
         max_username_size = sizeof(dest->username);
 
@@ -58,10 +62,10 @@ void gs_packet_auth_request_unpack(
 
         body += l2_string_bytes((l2_string_t *) body);
 
-        byte_read_val(dest->playOK2, body);
-        byte_read_val(dest->playOK1, body);
-        byte_read_val(dest->loginOK1, body);
-        byte_read_val(dest->loginOK2, body);
+        UTIL_READ_BYTES_VAL(dest->playOK2, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->playOK1, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->loginOK1, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->loginOK2, &body, tail - body);
 }
 
 void gs_packet_char_select_request_unpack(
@@ -69,12 +73,15 @@ void gs_packet_char_select_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
-        byte_read_val(dest->index, body);
+        tail = src + packet_size(src);
+
+        UTIL_READ_BYTES_VAL(dest->index, &body, tail - body);
 }
 
 void gs_packet_create_char_request_unpack(
@@ -82,6 +89,7 @@ void gs_packet_create_char_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         size_t max_name_size = 0;
 
@@ -89,25 +97,29 @@ void gs_packet_create_char_request_unpack(
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
         max_name_size = sizeof(dest->name);
 
-        l2_string_cpy(dest->name, (l2_string_t *) body, max_name_size);
+        l2_string_cpy(
+                dest->name,
+                (l2_string_t *) body,
+                UTIL_MIN((u64_t)(tail - body), max_name_size));
 
         body += l2_string_bytes((l2_string_t *) body);
 
-        byte_read_val(dest->race, body);
-        byte_read_val(dest->sex, body);
-        byte_read_val(dest->_class, body);
-        byte_read_val(dest->_int, body);
-        byte_read_val(dest->str, body);
-        byte_read_val(dest->con, body);
-        byte_read_val(dest->men, body);
-        byte_read_val(dest->dex, body);
-        byte_read_val(dest->wit, body);
-        byte_read_val(dest->hair_style, body);
-        byte_read_val(dest->hair_color, body);
-        byte_read_val(dest->face, body);
+        UTIL_READ_BYTES_VAL(dest->race, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->sex, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->_class, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->_int, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->str, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->con, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->men, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->dex, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->wit, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->hair_style, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->hair_color, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->face, &body, tail - body);
 }
 
 void gs_packet_move_request_unpack(
@@ -115,15 +127,17 @@ void gs_packet_move_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
-        byte_read_val(dest->x, body);
-        byte_read_val(dest->y, body);
-        byte_read_val(dest->z, body);
+        UTIL_READ_BYTES_VAL(dest->x, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->y, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->z, &body, tail - body);
 }
 
 void gs_packet_revive_request_unpack(
@@ -131,13 +145,15 @@ void gs_packet_revive_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
-        byte_read_val(dest->option_chosen, body);
+        UTIL_READ_BYTES_VAL(dest->option_chosen, &body, tail - body);
 }
 
 void gs_packet_validate_pos_request_unpack(
@@ -145,23 +161,25 @@ void gs_packet_validate_pos_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
-        byte_read_val(dest->x, body);
-        byte_read_val(dest->y, body);
-        byte_read_val(dest->z, body);
-        byte_read_val(dest->heading, body);
+        UTIL_READ_BYTES_VAL(dest->x, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->y, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->z, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->heading, &body, tail - body);
 }
 
 void gs_packet_say_request_unpack(
         struct gs_packet_say_request *dest,
         packet_t *src)
 {
-        byte_t *body = 0;
+        packet_t *body = 0;
 
         assert(dest);
         assert(src);

@@ -2,7 +2,6 @@
 #include <math.h>
 #include "include/config.h"
 #include "include/util.h"
-#include "include/list.h"
 #include "include/gs_types.h"
 #include "include/gs_server_packets.h"
 #include "include/gs_client_packets.h"
@@ -12,7 +11,7 @@
 #include "include/gs_character.h"
 
 #define gs_character_each(character, state) \
-        list_each(struct gs_character, character, state->list_characters)
+        UTIL_LIST_EACH(state->list_characters, struct gs_character, character)
 
 int gs_character_is_npc(struct gs_character *src)
 {
@@ -84,7 +83,6 @@ static void gs_character_encrypt_and_send_packet(
         gs_session_send_packet(gs, from->session, packet);
 }
 
-// Todo: do we really need from?
 static void gs_character_broadcast_packet(
         struct gs_state *gs,
         struct gs_character *from,
@@ -94,15 +92,15 @@ static void gs_character_broadcast_packet(
 
         struct gs_character *character = 0;
 
-        size_t safe_packet_size = 0;
+        u64_t safe_packet_size = 0;
 
         assert(gs);
         assert(from);
         assert(packet);
 
         // This way maybe we can clear less space than what we really need.
-        safe_packet_size = (size_t)(packet_size(packet) * 2);
-        safe_packet_size = _min(sizeof(response), safe_packet_size);
+        safe_packet_size = (u64_t)(packet_size(packet) * 2);
+        safe_packet_size = UTIL_MIN(sizeof(response), safe_packet_size);
 
         gs_character_each(character, gs)
         {
@@ -110,8 +108,9 @@ static void gs_character_broadcast_packet(
                         continue;
                 }
 
-                bytes_zero(response, safe_packet_size);
-                bytes_cpy(response, packet, (size_t) packet_size(packet));
+                util_set_zero(response, safe_packet_size);
+                UTIL_CPY_SRC_BYTES_TO_ARRAY(
+                        response, packet, packet_size(packet));
                 gs_character_encrypt_and_send_packet(gs, character, response);
         }
 }
@@ -128,8 +127,8 @@ void gs_character_say(
         assert(from);
         assert(message);
 
-        bytes_zero((byte_t *) &say, sizeof(say));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&say, sizeof(say));
+        UTIL_SET_ZERO_ARRAY(response);
 
         say.character_id = from->id;
 
@@ -159,7 +158,7 @@ void gs_character_send_status(
                 return;
         }
 
-        bytes_zero(response, sizeof(response));
+        UTIL_SET_ZERO_ARRAY(response);
 
         status.obj_id = from->id;
 
@@ -407,8 +406,8 @@ void gs_character_spawn_random_orc(
         orc.stats.walk_speed     = 45;
         orc.stats.run_speed      = 110;
 
-        bytes_cpy_str(orc.name, "Beti", sizeof(orc.name));
-        bytes_cpy_str(orc.title, "Merchant", sizeof(orc.title));
+        UTIL_CPY_STR_ARRAY(orc.name, "Beti");
+        UTIL_CPY_STR_ARRAY(orc.title, "Merchant");
 
         gs_character_spawn(gs, &orc);
 }
@@ -518,8 +517,8 @@ static void gs_character_set_player_info(
         assert(dest);
         assert(src);
 
-        bytes_zero(dest->name, sizeof(dest->name));
-        bytes_zero(dest->title, sizeof(dest->title));
+        UTIL_SET_ZERO_ARRAY(dest->name);
+        UTIL_SET_ZERO_ARRAY(dest->title);
 
         l2_string_from_char(dest->name, src->name, sizeof(dest->name));
         l2_string_from_char(dest->title, src->title, sizeof(dest->title));
@@ -602,14 +601,14 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
                 }
 
                 // Notify player in the world of the new spawning character.
-                bytes_zero(response, sizeof(response));
+                UTIL_SET_ZERO_ARRAY(response);
 
                 if (gs_character_is_npc(spawning)) {
-                        bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
+                        npc_info = (struct gs_packet_npc_info){ 0 };
                         gs_character_set_npc_info(&npc_info, spawning);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
-                        bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                        char_info = (struct gs_packet_char_info){ 0 };
                         gs_character_set_player_info(&char_info, spawning);
                         gs_packet_char_info_pack(response, &char_info);
                 }
@@ -622,14 +621,14 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
                         continue;
                 }
 
-                bytes_zero(response, sizeof(response));
+                UTIL_SET_ZERO_ARRAY(response);
 
                 if (gs_character_is_npc(character)) {
-                        bytes_zero((byte_t *) &npc_info, sizeof(npc_info));
+                        npc_info = (struct gs_packet_npc_info){ 0 };
                         gs_character_set_npc_info(&npc_info, character);
                         gs_packet_npc_info_pack(response, &npc_info);
                 } else {
-                        bytes_zero((byte_t *) &char_info, sizeof(char_info));
+                        char_info = (struct gs_packet_char_info){ 0 };
                         gs_character_set_player_info(&char_info, character);
                         gs_packet_char_info_pack(response, &char_info);
                 }
@@ -674,8 +673,8 @@ void gs_character_show_npc_html_message(
         assert(character);
         assert(message);
 
-        bytes_zero((byte_t *) &html_message, sizeof(html_message));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&html_message, sizeof(html_message));
+        UTIL_SET_ZERO_ARRAY(response);
 
         html_message.message_id = 1;
 
@@ -743,7 +742,8 @@ u32_t gs_character_get_free_id(struct gs_state *gs)
 
         // Don't use id 0, it causes issues with packets
         // sent to the client.
-        for (size_t i = 1, max = arr_size(gs->characters); i < max; i += 1) {
+        for (u64_t i = 1, max = UTIL_ARRAY_LEN(gs->characters); i < max;
+             i += 1) {
                 if (!gs->characters[i].id) {
                         return (u32_t) i;
                 }
@@ -759,7 +759,10 @@ void gs_character_add(struct gs_state *gs, struct gs_character *src)
         assert(src->id);
 
         gs->characters[src->id] = *src;
-        list_add(gs->list_characters, &gs->characters[src->id]);
+        util_list_add(
+                gs->list_characters,
+                UTIL_ARRAY_LEN(gs->list_characters),
+                &gs->characters[src->id]);
 }
 
 void gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
@@ -767,6 +770,6 @@ void gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
         assert(gs);
         assert(src);
 
-        list_remove(gs->list_characters, src);
+        util_list_remove(gs->list_characters, src);
         *src = (struct gs_character){ 0 };
 }

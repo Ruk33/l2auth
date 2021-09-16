@@ -52,9 +52,9 @@ static struct os_io *io_add(int fd, enum io_type type)
 {
         size_t instance = 0;
 
-        assert(io_count < arr_size(ios));
+        assert(io_count < UTIL_ARRAY_LEN(ios));
 
-        io_count += recycle_id_get(&instance, instances);
+        io_count += util_recycle_id_get(&instance, instances);
 
         ios[instance].id   = instance;
         ios[instance].fd   = fd;
@@ -66,7 +66,7 @@ static struct os_io *io_add(int fd, enum io_type type)
 static void io_remove(struct os_io *io)
 {
         assert(io);
-        recycle_id(instances, io->id);
+        util_recycle_id(instances, io->id);
         *io = (struct os_io){ 0 };
 }
 

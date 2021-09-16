@@ -6,7 +6,7 @@ u16_t packet_size(packet_t *src)
 {
         u16_t size = 0;
         assert(src);
-        bytes_cpy((byte_t *) &size, src, sizeof(size));
+        size = *((u16_t *) src);
         return size & 0xFFFF;
 }
 
@@ -34,6 +34,8 @@ void packet_append_n(packet_t *dest, byte_t *src, size_t n)
         size     = size == 0 ? 2 : size; // Leave space for packet size header.
         new_size = size + n;
 
-        bytes_cpy(dest, (byte_t *) &new_size, sizeof(new_size));
-        bytes_cpy(dest + size, src, n);
+        *((u16_t *) dest) = new_size;
+
+        // (franco.montenegro) Make SURE we don't overflow!
+        util_cpy_bytes(dest + size, src, n, n, n);
 }

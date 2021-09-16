@@ -286,7 +286,7 @@ static void gs_ai_handle_say(
         assert(character);
         assert(packet);
 
-        bytes_zero((byte_t *) message, sizeof(message));
+        UTIL_SET_ZERO_ARRAY(message);
 
         gs_packet_say_request_unpack(&say, packet);
         l2_string_to_char(message, say.message, sizeof(message));

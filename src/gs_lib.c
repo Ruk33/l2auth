@@ -10,7 +10,6 @@
 #include "gs_request.c"
 #include "gs_session.c"
 #include "l2_string.c"
-#include "list.c"
 #include "packet.c"
 #include "util.c"
 

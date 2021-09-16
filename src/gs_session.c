@@ -1,7 +1,6 @@
 #include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
-#include "include/list.h"
 #include "include/os_io.h"
 #include "include/l2_string.h"
 #include "include/gs_types.h"
@@ -9,13 +8,17 @@
 #include "include/gs_session.h"
 
 #define gs_session_each(session, state) \
-        list_each(struct gs_session, session, state->list_sessions)
+        UTIL_LIST_EACH(state->list_sessions, struct gs_session, session)
 
 static size_t gs_session_get_free_id(struct gs_state *state)
 {
+        size_t max = 0;
+
+        max = UTIL_ARRAY_LEN(state->sessions);
+
         // Don't use id 0, it causes issues with packets
         // sent to the client.
-        for (size_t i = 1, max = arr_size(state->sessions); i < max; i += 1) {
+        for (size_t i = 1; i < max; i += 1) {
                 if (!state->sessions[i].id) {
                         return i;
                 }
@@ -39,15 +42,17 @@ struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
 
         new_session = &state->sessions[id];
 
-        bytes_zero((byte_t *) new_session, sizeof(*new_session));
-
+        *new_session        = (struct gs_session){ 0 };
         new_session->id     = (u32_t) id;
         new_session->socket = socket;
 
-        bytes_cpy(new_session->encrypt_key, key, sizeof(key));
-        bytes_cpy(new_session->decrypt_key, key, sizeof(key));
+        UTIL_CPY_SRC_BYTES_TO_ARRAY(new_session->encrypt_key, key, sizeof(key));
+        UTIL_CPY_SRC_BYTES_TO_ARRAY(new_session->decrypt_key, key, sizeof(key));
 
-        list_add(state->list_sessions, new_session);
+        util_list_add(
+                state->list_sessions,
+                UTIL_ARRAY_LEN(state->list_sessions),
+                new_session);
 
         return new_session;
 }
@@ -106,6 +111,10 @@ void gs_session_send_packet(
         gs->send_response(session->socket, src, (size_t) packet_size(src));
 }
 
+// (franco.montenegro) Do you remember that time while streaming
+// when you said I don't have to worry about the dest buf size?
+// If you are reading this, probably you are tracking
+// down a bug so... good one, buddy.
 void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
 {
         packet_t *dest_body = 0;
@@ -147,9 +156,11 @@ void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
         session->encrypt_key[2] = (byte_t)(old >> 0x10 & 0xff);
         session->encrypt_key[3] = (byte_t)(old >> 0x18 & 0xff);
 
-        bytes_cpy(dest, (byte_t *) &src_size, 2);
+        // Copy size of the packet to dest.
+        *((u16_t *) dest) = src_size;
 }
 
+// (franco.montenegro) We SHOULD make sure dest is big enough to hold src.
 void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
 {
         packet_t *dest_body = 0;
@@ -167,7 +178,13 @@ void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
         assert(src);
 
         if (!session->conn_encrypted) {
-                bytes_cpy(dest, src, (size_t) packet_size(src));
+                // HERE, make sure no overflow happens!
+                util_cpy_bytes(
+                        dest,
+                        src,
+                        (size_t) packet_size(src),
+                        (size_t) packet_size(src),
+                        (size_t) packet_size(src));
                 return;
         }
 
@@ -196,7 +213,8 @@ void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
         session->decrypt_key[2] = (byte_t)(old >> 0x10 & 0xff);
         session->decrypt_key[3] = (byte_t)(old >> 0x18 & 0xff);
 
-        bytes_cpy(dest, (byte_t *) &body_size, 2);
+        // Copy packet size to dest.
+        *((u16_t *) dest) = body_size;
 }
 
 void gs_session_disconnected(struct gs_state *gs, struct gs_session *session)
@@ -204,7 +222,7 @@ void gs_session_disconnected(struct gs_state *gs, struct gs_session *session)
         assert(gs);
         assert(session);
 
-        list_remove(gs->list_sessions, session);
+        util_list_remove(gs->list_sessions, session);
         *session = (struct gs_session){ 0 };
 }
 
