@@ -1,6 +1,5 @@
 #include <assert.h>
 #include "include/util.h"
-#include "include/list.h"
 #include "include/os_io.h"
 #include "include/storage.h"
 #include "include/l2_string.h"
@@ -37,8 +36,8 @@ static void handle_enter_world(struct gs_state *gs, struct gs_session *session)
         assert(gs);
         assert(session);
 
-        bytes_zero((byte_t *) &enter_world, sizeof(enter_world));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&enter_world, sizeof(enter_world));
+        UTIL_SET_ZERO_ARRAY(response);
 
         character = gs_character_from_session(gs, session);
 
@@ -137,9 +136,9 @@ static void handle_auth_login(
         assert(gs);
         assert(session);
 
-        bytes_zero((byte_t *) &auth_login, sizeof(auth_login));
-        bytes_zero((byte_t *) characters, sizeof(characters));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&auth_login, sizeof(auth_login));
+        UTIL_SET_ZERO_ARRAY(characters);
+        UTIL_SET_ZERO_ARRAY(response);
 
         if (packet) {
                 gs_packet_auth_request_unpack(&auth_request, packet);
@@ -147,7 +146,7 @@ static void handle_auth_login(
         }
 
         username    = session->username;
-        chars_max   = arr_size(characters);
+        chars_max   = UTIL_ARRAY_LEN(characters);
         chars_found = storage_get_characters(characters, username, chars_max);
 
         auth_login.count = (u32_t) chars_found;
@@ -315,10 +314,10 @@ handle_new_character(struct gs_state *gs, struct gs_session *session)
         assert(gs);
         assert(session);
 
-        bytes_zero((byte_t *) &new_char, sizeof(new_char));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&new_char, sizeof(new_char));
+        UTIL_SET_ZERO_ARRAY(response);
 
-        new_char.count = (u32_t) arr_size(templates);
+        new_char.count = (u32_t) UTIL_ARRAY_LEN(templates);
 
         for (u32_t i = 0; i < new_char.count; i += 1) {
                 new_char.templates[new_char.count].race   = templates[i].race;
@@ -355,7 +354,7 @@ static void handle_create_character(
         assert(session);
         assert(packet);
 
-        bytes_zero(response, sizeof(response));
+        UTIL_SET_ZERO_ARRAY(response);
 
         gs_packet_create_char_request_unpack(&create_char_request, packet);
         gs_character_from_request(&character, &create_char_request);
@@ -393,8 +392,8 @@ static void handle_selected_character(
         assert(session);
         assert(packet);
 
-        bytes_zero((byte_t *) &char_select, sizeof(char_select));
-        bytes_zero(response, sizeof(response));
+        util_set_zero(&char_select, sizeof(char_select));
+        UTIL_SET_ZERO_ARRAY(response);
 
         gs_packet_char_select_request_unpack(&char_select_request, packet);
 
@@ -682,8 +681,8 @@ void gs_request(struct gs_state *gs, struct os_io *socket, byte_t *buf, size_t n
         // Not sure how useful this may be, but it
         // may help reducing the amount of bytes required to
         // be reset.
-        safe_packet_clean = _min(sizeof(packet), n * 2);
-        bytes_zero(packet, safe_packet_clean);
+        safe_packet_clean = UTIL_MIN(sizeof(packet), n * 2);
+        util_set_zero(packet, safe_packet_clean);
 
         gs_session_decrypt(session, packet, buf);
         gs_session_encrypt_conn(session);
@@ -772,7 +771,7 @@ void gs_request_tick(struct gs_state *gs, double delta)
                 return;
         }
 
-        list_each(struct gs_character, character, gs->list_characters)
+        UTIL_LIST_EACH(gs->list_characters, struct gs_character, character)
         {
                 gs_ai_tick(gs, character, delta);
         }

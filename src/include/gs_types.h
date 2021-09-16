@@ -5,7 +5,6 @@
 
 #include "config.h"
 #include "util.h"
-#include "list.h"
 #include "os_io.h"
 
 /*

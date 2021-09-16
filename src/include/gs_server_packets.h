@@ -470,7 +470,7 @@ struct gs_packet_npc_html_message {
         // If we pass more, the client will crash.
         // (franco.montenegro) confirmed on stream, it was 4kb, I got scammed
         // big time. Chat was wrong all the time.
-        l2_string_t message[kb(4)];
+        l2_string_t message[UTIL_KB(4)];
 };
 
 struct gs_packet_change_move_type {

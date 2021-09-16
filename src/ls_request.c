@@ -123,13 +123,14 @@ handle_request_server_list(struct ls_state *ls, struct ls_session *session)
         assert(ls->text_ip_to_u32);
         assert(session);
 
-        bytes_zero(response, sizeof(response));
-        bytes_zero((byte_t *) &server_list, sizeof(server_list));
+        UTIL_SET_ZERO_ARRAY(response);
+        util_set_zero(&server_list, sizeof(server_list));
 
         server_list.count = storage_get_servers(
-                server_list.servers, arr_size(server_list.servers));
+                server_list.servers, UTIL_ARRAY_LEN(server_list.servers));
 
         for (size_t i = 0; i < server_list.count; i += 1) {
+                log_normal("ip %s\n", server_list.servers[i].text_ip);
                 server_list.servers[i].ip =
                         ls->text_ip_to_u32(server_list.servers[i].text_ip);
         }
@@ -176,14 +177,16 @@ void ls_request_new_conn(struct ls_state *ls, struct os_io *socket)
         assert(ls);
         assert(socket);
 
-        bytes_zero(response, sizeof(response));
-        bytes_zero((byte_t *) &init, sizeof(init));
+        UTIL_SET_ZERO_ARRAY(response);
+        util_set_zero(&init, sizeof(init));
 
         session = ls_session_new(ls, socket);
         assert(session);
 
-        bytes_cpy(init.session_id, session_id, sizeof(init.session_id));
-        bytes_cpy(init.protocol, protocol, sizeof(init.protocol));
+        UTIL_CPY_SRC_BYTES_TO_ARRAY(
+                init.session_id, session_id, sizeof(init.session_id));
+        UTIL_CPY_SRC_BYTES_TO_ARRAY(
+                init.protocol, protocol, sizeof(init.protocol));
         ls_session_rsa_modulus(session, init.modulus);
 
         ls_packet_init_pack(response, &init);
@@ -209,7 +212,7 @@ void ls_request(struct ls_state *ls, struct os_io *socket, byte_t *buf, size_t n
                 return;
         }
 
-        bytes_zero(packet, sizeof(packet));
+        UTIL_SET_ZERO_ARRAY(packet);
         ls_session_decrypt_packet(session, packet, buf);
 
         switch (packet_type(packet)) {

@@ -33,20 +33,27 @@ static void ls_session_blowfish_encrypt(
         byte_t *src,
         size_t n)
 {
+        u32_t tmp = 0;
+
         assert(bf);
         assert(dest);
         assert(src);
 
         for (size_t i = 0, iters = (n + 7) & (~7); i < iters; i += 8) {
                 // Blowfish uses big endian
-                encode32be(dest + i, decode32le(src + i));
-                encode32be(dest + i + 4, decode32le(src + i + 4));
+                // (franco.montenegro) Make SURE it won't overflow.
+                util_decode32le(&tmp, src + i, sizeof(tmp));
+                util_encode32be(dest + i, tmp, 4);
+                util_decode32le(&tmp, src + i + 4, sizeof(tmp));
+                util_encode32be(dest + i + 4, tmp, 4);
 
                 BF_ecb_encrypt((dest + i), (dest + i), &bf->key, BF_ENCRYPT);
 
                 // Back to little endian (endianess used by Lineage 2)
-                encode32le(dest + i, decode32be(dest + i));
-                encode32le(dest + i + 4, decode32be(dest + i + 4));
+                util_decode32be(&tmp, dest + i, sizeof(tmp));
+                util_encode32le(dest + i, tmp, 4);
+                util_decode32be(&tmp, dest + i + 4, sizeof(tmp));
+                util_encode32le(dest + i + 4, tmp, 4);
         }
 }
 
@@ -56,20 +63,27 @@ static void ls_session_blowfish_decrypt(
         byte_t *src,
         size_t n)
 {
+        u32_t tmp = 0;
+
         assert(bf);
         assert(dest);
         assert(src);
 
         for (size_t i = 0, iters = (n + 7) & (~7); i < iters; i += 8) {
                 // Blowfish uses big endian
-                encode32be(dest + i, decode32le(src + i));
-                encode32be(dest + i + 4, decode32le(src + i + 4));
+                // (franco.montenegro) Make SURE it won't overflow.
+                util_decode32le(&tmp, src + i, sizeof(tmp));
+                util_encode32be(dest + i, tmp, 4);
+                util_decode32le(&tmp, src + i + 4, sizeof(tmp));
+                util_encode32be(dest + i + 4, tmp, 4);
 
                 BF_ecb_encrypt((dest + i), (dest + i), &bf->key, BF_DECRYPT);
 
                 // Back to little endian (endianess used by Lineage 2)
-                encode32le(dest + i, decode32be(dest + i));
-                encode32le(dest + i + 4, decode32be(dest + i + 4));
+                util_decode32be(&tmp, dest + i, sizeof(tmp));
+                util_encode32le(dest + i, tmp, 4);
+                util_decode32be(&tmp, dest + i + 4, sizeof(tmp));
+                util_encode32le(dest + i + 4, tmp, 4);
         }
 }
 
@@ -139,9 +153,9 @@ struct ls_session *ls_session_new(struct ls_state *ls, struct os_io *socket)
 
         assert(ls);
         assert(socket);
-        assert(ls->session_count < arr_size(ls->sessions));
+        assert(ls->session_count < UTIL_ARRAY_LEN(ls->sessions));
 
-        ls->session_count += recycle_id_get(&id, ls->session_instances);
+        ls->session_count += util_recycle_id_get(&id, ls->session_instances);
         session = &ls->sessions[id];
 
         session->id       = id;
@@ -163,7 +177,7 @@ void ls_session_free(struct ls_state *ls, struct ls_session *session)
         RSA_free(session->rsa->key);
         BN_free(session->rsa->e);
 
-        recycle_id(ls->session_instances, session->id);
+        util_recycle_id(ls->session_instances, session->id);
 
         *session->rsa      = (struct ls_rsa){ 0 };
         *session->blowfish = (struct ls_blowfish){ 0 };
@@ -244,7 +258,8 @@ void ls_session_encrypt_packet(
         body_size      = packet_size(src) - 2;
         encrypted_size = ((body_size + 7) & (~7)) + 2;
 
-        bytes_cpy(dest, (byte_t *) &encrypted_size, 2);
+        // Copy packet size to dest.
+        *((u16_t *) dest) = encrypted_size;
         ls_session_blowfish_encrypt(
                 session->blowfish, dest + 2, src + 2, body_size);
 }
@@ -269,7 +284,7 @@ void ls_session_decrypt_packet(
         dest_body = packet_body(dest);
 
         // Copy packet size.
-        bytes_cpy(dest, src, 2);
+        *((u16_t *) dest) = *((u16_t *) src);
 
         // Copy decrypted packet body.
         ls_session_blowfish_decrypt(

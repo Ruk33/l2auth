@@ -86,10 +86,11 @@
  * Keep in mind sqlite3_column_text could return NULL,
  * that's why the ternary operator is being used.
  */
-#define sqlite_cpy_text(dest, stmt, col)                   \
-        bytes_cpy_str(                                     \
-                (byte_t *) dest,                           \
-                (byte_t *) sqlite3_column_text(stmt, col), \
+#define sqlite_cpy_text(dest, stmt, col)                 \
+        util_cpy_str(                                    \
+                (char *) dest,                           \
+                (char *) sqlite3_column_text(stmt, col), \
+                sizeof(dest),                            \
                 sizeof(dest))
 
 #define ACCOUNT_FROM_USERNAME_QUERY \
@@ -212,9 +213,11 @@ int storage_get_account(struct ls_account *dest, char *username)
 
         if (result) {
                 sqlite_cpy_text(dest->username, stmt, 0);
-                bytes_cpy(
+                util_cpy_bytes(
                         dest->encrypted_password,
-                        (byte_t *) sqlite3_column_blob(stmt, 1),
+                        (void *) sqlite3_column_blob(stmt, 1),
+                        sizeof(dest->encrypted_password),
+                        sizeof(dest->encrypted_password),
                         sizeof(dest->encrypted_password));
         }
 

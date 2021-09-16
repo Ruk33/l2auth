@@ -1,68 +1,200 @@
 #include <assert.h>
 #include "include/util.h"
 
-void bytes_cpy(byte_t *dest, byte_t *src, size_t n)
+// (franco.montenegro) There may be room for improvement
+// in this function, say, instead of copying byte per byte
+// copy chunks (4 bytes at a time using size_t)
+void util_set_zero(void *dest, u64_t n)
 {
-        while (dest && src && n) {
+        byte_t *byte_dest = 0;
+
+        if (!dest || !n) {
+                return;
+        }
+
+        byte_dest = dest;
+
+        for (u64_t i = 0; i < n; i += 1) {
+                *byte_dest = 0;
+                byte_dest += 1;
+        }
+}
+
+void util_cpy_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
+{
+        byte_t *byte_dest = 0;
+        byte_t *byte_src  = 0;
+
+        if (!dest || !src || !dn || !sn || !n) {
+                return;
+        }
+
+        byte_dest = dest;
+        byte_src  = src;
+
+        while (dn && sn && n) {
+                *byte_dest = *byte_src;
+                byte_dest += 1;
+                byte_src += 1;
+                dn -= 1;
+                sn -= 1;
+                n -= 1;
+        }
+}
+
+int util_cpy_all_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
+{
+        if (!dest || !src || !dn || !sn) {
+                return 0;
+        }
+
+        if (dn < n || sn < n) {
+                return 0;
+        }
+
+        if (!n) {
+                return 1;
+        }
+
+        util_cpy_bytes(dest, src, dn, sn, n);
+
+        return 1;
+}
+
+void util_cpy_str(char *dest, char *src, u64_t dn, u64_t sn)
+{
+        if (!dest || !src || !dn || !sn) {
+                return;
+        }
+
+        while (dn && sn && *src) {
                 *dest = *src;
                 dest += 1;
                 src += 1;
-                n -= 1;
+                dn -= 1;
+                sn -= 1;
         }
+
+        *dest = 0;
 }
 
-void bytes_cpy_until(byte_t *dest, byte_t *src, byte_t c, size_t n)
+int util_read_bytes(void *dest, void **src, u64_t dn, u64_t sn, u64_t n)
 {
-        while (dest && src && *src != c && n) {
-                *dest = *src;
-                dest += 1;
-                src += 1;
-                n -= 1;
+        if (!util_cpy_all_bytes(dest, *src, dn, sn, n)) {
+                return 0;
         }
+
+        *((byte_t **) src) += n;
+        return 1;
 }
 
-void bytes_zero(byte_t *dest, size_t n)
+int util_list_add(struct list *src, u64_t src_len, void *value)
 {
-        while (dest && n) {
-                *dest = 0;
-                dest += 1;
-                n -= 1;
+        struct list **head     = 0;
+        struct list *free_node = 0;
+
+        if (!src || !src_len) {
+                return 0;
         }
+
+        head      = &src->head;
+        free_node = src + 1;
+
+        while (free_node->value) {
+                if ((u64_t)(free_node - src) >= src_len) {
+                        return 0;
+                }
+
+                free_node += 1;
+        }
+
+        free_node->value = value;
+        free_node->next  = *head;
+
+        *head = free_node;
+
+        return 1;
 }
 
-u32_t decode32le(byte_t *buf)
+int util_list_remove(struct list *src, void *value)
 {
-        assert(buf);
-        return (u32_t) buf[0] | ((u32_t) buf[1] << 8) | ((u32_t) buf[2] << 16) |
-               ((u32_t) buf[3] << 24);
+        struct list **match    = 0;
+        struct list *to_remove = 0;
+
+        if (!src) {
+                return 0;
+        }
+
+        match = &src->head;
+
+        while (*match && (*match)->value != value) {
+                match = &(*match)->next;
+        }
+
+        if (!*match) {
+                return 0;
+        }
+
+        to_remove  = *match;
+        *match     = (*match)->next;
+        *to_remove = (struct list){ 0 };
+
+        return 1;
 }
 
-u32_t decode32be(byte_t *buf)
+int util_decode32le(u32_t *dest, byte_t *src, u64_t n)
 {
-        assert(buf);
-        return (u32_t) buf[3] | ((u32_t) buf[2] << 8) | ((u32_t) buf[1] << 16) |
-               ((u32_t) buf[0] << 24);
+        if (!dest || !src || n < 4) {
+                return 0;
+        }
+
+        *dest = (u32_t) src[0] | ((u32_t) src[1] << 8) |
+                ((u32_t) src[2] << 16) | ((u32_t) src[3] << 24);
+
+        return 1;
 }
 
-void encode32le(byte_t *buf, u32_t val)
+int util_decode32be(u32_t *dest, byte_t *src, u64_t n)
 {
-        assert(buf);
-        buf[0] = (byte_t) val;
-        buf[1] = (byte_t)(val >> 8);
-        buf[2] = (byte_t)(val >> 16);
-        buf[3] = (byte_t)(val >> 24);
+        if (!dest || !src || n < 4) {
+                return 0;
+        }
+
+        *dest = (u32_t) src[3] | ((u32_t) src[2] << 8) |
+                ((u32_t) src[1] << 16) | ((u32_t) src[0] << 24);
+
+        return 1;
 }
 
-void encode32be(byte_t *buf, u32_t val)
+int util_encode32le(byte_t *dest, u32_t src, u64_t n)
 {
-        assert(buf);
-        buf[3] = (byte_t) val;
-        buf[2] = (byte_t)(val >> 8);
-        buf[1] = (byte_t)(val >> 16);
-        buf[0] = (byte_t)(val >> 24);
+        if (!dest || n < 4) {
+                return 0;
+        }
+
+        dest[0] = (byte_t) src;
+        dest[1] = (byte_t)(src >> 8);
+        dest[2] = (byte_t)(src >> 16);
+        dest[3] = (byte_t)(src >> 24);
+
+        return 1;
 }
 
-int recycle_id_get(size_t *dest, size_t *src)
+int util_encode32be(byte_t *dest, u32_t src, u64_t n)
+{
+        if (!dest || n < 4) {
+                return 0;
+        }
+
+        dest[3] = (byte_t) src;
+        dest[2] = (byte_t)(src >> 8);
+        dest[1] = (byte_t)(src >> 16);
+        dest[0] = (byte_t)(src >> 24);
+
+        return 1;
+}
+
+int util_recycle_id_get(u64_t *dest, u64_t *src)
 {
         assert(src);
 
@@ -73,12 +205,12 @@ int recycle_id_get(size_t *dest, size_t *src)
                 return 0;
         }
 
-        src[0] = *dest + 1;
+        src[0] = UTIL_SAFE_U64(*dest + 1);
 
         return 1;
 }
 
-void recycle_id(size_t *src, size_t id)
+void util_recycle_id(u64_t *src, u64_t id)
 {
         assert(src);
         src[id] = src[0];
