@@ -30,7 +30,8 @@ struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id);
 void gs_character_say(
         struct gs_state *gs,
         struct gs_character *from,
-        char *message);
+        char *message,
+        size_t message_size);
 
 // Sends hp and max hp info of from to to character.
 // Todo: rename?
@@ -101,7 +102,8 @@ void gs_character_restart(struct gs_state *gs, struct gs_character *character);
 void gs_character_show_npc_html_message(
         struct gs_state *gs,
         struct gs_character *character,
-        char *message);
+        char *message,
+        size_t message_size);
 
 // Change character's movement type to be walking.
 void gs_character_walk(struct gs_state *gs, struct gs_character *src);

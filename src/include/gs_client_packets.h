@@ -26,7 +26,7 @@ struct gs_packet_char_select_request {
 };
 
 struct gs_packet_create_char_request {
-        l2_string_t name[28];
+        l2_string_t name[32];
         u32_t race;
         u32_t sex;
         u32_t _class;
@@ -67,11 +67,12 @@ struct gs_packet_validate_pos_request {
 
 struct gs_packet_say_request {
         l2_string_t *message;
-        size_t len;
+        size_t size;
 };
 
 struct gs_packet_bypass_request {
         l2_string_t *command;
+        size_t size;
 };
 
 void gs_packet_action_request_unpack(

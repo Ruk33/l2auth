@@ -8,6 +8,9 @@
 #include "include/gs_client_packets.h"
 #include "include/gs_ai.h"
 
+#define GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs, character, src) \
+        gs_character_show_npc_html_message(gs, character, src, sizeof(src))
+
 static i32_t gs_ai_random_number(i32_t a, i32_t b)
 {
         return rand() % (b + 1 - a) + a;
@@ -289,8 +292,8 @@ static void gs_ai_handle_say(
         UTIL_SET_ZERO_ARRAY(message);
 
         gs_packet_say_request_unpack(&say, packet);
-        l2_string_to_char(message, say.message, sizeof(message));
-        gs_character_say(gs, character, message);
+        L2_STRING_TO_CHAR_ARRAY(message, say.message, say.size);
+        gs_character_say(gs, character, message, sizeof(message));
 }
 
 static void gs_ai_handle_attack_request(
@@ -368,7 +371,8 @@ static void gs_ai_handle_bypass_request(
 
         gs_packet_bypass_request_unpack(&bypass_request, request);
 
-        l2_string_to_char(command, bypass_request.command, sizeof(command));
+        L2_STRING_TO_CHAR_ARRAY(
+                command, bypass_request.command, bypass_request.size);
 
         log_normal("command is: %s", command);
 }
@@ -403,7 +407,7 @@ static void gs_ai_idle_state(
                 break;
         case 0xcd: // Show map.
                 log_normal("show map, todo");
-                gs_character_show_npc_html_message(
+                GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
                         gs,
                         character,
                         "<html><body>And so... a chat window popped out. <a action=\"bypass -h npc_42_support player\">Magic support</a></body></html>");
@@ -411,7 +415,7 @@ static void gs_ai_idle_state(
                 break;
         case 0x21: // Bypass.
                 gs_ai_handle_bypass_request(gs, character, request);
-                gs_character_show_npc_html_message(
+                GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
                         gs,
                         character,
                         "<html><body>It works! even though it breaks if you send more than 3kb of data!</body></html>");

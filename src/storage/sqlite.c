@@ -139,7 +139,7 @@ static void sqlite_to_character(struct gs_character *dest, sqlite3_stmt *stmt)
 
         col = 1;
 
-        sqlite_cpy_text((byte_t *) (dest->name), stmt, col++);
+        sqlite_cpy_text(dest->name, stmt, col++);
         dest->race                 = sqlite3_column_int(stmt, col++);
         dest->sex                  = sqlite3_column_int(stmt, col++);
         dest->_class               = sqlite3_column_int(stmt, col++);
