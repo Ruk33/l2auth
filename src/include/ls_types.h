@@ -14,6 +14,11 @@ struct ls_session {
         struct ls_rsa *rsa;
         i32_t playOK1;
         i32_t playOK2;
+
+        // If the session is being used, active will be 1.
+        // Used to avoid double frees when sessions are
+        // disconnected.
+        int active;
 };
 
 struct ls_account {

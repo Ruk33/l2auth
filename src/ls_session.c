@@ -162,6 +162,7 @@ struct ls_session *ls_session_new(struct ls_state *ls, struct os_io *socket)
         session->socket   = socket;
         session->blowfish = &blowfish_keys[id];
         session->rsa      = &rsa_keys[id];
+        session->active   = 1;
 
         ls_session_blowfish_init(session->blowfish);
         ls_session_rsa_init(session->rsa);
@@ -173,6 +174,10 @@ void ls_session_free(struct ls_state *ls, struct ls_session *session)
 {
         assert(ls);
         assert(session);
+
+        if (!session->active) {
+                return;
+        }
 
         RSA_free(session->rsa->key);
         BN_free(session->rsa->e);
