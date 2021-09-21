@@ -46,7 +46,7 @@ int platform_socket_accept(
 /**
  * Listen for requests in all the sockets stored in src and execute cb when a
  * new request comes. On success, it will block the thread. If all connections
- * are closed, the function will return 1. On error, 0 is immediatly returned.
+ * are closed, the function will return 1. On error, 0 is immediately returned.
  */
 int platform_socket_listen(
         struct platform_socket *src,
