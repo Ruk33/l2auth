@@ -84,13 +84,10 @@ void gs_session_update_auth(
         struct gs_session *dest,
         struct gs_packet_auth_request *src)
 {
-        size_t max_username_size = 0;
-
         assert(dest);
         assert(src);
 
-        max_username_size = sizeof(dest->username);
-        l2_string_to_char(dest->username, src->username, max_username_size);
+        L2_STRING_ARRAY_TO_CHAR_ARRAY(dest->username, src->username);
 
         dest->loginOK1 = src->loginOK1;
         dest->loginOK2 = src->loginOK2;

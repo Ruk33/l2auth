@@ -50,7 +50,7 @@ struct gs_packet_die {
 
 struct gs_packet_char_select {
         u32_t empty[54];
-        l2_string_t name[28];
+        l2_string_t name[32];
         u32_t id;
         l2_string_t title[28];
         i32_t playOK1;
@@ -117,10 +117,10 @@ struct gs_packet_target_selected {
 
 struct gs_packet_auth_login_char {
         u32_t empty[10];
-        l2_string_t name[28];
+        l2_string_t name[32];
         u32_t id;
         // For some reason, name goes twice in the packet
-        l2_string_t name_copy[28];
+        l2_string_t name_copy[32];
         i32_t playOK1;
         u32_t clan_id;
         u32_t sex;
@@ -193,7 +193,7 @@ struct gs_packet_char_info {
         i32_t z;
         i32_t heading;
         u32_t id;
-        l2_string_t name[28];
+        l2_string_t name[32];
         u32_t race_id;
         u32_t sex;
         u32_t class_id;
@@ -286,7 +286,7 @@ struct gs_packet_npc_info {
         u8_t in_combat;
         u8_t alike_dead;
         u8_t summoned;
-        l2_string_t name[28];
+        l2_string_t name[32];
         l2_string_t title[28];
         u32_t karma; // ?
         u32_t abnormal_effect;
@@ -346,7 +346,7 @@ struct gs_packet_enter_world {
         i32_t z;
         i32_t heading;
         u32_t id;
-        l2_string_t name[28];
+        l2_string_t name[32];
         u32_t race_id;
         u32_t sex;
         u32_t class_id;
@@ -449,7 +449,7 @@ struct gs_packet_say {
         u32_t character_id;
         u32_t type;
         // Todo: double check name and message limits.
-        l2_string_t name[28];
+        l2_string_t name[32];
         l2_string_t message[256];
 };
 

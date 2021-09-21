@@ -48,8 +48,7 @@ static void handle_enter_world(struct gs_state *gs, struct gs_session *session)
 
         gs_character_spawn(gs, character);
 
-        l2_string_from_char(
-                enter_world.name, character->name, sizeof(enter_world.name));
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(enter_world.name, character->name);
 
         enter_world.heading       = character->heading;
         enter_world.x             = character->position.x;
@@ -136,7 +135,8 @@ static void handle_auth_login(
         assert(gs);
         assert(session);
 
-        util_set_zero(&auth_login, sizeof(auth_login));
+        auth_login = (struct gs_packet_auth_login){ 0 };
+
         UTIL_SET_ZERO_ARRAY(characters);
         UTIL_SET_ZERO_ARRAY(response);
 
@@ -154,10 +154,8 @@ static void handle_auth_login(
         for (size_t i = 0; i < chars_found; i += 1) {
                 character = &auth_login.characters[i];
 
-                l2_string_from_char(
-                        character->name,
-                        characters[i].name,
-                        sizeof(character->name));
+                L2_STRING_ARRAY_FROM_CHAR_ARRAY(
+                        character->name, characters[i].name);
 
                 character->playOK1       = session->playOK1;
                 character->active        = 1;
@@ -414,10 +412,9 @@ static void handle_selected_character(
         gs_character_add(gs, &character);
 
         char_select.playOK1 = session->playOK1;
-        l2_string_from_char(
-                char_select.name, character.name, sizeof(char_select.name));
-        l2_string_from_char(
-                char_select.title, character.title, sizeof(char_select.title));
+
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(char_select.name, character.name);
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(char_select.title, character.title);
 
         char_select.id        = character.id;
         char_select.active    = 1;

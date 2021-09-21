@@ -10,7 +10,7 @@
 #include "include/gs_session.h"
 #include "include/gs_character.h"
 
-#define gs_character_each(character, state) \
+#define GS_CHARACTER_EACH(character, state) \
         UTIL_LIST_EACH(state->list_characters, struct gs_character, character)
 
 int gs_character_is_npc(struct gs_character *src)
@@ -56,7 +56,7 @@ struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 
         assert(gs);
 
-        gs_character_each(character, gs)
+        GS_CHARACTER_EACH(character, gs)
         {
                 if (character->id == id) {
                         return character;
@@ -102,7 +102,7 @@ static void gs_character_broadcast_packet(
         safe_packet_size = (u64_t)(packet_size(packet) * 2);
         safe_packet_size = UTIL_MIN(sizeof(response), safe_packet_size);
 
-        gs_character_each(character, gs)
+        GS_CHARACTER_EACH(character, gs)
         {
                 if (gs_character_is_npc(character)) {
                         continue;
@@ -118,7 +118,8 @@ static void gs_character_broadcast_packet(
 void gs_character_say(
         struct gs_state *gs,
         struct gs_character *from,
-        char *message)
+        char *message,
+        size_t message_size)
 {
         static struct gs_packet_say say = { 0 };
         static packet_t response[256]   = { 0 };
@@ -132,8 +133,13 @@ void gs_character_say(
 
         say.character_id = from->id;
 
-        l2_string_from_char(say.name, from->name, sizeof(say.name));
-        l2_string_from_char(say.message, message, sizeof(say.message));
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(say.name, from->name);
+        l2_string_from_char(
+                say.message,
+                message,
+                sizeof(say.message),
+                message_size,
+                message_size);
 
         gs_packet_say_pack(response, &say);
         gs_character_broadcast_packet(gs, from, response);
@@ -419,7 +425,7 @@ void gs_character_from_request(
         assert(dest);
         assert(src);
 
-        l2_string_to_char(dest->name, src->name, sizeof(dest->name));
+        L2_STRING_ARRAY_TO_CHAR_ARRAY(dest->name, src->name);
 
         dest->race       = src->race;
         dest->_class     = src->_class;
@@ -476,8 +482,8 @@ static void gs_character_set_npc_info(
         assert(src->id);
         assert(src->template_id);
 
-        l2_string_from_char(dest->name, src->name, sizeof(dest->name));
-        l2_string_from_char(dest->title, src->title, sizeof(dest->title));
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->name, src->name);
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->title, src->title);
 
         dest->id                  = src->id;
         dest->template_id         = src->template_id + 1000000;
@@ -520,8 +526,8 @@ static void gs_character_set_player_info(
         UTIL_SET_ZERO_ARRAY(dest->name);
         UTIL_SET_ZERO_ARRAY(dest->title);
 
-        l2_string_from_char(dest->name, src->name, sizeof(dest->name));
-        l2_string_from_char(dest->title, src->title, sizeof(dest->title));
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->name, src->name);
+        L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->title, src->title);
 
         dest->x                       = src->position.x;
         dest->y                       = src->position.y;
@@ -593,7 +599,7 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
         log_normal(
                 "spawning character with id %d. notifying close players.", id);
 
-        gs_character_each(character, gs)
+        GS_CHARACTER_EACH(character, gs)
         {
                 if (character->id == spawning->id) {
                         already_in_list = 1;
@@ -663,7 +669,8 @@ void gs_character_restart(struct gs_state *gs, struct gs_character *character)
 void gs_character_show_npc_html_message(
         struct gs_state *gs,
         struct gs_character *character,
-        char *message)
+        char *message,
+        size_t message_size)
 {
         static struct gs_packet_npc_html_message html_message = { 0 };
 
@@ -673,13 +680,18 @@ void gs_character_show_npc_html_message(
         assert(character);
         assert(message);
 
-        util_set_zero(&html_message, sizeof(html_message));
+        html_message = (struct gs_packet_npc_html_message){ 0 };
+
         UTIL_SET_ZERO_ARRAY(response);
 
         html_message.message_id = 1;
 
         l2_string_from_char(
-                html_message.message, message, sizeof(html_message.message));
+                html_message.message,
+                message,
+                sizeof(html_message.message),
+                message_size,
+                message_size);
 
         gs_packet_npc_html_message_pack(response, &html_message);
         gs_character_encrypt_and_send_packet(gs, character, response);
@@ -726,7 +738,7 @@ gs_character_from_session(struct gs_state *gs, struct gs_session *session)
         assert(gs);
         assert(session);
 
-        gs_character_each(character, gs)
+        GS_CHARACTER_EACH(character, gs)
         {
                 if (character->session == session) {
                         return character;

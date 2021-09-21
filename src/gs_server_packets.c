@@ -128,8 +128,8 @@ void gs_packet_char_select_pack(
 
         type = 0x15;
 
-        name_size  = l2_string_bytes(src->name);
-        title_size = l2_string_bytes(src->title);
+        name_size  = l2_string_bytes(src->name, sizeof(src->name));
+        title_size = l2_string_bytes(src->title, sizeof(src->title));
 
         packet_append_val(dest, type);
         packet_append_n(dest, (byte_t *) src->name, name_size);
@@ -308,7 +308,8 @@ void gs_packet_auth_login_pack(packet_t *dest, struct gs_packet_auth_login *src)
 
         for (u32_t i = 0; i < src->count; i += 1) {
                 character = &src->characters[i];
-                name_size = l2_string_bytes(character->name);
+                name_size = l2_string_bytes(
+                        character->name, sizeof(character->name));
 
                 packet_append_n(dest, (byte_t *) character->name, name_size);
                 packet_append_val(dest, character->id);
@@ -398,8 +399,8 @@ void gs_packet_char_info_pack(packet_t *dest, struct gs_packet_char_info *src)
 
         type = 0x03;
 
-        name_size  = l2_string_bytes(src->name);
-        title_size = l2_string_bytes(src->title);
+        name_size  = l2_string_bytes(src->name, sizeof(src->name));
+        title_size = l2_string_bytes(src->title, sizeof(src->title));
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->x);
@@ -529,8 +530,8 @@ void gs_packet_npc_info_pack(packet_t *dest, struct gs_packet_npc_info *src)
 
         p_attack_speed_div = src->p_attack_speed / 277.478340719;
 
-        name_size  = l2_string_bytes(src->name);
-        title_size = l2_string_bytes(src->title);
+        name_size  = l2_string_bytes(src->name, sizeof(src->name));
+        title_size = l2_string_bytes(src->title, sizeof(src->title));
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->id);
@@ -615,8 +616,8 @@ void gs_packet_enter_world_pack(
 
         type = 0x04;
 
-        name_size  = l2_string_bytes(src->name);
-        title_size = l2_string_bytes(src->title);
+        name_size  = l2_string_bytes(src->name, sizeof(src->name));
+        title_size = l2_string_bytes(src->title, sizeof(src->title));
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->x);
@@ -760,8 +761,12 @@ void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src)
         packet_append_val(dest, type);
         packet_append_val(dest, src->character_id);
         packet_append_val(dest, src->type);
-        packet_append_n(dest, src->name, l2_string_bytes(src->name));
-        packet_append_n(dest, src->message, l2_string_bytes(src->message));
+        packet_append_n(
+                dest, src->name, l2_string_bytes(src->name, sizeof(src->name)));
+        packet_append_n(
+                dest,
+                src->message,
+                l2_string_bytes(src->message, sizeof(src->message)));
 }
 
 void gs_packet_auto_attack_stop_pack(
@@ -812,7 +817,10 @@ void gs_packet_npc_html_message_pack(
 
         packet_append_val(dest, type);
         packet_append_val(dest, src->message_id);
-        packet_append_n(dest, src->message, l2_string_bytes(src->message));
+        packet_append_n(
+                dest,
+                src->message,
+                l2_string_bytes(src->message, sizeof(src->message)));
 }
 
 void gs_packet_change_move_type_pack(

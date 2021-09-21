@@ -48,19 +48,20 @@ void gs_packet_auth_request_unpack(
         packet_t *body = 0;
         packet_t *tail = 0;
 
-        size_t max_username_size = 0;
-
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
         tail = src + packet_size(src);
 
-        max_username_size = sizeof(dest->username);
+        l2_string_cpy(
+                dest->username,
+                (l2_string_t *) body,
+                sizeof(dest->username),
+                UTIL_MAX(0, tail - body),
+                UTIL_MAX(0, tail - body));
 
-        l2_string_cpy(dest->username, (l2_string_t *) body, max_username_size);
-
-        body += l2_string_bytes((l2_string_t *) body);
+        body += l2_string_bytes((l2_string_t *) body, UTIL_MAX(0, tail - body));
 
         UTIL_READ_BYTES_VAL(dest->playOK2, &body, tail - body);
         UTIL_READ_BYTES_VAL(dest->playOK1, &body, tail - body);
@@ -91,22 +92,20 @@ void gs_packet_create_char_request_unpack(
         packet_t *body = 0;
         packet_t *tail = 0;
 
-        size_t max_name_size = 0;
-
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
         tail = src + packet_size(src);
 
-        max_name_size = sizeof(dest->name);
-
         l2_string_cpy(
                 dest->name,
                 (l2_string_t *) body,
-                UTIL_MIN((u64_t)(tail - body), max_name_size));
+                sizeof(dest->name),
+                UTIL_MAX(0, tail - body),
+                UTIL_MAX(0, tail - body));
 
-        body += l2_string_bytes((l2_string_t *) body);
+        body += l2_string_bytes((l2_string_t *) body, UTIL_MAX(0, tail - body));
 
         UTIL_READ_BYTES_VAL(dest->race, &body, tail - body);
         UTIL_READ_BYTES_VAL(dest->sex, &body, tail - body);
@@ -180,26 +179,31 @@ void gs_packet_say_request_unpack(
         packet_t *src)
 {
         packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
         dest->message = body;
-        dest->len     = l2_string_len(dest->message);
+        dest->size = l2_string_bytes(dest->message, UTIL_MAX(0, tail - body));
 }
 
 void gs_packet_bypass_request_unpack(
         struct gs_packet_bypass_request *dest,
         packet_t *src)
 {
-        byte_t *body = 0;
+        packet_t *body = 0;
+        packet_t *tail = 0;
 
         assert(dest);
         assert(src);
 
         body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
 
         dest->command = (l2_string_t *) body;
+        dest->size = l2_string_bytes(dest->command, UTIL_MAX(0, tail - body));
 }
