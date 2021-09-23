@@ -2,6 +2,7 @@
 #define INCLUDE_LS_TYPES_H
 
 #include "util.h"
+#include "config.h"
 
 struct ls_rsa;
 
@@ -9,7 +10,7 @@ struct ls_blowfish;
 
 struct ls_session {
         size_t id;
-        struct os_io *socket;
+        struct platform_socket *socket;
         struct ls_blowfish *blowfish;
         struct ls_rsa *rsa;
         i32_t playOK1;
@@ -48,8 +49,11 @@ struct ls_state {
         size_t session_instances[MAX_CLIENTS];
         size_t session_count;
 
-        void (*send_response)(struct os_io *socket, void *buf, size_t n);
-        void (*disconnect)(struct os_io *socket);
+        void (*send_response)(
+                struct platform_socket *socket,
+                void *buf,
+                size_t n);
+        void (*disconnect)(struct platform_socket *socket);
         u32_t (*text_ip_to_u32)(char *ip);
 };
 

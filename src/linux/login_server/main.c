@@ -1,45 +1,110 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "../../include/util.h"
 #include "../../include/config.h"
 #include "../../include/ls_types.h"
 
-#include "../os_io.c"
+#include "../platform.c"
 #include "../../ls_lib.c"
 
-static void _send_response(struct os_io *socket, void *buf, size_t n)
+static struct platform_socket *g_sockets[MAX_CLIENTS] = { 0 };
+static u64_t g_socket_instances[MAX_CLIENTS]          = { 0 };
+
+static void send_response(struct platform_socket *dest, void *buf, size_t n)
 {
-        if (!socket) {
+        u32_t sent = 0;
+
+        if (!dest) {
                 return;
         }
-        os_io_write(socket, buf, n);
+
+        if (platform_socket_send(dest, &sent, buf, (u32_t) n)) {
+                return;
+        }
+
+        printf("unable to send response.\n");
 }
 
-static void _disconnect(struct os_io *socket)
+static void disconnect(struct platform_socket *src)
 {
-        if (!socket) {
+        if (!src) {
                 return;
         }
-        ls_lib_disconnect(socket);
-        os_io_close(socket);
+
+        if (platform_socket_close(src)) {
+                return;
+        }
+
+        printf("unable to close connection.\n");
 }
 
-static void
-on_request(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
+static u32_t ip_to_u32(char *ip)
 {
-        if (!socket) {
+        u32_t result = 0;
+
+        if (!ip) {
+                return 0;
+        }
+
+        if (platform_ip_to_u32(&result, ip)) {
+                return result;
+        }
+
+        printf("unable to convert ip '%s' to u32.\n", ip);
+
+        return 0;
+}
+
+static void on_request(
+        struct platform_socket *src,
+        enum platform_socket_request_type type,
+        void *buf,
+        u32_t n)
+{
+        u64_t free_socket = 0;
+
+        if (!src) {
                 return;
         }
 
-        switch (event) {
-        case OS_IO_SOCKET_CONNECTION:
-                ls_lib_new_conn(socket);
+        switch (type) {
+        case PLATFORM_SOCKET_NEW_CONNECTION:
+                util_recycle_id_get(&free_socket, g_socket_instances);
+                g_sockets[free_socket] = platform_socket_new();
+
+                if (!g_sockets[free_socket]) {
+                        util_recycle_id(g_socket_instances, free_socket);
+                        printf("login server unable to get new socket for accepting client.\n");
+                        return;
+                }
+
+                if (!platform_socket_accept(g_sockets[free_socket], src)) {
+                        util_recycle_id(g_socket_instances, free_socket);
+                        printf("login server unable to accept new connection.\n");
+                        return;
+                }
+
+                ls_lib_new_conn(g_sockets[free_socket]);
                 break;
-        case OS_IO_SOCKET_REQUEST:
-                ls_lib_new_req(socket, buf, n);
+        case PLATFORM_SOCKET_NEW_REQUEST:
+                ls_lib_new_req(src, buf, n);
                 break;
-        case OS_IO_SOCKET_DISCONNECTED:
-                ls_lib_disconnect(socket);
+        case PLATFORM_SOCKET_FAILED_TO_READ:
+                printf("login server failed to read packet.\n");
+                break;
+        case PLATFORM_SOCKET_READY_TO_WRITE:
+                printf("login server ready to write.\n");
+                break;
+        case PLATFORM_SOCKET_DISCONNECTED:
+                printf("login server client disconnected.\n");
+                for (u64_t i = 0, max = UTIL_ARRAY_LEN(g_sockets); i < max;
+                     i += 1) {
+                        if (g_sockets[i] == src) {
+                                util_recycle_id(g_socket_instances, i);
+                                break;
+                        }
+                }
                 break;
         default:
                 break;
@@ -50,27 +115,34 @@ int main(/* int argc, char **argv */)
 {
         static struct ls_state ls = { 0 };
 
-        struct os_io *socket = 0;
+        u64_t free_socket = 0;
 
-        socket = os_io_socket_create(2106, MAX_CLIENTS);
+        util_recycle_id_get(&free_socket, g_socket_instances);
+        g_sockets[free_socket] = platform_socket_new();
 
-        if (!socket) {
+        if (!g_sockets[free_socket]) {
                 printf("login server socket couldn't be created.\n");
                 return 1;
         }
 
-        ls.send_response  = _send_response;
-        ls.disconnect     = _disconnect;
-        ls.text_ip_to_u32 = os_io_ip_text_to_u32;
-
-        ls_lib_load(&ls);
-
-        if (!os_io_listen(on_request)) {
-                printf("login server request can't be handled.\n");
+        if (!platform_socket_init(g_sockets[free_socket], 2106, MAX_CLIENTS)) {
+                printf("login server socket unable to initialize.\n");
                 return 1;
         }
 
-        printf("login server listening for requests.\n");
+        ls.send_response  = send_response;
+        ls.disconnect     = disconnect;
+        ls.text_ip_to_u32 = ip_to_u32;
+
+        ls_lib_load(&ls);
+
+        printf("login server started.\n");
+
+        if (!platform_socket_listen(
+                    *g_sockets, UTIL_ARRAY_LEN(g_sockets), on_request)) {
+                printf("login server socket unable to listen for new connections.\n");
+                return 1;
+        }
 
         return 0;
 }
