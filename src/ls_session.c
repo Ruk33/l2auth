@@ -4,7 +4,7 @@
 #include <openssl/blowfish.h>
 #include "include/util.h"
 #include "include/config.h"
-#include "include/os_io.h"
+#include "include/platform.h"
 #include "include/ls_session.h"
 
 struct ls_rsa {
@@ -145,7 +145,8 @@ static int ls_session_rsa_decrypt(struct ls_rsa *rsa, byte_t *dest, byte_t *src)
         return RSA_private_decrypt(size, src, dest, rsa->key, RSA_NO_PADDING);
 }
 
-struct ls_session *ls_session_new(struct ls_state *ls, struct os_io *socket)
+struct ls_session *
+ls_session_new(struct ls_state *ls, struct platform_socket *socket)
 {
         struct ls_session *session = 0;
 
@@ -189,7 +190,8 @@ void ls_session_free(struct ls_state *ls, struct ls_session *session)
         *session           = (struct ls_session){ 0 };
 }
 
-struct ls_session *ls_session_find(struct ls_state *ls, struct os_io *socket)
+struct ls_session *
+ls_session_find(struct ls_state *ls, struct platform_socket *socket)
 {
         assert(ls);
         assert(socket);

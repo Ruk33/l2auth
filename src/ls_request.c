@@ -3,7 +3,7 @@
 #include <string.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
-#include "include/os_io.h"
+#include "include/platform.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/storage.h"
@@ -42,6 +42,7 @@ static void handle_auth_login(
         char username[14] = { 0 };
         char password[16] = { 0 };
 
+        // Todo: make this configurable!
         char *salt = "somethign!";
 
         byte_t encrypted_password[64] = { 0 };
@@ -72,15 +73,19 @@ static void handle_auth_login(
 
         account_exists = storage_get_account(&account, username);
 
-        PKCS5_PBKDF2_HMAC(
-                password,
-                strnlen(password, sizeof(password)),
-                (unsigned char *) salt,
-                strlen(salt),
-                1000,
-                EVP_sha512(),
-                64,
-                encrypted_password);
+        if (!PKCS5_PBKDF2_HMAC(
+                    password,
+                    strnlen(password, sizeof(password)),
+                    (unsigned char *) salt,
+                    strlen(salt),
+                    1000,
+                    EVP_sha512(),
+                    64,
+                    encrypted_password)) {
+                log_normal("unable to encrypt password.");
+                ls_session_disconnect(ls, session);
+                return;
+        }
 
         if (account_exists) {
                 valid_password = CRYPTO_memcmp(
@@ -89,6 +94,7 @@ static void handle_auth_login(
                                          64) == 0;
 
                 if (!valid_password) {
+                        log_normal("invalid password. disconnecting client.");
                         ls_session_disconnect(ls, session);
                         return;
                 }
@@ -161,7 +167,7 @@ static void handle_login_server(struct ls_state *ls, struct ls_session *session)
         ls_session_send_packet(ls, session, response);
 }
 
-void ls_request_new_conn(struct ls_state *ls, struct os_io *socket)
+void ls_request_new_conn(struct ls_state *ls, struct platform_socket *socket)
 {
         static packet_t response[256]     = { 0 };
         static struct ls_packet_init init = { 0 };
@@ -194,7 +200,11 @@ void ls_request_new_conn(struct ls_state *ls, struct os_io *socket)
         ls_session_send_packet(ls, session, response);
 }
 
-void ls_request(struct ls_state *ls, struct os_io *socket, byte_t *buf, size_t n)
+void ls_request(
+        struct ls_state *ls,
+        struct platform_socket *socket,
+        byte_t *buf,
+        size_t n)
 {
         static packet_t packet[2048] = { 0 };
 
@@ -241,7 +251,7 @@ void ls_request(struct ls_state *ls, struct os_io *socket, byte_t *buf, size_t n
         }
 }
 
-void ls_request_disconnect(struct ls_state *ls, struct os_io *socket)
+void ls_request_disconnect(struct ls_state *ls, struct platform_socket *socket)
 {
         struct ls_session *session = 0;
 

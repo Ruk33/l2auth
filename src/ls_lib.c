@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "include/os_io.h"
+#include "include/platform.h"
 #include "include/ls_types.h"
 #include "include/ls_lib.h"
 
@@ -23,7 +23,7 @@ void ls_lib_load(struct ls_state *ls)
         g_ls = ls;
 }
 
-void ls_lib_new_conn(struct os_io *socket)
+void ls_lib_new_conn(struct platform_socket *socket)
 {
         if (!g_ls || !socket) {
                 return;
@@ -31,7 +31,7 @@ void ls_lib_new_conn(struct os_io *socket)
         ls_request_new_conn(g_ls, socket);
 }
 
-void ls_lib_new_req(struct os_io *socket, void *buf, size_t n)
+void ls_lib_new_req(struct platform_socket *socket, void *buf, size_t n)
 {
         if (!g_ls || !socket) {
                 return;
@@ -39,7 +39,7 @@ void ls_lib_new_req(struct os_io *socket, void *buf, size_t n)
         ls_request(g_ls, socket, buf, n);
 }
 
-void ls_lib_disconnect(struct os_io *socket)
+void ls_lib_disconnect(struct platform_socket *socket)
 {
         if (!g_ls || !socket) {
                 return;

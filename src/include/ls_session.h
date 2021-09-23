@@ -2,13 +2,15 @@
 #define INCLUDE_LS_SESSION_H
 
 #include "util.h"
-#include "os_io.h"
+#include "platform.h"
 #include "packet.h"
 #include "ls_types.h"
 
-struct ls_session *ls_session_new(struct ls_state *ls, struct os_io *socket);
+struct ls_session *
+ls_session_new(struct ls_state *ls, struct platform_socket *socket);
 
-struct ls_session *ls_session_find(struct ls_state *ls, struct os_io *socket);
+struct ls_session *
+ls_session_find(struct ls_state *ls, struct platform_socket *socket);
 
 void ls_session_rsa_modulus(struct ls_session *session, byte_t *dest);
 

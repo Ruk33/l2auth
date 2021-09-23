@@ -247,9 +247,9 @@ int util_encode32be(byte_t *dest, u32_t src, u64_t n);
  *
  * size_t instance = 0;
  *
- * foo_count += recycled_id(&instance, instances);
+ * foo_count += util_recycle_id_get(&instance, instances);
  * foo[instance] = free instance to be used.
- * recycle_id(instances, instance);
+ * util_recycle_id(instances, instance);
  */
 int util_recycle_id_get(u64_t *dest, u64_t *instances);
 

@@ -24,6 +24,24 @@ typedef void platform_socket_request_cb(
 typedef void platform_timer_tick_cb(struct platform_timer *src);
 
 /**
+ * Get a new usable socket.
+ * On success, a new instance is returned.
+ * On error, NULL will be returned.
+ */
+struct platform_socket *platform_socket_new(void);
+
+/**
+ * Get a new usable socket.
+ * On success, a new instance is returned.
+ * On error, NULL will be returned.
+ */
+struct platform_timer *platform_timer_new(void);
+
+void platform_socket_free(struct platform_socket *src);
+
+void platform_timer_free(struct platform_timer *src);
+
+/**
  * Initialize socket.
  * On success, 1 is returned, otherwise, 0.
  */
@@ -92,5 +110,12 @@ void platform_timer_resume(struct platform_timer *src);
  * Simple message logging.
  */
 void platform_normal_log(char *format, ...);
+
+/**
+ * Convert ip to unsigned int.
+ * On success, 1 will be returned and result stored in dest.
+ * On error, 0.
+ */
+int platform_ip_to_u32(u32_t *dest, char *ip);
 
 #endif
