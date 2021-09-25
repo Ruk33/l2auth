@@ -35,6 +35,8 @@ enum gs_ai_state {
         AI_TARGET_SELECTED,
         AI_MOVING_TO_ATTACK,
         AI_ATTACKING,
+        AI_MOVING_TO_INTERACT,
+        AI_INTERACTING,
         AI_DEAD,
 };
 

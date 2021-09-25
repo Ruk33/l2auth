@@ -41,6 +41,26 @@ void gs_packet_action_request_unpack(
         UTIL_READ_BYTES_VAL(dest->action, &body, tail - body);
 }
 
+void gs_packet_attack_request_unpack(
+        struct gs_packet_attack_request *dest,
+        packet_t *src)
+{
+        packet_t *body = 0;
+        packet_t *tail = 0;
+
+        assert(dest);
+        assert(src);
+
+        body = gs_packet_body_without_type(src);
+        tail = src + packet_size(src);
+
+        UTIL_READ_BYTES_VAL(dest->target_id, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_x, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_y, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->origin_z, &body, tail - body);
+        UTIL_READ_BYTES_VAL(dest->action, &body, tail - body);
+}
+
 void gs_packet_auth_request_unpack(
         struct gs_packet_auth_request *dest,
         packet_t *src)

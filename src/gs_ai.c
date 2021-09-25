@@ -31,6 +31,20 @@ static void gs_ai_on_npc_attacked(
         gs_character_run(gs, npc);
 }
 
+static void gs_ai_on_npc_interact(
+        struct gs_state *gs,
+        struct gs_character *npc,
+        struct gs_character *player)
+{
+        assert(gs);
+        assert(npc);
+        assert(player);
+
+        // Todo: don't hardcode the message.
+        GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
+                gs, player, "<html><body>Hi, this is a test!</body></html>");
+}
+
 static void gs_ai_on_dead(
         struct gs_state *gs,
         struct gs_character *dead,
@@ -175,6 +189,42 @@ static void gs_ai_attack(
         }
 }
 
+static void gs_ai_interact(
+        struct gs_state *gs,
+        struct gs_character *src,
+        struct gs_character *target)
+{
+        struct gs_point walk_to = { 0 };
+        double walk_angle       = 0;
+
+        assert(gs);
+        assert(src);
+
+        if (!target) {
+                src->ai.target_id = 0;
+                gs_ai_go_idle(gs, src);
+                return;
+        }
+
+        src->ai.target_id = target->id;
+        src->ai.state     = AI_INTERACTING;
+
+        if (gs_character_distance(src, target) > 80) {
+                walk_angle =
+                        gs_character_angle_to_point(src, &target->position);
+                walk_to.x = target->position.x - 40 * cos(walk_angle);
+                walk_to.y = target->position.y - 40 * sin(walk_angle);
+                walk_to.z = target->position.z;
+                gs_ai_move(gs, src, &walk_to);
+                src->ai.state = AI_MOVING_TO_INTERACT;
+                return;
+        }
+
+        if (gs_character_is_npc(target)) {
+                gs_ai_on_npc_interact(gs, target, src);
+        }
+}
+
 static void gs_ai_select_target(
         struct gs_state *gs,
         struct gs_character *src,
@@ -275,6 +325,32 @@ static void gs_ai_handle_action_request(
         gs_ai_select_target(gs, character, target);
 }
 
+static void gs_ai_handle_attack_request(
+        struct gs_state *gs,
+        struct gs_character *character,
+        packet_t *packet)
+{
+        struct gs_packet_attack_request attack = { 0 };
+
+        struct gs_character *target = 0;
+
+        assert(gs);
+        assert(character);
+        assert(packet);
+
+        gs_packet_attack_request_unpack(&attack, packet);
+
+        target = gs_character_find_by_id(gs, attack.target_id);
+
+        if (!target) {
+                character->ai.target_id = 0;
+                gs_ai_go_idle(gs, character);
+                return;
+        }
+
+        gs_ai_attack(gs, character, target);
+}
+
 static void gs_ai_handle_say(
         struct gs_state *gs,
         struct gs_character *character,
@@ -296,7 +372,7 @@ static void gs_ai_handle_say(
         gs_character_say(gs, character, message, sizeof(message));
 }
 
-static void gs_ai_handle_attack_request(
+static void gs_ai_handle_interaction_request(
         struct gs_state *gs,
         struct gs_character *character,
         packet_t *packet)
@@ -323,12 +399,7 @@ static void gs_ai_handle_attack_request(
                 return;
         }
 
-        if (character->ai.target_id == target->id) {
-                gs_ai_attack(gs, character, target);
-                return;
-        }
-
-        gs_ai_select_target(gs, character, target);
+        gs_ai_interact(gs, character, target);
 }
 
 static void
@@ -420,6 +491,9 @@ static void gs_ai_idle_state(
                         character,
                         "<html><body>It works! even though it breaks if you send more than 3kb of data!</body></html>");
                 break;
+        case 0x0a: // Attack request
+                gs_ai_handle_attack_request(gs, character, request);
+                break;
         default:
                 log_normal("unable to handle packet %x.", packet_type(request));
                 break;
@@ -453,7 +527,7 @@ static void gs_ai_target_selected_state(
 
         switch (packet_type(request)) {
         case 0x04:
-                gs_ai_handle_attack_request(gs, character, request);
+                gs_ai_handle_interaction_request(gs, character, request);
                 break;
         default:
                 gs_ai_idle_state(gs, character, request);
@@ -627,6 +701,12 @@ void gs_ai_tick(
                 gs_ai_update_character_position(gs, character, delta);
                 gs_ai_attack(gs, character, target);
                 break;
+        case AI_INTERACTING:
+                break;
+        case AI_MOVING_TO_INTERACT:
+                gs_ai_update_character_position(gs, character, delta);
+                gs_ai_interact(gs, character, target);
+                break;
         case AI_DEAD:
                 break;
         default:
@@ -645,6 +725,8 @@ void gs_ai_handle_request(
 
         switch (character->ai.state) {
         case AI_IDLE:
+        case AI_INTERACTING:
+        case AI_MOVING_TO_INTERACT:
                 gs_ai_idle_state(gs, character, request);
                 break;
         case AI_MOVING:

@@ -13,6 +13,14 @@ struct gs_packet_action_request {
         u8_t action; // 0 = click, 1 = shift click
 };
 
+struct gs_packet_attack_request {
+        u32_t target_id;
+        i32_t origin_x;
+        i32_t origin_y;
+        i32_t origin_z;
+        u8_t action; // 0 = click, 1 = shift click
+};
+
 struct gs_packet_auth_request {
         l2_string_t username[28];
         i32_t playOK1;
@@ -77,6 +85,10 @@ struct gs_packet_bypass_request {
 
 void gs_packet_action_request_unpack(
         struct gs_packet_action_request *dest,
+        packet_t *src);
+
+void gs_packet_attack_request_unpack(
+        struct gs_packet_attack_request *dest,
         packet_t *src);
 
 void gs_packet_auth_request_unpack(
