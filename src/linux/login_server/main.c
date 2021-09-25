@@ -9,17 +9,17 @@
 #include "../../ls_lib.c"
 
 static struct platform_socket *g_sockets[MAX_CLIENTS] = { 0 };
-static u64_t g_socket_instances[MAX_CLIENTS]          = { 0 };
+static size_t g_socket_instances[MAX_CLIENTS]         = { 0 };
 
 static void send_response(struct platform_socket *dest, void *buf, size_t n)
 {
-        u32_t sent = 0;
+        ssize_t sent = 0;
 
         if (!dest) {
                 return;
         }
 
-        if (platform_socket_send(dest, &sent, buf, (u32_t) n)) {
+        if (platform_socket_send(dest, &sent, buf, n)) {
                 return;
         }
 
@@ -60,9 +60,9 @@ static void on_request(
         struct platform_socket *src,
         enum platform_socket_request_type type,
         void *buf,
-        u32_t n)
+        size_t n)
 {
-        u64_t free_socket = 0;
+        size_t free_socket = 0;
 
         if (!src) {
                 return;
@@ -98,8 +98,7 @@ static void on_request(
                 break;
         case PLATFORM_SOCKET_DISCONNECTED:
                 printf("login server client disconnected.\n");
-                for (u64_t i = 0, max = UTIL_ARRAY_LEN(g_sockets); i < max;
-                     i += 1) {
+                for (size_t i = 0; i < UTIL_ARRAY_LEN(g_sockets); i += 1) {
                         if (g_sockets[i] == src) {
                                 util_recycle_id(g_socket_instances, i);
                                 break;
@@ -115,7 +114,7 @@ int main(/* int argc, char **argv */)
 {
         static struct ls_state ls = { 0 };
 
-        u64_t free_socket = 0;
+        size_t free_socket = 0;
 
         util_recycle_id_get(&free_socket, g_socket_instances);
         g_sockets[free_socket] = platform_socket_new();

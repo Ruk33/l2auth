@@ -20,10 +20,10 @@
 #define packet_padded_size(size) (((size_t)(size + 4 + 7)) & ((size_t)(~7)))
 
 #define packet_append(dest, src) \
-        packet_append_n(dest, (byte_t *) (src), sizeof(src))
+        packet_append_n((packet_t *) dest, (byte_t *) (src), sizeof(src))
 
 #define packet_append_val(dest, src) \
-        packet_append_n(dest, (byte_t *) &(src), sizeof(src))
+        packet_append_n((packet_t *) dest, (byte_t *) &(src), sizeof(src))
 
 typedef byte_t packet_t;
 

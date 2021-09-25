@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -21,6 +22,8 @@
 #define MAX_SOCKETS (32)
 
 #define MAX_TIMERS (1)
+
+#define MAX_THREADS (1)
 
 struct platform_socket {
         int fd;
@@ -35,12 +38,18 @@ struct platform_timer {
         int initialized;
 };
 
+struct platform_thread {
+        pthread_t id;
+        platform_thread_cb *cb;
+};
+
 static struct platform_socket sockets[MAX_SOCKETS] = { 0 };
 static struct platform_timer timers[MAX_TIMERS]    = { 0 };
+static struct platform_thread threads[MAX_THREADS] = { 0 };
 
 static struct platform_socket *find_free_socket(void)
 {
-        for (u32_t i = 0, max = UTIL_ARRAY_LEN(sockets); i < max; i += 1) {
+        for (size_t i = 0, max = UTIL_ARRAY_LEN(sockets); i < max; i += 1) {
                 if (sockets[i].initialized) {
                         continue;
                 }
@@ -77,6 +86,11 @@ struct platform_socket *platform_socket_new(void)
 struct platform_timer *platform_timer_new(void)
 {
         return &timers[0];
+}
+
+struct platform_thread *platform_thread_new(void)
+{
+        return &threads[0];
 }
 
 void platform_socket_free(struct platform_socket *src)
@@ -202,7 +216,7 @@ int platform_socket_accept(
 
 int platform_socket_listen(
         struct platform_socket *src,
-        u32_t src_len,
+        size_t src_len,
         platform_socket_request_cb *cb)
 {
         static struct epoll_event events[64] = { 0 };
@@ -213,7 +227,7 @@ int platform_socket_listen(
         int epoll_fd = 0;
         int ev_count = 0;
 
-        i32_t read = 0;
+        ssize_t read = 0;
 
         if (!src || !src_len || !cb) {
                 return 0;
@@ -226,7 +240,7 @@ int platform_socket_listen(
         }
 
         while (1) {
-                for (u32_t i = 0; i < src_len; i += 1) {
+                for (size_t i = 0; i < src_len; i += 1) {
                         if (!src[i].initialized) {
                                 continue;
                         }
@@ -249,7 +263,7 @@ int platform_socket_listen(
                         return 0;
                 }
 
-                for (u32_t i = 0; i < src_len; i += 1) {
+                for (size_t i = 0; i < src_len; i += 1) {
                         if (!src[i].initialized) {
                                 continue;
                         }
@@ -305,7 +319,7 @@ int platform_socket_listen(
                                 cb(&src[i],
                                    PLATFORM_SOCKET_NEW_REQUEST,
                                    buf,
-                                   (u32_t) read);
+                                   (size_t) read);
                         }
                 }
         }
@@ -317,11 +331,11 @@ int platform_socket_listen(
 
 int platform_socket_send(
         struct platform_socket *dest,
-        u32_t *sent,
+        ssize_t *sent,
         void *buf,
-        u32_t n)
+        size_t n)
 {
-        i32_t tmp = 0;
+        ssize_t tmp = 0;
 
         assert(dest);
         assert(sent);
@@ -332,7 +346,7 @@ int platform_socket_send(
                 return 0;
         }
 
-        *sent = (u32_t) tmp;
+        *sent = tmp;
 
         return 1;
 }
@@ -388,7 +402,7 @@ int platform_timer_init(
 
 int platform_timer_start(
         struct platform_timer *src,
-        u32_t src_len,
+        size_t src_len,
         platform_timer_tick_cb *cb)
 {
         static struct epoll_event events[64] = { 0 };
@@ -411,7 +425,7 @@ int platform_timer_start(
         }
 
         while (1) {
-                for (u32_t i = 0; i < src_len; i += 1) {
+                for (size_t i = 0; i < src_len; i += 1) {
                         if (!src[i].initialized || src[i].stopped) {
                                 continue;
                         }
@@ -431,7 +445,7 @@ int platform_timer_start(
                         return 0;
                 }
 
-                for (u32_t i = 0; i < src_len; i += 1) {
+                for (size_t i = 0; i < src_len; i += 1) {
                         if (src[i].stopped) {
                                 event.data.fd = src[i].fd;
                                 epoll_ctl(
@@ -485,6 +499,61 @@ void platform_timer_resume(struct platform_timer *src)
  * ------------------------
  * End timer implementation
  * ------------------------
+ */
+
+/*
+ * ---------------------
+ * Thread implementation
+ * ---------------------
+ */
+
+static void *platform_thread_on_start(void *arg)
+{
+        struct platform_thread *thread = 0;
+
+        if (!arg) {
+                return 0;
+        }
+
+        thread = arg;
+        thread->cb(thread);
+
+        return 0;
+}
+
+int platform_thread_create(
+        struct platform_thread *thread,
+        platform_thread_cb *cb)
+{
+        if (!thread || !cb) {
+                return 0;
+        }
+
+        thread->cb = cb;
+
+        // Returns non zero if something went wrong.
+        if (pthread_create(&thread->id, 0, platform_thread_on_start, thread)) {
+                return 0;
+        }
+
+        return 1;
+}
+
+int platform_thread_kill(struct platform_thread *thread)
+{
+        if (!thread) {
+                return 0;
+        }
+
+        pthread_exit(0);
+
+        return 1;
+}
+
+/*
+ * -------------------------
+ * End thread implementation
+ * -------------------------
  */
 
 int platform_ip_to_u32(u32_t *dest, char *ip)

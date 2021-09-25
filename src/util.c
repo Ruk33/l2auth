@@ -4,7 +4,7 @@
 // (franco.montenegro) There may be room for improvement
 // in this function, say, instead of copying byte per byte
 // copy chunks (4 bytes at a time using size_t)
-void util_set_zero(void *dest, u64_t n)
+void util_set_zero(void *dest, size_t n)
 {
         byte_t *byte_dest = 0;
 
@@ -14,13 +14,13 @@ void util_set_zero(void *dest, u64_t n)
 
         byte_dest = dest;
 
-        for (u64_t i = 0; i < n; i += 1) {
+        for (size_t i = 0; i < n; i += 1) {
                 *byte_dest = 0;
                 byte_dest += 1;
         }
 }
 
-void util_cpy_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
+void util_cpy_bytes(void *dest, void *src, size_t dn, size_t sn, size_t n)
 {
         byte_t *byte_dest = 0;
         byte_t *byte_src  = 0;
@@ -42,7 +42,7 @@ void util_cpy_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
         }
 }
 
-int util_cpy_all_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
+int util_cpy_all_bytes(void *dest, void *src, size_t dn, size_t sn, size_t n)
 {
         if (!dest || !src || !dn || !sn) {
                 return 0;
@@ -61,7 +61,7 @@ int util_cpy_all_bytes(void *dest, void *src, u64_t dn, u64_t sn, u64_t n)
         return 1;
 }
 
-void util_cpy_str(char *dest, char *src, u64_t dn, u64_t sn)
+void util_cpy_str(char *dest, char *src, size_t dn, size_t sn)
 {
         if (!dest || !src || !dn || !sn) {
                 return;
@@ -78,7 +78,7 @@ void util_cpy_str(char *dest, char *src, u64_t dn, u64_t sn)
         *dest = 0;
 }
 
-int util_read_bytes(void *dest, void **src, u64_t dn, u64_t sn, u64_t n)
+int util_read_bytes(void *dest, void **src, size_t dn, size_t sn, size_t n)
 {
         if (!util_cpy_all_bytes(dest, *src, dn, sn, n)) {
                 return 0;
@@ -88,7 +88,7 @@ int util_read_bytes(void *dest, void **src, u64_t dn, u64_t sn, u64_t n)
         return 1;
 }
 
-int util_list_add(struct list *src, u64_t src_len, void *value)
+int util_list_add(struct list *src, size_t src_len, void *value)
 {
         struct list **head     = 0;
         struct list *free_node = 0;
@@ -101,7 +101,7 @@ int util_list_add(struct list *src, u64_t src_len, void *value)
         free_node = src + 1;
 
         while (free_node->value) {
-                if ((u64_t)(free_node - src) >= src_len) {
+                if ((size_t)(free_node - src) >= src_len) {
                         return 0;
                 }
 
@@ -142,7 +142,7 @@ int util_list_remove(struct list *src, void *value)
         return 1;
 }
 
-int util_decode32le(u32_t *dest, byte_t *src, u64_t n)
+int util_decode32le(u32_t *dest, byte_t *src, size_t n)
 {
         if (!dest || !src || n < 4) {
                 return 0;
@@ -154,7 +154,7 @@ int util_decode32le(u32_t *dest, byte_t *src, u64_t n)
         return 1;
 }
 
-int util_decode32be(u32_t *dest, byte_t *src, u64_t n)
+int util_decode32be(u32_t *dest, byte_t *src, size_t n)
 {
         if (!dest || !src || n < 4) {
                 return 0;
@@ -166,7 +166,7 @@ int util_decode32be(u32_t *dest, byte_t *src, u64_t n)
         return 1;
 }
 
-int util_encode32le(byte_t *dest, u32_t src, u64_t n)
+int util_encode32le(byte_t *dest, u32_t src, size_t n)
 {
         if (!dest || n < 4) {
                 return 0;
@@ -180,7 +180,7 @@ int util_encode32le(byte_t *dest, u32_t src, u64_t n)
         return 1;
 }
 
-int util_encode32be(byte_t *dest, u32_t src, u64_t n)
+int util_encode32be(byte_t *dest, u32_t src, size_t n)
 {
         if (!dest || n < 4) {
                 return 0;
@@ -194,7 +194,7 @@ int util_encode32be(byte_t *dest, u32_t src, u64_t n)
         return 1;
 }
 
-int util_recycle_id_get(u64_t *dest, u64_t *src)
+int util_recycle_id_get(size_t *dest, size_t *src)
 {
         assert(src);
 
@@ -205,12 +205,12 @@ int util_recycle_id_get(u64_t *dest, u64_t *src)
                 return 0;
         }
 
-        src[0] = UTIL_SAFE_U64(*dest + 1);
+        src[0] = *dest + 1;
 
         return 1;
 }
 
-void util_recycle_id(u64_t *src, u64_t id)
+void util_recycle_id(size_t *src, size_t id)
 {
         assert(src);
         src[id] = src[0];

@@ -1,6 +1,6 @@
 #include <assert.h>
 #include "include/util.h"
-#include "include/os_io.h"
+#include "include/platform.h"
 #include "include/storage.h"
 #include "include/l2_string.h"
 #include "include/packet.h"
@@ -621,7 +621,7 @@ in_world_state(struct gs_state *gs, struct gs_session *session, packet_t *packet
         }
 }
 
-void gs_request_new_conn(struct gs_state *gs, struct os_io *socket)
+void gs_request_new_conn(struct gs_state *gs, struct platform_socket *socket)
 {
         struct gs_session *session = 0;
 
@@ -641,7 +641,11 @@ void gs_request_new_conn(struct gs_state *gs, struct os_io *socket)
         log_normal("new game session with id %d generated.", session->id);
 }
 
-void gs_request(struct gs_state *gs, struct os_io *socket, byte_t *buf, size_t n)
+void gs_request(
+        struct gs_state *gs,
+        struct platform_socket *socket,
+        void *buf,
+        size_t n)
 {
         // 65536 being the limit for a single packet.
         static packet_t packet[65536] = { 0 };
@@ -716,7 +720,7 @@ void gs_request(struct gs_state *gs, struct os_io *socket, byte_t *buf, size_t n
         }
 }
 
-void gs_request_disconnect(struct gs_state *gs, struct os_io *socket)
+void gs_request_disconnect(struct gs_state *gs, struct platform_socket *socket)
 {
         packet_t response[32] = { 0 };
 

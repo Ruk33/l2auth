@@ -43,7 +43,7 @@ void gs_lib_unload(void)
 {
 }
 
-void gs_lib_new_conn(struct os_io *socket)
+void gs_lib_new_conn(struct platform_socket *socket)
 {
         if (!g_gs) {
                 log_normal("game state not initialized. ignoring new con.");
@@ -58,7 +58,7 @@ void gs_lib_new_conn(struct os_io *socket)
         gs_request_new_conn(g_gs, socket);
 }
 
-void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
+void gs_lib_new_req(struct platform_socket *socket, void *buf, size_t n)
 {
         if (!g_gs) {
                 log_normal("game state not initialized. ignoring new request.");
@@ -73,7 +73,7 @@ void gs_lib_new_req(struct os_io *socket, void *buf, size_t n)
         gs_request(g_gs, socket, buf, n);
 }
 
-void gs_lib_disconnect(struct os_io *socket)
+void gs_lib_disconnect(struct platform_socket *socket)
 {
         if (!g_gs) {
                 log_normal("game state not initialized. ignoring disconnect.");
