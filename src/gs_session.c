@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "include/config.h"
 #include "include/util.h"
-#include "include/os_io.h"
+#include "include/platform.h"
 #include "include/l2_string.h"
 #include "include/gs_types.h"
 #include "include/gs_client_packets.h"
@@ -27,7 +27,8 @@ static size_t gs_session_get_free_id(struct gs_state *state)
         return 0;
 }
 
-struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
+struct gs_session *
+gs_session_new(struct gs_state *state, struct platform_socket *socket)
 {
         byte_t key[] = { 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 };
 
@@ -57,7 +58,8 @@ struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket)
         return new_session;
 }
 
-struct gs_session *gs_session_find(struct gs_state *state, struct os_io *socket)
+struct gs_session *
+gs_session_find(struct gs_state *state, struct platform_socket *socket)
 {
         struct gs_session *session = 0;
 

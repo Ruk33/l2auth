@@ -15,13 +15,17 @@ struct platform_socket;
 
 struct platform_timer;
 
+struct platform_thread;
+
 typedef void platform_socket_request_cb(
         struct platform_socket *src,
         enum platform_socket_request_type type,
         void *buf,
-        u32_t n);
+        size_t n);
 
 typedef void platform_timer_tick_cb(struct platform_timer *src);
+
+typedef void platform_thread_cb(struct platform_thread *thread);
 
 /**
  * Get a new usable socket.
@@ -36,6 +40,13 @@ struct platform_socket *platform_socket_new(void);
  * On error, NULL will be returned.
  */
 struct platform_timer *platform_timer_new(void);
+
+/**
+ * Get a new usable thread.
+ * On success, a new instance is returned.
+ * ON error, NULL will be returned.
+ */
+struct platform_thread *platform_thread_new(void);
 
 void platform_socket_free(struct platform_socket *src);
 
@@ -68,7 +79,7 @@ int platform_socket_accept(
  */
 int platform_socket_listen(
         struct platform_socket *src,
-        u32_t src_len,
+        size_t src_len,
         platform_socket_request_cb *cb);
 
 /**
@@ -78,9 +89,9 @@ int platform_socket_listen(
  */
 int platform_socket_send(
         struct platform_socket *dest,
-        u32_t *sent,
+        ssize_t *sent,
         void *buf,
-        u32_t n);
+        size_t n);
 
 /**
  * Initializes timer.
@@ -99,12 +110,18 @@ int platform_timer_init(
  */
 int platform_timer_start(
         struct platform_timer *src,
-        u32_t src_len,
+        size_t src_len,
         platform_timer_tick_cb *cb);
 
 void platform_timer_stop(struct platform_timer *src);
 
 void platform_timer_resume(struct platform_timer *src);
+
+int platform_thread_create(
+        struct platform_thread *thread,
+        platform_thread_cb *cb);
+
+int platform_thread_kill(struct platform_thread *thread);
 
 /**
  * Simple message logging.

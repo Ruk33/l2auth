@@ -5,13 +5,14 @@
 #include "util.h"
 #include "gs_types.h"
 #include "packet.h"
-#include "os_io.h"
+#include "platform.h"
 #include "gs_client_packets.h"
 
-struct gs_session *gs_session_new(struct gs_state *state, struct os_io *socket);
+struct gs_session *
+gs_session_new(struct gs_state *state, struct platform_socket *socket);
 
 struct gs_session *
-gs_session_find(struct gs_state *state, struct os_io *socket);
+gs_session_find(struct gs_state *state, struct platform_socket *socket);
 
 // Mark the connection as encrypted.
 // This function AFFECTS gs_session_decrypt.

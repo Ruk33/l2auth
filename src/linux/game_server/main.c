@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "../os_io.c"
+#include "../platform.c"
 #include "../../util.c"
 
 #include "../../include/config.h"
@@ -18,15 +18,18 @@ struct lib {
         time_t load_time;
         void (*on_load)(struct gs_state *);
         void (*on_unload)(void);
-        void (*on_new_conn)(struct os_io *);
-        void (*on_new_req)(struct os_io *, void *, size_t);
-        void (*on_disconnect)(struct os_io *);
+        void (*on_new_conn)(struct platform_socket *);
+        void (*on_new_req)(struct platform_socket *, void *, size_t);
+        void (*on_disconnect)(struct platform_socket *);
         void (*on_tick)(double);
 };
 
 static struct lib lib = { 0 };
 
 static struct gs_state *game_server = 0;
+
+static struct platform_socket *g_sockets[MAX_CLIENTS] = { 0 };
+static size_t g_socket_instances[MAX_CLIENTS]         = { 0 };
 
 static void *load_lib_function(char *name)
 {
@@ -48,23 +51,28 @@ static void *load_lib_function(char *name)
         return function;
 }
 
-static void internal_send_response(struct os_io *io, void *buf, size_t n)
+static void send_response(struct platform_socket *socket, void *buf, size_t n)
 {
-        if (!io) {
+        ssize_t sent = 0;
+
+        if (!socket) {
                 printf("internal send response, no io? ignoring.\n");
                 return;
         }
 
-        os_io_write(io, buf, n);
+        if (!platform_socket_send(socket, &sent, buf, n)) {
+                printf("internal send response, unable to send response.\n");
+                return;
+        }
 }
 
-static void internal_disconnect(struct os_io *socket)
+static void disconnect(struct platform_socket *socket)
 {
         if (!socket) {
                 return;
         }
         lib.on_disconnect(socket);
-        os_io_close(socket);
+        platform_socket_close(socket);
 }
 
 static int init_gs_lib(void)
@@ -123,9 +131,14 @@ static int init_gs_lib(void)
         return 1;
 }
 
-static void
-on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
+static void on_request(
+        struct platform_socket *socket,
+        enum platform_socket_request_type type,
+        void *buf,
+        size_t n)
 {
+        size_t free_socket = 0;
+
         assert(game_server);
         assert(game_server->send_response);
         assert(game_server->disconnect);
@@ -141,63 +154,133 @@ on_io_event(struct os_io *socket, os_io_event_t event, void *buf, size_t n)
                 return;
         }
 
-        switch (event) {
-        case OS_IO_SOCKET_CONNECTION:
-                lib.on_new_conn(socket);
+        switch (type) {
+        case PLATFORM_SOCKET_NEW_CONNECTION:
+                util_recycle_id_get(&free_socket, g_socket_instances);
+                g_sockets[free_socket] = platform_socket_new();
+
+                if (!g_sockets[free_socket]) {
+                        util_recycle_id(g_socket_instances, free_socket);
+                        printf("game server unable to get new socket for accepting client.\n");
+                        return;
+                }
+
+                if (!platform_socket_accept(g_sockets[free_socket], socket)) {
+                        util_recycle_id(g_socket_instances, free_socket);
+                        printf("login server unable to accept new connection.\n");
+                        return;
+                }
+
+                lib.on_new_conn(g_sockets[free_socket]);
                 break;
-        case OS_IO_SOCKET_REQUEST:
+        case PLATFORM_SOCKET_NEW_REQUEST:
                 lib.on_new_req(socket, buf, n);
                 break;
-        case OS_IO_SOCKET_DISCONNECTED:
-                lib.on_disconnect(socket);
+        case PLATFORM_SOCKET_FAILED_TO_READ:
+                printf("game server failed to read packet.\n");
                 break;
-        case OS_IO_TIMER_TICK:
-                lib.on_tick(0.1);
+        case PLATFORM_SOCKET_READY_TO_WRITE:
+                printf("game server ready to write.\n");
+                break;
+        case PLATFORM_SOCKET_DISCONNECTED:
+                printf("game server client disconnected.\n");
+                for (size_t i = 0; i < UTIL_ARRAY_LEN(g_sockets); i += 1) {
+                        if (g_sockets[i] == socket) {
+                                util_recycle_id(g_socket_instances, i);
+                                break;
+                        }
+                }
                 break;
         default:
                 break;
         }
+}
 
-        fflush(stdout);
+static void on_tick(struct platform_timer *src)
+{
+        assert(src);
+
+        if (!init_gs_lib()) {
+                printf("unable to load game server library.\n");
+                printf("ignoring tick.\n");
+                return;
+        }
+
+        lib.on_tick(0.1);
+}
+
+void timer_thread(struct platform_thread *thread)
+{
+        struct platform_timer *timer = 0;
+
+        assert(thread);
+
+        timer = platform_timer_new();
+
+        if (!timer) {
+                printf("game server unable to create timer.\n");
+                platform_thread_kill(thread);
+                return;
+        }
+
+        if (!platform_timer_init(timer, 100, 1)) {
+                printf("game server unable to initialize timer.\n");
+                platform_thread_kill(thread);
+                return;
+        }
+
+        if (!platform_timer_start(timer, 1, on_tick)) {
+                printf("game server unable to start timer.\n");
+                platform_thread_kill(thread);
+                return;
+        }
 }
 
 int main(/* int argc, char **argv */)
 {
-        struct os_io *timer  = 0;
-        struct os_io *socket = 0;
+        struct platform_thread *thread = 0;
+
+        size_t free_socket = 0;
+        size_t sockets_len = 0;
 
         game_server = calloc(1, sizeof(*game_server));
 
-        game_server->send_response = internal_send_response;
-        game_server->disconnect    = internal_disconnect;
+        game_server->send_response = send_response;
+        game_server->disconnect    = disconnect;
 
-        timer  = os_io_timer(0.1);
-        socket = os_io_socket_create(7777, MAX_CLIENTS);
+        thread = platform_thread_new();
 
-        if (!timer) {
-                printf("game server timer couldn't be created.\n");
-                goto abort;
+        if (!thread) {
+                printf("game server unable to create thread.\n");
+                return 1;
         }
 
-        if (!socket) {
+        if (!platform_thread_create(thread, timer_thread)) {
+                printf("game server unable to initialize thread.\n");
+                return 1;
+        }
+
+        util_recycle_id_get(&free_socket, g_socket_instances);
+        g_sockets[free_socket] = platform_socket_new();
+
+        if (!g_sockets[free_socket]) {
                 printf("game server socket couldn't be created.\n");
-                goto abort;
+                return 1;
         }
 
-        if (!os_io_listen(on_io_event)) {
-                printf("game server request can't be handled.\n");
-                goto abort;
+        if (!platform_socket_init(g_sockets[free_socket], 7777, MAX_CLIENTS)) {
+                printf("game server socket unable to initialize.\n");
+                return 1;
         }
 
-        printf("shuting down.\n");
+        printf("game server started.\n");
 
-        os_io_close(timer);
-        os_io_close(socket);
+        sockets_len = UTIL_ARRAY_LEN(g_sockets);
 
-        return EXIT_SUCCESS;
+        if (!platform_socket_listen(*g_sockets, sockets_len, on_request)) {
+                printf("game server socket unable to listen for new connections.\n");
+                return 1;
+        }
 
-abort:
-        os_io_close(timer);
-        os_io_close(socket);
-        return EXIT_FAILURE;
+        return 0;
 }

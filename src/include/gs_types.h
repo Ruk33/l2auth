@@ -5,7 +5,7 @@
 
 #include "config.h"
 #include "util.h"
-#include "os_io.h"
+#include "platform.h"
 
 /*
  * These represent the states of a client's session.
@@ -40,7 +40,7 @@ enum gs_ai_state {
 
 struct gs_session {
         u32_t id;
-        struct os_io *socket;
+        struct platform_socket *socket;
 
         enum gs_session_state state;
 
@@ -155,8 +155,11 @@ struct gs_state {
         u64_t game_ticks;
         time_t game_start_time;
 
-        void (*send_response)(struct os_io *socket, void *buf, size_t n);
-        void (*disconnect)(struct os_io *socket);
+        void (*send_response)(
+                struct platform_socket *socket,
+                void *buf,
+                size_t n);
+        void (*disconnect)(struct platform_socket *socket);
 };
 
 #endif
