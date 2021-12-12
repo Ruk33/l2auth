@@ -41,9 +41,15 @@ In Linux, the host file can be found in /etc/hosts.
 
 == Running migrations
 Open a terminal and run:
-bash migrations/sqlite/run.sh <path/to/db>
+bash migrations/sqlite/run.sh build/db
 
 This will create a database in build/db (if required) and run the migration.
+
+== Running seeds
+Open a terminal and run:
+bash seeds/sqlite/run.sh build/db
+
+This will create some initial entries in the database (ie, server like Bartz)
 
 == Start login server
 Run build/login_server. The login server will listen for connections to
