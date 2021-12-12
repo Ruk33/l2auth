@@ -250,13 +250,21 @@ void gs_character_die(struct gs_state *gs, struct gs_character *src)
         gs_character_broadcast_packet(gs, src, response);
 }
 
+// (franco.montenegro) We should rename this function. The attack
+// is launched but the actual hit/damage gets done in the tick
+// function. Otherwise, the damage gets applied even after
+// the hit reached the target.
 void gs_character_attack(
         struct gs_state *gs,
         struct gs_character *attacker,
         struct gs_character *target)
 {
+        // (franco.montenegro) auto_attack really means,
+        // "go into aggro mode"
         struct gs_packet_auto_attack auto_attack = { 0 };
 
+        // (franco.montenegro) this is the packet that
+        // actually launches the attack.
         struct gs_packet_attack attack  = { 0 };
         struct gs_packet_attack_hit hit = { 0 };
 
@@ -267,8 +275,6 @@ void gs_character_attack(
         double a = 0;
         i32_t x  = 0;
         i32_t y  = 0;
-
-        int was_already_dead = 0;
 
         assert(gs);
         assert(attacker);
@@ -286,32 +292,11 @@ void gs_character_attack(
         attack.hit_count   = 1;
         attack.hits[0]     = hit;
 
-        // todo: implement properly.
-        was_already_dead = target->stats.hp == 0;
-        target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
-
         gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
         gs_packet_attack_pack(attack_packet, &attack);
 
         gs_character_broadcast_packet(gs, attacker, auto_attack_packet);
         gs_character_broadcast_packet(gs, attacker, attack_packet);
-
-        // Allow to hit dead bodies. But since they
-        // were already dead, we don't need to re-send
-        // the life or dead packet.
-        if (was_already_dead) {
-                return;
-        }
-
-        // When the life of the target gets modified
-        // make sure the attacker and the target
-        // are notified & updated.
-        gs_character_send_status(gs, target, target);
-        gs_character_send_status(gs, target, attacker);
-
-        if (target->stats.hp == 0) {
-                gs_character_die(gs, target);
-        }
 }
 
 void gs_character_stop_auto_attack(

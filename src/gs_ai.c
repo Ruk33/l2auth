@@ -166,7 +166,11 @@ static void gs_ai_attack(
                 return;
         }
 
+        // If the attacker is too far away
+        // from the target, make it walk closer.
         if (gs_character_distance(attacker, target) > 80) {
+                // (franco.montenegro) We may want to introduce some
+                // vector math to make this easier, right?
                 walk_angle = gs_character_angle_to_point(
                         attacker, &target->position);
                 walk_to.x = target->position.x - 40 * cos(walk_angle);
@@ -181,12 +185,13 @@ static void gs_ai_attack(
                 gs_ai_on_npc_attacked(gs, target, attacker);
         }
 
-        attacker->ai.attack_cd = 20;
+        // (franco.montenegro) Properly calculate this value 
+        // based on attack speed.
+        attacker->ai.attack_cd = 10;
+        // (franco.montenegro) Do we really need this new state or
+        // can we work with just AI_ATTACK?
+        attacker->ai.state = AI_LAUNCHED_ATTACK;
         gs_character_attack(gs, attacker, target);
-
-        if (target->stats.hp == 0) {
-                gs_ai_on_dead(gs, target, attacker);
-        }
 }
 
 static void gs_ai_interact(
@@ -696,6 +701,30 @@ void gs_ai_tick(
         case AI_ATTACKING:
                 gs_ai_update_character_position(gs, character, delta);
                 gs_ai_attack(gs, character, target);
+                break;
+        case AI_LAUNCHED_ATTACK:
+                // Find a better way to implement these behaviors
+                // Maybe making these many checks will become unmaintainable.
+                if (character->stats.hp > 0 && character->ai.attack_cd <= 0) {
+                        if (target) {
+                                // (franco.montenegro) Implement properly.
+                                target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
+                                character->ai.state = AI_ATTACKING;
+
+                                // Make sure both, attacker and target
+                                // get their status updated.
+                                // (franco.montenegro) I think this should be broadcasted
+                                gs_character_send_status(gs, target, target);
+                                gs_character_send_status(gs, target, character);
+
+                                if (target->stats.hp == 0) {
+                                        gs_character_die(gs, target);
+                                        gs_ai_go_idle(gs, character);
+                                }
+                        } else {
+                                gs_ai_go_idle(gs, character);
+                        }
+                }
                 break;
         case AI_MOVING_TO_ATTACK:
                 gs_ai_update_character_position(gs, character, delta);

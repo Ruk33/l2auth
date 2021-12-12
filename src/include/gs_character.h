@@ -65,6 +65,12 @@ void gs_character_attack(
         struct gs_character *attacker,
         struct gs_character *target);
 
+// (franco.montenegro) Rename. The function's name
+// doesn't represent what the function does. The only
+// thing that it does is to broadcast the character's death
+// and display the "resurrect window"
+void gs_character_die(struct gs_state *state, struct gs_character *character);
+
 void gs_character_stop_auto_attack(
         struct gs_state *gs,
         struct gs_character *attacker,

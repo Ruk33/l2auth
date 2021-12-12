@@ -61,6 +61,7 @@ static void handle_auth_login(
         // Small little check for invalid or questionable request...
         // Todo: improve.
         if (packet_size(request) < 128) {
+                log_normal("seems like a questionable packet... disconnect just in case...");
                 ls_session_disconnect(ls, session);
                 return;
         }
@@ -102,6 +103,7 @@ static void handle_auth_login(
                 memcpy(account.username, username, sizeof(account.username));
                 memcpy(account.encrypted_password, encrypted_password, 64);
                 if (!storage_create_account(&account)) {
+                        log_normal("unable to create account.");
                         ls_session_disconnect(ls, session);
                         return;
                 }
