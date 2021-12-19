@@ -109,6 +109,21 @@ static void gs_ai_on_npc_interact(
                 gs, player, "<html><body>Hi, this is a test!</body></html>");
 }
 
+static void gs_ai_go_idle(struct gs_state *gs, struct gs_character *src)
+{
+        assert(gs);
+        assert(src);
+
+        src->ai.move_data = (struct gs_move_data){ 0 };
+
+        if (src->ai.target_id) {
+            src->ai.state = AI_TARGET_SELECTED;
+            return;
+        }
+
+        src->ai.state = AI_IDLE;
+}
+
 static void gs_ai_on_dead(
         struct gs_state *gs,
         struct gs_character *dead,
@@ -122,8 +137,8 @@ static void gs_ai_on_dead(
         dead->ai.state = AI_DEAD;
 
         killer->ai.move_data = (struct gs_move_data){ 0 };
-        killer->ai.state     = AI_IDLE;
         killer->ai.target_id = 0;
+        gs_ai_go_idle(gs, killer);
 
         gs_character_stop_auto_attack(gs, killer, dead);
         gs_character_stop_auto_attack(gs, dead, killer);
@@ -142,15 +157,6 @@ static void gs_ai_on_revive(struct gs_state *gs, struct gs_character *src)
         src->stats.hp = src->stats.max_hp;
 
         gs_character_send_status(gs, src, src);
-}
-
-static void gs_ai_go_idle(struct gs_state *gs, struct gs_character *src)
-{
-        assert(gs);
-        assert(src);
-
-        src->ai.move_data = (struct gs_move_data){ 0 };
-        src->ai.state     = AI_IDLE;
 }
 
 static void
@@ -383,12 +389,25 @@ static void gs_ai_handle_action_request(
 
         gs_packet_action_request_unpack(&action, packet);
 
+        if (character->id == action.target_id) {
+                return;
+        }
+
         target = gs_character_find_by_id(gs, action.target_id);
 
+        // (franco.montenegro) Maybe we should consider using a stack
+        // for the states. This way, instead of backing to "idle" we just
+        // pop the last state. If the state is empty, then we hardcode
+        // "idle" as the state.
         if (!target) {
                 character->ai.target_id = 0;
                 gs_ai_go_idle(gs, character);
                 return;
+        }
+
+        if (target->id == character->ai.target_id) {
+            gs_ai_interact(gs, character, target);
+            return;
         }
 
         gs_ai_select_target(gs, character, target);
@@ -441,36 +460,6 @@ static void gs_ai_handle_say(
         gs_character_say(gs, character, message, sizeof(message));
 }
 
-static void gs_ai_handle_interaction_request(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *packet)
-{
-        struct gs_packet_action_request action = { 0 };
-
-        struct gs_character *target = 0;
-
-        assert(gs);
-        assert(character);
-        assert(packet);
-
-        gs_packet_action_request_unpack(&action, packet);
-
-        if (character->id == action.target_id) {
-                return;
-        }
-
-        target = gs_character_find_by_id(gs, action.target_id);
-
-        if (!target) {
-                character->ai.target_id = 0;
-                gs_ai_go_idle(gs, character);
-                return;
-        }
-
-        gs_ai_interact(gs, character, target);
-}
-
 static void
 gs_ai_handle_restart_request(struct gs_state *gs, struct gs_character *character)
 {
@@ -517,143 +506,6 @@ static void gs_ai_handle_bypass_request(
         log_normal("command is: %s", command);
 }
 
-static void gs_ai_idle_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        case 0x01: // Moving
-                gs_ai_handle_move_request(gs, character, request);
-                break;
-        case 0x04: // Action.
-                gs_ai_handle_action_request(gs, character, request);
-                break;
-        case 0x09: // Logout.
-                log_normal("logout, todo");
-                break;
-        case 0x38: // Say.
-                gs_ai_handle_say(gs, character, request);
-                break;
-        case 0x46: // Restart.
-                gs_ai_handle_restart_request(gs, character);
-                break;
-        case 0x48: // Validate position.
-                gs_ai_handle_val_pos_request(gs, character, request);
-                break;
-        case 0xcd: // Show map.
-                log_normal("show map, todo");
-                GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
-                        gs,
-                        character,
-                        "<html><body>And so... a chat window popped out. <a action=\"bypass -h npc_42_support player\">Magic support</a></body></html>");
-                gs_character_spawn_random_orc(gs, &character->position);
-                break;
-        case 0x21: // Bypass.
-                gs_ai_handle_bypass_request(gs, character, request);
-                GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
-                        gs,
-                        character,
-                        "<html><body>It works! even though it breaks if you send more than 3kb of data!</body></html>");
-                break;
-        case 0x0a: // Attack request
-                gs_ai_handle_attack_request(gs, character, request);
-                break;
-        default:
-                log_normal("unable to handle packet %x.", packet_type(request));
-                break;
-        }
-}
-
-static void gs_ai_moving_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        default:
-                gs_ai_idle_state(gs, character, request);
-                break;
-        }
-}
-
-static void gs_ai_target_selected_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        case 0x04:
-                gs_ai_handle_interaction_request(gs, character, request);
-                break;
-        default:
-                gs_ai_idle_state(gs, character, request);
-                break;
-        }
-}
-
-static void gs_ai_moving_to_attack_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        default:
-                gs_ai_idle_state(gs, character, request);
-                break;
-        }
-}
-
-static void gs_ai_attacking_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        default:
-                gs_ai_idle_state(gs, character, request);
-                break;
-        }
-}
-
-static void gs_ai_dead_state(
-        struct gs_state *gs,
-        struct gs_character *character,
-        packet_t *request)
-{
-        assert(gs);
-        assert(character);
-        assert(request);
-
-        switch (packet_type(request)) {
-        case 0x6d: // Revive
-                gs_ai_handle_revive_request(gs, character, request);
-                break;
-        default:
-                break;
-        }
-}
-
 static void gs_ai_update_character_position(
         struct gs_state *gs,
         struct gs_character *character,
@@ -682,9 +534,8 @@ static void gs_ai_update_character_position(
         if (elapsed >= move_data->ticks_to_move) {
                 move_data->move_timestamp = gs->game_ticks;
 
-                character->position     = move_data->destination;
-                character->ai.move_data = (struct gs_move_data){ 0 };
-                character->ai.state     = AI_IDLE;
+                character->position = move_data->destination;
+                gs_ai_go_idle(gs, character);
 
                 return;
         }
@@ -783,7 +634,7 @@ void gs_ai_tick(
 
                                 if (target->stats.hp == 0) {
                                         gs_character_die(gs, target);
-                                        gs_ai_go_idle(gs, character);
+                                        gs_ai_on_dead(gs, target, character);
                                 }
                         } else {
                                 gs_ai_go_idle(gs, character);
@@ -821,6 +672,7 @@ void gs_ai_handle_request(
 
         allowed_by_state = g_actions_by_state[character->ai.state];
 
+        // Find if the request can be handled by the current AI's state.
         for (size_t i = 0; i < UTIL_ARRAY_LEN(g_actions_by_state[0]); i += 1) {
             if (allowed_by_state[i] == packet_type(request)) {
                 can_be_handled = 1;
@@ -830,6 +682,7 @@ void gs_ai_handle_request(
 
         if (!can_be_handled) {
             log_normal("unable to handle request by current state.");
+            log_normal("current state: %d", character->ai.state);
             return;
         }
 
@@ -854,8 +707,19 @@ void gs_ai_handle_request(
             gs_ai_handle_val_pos_request(gs, character, request);
             break;
         case request_type_show_map:
+            log_normal("show map, todo");
+            GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
+                    gs,
+                    character,
+                    "<html><body>And so... a chat window popped out. <a action=\"bypass -h npc_42_support player\">Magic support</a></body></html>");
+            gs_character_spawn_random_orc(gs, &character->position);
             break;
         case request_type_bypass:
+            gs_ai_handle_bypass_request(gs, character, request);
+            GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(
+                    gs,
+                    character,
+                    "<html><body>It works! even though it breaks if you send more than 3kb of data!</body></html>");
             break;
         case request_type_attack:
             gs_ai_handle_attack_request(gs, character, request);
