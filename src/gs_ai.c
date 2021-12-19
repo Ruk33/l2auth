@@ -11,6 +11,70 @@
 #define GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs, character, src) \
         gs_character_show_npc_html_message(gs, character, src, sizeof(src))
 
+// Packet type from client.
+enum request_type {
+    request_type_none              = 0,
+    request_type_moving            = 0x01,
+    request_type_action            = 0x04,
+    request_type_logout            = 0x09,
+    request_type_say               = 0x38,
+    request_type_restart           = 0x46,
+    request_type_validate_position = 0x48,
+    request_type_show_map          = 0xcd,
+    request_type_bypass            = 0x21,
+    request_type_attack            = 0x0a,
+    request_type_revive            = 0x6d,
+};
+
+// This table/array represents all the actions (requests made by clients)
+// that can be handled depending of the ai's state.
+// It's meant to avoid situations that can't happen. For instance,
+// a dead player can't handle a character walk/movement request.
+static enum request_type g_actions_by_state[][10] = {
+    [AI_IDLE]               = {
+        request_type_moving, request_type_action, request_type_logout, 
+        request_type_say, request_type_restart, request_type_validate_position,
+        request_type_show_map,
+    },
+    [AI_MOVING]             = {
+        request_type_moving, request_type_action, request_type_logout,
+        request_type_say, request_type_restart, request_type_validate_position, 
+        request_type_show_map,
+    },
+    [AI_TARGET_SELECTED]    = {
+        request_type_moving, request_type_action, request_type_logout,
+        request_type_say, request_type_restart, request_type_validate_position, 
+        request_type_show_map, request_type_bypass, request_type_attack,
+    },
+    [AI_MOVING_TO_ATTACK]   = {
+        request_type_moving, request_type_action, request_type_logout,
+        request_type_say, request_type_restart, request_type_validate_position, 
+        request_type_show_map, request_type_attack,
+    },
+    [AI_HAS_AGRO]          = {
+        request_type_moving, request_type_action, request_type_say, 
+        request_type_validate_position, request_type_show_map, request_type_attack,
+    },
+    [AI_LAUNCHED_ATTACK]    = {
+        request_type_moving, request_type_action, request_type_say, 
+        request_type_validate_position, request_type_show_map, request_type_attack,
+    },
+    [AI_MOVING_TO_INTERACT] = {
+        request_type_moving, request_type_action, request_type_logout, 
+        request_type_say, request_type_restart, request_type_validate_position,
+        request_type_show_map,
+    },
+    [AI_INTERACTING]        = {
+        request_type_moving, request_type_action, request_type_logout, 
+        request_type_say, request_type_restart, request_type_validate_position,
+        request_type_show_map,
+    },
+    [AI_DEAD]               = {
+        request_type_logout, request_type_say, request_type_restart, 
+        request_type_show_map, request_type_revive,
+    },
+};
+
 static i32_t gs_ai_random_number(i32_t a, i32_t b)
 {
         return rand() % (b + 1 - a) + a;
@@ -25,7 +89,7 @@ static void gs_ai_on_npc_attacked(
         assert(npc);
         assert(attacker);
 
-        npc->ai.state     = AI_ATTACKING;
+        npc->ai.state     = AI_HAS_AGRO;
         npc->ai.target_id = attacker->id;
 
         gs_character_run(gs, npc);
@@ -160,7 +224,7 @@ static void gs_ai_attack(
         }
 
         attacker->ai.target_id = target->id;
-        attacker->ai.state     = AI_ATTACKING;
+        attacker->ai.state     = AI_HAS_AGRO;
 
         if (attacker->ai.attack_cd > 0) {
                 return;
@@ -698,7 +762,7 @@ void gs_ai_tick(
         case AI_TARGET_SELECTED:
                 gs_ai_update_character_position(gs, character, delta);
                 break;
-        case AI_ATTACKING:
+        case AI_HAS_AGRO:
                 gs_ai_update_character_position(gs, character, delta);
                 gs_ai_attack(gs, character, target);
                 break;
@@ -709,7 +773,7 @@ void gs_ai_tick(
                         if (target) {
                                 // (franco.montenegro) Implement properly.
                                 target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30 : 0;
-                                character->ai.state = AI_ATTACKING;
+                                character->ai.state = AI_HAS_AGRO;
 
                                 // Make sure both, attacker and target
                                 // get their status updated.
@@ -748,32 +812,58 @@ void gs_ai_handle_request(
         struct gs_character *character,
         packet_t *request)
 {
+        enum request_type *allowed_by_state = 0;
+        int can_be_handled = 0;
+
         assert(gs);
         assert(character);
         assert(request);
 
-        switch (character->ai.state) {
-        case AI_IDLE:
-        case AI_INTERACTING:
-        case AI_MOVING_TO_INTERACT:
-                gs_ai_idle_state(gs, character, request);
+        allowed_by_state = g_actions_by_state[character->ai.state];
+
+        for (size_t i = 0; i < UTIL_ARRAY_LEN(g_actions_by_state[0]); i += 1) {
+            if (allowed_by_state[i] == packet_type(request)) {
+                can_be_handled = 1;
                 break;
-        case AI_MOVING:
-                gs_ai_moving_state(gs, character, request);
-                break;
-        case AI_TARGET_SELECTED:
-                gs_ai_target_selected_state(gs, character, request);
-                break;
-        case AI_MOVING_TO_ATTACK:
-                gs_ai_moving_to_attack_state(gs, character, request);
-                break;
-        case AI_ATTACKING:
-                gs_ai_attacking_state(gs, character, request);
-                break;
-        case AI_DEAD:
-                gs_ai_dead_state(gs, character, request);
-                break;
+            }
+        }
+
+        if (!can_be_handled) {
+            log_normal("unable to handle request by current state.");
+            return;
+        }
+
+        switch (packet_type(request)) {
+        case request_type_none:
+            break;
+        case request_type_moving:
+            gs_ai_handle_move_request(gs, character, request);
+            break;
+        case request_type_action:
+            gs_ai_handle_action_request(gs, character, request);
+            break;
+        case request_type_logout:
+            break;
+        case request_type_say:
+            gs_ai_handle_say(gs, character, request);
+            break;
+        case request_type_restart:
+            gs_ai_handle_restart_request(gs, character);
+            break;
+        case request_type_validate_position:
+            gs_ai_handle_val_pos_request(gs, character, request);
+            break;
+        case request_type_show_map:
+            break;
+        case request_type_bypass:
+            break;
+        case request_type_attack:
+            gs_ai_handle_attack_request(gs, character, request);
+            break;
+        case request_type_revive:
+            gs_ai_handle_revive_request(gs, character, request);
+            break;
         default:
-                break;
+            break;
         }
 }

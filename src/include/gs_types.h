@@ -30,14 +30,28 @@ enum gs_character_state {
 };
 
 enum gs_ai_state {
+        // When the character is standing without doing anything.
         AI_IDLE,
+        // When the character is moving.
         AI_MOVING,
+        // When the character has a target selected (clicked on it)
         AI_TARGET_SELECTED,
+        // When the character has a target and is getting closer
+        // to launch an attack.
         AI_MOVING_TO_ATTACK,
-        AI_ATTACKING,
+        // When the character is in an aggressive state. Either
+        // it was attacked, or it's waiting for it's cool down
+        // to launch a new attack.
+        AI_HAS_AGRO,
+        // When the character just launched an attack.
         AI_LAUNCHED_ATTACK,
+        // When the character is moving to interact with another character.
         AI_MOVING_TO_INTERACT,
+        // When the character is interacting with another character.
+        // For instance, interacting with an NPC could mean, open the 
+        // dialog window.
         AI_INTERACTING,
+        // Yep, exactly what you are thinking.
         AI_DEAD,
 };
 

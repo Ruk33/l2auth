@@ -222,6 +222,8 @@ int platform_socket_listen(
         static struct epoll_event events[64] = { 0 };
         static byte_t buf[UTIL_MB(5)]        = { 0 };
 
+        struct platform_socket *socket = 0;
+
         struct epoll_event event = { 0 };
 
         int epoll_fd = 0;
@@ -247,9 +249,10 @@ int platform_socket_listen(
 
                         // EPOLLIN: Ready to read.
                         // EPOLLOUT: Ready to write.
-                        // EPOLLET: Only get events that ocurr after listening.
-                        event.events  = EPOLLIN | EPOLLOUT | EPOLLET;
+                        // DO NOT include EPOLLET, the thing just screws things up.
+                        event.events  = EPOLLIN; // | EPOLLOUT;
                         event.data.fd = src[i].fd;
+                        event.data.ptr = &src[i];
 
                         // Duplicates won't be included.
                         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, src[i].fd, &event);
@@ -263,64 +266,41 @@ int platform_socket_listen(
                         return 0;
                 }
 
-                for (size_t i = 0; i < src_len; i += 1) {
-                        if (!src[i].initialized) {
+                for (int i = 0; i < ev_count; i += 1) {
+                        socket = events[i].data.ptr;
+
+                        if (!socket->initialized) {
                                 continue;
                         }
 
-                        for (int n = 0; n < ev_count; n += 1) {
-                                if (events[n].data.fd != src[i].fd) {
-                                        continue;
-                                }
-
-                                if (src[i].is_server) {
-                                        cb(&src[i],
-                                           PLATFORM_SOCKET_NEW_CONNECTION,
-                                           0,
-                                           0);
-                                        continue;
-                                }
-
-                                if ((events[n].events & EPOLLOUT) == EPOLLOUT) {
-                                        cb(&src[i],
-                                           PLATFORM_SOCKET_READY_TO_WRITE,
-                                           0,
-                                           0);
-                                }
-
-                                if ((events[n].events & EPOLLIN) != EPOLLIN) {
-                                        continue;
-                                }
-
-                                read = recv(src[i].fd, buf, sizeof(buf), 0);
-
-                                if (read < 0) {
-                                        cb(&src[i],
-                                           PLATFORM_SOCKET_FAILED_TO_READ,
-                                           0,
-                                           0);
-                                        continue;
-                                }
-
-                                if (read == 0) {
-                                        cb(&src[i],
-                                           PLATFORM_SOCKET_DISCONNECTED,
-                                           0,
-                                           0);
-                                        epoll_ctl(
-                                                epoll_fd,
-                                                EPOLL_CTL_ADD,
-                                                src[i].fd,
-                                                &event);
-                                        src[i] = (struct platform_socket){ 0 };
-                                        continue;
-                                }
-
-                                cb(&src[i],
-                                   PLATFORM_SOCKET_NEW_REQUEST,
-                                   buf,
-                                   (size_t) read);
+                        if (socket->is_server) {
+                                cb(socket, PLATFORM_SOCKET_NEW_CONNECTION, 0, 0);
+                                continue;
                         }
+
+                        if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
+                                cb(socket, PLATFORM_SOCKET_READY_TO_WRITE, 0, 0);
+                        }
+
+                        if ((events[i].events & EPOLLIN) != EPOLLIN) {
+                                continue;
+                        }
+
+                        read = recv(socket->fd, buf, sizeof(buf), 0);
+
+                        if (read < 0) {
+                                cb(socket, PLATFORM_SOCKET_FAILED_TO_READ, 0, 0);
+                                continue;
+                        }
+
+                        if (read == 0) {
+                                cb(socket, PLATFORM_SOCKET_DISCONNECTED, 0, 0);
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, socket->fd, &event);
+                                *socket = (struct platform_socket){ 0 };
+                                continue;
+                        }
+
+                        cb(socket, PLATFORM_SOCKET_NEW_REQUEST, buf, (size_t) read);
                 }
         }
 
@@ -414,6 +394,8 @@ int platform_timer_start(
 
         struct itimerspec utmr = { 0 };
 
+        struct platform_timer *timer = 0;
+
         if (!src || !src_len || !cb) {
                 return 0;
         }
@@ -430,44 +412,40 @@ int platform_timer_start(
                                 continue;
                         }
 
-                        event.events  = EPOLLIN | EPOLLET;
+                        event.events  = EPOLLIN;
                         event.data.fd = src[i].fd;
+                        event.data.ptr = &src[i];
 
                         // Duplicates won't be included.
                         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, src[i].fd, &event);
                 }
 
                 ev_count = epoll_wait(
-                        epoll_fd, events, UTIL_ARRAY_LEN(events), -1);
+                        epoll_fd, 
+                        events, 
+                        UTIL_ARRAY_LEN(events), 
+                        -1
+                );
 
                 if (ev_count < 0) {
                         close(epoll_fd);
                         return 0;
                 }
 
-                for (size_t i = 0; i < src_len; i += 1) {
-                        if (src[i].stopped) {
-                                event.data.fd = src[i].fd;
-                                epoll_ctl(
-                                        epoll_fd,
-                                        EPOLL_CTL_DEL,
-                                        src[i].fd,
-                                        &event);
+                for (int i = 0; i < ev_count; i += 1) {
+                        timer = events[i].data.ptr;
+
+                        if (timer->stopped) {
+                                event.data.fd = timer->fd;
+                                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, src[i].fd, &event);
                                 continue;
                         }
 
-                        for (int n = 0; n < ev_count; n += 1) {
-                                if (events[n].data.fd != src[i].fd) {
-                                        continue;
-                                }
+                        cb(timer);
 
-                                cb(&src[i]);
-
-                                if (src[i].repeats) {
-                                        // Calling timerfd_gettime repeats the
-                                        // timer...
-                                        timerfd_gettime(src[i].fd, &utmr);
-                                }
+                        if (timer->repeats) {
+                                // Calling timerfd_gettime repeats the timer...
+                                timerfd_gettime(timer->fd, &utmr);
                         }
                 }
         }
