@@ -100,6 +100,7 @@ struct gs_ai {
         struct gs_move_data move_data;
         double attack_cd;
         double idle_cd;
+        double leave_agro_cd;
 };
 
 struct gs_stats {

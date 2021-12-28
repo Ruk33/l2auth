@@ -137,11 +137,12 @@ static void gs_ai_on_dead(
         dead->ai.state = AI_DEAD;
 
         killer->ai.move_data = (struct gs_move_data){ 0 };
-        killer->ai.target_id = 0;
+        killer->ai.leave_agro_cd = 100;
+        // killer->ai.target_id = 0;
         gs_ai_go_idle(gs, killer);
 
-        gs_character_stop_auto_attack(gs, killer, dead);
-        gs_character_stop_auto_attack(gs, dead, killer);
+        // gs_character_stop_auto_attack(gs, killer, dead);
+        // gs_character_stop_auto_attack(gs, dead, killer);
 
         if (gs_character_is_npc(killer)) {
                 gs_character_walk(gs, killer);
@@ -601,6 +602,20 @@ void gs_ai_tick(
 
         if (character->ai.target_id) {
                 target = gs_character_find_by_id(gs, character->ai.target_id);
+        }
+
+        if (character->ai.leave_agro_cd > 0 && target) {
+                log_normal("agro: %f", character->ai.leave_agro_cd);
+                character->ai.leave_agro_cd -= delta * 100;
+                if (character->ai.leave_agro_cd <= 0) {
+                    log_normal("sending reset aggro");
+                    character->ai.leave_agro_cd = 0;
+                    // (franco.montenegro) How should we handle
+                    // the case where the target is null?
+                    // For instance, it got disconnected.
+                    gs_character_stop_auto_attack(gs, character, target);
+                    gs_character_stop_auto_attack(gs, target, character);
+                }
         }
 
         switch (character->ai.state) {
