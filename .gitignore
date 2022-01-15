@@ -83,3 +83,5 @@ login_server
 game_server
 schema.txt
 release.bat
+
+src/include/cglm
