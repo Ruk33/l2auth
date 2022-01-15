@@ -6,18 +6,16 @@
 
 # These settings are mirrored in .editorconfig.  Keep them in sync.
 UseTab: Never
-IndentWidth: 8
-ContinuationIndentWidth: 8
+IndentWidth: 4
+ContinuationIndentWidth: 4
 ColumnLimit: 80
 
 # C Language specifics
 Language: Cpp
 
-# Break parameters on the open bracket
-# someLongFunction(
-#        argument1,
-#        argument2);
-AlignAfterOpenBracket: AlwaysBreak
+# someLongFunction(argument1,
+#                  argument2);
+AlignAfterOpenBracket: Align
 
 # Align consecutive assignments
 # int aaaa = 12;
@@ -29,6 +27,15 @@ AlignConsecutiveAssignments: true
 # double b = 3.14;
 AlignConsecutiveDeclarations: false
 
+#define SHORT_NAME       42
+#define LONGER_NAME      0x007f
+#define EVEN_LONGER_NAME (2)
+#
+#define foo(x) (x * x)
+#/* some comment */
+#define bar(y, z) (y + z)
+AlignConsecutiveMacros: Consecutive
+
 # Align escaped newlines as far left as possible
 # #define A   \
 #   int aaaa; \
@@ -37,17 +44,25 @@ AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: Left
 
 # Align operands of binary and ternary expressions
-# int aaa = bbbbbbbbbbb +
-#           cccccc;
-AlignOperands: true
+# int aaa = bbbbbbbbbbb
+#         + cccccc;
+AlignOperands: AlignAfterOperator
 
 # Align trailing comments
 # int a;     // Comment a
 # int b = 2; // Comment b
 AlignTrailingComments: true
 
+# callFunction(a,
+#              b,
+#              c,
+#              d);
+AllowAllArgumentsOnNextLine: false
+
 # By default don't allow putting parameters onto the next line
-# myFunction(foo, bar, baz);
+# myFunction(foo, 
+#            bar, 
+#            baz);
 AllowAllParametersOfDeclarationOnNextLine: false
 
 # Don't allow short braced statements to be on a single line
@@ -55,6 +70,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 #   return;
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
@@ -62,6 +78,12 @@ AllowShortLoopsOnASingleLine: false
 # By default don't add a line break after the return type of top-level functions
 # int foo();
 AlwaysBreakAfterReturnType: None
+
+# true:                                  false:
+# aaaa =                         vs.     aaaa = "bbbb"
+#     "bbbb"                                    "cccc";
+#     "cccc";
+AlwaysBreakBeforeMultilineStrings: true
 
 # Do not pack parameters or arguments onto the same line
 # int myFunction(int aaaaaaaaaaaa,
@@ -85,10 +107,16 @@ BreakBeforeBraces: Linux
 #              bbbbbb -
 #              ccccccccccc;
 BreakBeforeBinaryOperators: None
-BreakBeforeTernaryOperators: false
 
-# Don't break string literals
-BreakStringLiterals: false
+# veryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongDescription
+#     ? firstValue
+#     : SecondValueVeryVeryVeryVeryLong;
+BreakBeforeTernaryOperators: true
+
+# const char* x = "veryVeryVeryVeryVeryVe"
+#                 "ryVeryVeryVeryVeryVery"
+#                 "VeryLongString";
+BreakStringLiterals: true
 
 # Use the same indentation level as for the switch statement.
 # Switch statement body is always indented one level more than case labels.

@@ -22,10 +22,9 @@ storage_get_characters(struct gs_character *dest, char *username, size_t max);
 
 // Get character using index and store it on dest.
 // Used when the user is selecting a character to play with.
-void storage_get_character(
-        struct gs_character *dest,
-        char *username,
-        size_t index);
+void storage_get_character(struct gs_character *dest,
+                           char *username,
+                           size_t index);
 
 // Save character to database.
 // On success, 1 is returned. On error, 0.

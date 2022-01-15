@@ -5,11 +5,11 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#define log_normal(...)              \
-        {                            \
-                printf(__VA_ARGS__); \
-                printf("\n");        \
-        }
+#define log_normal(...)      \
+    {                        \
+        printf(__VA_ARGS__); \
+        printf("\n");        \
+    }
 
 #define UTIL_KB(x) ((x) *1024)
 
@@ -42,7 +42,7 @@
  * UTIL_CPY_SRC_BYTES_TO_ARRAY(dest, src, 2);
  */
 #define UTIL_CPY_SRC_BYTES_TO_ARRAY(dest, src, sn) \
-        (util_cpy_bytes(dest, src, sizeof(dest), (size_t)(sn), (size_t)(sn)))
+    (util_cpy_bytes(dest, src, sizeof(dest), (size_t) (sn), (size_t) (sn)))
 
 /**
  * Copy array string from src to array dest.
@@ -55,7 +55,7 @@
  * NOTE: Make sure both buffers are arrays and not just pointers!
  */
 #define UTIL_CPY_STR_ARRAY(dest, src) \
-        (util_cpy_str(dest, src, sizeof(dest), sizeof(src)))
+    (util_cpy_str(dest, src, sizeof(dest), sizeof(src)))
 
 #define UTIL_MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -80,7 +80,7 @@
  * UTIL_CLAMP(30, 10, 20); // Result is 20.
  */
 #define UTIL_CLAMP(x, min, max) \
-        (((x) > (max)) ? (max) : (((x) < (min)) ? (min) : (x)))
+    (((x) > (max)) ? (max) : (((x) < (min)) ? (min) : (x)))
 
 #define UTIL_SAFE_U8(x) (UTIL_MIN(x, UINT8_MAX))
 
@@ -115,12 +115,11 @@
 #define UTIL_TOGGLE_BIT(x, value) ((x) ^ UTIL_BIT(value))
 
 #define UTIL_READ_BYTES_VAL(dest, src, n) \
-        (util_read_bytes(                 \
-                &(dest),                  \
-                (void **) (src),          \
-                sizeof(dest),             \
-                UTIL_MAX(0, n),           \
-                sizeof(dest)))
+    (util_read_bytes(&(dest),             \
+                     (void **) (src),     \
+                     sizeof(dest),        \
+                     UTIL_MAX(0, n),      \
+                     sizeof(dest)))
 
 /**
  * Iterate through all items in a list.
@@ -131,10 +130,10 @@
  * util_list_add(foo, &bar);
  * UTIL_LIST_EACH(foo, int, value) { *value; // => 42 }
  */
-#define UTIL_LIST_EACH(arr, type, name)                               \
-        for (struct list *list_iterator = (arr)->head;                \
-             list_iterator && (name = (type *) list_iterator->value); \
-             list_iterator = list_iterator->next)
+#define UTIL_LIST_EACH(arr, type, name)                           \
+    for (struct list *list_iterator = (arr)->head;                \
+         list_iterator && (name = (type *) list_iterator->value); \
+         list_iterator = list_iterator->next)
 
 typedef int8_t i8_t;
 typedef int16_t i16_t;
@@ -149,9 +148,9 @@ typedef uint64_t u64_t;
 typedef u8_t byte_t;
 
 struct list {
-        struct list *head;
-        struct list *next;
-        void *value;
+    struct list *head;
+    struct list *next;
+    void *value;
 };
 
 /**
@@ -186,12 +185,11 @@ void util_cpy_str(char *dest, char *src, size_t dn, size_t sn);
  * bytes forward. On error, 0 will be returned and no bytes
  * will be read.
  */
-int util_read_bytes(
-        void *dest,
-        void **src,
-        size_t dest_n,
-        size_t src_n,
-        size_t n);
+int util_read_bytes(void *dest,
+                    void **src,
+                    size_t dest_n,
+                    size_t src_n,
+                    size_t n);
 
 /**
  * Add value to list contained in src buf.

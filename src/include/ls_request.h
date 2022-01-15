@@ -7,11 +7,10 @@
 
 void ls_request_new_conn(struct ls_state *ls, struct platform_socket *socket);
 
-void ls_request(
-        struct ls_state *ls,
-        struct platform_socket *socket,
-        byte_t *buf,
-        size_t n);
+void ls_request(struct ls_state *ls,
+                struct platform_socket *socket,
+                byte_t *buf,
+                size_t n);
 
 void ls_request_disconnect(struct ls_state *ls, struct platform_socket *socket);
 
