@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <math.h>
+#include <cglm/cglm.h>
 #include "include/config.h"
 #include "include/packet.h"
 #include "include/gs_types.h"
@@ -132,11 +133,8 @@ static void gs_ai_on_dead(struct gs_state *gs,
 
     killer->ai.move_data     = (struct gs_move_data){ 0 };
     killer->ai.leave_agro_cd = 100;
-    // killer->ai.target_id = 0;
-    gs_ai_go_idle(gs, killer);
 
-    // gs_character_stop_auto_attack(gs, killer, dead);
-    // gs_character_stop_auto_attack(gs, dead, killer);
+    gs_ai_go_idle(gs, killer);
 
     if (gs_character_is_npc(killer)) {
         gs_character_walk(gs, killer);
@@ -158,52 +156,28 @@ static void gs_ai_move(struct gs_state *gs,
                        struct gs_character *src,
                        struct gs_point *where)
 {
-    double speed = 0;
-
-    double dx = 0;
-    double dy = 0;
-    double d  = 0;
-
-    double _sin = 0;
-    double _cos = 0;
+    vec3 from = { 0 };
+    vec3 to = {  0};
 
     assert(gs);
     assert(src);
     assert(where);
 
+    from[0] = src->position.x;
+    from[1] = src->position.y;
+    from[2] = src->position.z;
+
+    to[0] = where->x;
+    to[1] = where->y;
+    to[2] = where->z;
+
     src->ai.moving_to = *where;
     src->ai.state     = AI_MOVING;
 
-    /*
-     * Todo: refactor.
-     * Thanks to l2j project to provide this first iteration of the code.
-     */
-    speed = src->running ? src->stats.run_speed : src->stats.walk_speed;
-
-    dx = where->x - src->position.x;
-    dy = where->y - src->position.y;
-    d  = sqrt(dx * dx + dy * dy);
-
-    _sin = dy / d;
-    _cos = dx / d;
-    d -= 10 /* 10 as offset */ - 5;
-
-    src->ai.move_data.heading         = 0;
+    src->ai.move_data.heading         = glm_vec3_angle(from, to);
     src->ai.move_data.destination     = *where;
-    src->ai.move_data.ticks_to_move   = (u32_t) (TICKS_PER_SECOND * d / speed);
-    src->ai.move_data.x_speed_ticks   = _cos * speed / TICKS_PER_SECOND;
-    src->ai.move_data.y_speed_ticks   = _sin * speed / TICKS_PER_SECOND;
     src->ai.move_data.move_start_time = gs->game_ticks;
-
-    src->ai.move_data.origin = src->position;
-
-    if (src->ai.move_data.ticks_to_move < 1) {
-        src->ai.move_data.ticks_to_move = 1;
-    }
-
-    src->heading =
-        (i32_t) (atan2(-_sin, -_cos) * 10430.378350470452724949566316381);
-    src->heading += 32768;
+    src->ai.move_data.origin          = src->position;
 
     gs_character_move(gs, src, where);
 }
@@ -497,7 +471,9 @@ static void gs_ai_update_character_position(struct gs_state *gs,
 {
     struct gs_move_data *move_data = 0;
 
-    u64_t elapsed = 0;
+    vec3 position = { 0 };
+    vec3 target = { 0 };
+    vec3 velocity = { 0 };
 
     assert(gs);
     assert(character);
@@ -509,27 +485,27 @@ static void gs_ai_update_character_position(struct gs_state *gs,
         return;
     }
 
-    if (move_data->move_timestamp == gs->game_ticks) {
-        return;
-    }
+    position[0] = character->position.x;
+    position[1] = character->position.y;
+    position[2] = character->position.z;
 
-    elapsed = gs->game_ticks - move_data->move_start_time;
+    target[0] = move_data->destination.x;
+    target[1] = move_data->destination.y;
+    target[2] = move_data->destination.z;
 
-    if (elapsed >= move_data->ticks_to_move) {
-        move_data->move_timestamp = gs->game_ticks;
-
+    if (glm_vec3_distance(target, position) > 50) {
+        glm_vec3_sub(target, position, velocity);
+        glm_vec3_normalize(velocity);
+        glm_vec3_scale(velocity, character->stats.run_speed, velocity);
+        character->position.x += velocity[0];// * delta;
+        character->position.y += velocity[1];// * delta;
+        character->position.z += velocity[2];// * delta;
+    } else {
         character->position = move_data->destination;
+        character->ai.move_data = (struct gs_move_data) { 0 };
         gs_ai_go_idle(gs, character);
-
-        return;
+        log_normal("end movement.");
     }
-
-    character->position.x =
-        move_data->origin.x + (i32_t) (elapsed * move_data->x_speed_ticks);
-    character->position.y =
-        move_data->origin.y + (i32_t) (elapsed * move_data->y_speed_ticks);
-
-    move_data->move_timestamp = gs->game_ticks;
 }
 
 static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,

@@ -1,13 +1,14 @@
 #!/bin/bash
 
-CFLAGS="-Wextra -Wall -Wfloat-equal -Wundef -Wshadow -Wcast-align -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter"
+# -Wfloat-equal disabled due to cglm warnings.
+CFLAGS="-Wextra -Wall -Wundef -Wshadow -Wcast-align -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter"
 
 mkdir -p build
 
 echo ""
 echo "- building game server library"
 echo ""
-gcc $CFLAGS src/gs_lib.c -lm -lcrypto -lsqlite3 -shared -fPIC -o build/game_server_lib.so
+gcc $CFLAGS src/gs_lib.c src/linux/deps/libcglm.a -Isrc/include -lm -lcrypto -lsqlite3 -shared -fPIC -o build/game_server_lib.so
 
 echo ""
 echo "- building login server"

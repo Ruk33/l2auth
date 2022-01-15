@@ -249,7 +249,7 @@ int main(/* int argc, char **argv */)
 
     game_server->send_response = send_response;
     game_server->disconnect    = disconnect;
-    game_server->random_i32 = random_i32;
+    game_server->random_i32    = random_i32;
 
     thread = platform_thread_new();
 
