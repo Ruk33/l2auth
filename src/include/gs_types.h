@@ -179,8 +179,10 @@ struct gs_state {
     time_t game_start_time;
     int is_server_initialized;
 
+    // Platform code.
     void (*send_response)(struct platform_socket *socket, void *buf, size_t n);
     void (*disconnect)(struct platform_socket *socket);
+    i32_t (*random_i32)(i32_t min, i32_t max);
 };
 
 #endif

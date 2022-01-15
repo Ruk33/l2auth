@@ -206,7 +206,7 @@ static void on_tick(struct platform_timer *src)
     lib.on_tick(0.1);
 }
 
-void timer_thread(struct platform_thread *thread)
+static void timer_thread(struct platform_thread *thread)
 {
     struct platform_timer *timer = 0;
 
@@ -233,6 +233,11 @@ void timer_thread(struct platform_thread *thread)
     }
 }
 
+static i32_t random_i32(i32_t min, i32_t max)
+{
+    return rand() % (max + 1 - min) + min;
+}
+
 int main(/* int argc, char **argv */)
 {
     struct platform_thread *thread = 0;
@@ -244,6 +249,7 @@ int main(/* int argc, char **argv */)
 
     game_server->send_response = send_response;
     game_server->disconnect    = disconnect;
+    game_server->random_i32 = random_i32;
 
     thread = platform_thread_new();
 

@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdlib.h>
 #include <math.h>
 #include "include/config.h"
 #include "include/packet.h"
@@ -75,11 +74,6 @@ static enum request_type g_actions_by_state[][10] = {
         request_type_show_map, request_type_revive,
     },
 };
-
-static i32_t gs_ai_random_number(i32_t a, i32_t b)
-{
-    return rand() % (b + 1 - a) + a;
-}
 
 static void gs_ai_on_npc_attacked(struct gs_state *gs,
                                   struct gs_character *npc,
@@ -556,7 +550,7 @@ static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,
 
     npc->ai.idle_cd = 120;
 
-    if (gs_ai_random_number(1, 100) <= 33) {
+    if (gs->random_i32(1, 100) <= 33) {
         return;
     }
 
