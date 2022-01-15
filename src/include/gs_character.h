@@ -6,13 +6,7 @@
 #include "gs_session.h"
 #include "gs_client_packets.h"
 
-// Check if the character is a non playable character.
-// Players are characters too, the difference is, a player
-// is controller by a person.
 int gs_character_is_npc(struct gs_character *src);
-
-double gs_character_angle_to_point(struct gs_character *src,
-                                   struct gs_point *p);
 
 // Get distance between a character and a point.
 double gs_character_distance_from_point(struct gs_character *src,

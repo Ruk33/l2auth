@@ -68,7 +68,7 @@ static enum request_type g_actions_by_state[][10] = {
     [AI_INTERACTING]        = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
-        request_type_show_map,
+        request_type_show_map, request_type_attack,
     },
     [AI_DEAD]               = {
         request_type_logout, request_type_say, request_type_restart, 
@@ -157,7 +157,7 @@ static void gs_ai_move(struct gs_state *gs,
                        struct gs_point *where)
 {
     vec3 from = { 0 };
-    vec3 to = {  0};
+    vec3 to   = { 0 };
 
     assert(gs);
     assert(src);
@@ -182,13 +182,55 @@ static void gs_ai_move(struct gs_state *gs,
     gs_character_move(gs, src, where);
 }
 
+// Move src character closer to target if required.
+// If the src is too far, a movement behavior will begin and 1 will be returned.
+// If no movement is required, nothing happens and 0 is returned.
+static int 
+move_to_intereact_with(struct gs_state *gs, struct gs_character *src, struct gs_character *target)
+{
+    vec3 from   = { 0 };
+    vec3 to     = { 0 };
+    vec3 interact_vec = { 0 };
+    struct gs_point position_to_interact = { 0 };
+    float distance  = 0;
+
+    assert(gs);
+    assert(src);
+    assert(target);
+
+    from[0] = src->position.x;
+    from[1] = src->position.y;
+    from[2] = src->position.z;
+
+    to[0] = target->position.x;
+    to[1] = target->position.y;
+    to[2] = target->position.z;
+
+    distance = glm_vec3_distance(from, to);
+
+    // Return if there is no need to walk further/closer to the npc.
+    if (distance <= 50) {
+        return 0;
+    }
+
+    glm_vec3_sub(to, from, interact_vec);
+    glm_vec3_normalize(interact_vec);
+    glm_vec3_scale(interact_vec, distance - 50, interact_vec);
+    glm_vec3_add(from, interact_vec, interact_vec);
+
+    position_to_interact.x = interact_vec[0];
+    position_to_interact.y = interact_vec[1];
+    position_to_interact.z = interact_vec[2];
+
+    gs_ai_move(gs, src, &position_to_interact);
+
+    return 1;
+}
+
 static void gs_ai_attack(struct gs_state *gs,
                          struct gs_character *attacker,
                          struct gs_character *target)
 {
-    struct gs_point walk_to = { 0 };
-    double walk_angle       = 0;
-
     assert(gs);
     assert(attacker);
 
@@ -207,14 +249,7 @@ static void gs_ai_attack(struct gs_state *gs,
 
     // If the attacker is too far away
     // from the target, make it walk closer.
-    if (gs_character_distance(attacker, target) > 80) {
-        // (franco.montenegro) We may want to introduce some
-        // vector math to make this easier, right?
-        walk_angle = gs_character_angle_to_point(attacker, &target->position);
-        walk_to.x  = target->position.x - 40 * cos(walk_angle);
-        walk_to.y  = target->position.y - 40 * sin(walk_angle);
-        walk_to.z  = target->position.z;
-        gs_ai_move(gs, attacker, &walk_to);
+    if (move_to_intereact_with(gs, attacker, target)) {
         attacker->ai.state = AI_MOVING_TO_ATTACK;
         return;
     }
@@ -236,9 +271,6 @@ static void gs_ai_interact(struct gs_state *gs,
                            struct gs_character *src,
                            struct gs_character *target)
 {
-    struct gs_point walk_to = { 0 };
-    double walk_angle       = 0;
-
     assert(gs);
     assert(src);
 
@@ -251,12 +283,8 @@ static void gs_ai_interact(struct gs_state *gs,
     src->ai.target_id = target->id;
     src->ai.state     = AI_INTERACTING;
 
-    if (gs_character_distance(src, target) > 80) {
-        walk_angle = gs_character_angle_to_point(src, &target->position);
-        walk_to.x  = target->position.x - 40 * cos(walk_angle);
-        walk_to.y  = target->position.y - 40 * sin(walk_angle);
-        walk_to.z  = target->position.z;
-        gs_ai_move(gs, src, &walk_to);
+    // If it's too far, walk closer to the target.
+    if (move_to_intereact_with(gs, src, target)) {
         src->ai.state = AI_MOVING_TO_INTERACT;
         return;
     }
@@ -320,10 +348,7 @@ static void gs_ai_handle_val_pos_request(struct gs_state *gs,
     client_position.position.x = validate_request.x;
     client_position.position.y = validate_request.y;
     client_position.position.z = validate_request.z;
-
-    // todo: can we calculate z ourselves without relying on the client?
-    character->position.z = validate_request.z;
-    character->heading    = validate_request.heading;
+    character->heading         = validate_request.heading;
 
     // todo: refactor
     // Do approximation. If the client position isn't too far
@@ -472,7 +497,7 @@ static void gs_ai_update_character_position(struct gs_state *gs,
     struct gs_move_data *move_data = 0;
 
     vec3 position = { 0 };
-    vec3 target = { 0 };
+    vec3 target   = { 0 };
     vec3 velocity = { 0 };
 
     assert(gs);
@@ -497,12 +522,12 @@ static void gs_ai_update_character_position(struct gs_state *gs,
         glm_vec3_sub(target, position, velocity);
         glm_vec3_normalize(velocity);
         glm_vec3_scale(velocity, character->stats.run_speed, velocity);
-        character->position.x += velocity[0];// * delta;
-        character->position.y += velocity[1];// * delta;
-        character->position.z += velocity[2];// * delta;
+        character->position.x += velocity[0]; // * delta;
+        character->position.y += velocity[1]; // * delta;
+        character->position.z += velocity[2]; // * delta;
     } else {
-        character->position = move_data->destination;
-        character->ai.move_data = (struct gs_move_data) { 0 };
+        character->position     = character->ai.move_data.destination;
+        character->ai.move_data = (struct gs_move_data){ 0 };
         gs_ai_go_idle(gs, character);
         log_normal("end movement.");
     }

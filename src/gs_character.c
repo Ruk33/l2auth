@@ -19,13 +19,6 @@ int gs_character_is_npc(struct gs_character *src)
     return src->session ? 0 : 1;
 }
 
-double gs_character_angle_to_point(struct gs_character *src, struct gs_point *p)
-{
-    assert(src);
-    assert(p);
-    return atan2(p->y - src->position.y, p->x - src->position.x);
-}
-
 double gs_character_distance_to_point(struct gs_character *src,
                                       struct gs_point *p)
 {
