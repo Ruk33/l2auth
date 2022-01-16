@@ -8,7 +8,7 @@ mkdir -p build
 echo ""
 echo "- building game server library"
 echo ""
-gcc $CFLAGS src/gs_lib.c -lcglm -lm -lcrypto -lsqlite3 -shared -fPIC -o build/game_server_lib.so
+gcc $CFLAGS src/gs_lib.c -lcglm -lcrypto -lsqlite3 -shared -fPIC -o build/game_server_lib.so
 
 echo ""
 echo "- building login server"

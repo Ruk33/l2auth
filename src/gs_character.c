@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <math.h>
 #include "include/config.h"
 #include "include/util.h"
 #include "include/gs_types.h"
@@ -17,30 +16,6 @@ int gs_character_is_npc(struct gs_character *src)
 {
     assert(src);
     return src->session ? 0 : 1;
-}
-
-double gs_character_distance_to_point(struct gs_character *src,
-                                      struct gs_point *p)
-{
-    double dx = 0;
-    double dy = 0;
-    double dz = 0;
-
-    assert(src);
-    assert(p);
-
-    dx = p->x - src->position.x;
-    dy = p->y - src->position.y;
-    dz = p->z - src->position.z;
-
-    return sqrt(dx * dx + dy * dy + dz * dz);
-}
-
-double gs_character_distance(struct gs_character *a, struct gs_character *b)
-{
-    assert(a);
-    assert(b);
-    return gs_character_distance_to_point(a, &b->position);
 }
 
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
@@ -79,7 +54,7 @@ static void gs_character_broadcast_packet(struct gs_state *gs,
                                           struct gs_character *from,
                                           packet_t *packet)
 {
-    static packet_t response[65536] = { 0 };
+    packet_t response[2048] = { 0 };
 
     struct gs_character *character = 0;
 
@@ -88,6 +63,15 @@ static void gs_character_broadcast_packet(struct gs_state *gs,
     assert(gs);
     assert(from);
     assert(packet);
+
+    if (sizeof(response) < packet_size(packet)) {
+        log_normal(
+            "WARNING - packet size %d bigger than buf %ld. Packet won't be "
+            "sent. Maybe increase buf size?",
+            packet_size(packet),
+            sizeof(response));
+        return;
+    }
 
     // This way maybe we can clear less space than what we really need.
     safe_packet_size = (u64_t) (packet_size(packet) * 2);
@@ -110,15 +94,12 @@ void gs_character_say(struct gs_state *gs,
                       char *message,
                       size_t message_size)
 {
-    static struct gs_packet_say say = { 0 };
-    static packet_t response[256]   = { 0 };
+    struct gs_packet_say say = { 0 };
+    packet_t response[256]   = { 0 };
 
     assert(gs);
     assert(from);
     assert(message);
-
-    util_set_zero(&say, sizeof(say));
-    UTIL_SET_ZERO_ARRAY(response);
 
     say.character_id = from->id;
 
@@ -137,7 +118,7 @@ void gs_character_send_status(struct gs_state *gs,
                               struct gs_character *from,
                               struct gs_character *to)
 {
-    static packet_t response[512] = { 0 };
+    packet_t response[512] = { 0 };
 
     struct gs_packet_status status = { 0 };
 
@@ -146,12 +127,6 @@ void gs_character_send_status(struct gs_state *gs,
     assert(gs);
     assert(from);
     assert(to);
-
-    if (gs_character_is_npc(to)) {
-        // return;
-    }
-
-    UTIL_SET_ZERO_ARRAY(response);
 
     status.obj_id = from->id;
 
@@ -166,7 +141,6 @@ void gs_character_send_status(struct gs_state *gs,
     status.count = 2;
 
     gs_packet_status_pack(response, &status);
-    // gs_character_encrypt_and_send_packet(gs, to, response);
     gs_character_broadcast_packet(gs, from, response);
 }
 
@@ -240,7 +214,7 @@ void gs_character_die(struct gs_state *gs, struct gs_character *src)
 // is launched but the actual hit/damage gets done in the tick
 // function. Otherwise, the damage gets applied even after
 // the hit reached the target.
-void gs_character_attack(struct gs_state *gs,
+void gs_character_launch_attack(struct gs_state *gs,
                          struct gs_character *attacker,
                          struct gs_character *target)
 {

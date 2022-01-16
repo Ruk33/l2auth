@@ -28,7 +28,7 @@ enum request_type
 };
 
 // This table/array represents all the actions (requests made by clients)
-// that can be handled depending of the ai's state.
+// that can be handled depending of the AI's state.
 // It's meant to avoid situations that can't happen. For instance,
 // a dead player can't handle a character walk/movement request.
 static enum request_type g_actions_by_state[][10] = {
@@ -75,20 +75,6 @@ static enum request_type g_actions_by_state[][10] = {
         request_type_show_map, request_type_revive,
     },
 };
-
-static void gs_ai_on_npc_attacked(struct gs_state *gs,
-                                  struct gs_character *npc,
-                                  struct gs_character *attacker)
-{
-    assert(gs);
-    assert(npc);
-    assert(attacker);
-
-    npc->ai.state     = AI_HAS_AGRO;
-    npc->ai.target_id = attacker->id;
-
-    gs_character_run(gs, npc);
-}
 
 static void gs_ai_on_npc_interact(struct gs_state *gs,
                                   struct gs_character *npc,
@@ -185,18 +171,25 @@ static void gs_ai_move(struct gs_state *gs,
 // Move src character closer to target if required.
 // If the src is too far, a movement behavior will begin and 1 will be returned.
 // If no movement is required, nothing happens and 0 is returned.
-static int 
-move_to_intereact_with(struct gs_state *gs, struct gs_character *src, struct gs_character *target)
+static int move_to_intereact_with(struct gs_state *gs,
+                                  struct gs_character *src,
+                                  struct gs_character *target)
 {
-    vec3 from   = { 0 };
-    vec3 to     = { 0 };
+    vec3 from         = { 0 };
+    vec3 to           = { 0 };
     vec3 interact_vec = { 0 };
+
     struct gs_point position_to_interact = { 0 };
-    float distance  = 0;
+
+    float distance          = 0;
+    float range_to_interact = 0;
 
     assert(gs);
     assert(src);
     assert(target);
+
+    // (franco.montenegro) Should this be configurable?
+    range_to_interact = 50;
 
     from[0] = src->position.x;
     from[1] = src->position.y;
@@ -209,13 +202,13 @@ move_to_intereact_with(struct gs_state *gs, struct gs_character *src, struct gs_
     distance = glm_vec3_distance(from, to);
 
     // Return if there is no need to walk further/closer to the npc.
-    if (distance <= 50) {
+    if (distance <= range_to_interact) {
         return 0;
     }
 
     glm_vec3_sub(to, from, interact_vec);
     glm_vec3_normalize(interact_vec);
-    glm_vec3_scale(interact_vec, distance - 50, interact_vec);
+    glm_vec3_scale(interact_vec, distance - range_to_interact, interact_vec);
     glm_vec3_add(from, interact_vec, interact_vec);
 
     position_to_interact.x = interact_vec[0];
@@ -243,6 +236,8 @@ static void gs_ai_attack(struct gs_state *gs,
     attacker->ai.target_id = target->id;
     attacker->ai.state     = AI_HAS_AGRO;
 
+    // Prevent multiple attacks if the cool down hasn't
+    // expired yet.
     if (attacker->ai.attack_cd > 0) {
         return;
     }
@@ -254,8 +249,12 @@ static void gs_ai_attack(struct gs_state *gs,
         return;
     }
 
+    // If the target is an NPC, switch it's
+    // state to aggro and attack the attacker.
     if (gs_character_is_npc(target)) {
-        gs_ai_on_npc_attacked(gs, target, attacker);
+        target->ai.state     = AI_HAS_AGRO;
+        target->ai.target_id = attacker->id;
+        gs_character_run(gs, target);
     }
 
     // (franco.montenegro) Properly calculate this value
@@ -264,7 +263,7 @@ static void gs_ai_attack(struct gs_state *gs,
     // (franco.montenegro) Do we really need this new state or
     // can we work with just AI_ATTACK?
     attacker->ai.state = AI_LAUNCHED_ATTACK;
-    gs_character_attack(gs, attacker, target);
+    gs_character_launch_attack(gs, attacker, target);
 }
 
 static void gs_ai_interact(struct gs_state *gs,
@@ -336,7 +335,8 @@ static void gs_ai_handle_val_pos_request(struct gs_state *gs,
 {
     struct gs_packet_validate_pos_request validate_request = { 0 };
 
-    struct gs_character client_position = { 0 };
+    vec3 server_position = { 0 };
+    vec3 client_position = { 0 };
 
     assert(gs);
     assert(character);
@@ -344,20 +344,18 @@ static void gs_ai_handle_val_pos_request(struct gs_state *gs,
 
     gs_packet_validate_pos_request_unpack(&validate_request, packet);
 
-    client_position            = *character;
-    client_position.position.x = validate_request.x;
-    client_position.position.y = validate_request.y;
-    client_position.position.z = validate_request.z;
-    character->heading         = validate_request.heading;
+    server_position[0] = character->position.x;
+    server_position[1] = character->position.y;
+    server_position[2] = character->position.z;
 
-    // todo: refactor
-    // Do approximation. If the client position isn't too far
-    // away from the server's position, just don't force the update.
-    if (gs_character_distance(character, &client_position) < 100) {
-        // todo: double check.
-        // note: is it really required to send the confirmation?
-        // gs_character_validate_position(gs, &client_position);
-    } else {
+    client_position[0] = validate_request.x;
+    client_position[1] = validate_request.y;
+    client_position[2] = validate_request.z;
+
+    // If there is too much difference between the client's
+    // position and the server's position, correct the position
+    // using the server's position.
+    if (glm_vec3_distance(server_position, client_position) > 100) {
         gs_character_validate_position(gs, character);
     }
 }
@@ -376,16 +374,8 @@ static void gs_ai_handle_action_request(struct gs_state *gs,
 
     gs_packet_action_request_unpack(&action, packet);
 
-    if (character->id == action.target_id) {
-        return;
-    }
-
     target = gs_character_find_by_id(gs, action.target_id);
 
-    // (franco.montenegro) Maybe we should consider using a stack
-    // for the states. This way, instead of backing to "idle" we just
-    // pop the last state. If the state is empty, then we hardcode
-    // "idle" as the state.
     if (!target) {
         character->ai.target_id = 0;
         gs_ai_go_idle(gs, character);
@@ -429,16 +419,13 @@ static void gs_ai_handle_say(struct gs_state *gs,
                              struct gs_character *character,
                              packet_t *packet)
 {
-    // Todo: double check max message's length.
-    static char message[256] = { 0 };
+    char message[256] = { 0 };
 
     struct gs_packet_say_request say = { 0 };
 
     assert(gs);
     assert(character);
     assert(packet);
-
-    UTIL_SET_ZERO_ARRAY(message);
 
     gs_packet_say_request_unpack(&say, packet);
     L2_STRING_TO_CHAR_ARRAY(message, say.message, say.size);
@@ -518,25 +505,32 @@ static void gs_ai_update_character_position(struct gs_state *gs,
     target[1] = move_data->destination.y;
     target[2] = move_data->destination.z;
 
-    if (glm_vec3_distance(target, position) > 50) {
-        glm_vec3_sub(target, position, velocity);
-        glm_vec3_normalize(velocity);
-        glm_vec3_scale(velocity, character->stats.run_speed, velocity);
-        character->position.x += velocity[0]; // * delta;
-        character->position.y += velocity[1]; // * delta;
-        character->position.z += velocity[2]; // * delta;
-    } else {
+    // End movement if the character 
+    // is really close to the destination target.
+    if (glm_vec3_distance(target, position) <= 50) {
         character->position     = character->ai.move_data.destination;
         character->ai.move_data = (struct gs_move_data){ 0 };
         gs_ai_go_idle(gs, character);
-        log_normal("end movement.");
+        return;
     }
+
+    glm_vec3_sub(target, position, velocity);
+    glm_vec3_normalize(velocity);
+    glm_vec3_scale(velocity, character->stats.run_speed, velocity);
+
+    // (franco.montenegro) Should we consider delta here?
+    character->position.x += velocity[0]; // * delta;
+    character->position.y += velocity[1]; // * delta;
+    character->position.z += velocity[2]; // * delta;
 }
 
 static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,
                                          struct gs_character *npc)
 {
     struct gs_point random_point = { 0 };
+
+    i32_t random_x = 0;
+    i32_t random_y = 0;
 
     assert(gs);
     assert(npc);
@@ -551,18 +545,18 @@ static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,
 
     npc->ai.idle_cd = 120;
 
+    // 33% chance of initiating the wondering/idle walk.
     if (gs->random_i32(1, 100) <= 33) {
         return;
     }
 
-    // For npcs the heading is only set when
-    // moving. For some reason, it works quite
-    // well for "calculating" a random position.
-    // It may be a good idea to double check
-    // why that's the case.
-    random_point.x = npc->position.x - (60) * cos(npc->heading);
-    random_point.y = npc->position.y - (60) * sin(npc->heading);
+    random_x = gs->random_i32(-60, 60);
+    random_y = gs->random_i32(-60, 60);
+
+    random_point.x = npc->position.x + random_x;
+    random_point.y = npc->position.y + random_y;
     random_point.z = npc->position.z;
+
     gs_ai_move(gs, npc, &random_point);
 }
 
@@ -598,6 +592,7 @@ void gs_ai_tick(struct gs_state *gs,
         }
     }
 
+    // Check if we need to leave aggro state.
     if (character->ai.leave_agro_cd > 0 && target) {
         character->ai.leave_agro_cd -= delta * 100;
         if (character->ai.leave_agro_cd <= 0) {
@@ -687,8 +682,10 @@ void gs_ai_handle_request(struct gs_state *gs,
         }
     }
 
+    log_normal("packet %x received.", packet_type(request));
+
     if (!can_be_handled) {
-        log_normal("unable to handle request by current state.");
+        log_normal("unable to handle packet %x by current state.", packet_type(request));
         log_normal("current state: %d", character->ai.state);
         return;
     }
@@ -714,7 +711,6 @@ void gs_ai_handle_request(struct gs_state *gs,
         gs_ai_handle_val_pos_request(gs, character, request);
         break;
     case request_type_show_map:
-        log_normal("show map, todo");
         GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs,
                                           character,
                                           "<html><body>And so... a chat window "

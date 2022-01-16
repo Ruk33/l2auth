@@ -8,13 +8,6 @@
 
 int gs_character_is_npc(struct gs_character *src);
 
-// Get distance between a character and a point.
-double gs_character_distance_from_point(struct gs_character *src,
-                                        struct gs_point *p);
-
-// Get distance between two players.
-double gs_character_distance(struct gs_character *a, struct gs_character *b);
-
 // Get character by id.
 // If not found, NULL is returned.
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id);
@@ -48,9 +41,10 @@ void gs_character_move(struct gs_state *gs,
                        struct gs_character *character,
                        struct gs_point *p);
 
-// Attack and broadcast packet to all players.
-// Todo: make sure the packet gets broadcasted only to close players.
-void gs_character_attack(struct gs_state *gs,
+// Launches auto attack.
+// The damage won't be done until the hit reaches the target,
+// which is performed in the game server tick function.
+void gs_character_launch_attack(struct gs_state *gs,
                          struct gs_character *attacker,
                          struct gs_character *target);
 
