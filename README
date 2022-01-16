@@ -72,6 +72,7 @@ The new changes will be live.
 == Linux Dependencies
 - openssl
 - sqlite3
+- cglm
 
 == Windows dependencies
 - Microsoft Visual Studio (C compiler)
