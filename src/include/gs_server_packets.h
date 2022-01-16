@@ -7,6 +7,12 @@
 
 // Todo: document each packet.
 
+struct gs_packet_begin_rotation {
+    u32_t obj_id;
+    i32_t degree;
+    i32_t side;
+};
+
 struct gs_packet_attack_hit {
     u32_t target_id;
     u32_t damage;
@@ -479,6 +485,9 @@ struct gs_packet_change_move_type {
     u32_t running;
     u32_t empty;
 };
+
+void gs_packet_begin_rotation_pack(packet_t *dest,
+                                   struct gs_packet_begin_rotation *src);
 
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src);
 

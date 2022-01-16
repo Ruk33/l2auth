@@ -84,6 +84,23 @@ static void gs_ai_on_npc_interact(struct gs_state *gs,
     assert(npc);
     assert(player);
 
+    // vec3 npc_vec    = { 0 };
+    // vec3 player_vec = { 0 };
+    // float angle     = 0;
+
+    // npc_vec[0] = npc->position.x;
+    // npc_vec[1] = npc->position.y;
+    // npc_vec[2] = npc->position.z;
+
+    // player_vec[0] = player->position.x;
+    // player_vec[1] = player->position.y;
+    // player_vec[2] = player->position.z;
+
+    // angle = glm_vec3_angle(npc_vec, player_vec);
+    // angle = glm_deg(angle);
+
+    // gs_character_face_to(gs, npc, angle);
+
     // Todo: don't hardcode the message.
     GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs,
                                       player,
@@ -189,7 +206,7 @@ static int move_to_intereact_with(struct gs_state *gs,
     assert(target);
 
     // (franco.montenegro) Should this be configurable?
-    range_to_interact = 50;
+    range_to_interact = 60;
 
     from[0] = src->position.x;
     from[1] = src->position.y;
@@ -343,6 +360,7 @@ static void gs_ai_handle_val_pos_request(struct gs_state *gs,
     assert(packet);
 
     gs_packet_validate_pos_request_unpack(&validate_request, packet);
+    character->heading = validate_request.heading;
 
     server_position[0] = character->position.x;
     server_position[1] = character->position.y;
@@ -505,12 +523,13 @@ static void gs_ai_update_character_position(struct gs_state *gs,
     target[1] = move_data->destination.y;
     target[2] = move_data->destination.z;
 
-    // End movement if the character 
+    // End movement if the character
     // is really close to the destination target.
     if (glm_vec3_distance(target, position) <= 50) {
         character->position     = character->ai.move_data.destination;
         character->ai.move_data = (struct gs_move_data){ 0 };
         gs_ai_go_idle(gs, character);
+        gs_character_validate_position(gs, character);
         return;
     }
 
@@ -522,6 +541,8 @@ static void gs_ai_update_character_position(struct gs_state *gs,
     character->position.x += velocity[0]; // * delta;
     character->position.y += velocity[1]; // * delta;
     character->position.z += velocity[2]; // * delta;
+
+    gs_character_validate_position(gs, character);
 }
 
 static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,
@@ -685,8 +706,10 @@ void gs_ai_handle_request(struct gs_state *gs,
     log_normal("packet %x received.", packet_type(request));
 
     if (!can_be_handled) {
-        log_normal("unable to handle packet %x by current state.", packet_type(request));
+        log_normal("unable to handle packet %x by current state.",
+                   packet_type(request));
         log_normal("current state: %d", character->ai.state);
+        gs_character_action_failed(gs, character);
         return;
     }
 

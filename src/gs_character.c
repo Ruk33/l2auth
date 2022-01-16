@@ -50,6 +50,48 @@ static void gs_character_encrypt_and_send_packet(struct gs_state *gs,
     gs_session_send_packet(gs, from->session, packet);
 }
 
+static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
+                                            struct gs_character *src,
+                                            packet_t *packet)
+{
+    packet_t response[2048] = { 0 };
+
+    struct gs_character *character = 0;
+
+    u64_t safe_packet_size = 0;
+
+    assert(gs);
+    assert(src);
+    assert(packet);
+
+    if (sizeof(response) < packet_size(packet)) {
+        log_normal(
+            "WARNING - packet size %d bigger than buf %ld. Packet won't be "
+            "sent. Maybe increase buf size?",
+            packet_size(packet),
+            sizeof(response));
+        return;
+    }
+
+    // This way maybe we can clear less space than what we really need.
+    safe_packet_size = (u64_t) (packet_size(packet) * 2);
+    safe_packet_size = UTIL_MIN(sizeof(response), safe_packet_size);
+
+    GS_CHARACTER_EACH(character, gs)
+    {
+        if (gs_character_is_npc(character)) {
+            continue;
+        }
+        if (character->id == src->id) {
+            continue;
+        }
+
+        util_set_zero(response, safe_packet_size);
+        UTIL_CPY_SRC_BYTES_TO_ARRAY(response, packet, packet_size(packet));
+        gs_character_encrypt_and_send_packet(gs, character, response);
+    }
+}
+
 static void gs_character_broadcast_packet(struct gs_state *gs,
                                           struct gs_character *from,
                                           packet_t *packet)
@@ -87,6 +129,38 @@ static void gs_character_broadcast_packet(struct gs_state *gs,
         UTIL_CPY_SRC_BYTES_TO_ARRAY(response, packet, packet_size(packet));
         gs_character_encrypt_and_send_packet(gs, character, response);
     }
+}
+
+void gs_character_action_failed(struct gs_state *gs, struct gs_character *src)
+{
+    byte_t type = 0x00;
+    packet_t response[16] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    type = 0x25;
+    packet_append_val(response, type);
+
+    gs_character_encrypt_and_send_packet(gs, src, response);
+}
+
+void gs_character_face_to(struct gs_state *gs,
+                          struct gs_character *src,
+                          i32_t degree)
+{
+    packet_t response[64]                           = { 0 };
+    struct gs_packet_begin_rotation rotation_packet = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    rotation_packet.obj_id = src->id;
+    rotation_packet.degree = degree;
+    rotation_packet.side   = 1;
+
+    gs_packet_begin_rotation_pack(response, &rotation_packet);
+    gs_character_broadcast_packet(gs, src, response);
 }
 
 void gs_character_say(struct gs_state *gs,
@@ -215,8 +289,8 @@ void gs_character_die(struct gs_state *gs, struct gs_character *src)
 // function. Otherwise, the damage gets applied even after
 // the hit reached the target.
 void gs_character_launch_attack(struct gs_state *gs,
-                         struct gs_character *attacker,
-                         struct gs_character *target)
+                                struct gs_character *attacker,
+                                struct gs_character *target)
 {
     // (franco.montenegro) auto_attack really means,
     // "go into aggro mode"
@@ -312,7 +386,8 @@ void gs_character_validate_position(struct gs_state *gs,
     validate_response.z       = character->position.z;
 
     gs_packet_validate_pos_pack(response, &validate_response);
-    gs_character_encrypt_and_send_packet(gs, character, response);
+    // gs_character_encrypt_and_send_packet(gs, character, response);
+    gs_character_broadcast_ignoring_src(gs, character, response);
 }
 
 void gs_character_spawn_random_orc(struct gs_state *gs,

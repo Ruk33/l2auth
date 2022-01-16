@@ -3,6 +3,23 @@
 #include "include/packet.h"
 #include "include/gs_server_packets.h"
 
+void gs_packet_begin_rotation_pack(packet_t *dest,
+                                   struct gs_packet_begin_rotation *src)
+{
+    byte_t type = 0x00;
+
+    assert(dest);
+    assert(src);
+    assert(src->obj_id);
+
+    type = 0x62;
+
+    packet_append_val(dest, type);
+    packet_append_val(dest, src->obj_id);
+    packet_append_val(dest, src->degree);
+    packet_append_val(dest, src->side);
+}
+
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src)
 {
     byte_t type = 0x00;

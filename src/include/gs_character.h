@@ -12,6 +12,16 @@ int gs_character_is_npc(struct gs_character *src);
 // If not found, NULL is returned.
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id);
 
+void gs_character_action_failed(struct gs_state *gs, struct gs_character *src);
+
+static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
+                                            struct gs_character *src,
+                                            packet_t *packet);
+
+void gs_character_face_to(struct gs_state *gs,
+                          struct gs_character *src,
+                          i32_t degree);
+
 // Broadcast a chat message.
 // Todo: make sure packet is only broadcasted to close players.
 void gs_character_say(struct gs_state *gs,
@@ -45,8 +55,8 @@ void gs_character_move(struct gs_state *gs,
 // The damage won't be done until the hit reaches the target,
 // which is performed in the game server tick function.
 void gs_character_launch_attack(struct gs_state *gs,
-                         struct gs_character *attacker,
-                         struct gs_character *target);
+                                struct gs_character *attacker,
+                                struct gs_character *target);
 
 // (franco.montenegro) Rename. The function's name
 // doesn't represent what the function does. The only
