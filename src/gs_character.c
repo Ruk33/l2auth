@@ -9,8 +9,8 @@
 #include "include/gs_session.h"
 #include "include/gs_character.h"
 
-#define GS_CHARACTER_EACH(character, state) \
-    UTIL_LIST_EACH(state->list_characters, struct gs_character, character)
+#define macro_gs_character_each(character, state) \
+    macro_util_list_each(state->list_characters, struct gs_character, character)
 
 int gs_character_is_npc(struct gs_character *src)
 {
@@ -24,7 +24,7 @@ struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 
     assert(gs);
 
-    GS_CHARACTER_EACH(character, gs)
+    macro_gs_character_each(character, gs)
     {
         if (character->id == id) {
             return character;
@@ -50,9 +50,9 @@ static void gs_character_encrypt_and_send_packet(struct gs_state *gs,
     gs_session_send_packet(gs, from->session, packet);
 }
 
-static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
-                                            struct gs_character *src,
-                                            packet_t *packet)
+void gs_character_broadcast_ignoring_src(struct gs_state *gs,
+                                         struct gs_character *src,
+                                         packet_t *packet)
 {
     packet_t response[2048] = { 0 };
 
@@ -75,9 +75,9 @@ static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
 
     // This way maybe we can clear less space than what we really need.
     safe_packet_size = (u64_t) (packet_size(packet) * 2);
-    safe_packet_size = UTIL_MIN(sizeof(response), safe_packet_size);
+    safe_packet_size = macro_util_min(sizeof(response), safe_packet_size);
 
-    GS_CHARACTER_EACH(character, gs)
+    macro_gs_character_each(character, gs)
     {
         if (gs_character_is_npc(character)) {
             continue;
@@ -87,7 +87,7 @@ static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
         }
 
         util_set_zero(response, safe_packet_size);
-        UTIL_CPY_SRC_BYTES_TO_ARRAY(response, packet, packet_size(packet));
+        macro_util_cpy_bytes_to_arr(response, packet, packet_size(packet));
         gs_character_encrypt_and_send_packet(gs, character, response);
     }
 }
@@ -117,30 +117,30 @@ static void gs_character_broadcast_packet(struct gs_state *gs,
 
     // This way maybe we can clear less space than what we really need.
     safe_packet_size = (u64_t) (packet_size(packet) * 2);
-    safe_packet_size = UTIL_MIN(sizeof(response), safe_packet_size);
+    safe_packet_size = macro_util_min(sizeof(response), safe_packet_size);
 
-    GS_CHARACTER_EACH(character, gs)
+    macro_gs_character_each(character, gs)
     {
         if (gs_character_is_npc(character)) {
             continue;
         }
 
         util_set_zero(response, safe_packet_size);
-        UTIL_CPY_SRC_BYTES_TO_ARRAY(response, packet, packet_size(packet));
+        macro_util_cpy_bytes_to_arr(response, packet, packet_size(packet));
         gs_character_encrypt_and_send_packet(gs, character, response);
     }
 }
 
 void gs_character_action_failed(struct gs_state *gs, struct gs_character *src)
 {
-    byte_t type = 0x00;
+    byte_t type           = 0x00;
     packet_t response[16] = { 0 };
 
     assert(gs);
     assert(src);
 
     type = 0x25;
-    packet_append_val(response, type);
+    macro_packet_append_val(response, type);
 
     gs_character_encrypt_and_send_packet(gs, src, response);
 }
@@ -177,7 +177,7 @@ void gs_character_say(struct gs_state *gs,
 
     say.character_id = from->id;
 
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(say.name, from->name);
+    macro_l2_str_arr_from_char_arr(say.name, from->name);
     l2_string_from_char(say.message,
                         message,
                         sizeof(say.message),
@@ -429,8 +429,8 @@ void gs_character_spawn_random_orc(struct gs_state *gs,
     orc.revive_after_killed  = 1;
     orc.revive_after_cd      = 30;
 
-    UTIL_CPY_STR_ARRAY(orc.name, "Beti");
-    UTIL_CPY_STR_ARRAY(orc.title, "Merchant");
+    macro_util_cpy_str_arr(orc.name, "Beti");
+    macro_util_cpy_str_arr(orc.title, "Merchant");
 
     gs_character_spawn(gs, &orc);
 }
@@ -441,7 +441,7 @@ void gs_character_from_request(struct gs_character *dest,
     assert(dest);
     assert(src);
 
-    L2_STRING_ARRAY_TO_CHAR_ARRAY(dest->name, src->name);
+    macro_l2_str_arr_to_char_arr(dest->name, src->name);
 
     dest->race       = src->race;
     dest->_class     = src->_class;
@@ -497,8 +497,8 @@ static void gs_character_set_npc_info(struct gs_packet_npc_info *dest,
     assert(src->id);
     assert(src->template_id);
 
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->name, src->name);
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->title, src->title);
+    macro_l2_str_arr_from_char_arr(dest->name, src->name);
+    macro_l2_str_arr_from_char_arr(dest->title, src->title);
 
     dest->id                  = src->id;
     dest->template_id         = src->template_id + 1000000;
@@ -537,11 +537,11 @@ static void gs_character_set_player_info(struct gs_packet_char_info *dest,
     assert(dest);
     assert(src);
 
-    UTIL_SET_ZERO_ARRAY(dest->name);
-    UTIL_SET_ZERO_ARRAY(dest->title);
+    macro_util_set_arr_zero(dest->name);
+    macro_util_set_arr_zero(dest->title);
 
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->name, src->name);
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest->title, src->title);
+    macro_l2_str_arr_from_char_arr(dest->name, src->name);
+    macro_l2_str_arr_from_char_arr(dest->title, src->title);
 
     dest->x                       = src->position.x;
     dest->y                       = src->position.y;
@@ -612,7 +612,7 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
 
     log_normal("spawning character with id %d. notifying close players.", id);
 
-    GS_CHARACTER_EACH(character, gs)
+    macro_gs_character_each(character, gs)
     {
         if (character->id == spawning->id) {
             already_in_list = 1;
@@ -620,7 +620,7 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
         }
 
         // Notify player in the world of the new spawning character.
-        UTIL_SET_ZERO_ARRAY(response);
+        macro_util_set_arr_zero(response);
 
         if (gs_character_is_npc(spawning)) {
             npc_info = (struct gs_packet_npc_info){ 0 };
@@ -640,7 +640,7 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
             continue;
         }
 
-        UTIL_SET_ZERO_ARRAY(response);
+        macro_util_set_arr_zero(response);
 
         if (gs_character_is_npc(character)) {
             npc_info = (struct gs_packet_npc_info){ 0 };
@@ -694,7 +694,7 @@ void gs_character_show_npc_html_message(struct gs_state *gs,
 
     html_message = (struct gs_packet_npc_html_message){ 0 };
 
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(response);
 
     html_message.message_id = 1;
 
@@ -749,7 +749,7 @@ struct gs_character *gs_character_from_session(struct gs_state *gs,
     assert(gs);
     assert(session);
 
-    GS_CHARACTER_EACH(character, gs)
+    macro_gs_character_each(character, gs)
     {
         if (character->session == session) {
             return character;
@@ -765,7 +765,8 @@ u32_t gs_character_get_free_id(struct gs_state *gs)
 
     // Don't use id 0, it causes issues with packets
     // sent to the client.
-    for (u64_t i = 1, max = UTIL_ARRAY_LEN(gs->characters); i < max; i += 1) {
+    for (u64_t i = 1, max = macro_util_arr_len(gs->characters); i < max;
+         i += 1) {
         if (!gs->characters[i].id) {
             return (u32_t) i;
         }
@@ -782,7 +783,7 @@ void gs_character_add(struct gs_state *gs, struct gs_character *src)
 
     gs->characters[src->id] = *src;
     util_list_add(gs->list_characters,
-                  UTIL_ARRAY_LEN(gs->list_characters),
+                  macro_util_arr_len(gs->list_characters),
                   &gs->characters[src->id]);
 }
 

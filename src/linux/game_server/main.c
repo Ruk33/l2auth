@@ -181,7 +181,7 @@ static void on_request(struct platform_socket *socket,
         break;
     case PLATFORM_SOCKET_DISCONNECTED:
         printf("game server client disconnected.\n");
-        for (size_t i = 0; i < UTIL_ARRAY_LEN(g_sockets); i += 1) {
+        for (size_t i = 0; i < macro_util_arr_len(g_sockets); i += 1) {
             if (g_sockets[i] == socket) {
                 util_recycle_id(g_socket_instances, i);
                 break;
@@ -278,7 +278,7 @@ int main(/* int argc, char **argv */)
 
     printf("game server started.\n");
 
-    sockets_len = UTIL_ARRAY_LEN(g_sockets);
+    sockets_len = macro_util_arr_len(g_sockets);
 
     if (!platform_socket_listen(*g_sockets, sockets_len, on_request)) {
         printf("game server socket unable to listen for new connections.\n");

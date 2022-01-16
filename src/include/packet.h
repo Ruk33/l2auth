@@ -13,16 +13,17 @@
  * packet size = 5 (includes byte from packet type)
  * checksum = 4
  * packet size + checksum = 9
- * padded = PACKET_PADDED_SIZE(packet size + checksum) = 16
+ * padded = macro_packet_padded_size(packet size + checksum) = 16
  *
  * padded (16) is now safe to use as packet size.
  */
-#define packet_padded_size(size) (((size_t) (size + 4 + 7)) & ((size_t) (~7)))
+#define macro_packet_padded_size(size) \
+    (((size_t) (size + 4 + 7)) & ((size_t) (~7)))
 
-#define packet_append(dest, src) \
+#define macro_packet_append(dest, src) \
     packet_append_n((packet_t *) dest, (byte_t *) (src), sizeof(src))
 
-#define packet_append_val(dest, src) \
+#define macro_packet_append_val(dest, src) \
     packet_append_n((packet_t *) dest, (byte_t *) &(src), sizeof(src))
 
 typedef byte_t packet_t;

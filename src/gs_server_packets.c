@@ -14,10 +14,10 @@ void gs_packet_begin_rotation_pack(packet_t *dest,
 
     type = 0x62;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->obj_id);
-    packet_append_val(dest, src->degree);
-    packet_append_val(dest, src->side);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->obj_id);
+    macro_packet_append_val(dest, src->degree);
+    macro_packet_append_val(dest, src->side);
 }
 
 void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src)
@@ -35,21 +35,21 @@ void gs_packet_attack_pack(packet_t *dest, struct gs_packet_attack *src)
 
     updated_hit_count = src->hit_count - 1;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->attacker_id);
-    packet_append_val(dest, src->hits[0].target_id);
-    packet_append_val(dest, src->hits[0].damage);
-    packet_append_val(dest, src->hits[0].flags);
-    packet_append_val(dest, src->attacker_x);
-    packet_append_val(dest, src->attacker_y);
-    packet_append_val(dest, src->attacker_z);
-    packet_append_val(dest, updated_hit_count);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->attacker_id);
+    macro_packet_append_val(dest, src->hits[0].target_id);
+    macro_packet_append_val(dest, src->hits[0].damage);
+    macro_packet_append_val(dest, src->hits[0].flags);
+    macro_packet_append_val(dest, src->attacker_x);
+    macro_packet_append_val(dest, src->attacker_y);
+    macro_packet_append_val(dest, src->attacker_z);
+    macro_packet_append_val(dest, updated_hit_count);
 
     for (u16_t i = 1; i < src->hit_count; i += 1) {
         assert(src->hits[i].target_id);
-        packet_append_val(dest, src->hits[i].target_id);
-        packet_append_val(dest, src->hits[i].damage);
-        packet_append_val(dest, src->hits[i].flags);
+        macro_packet_append_val(dest, src->hits[i].target_id);
+        macro_packet_append_val(dest, src->hits[i].damage);
+        macro_packet_append_val(dest, src->hits[i].flags);
     }
 }
 
@@ -63,8 +63,8 @@ void gs_packet_auto_attack_pack(packet_t *dest,
     assert(src->target_id);
 
     type = 0x2b;
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->target_id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->target_id);
 }
 
 void gs_packet_create_char_pack(packet_t *dest,
@@ -77,8 +77,8 @@ void gs_packet_create_char_pack(packet_t *dest,
 
     type = 0x19;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->response);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->response);
 }
 
 void gs_packet_d0_pack(packet_t *dest, struct gs_packet_d0 *src)
@@ -92,9 +92,9 @@ void gs_packet_d0_pack(packet_t *dest, struct gs_packet_d0 *src)
 
     src->unknown = 0x1B;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->unknown);
-    packet_append_val(dest, src->manor_size);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->unknown);
+    macro_packet_append_val(dest, src->manor_size);
 }
 
 void gs_packet_die_pack(packet_t *dest, struct gs_packet_die *src)
@@ -107,14 +107,14 @@ void gs_packet_die_pack(packet_t *dest, struct gs_packet_die *src)
 
     type = 0x06;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->obj_id);
-    packet_append_val(dest, src->to_village);
-    packet_append_val(dest, src->to_hideaway);
-    packet_append_val(dest, src->to_castle);
-    packet_append_val(dest, src->to_siege);
-    packet_append_val(dest, src->sweepable);
-    packet_append_val(dest, src->to_fixed);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->obj_id);
+    macro_packet_append_val(dest, src->to_village);
+    macro_packet_append_val(dest, src->to_hideaway);
+    macro_packet_append_val(dest, src->to_castle);
+    macro_packet_append_val(dest, src->to_siege);
+    macro_packet_append_val(dest, src->sweepable);
+    macro_packet_append_val(dest, src->to_fixed);
 }
 
 void gs_packet_leave_world_pack(packet_t *dest)
@@ -124,7 +124,7 @@ void gs_packet_leave_world_pack(packet_t *dest)
     assert(dest);
 
     type = 0x7e;
-    packet_append_val(dest, type);
+    macro_packet_append_val(dest, type);
 }
 
 void gs_packet_char_select_pack(packet_t *dest,
@@ -145,35 +145,35 @@ void gs_packet_char_select_pack(packet_t *dest,
     name_size  = l2_string_bytes(src->name, sizeof(src->name));
     title_size = l2_string_bytes(src->title, sizeof(src->title));
 
-    packet_append_val(dest, type);
+    macro_packet_append_val(dest, type);
     packet_append_n(dest, (byte_t *) src->name, name_size);
-    packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, src->id);
     packet_append_n(dest, (byte_t *) src->title, title_size);
-    packet_append_val(dest, src->playOK1);
-    packet_append_val(dest, src->clan_id);
-    packet_append_val(dest, src->empty[0]);
-    packet_append_val(dest, src->sex);
-    packet_append_val(dest, src->race_id);
-    packet_append_val(dest, src->class_id);
-    packet_append_val(dest, src->active);
-    packet_append_val(dest, src->x);
-    packet_append_val(dest, src->y);
-    packet_append_val(dest, src->z);
-    packet_append_val(dest, src->hp);
-    packet_append_val(dest, src->mp);
-    packet_append_val(dest, src->sp);
-    packet_append_val(dest, src->exp);
-    packet_append_val(dest, src->level);
-    packet_append_val(dest, src->empty[0]);
-    packet_append_val(dest, src->empty[0]);
-    packet_append_val(dest, src->_int);
-    packet_append_val(dest, src->str);
-    packet_append_val(dest, src->con);
-    packet_append_val(dest, src->men);
-    packet_append_val(dest, src->dex);
-    packet_append_val(dest, src->wit);
+    macro_packet_append_val(dest, src->playOK1);
+    macro_packet_append_val(dest, src->clan_id);
+    macro_packet_append_val(dest, src->empty[0]);
+    macro_packet_append_val(dest, src->sex);
+    macro_packet_append_val(dest, src->race_id);
+    macro_packet_append_val(dest, src->class_id);
+    macro_packet_append_val(dest, src->active);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->hp);
+    macro_packet_append_val(dest, src->mp);
+    macro_packet_append_val(dest, src->sp);
+    macro_packet_append_val(dest, src->exp);
+    macro_packet_append_val(dest, src->level);
+    macro_packet_append_val(dest, src->empty[0]);
+    macro_packet_append_val(dest, src->empty[0]);
+    macro_packet_append_val(dest, src->_int);
+    macro_packet_append_val(dest, src->str);
+    macro_packet_append_val(dest, src->con);
+    macro_packet_append_val(dest, src->men);
+    macro_packet_append_val(dest, src->dex);
+    macro_packet_append_val(dest, src->wit);
     packet_append_n(dest, (byte_t *) src->empty, sizeof(src->empty[0]) * 36);
-    packet_append_val(dest, src->game_time);
+    macro_packet_append_val(dest, src->game_time);
     packet_append_n(dest, (byte_t *) src->empty, sizeof(src->empty[0]) * 15);
 }
 
@@ -188,12 +188,12 @@ void gs_packet_validate_pos_pack(packet_t *dest,
 
     type = 0x61;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->id);
-    packet_append_val(dest, src->x);
-    packet_append_val(dest, src->y);
-    packet_append_val(dest, src->z);
-    packet_append_val(dest, src->heading);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->heading);
 }
 
 void gs_packet_move_pack(packet_t *dest, struct gs_packet_move *src)
@@ -206,14 +206,14 @@ void gs_packet_move_pack(packet_t *dest, struct gs_packet_move *src)
 
     type = 0x01;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->id);
-    packet_append_val(dest, src->new_x);
-    packet_append_val(dest, src->new_y);
-    packet_append_val(dest, src->new_z);
-    packet_append_val(dest, src->prev_x);
-    packet_append_val(dest, src->prev_y);
-    packet_append_val(dest, src->prev_z);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, src->new_x);
+    macro_packet_append_val(dest, src->new_y);
+    macro_packet_append_val(dest, src->new_z);
+    macro_packet_append_val(dest, src->prev_x);
+    macro_packet_append_val(dest, src->prev_y);
+    macro_packet_append_val(dest, src->prev_z);
 }
 
 void gs_packet_protocol_version_pack(packet_t *dest,
@@ -239,8 +239,8 @@ void gs_packet_protocol_version_pack(packet_t *dest,
 
     type = 0x00;
 
-    packet_append_val(dest, type);
-    packet_append(dest, content);
+    macro_packet_append_val(dest, type);
+    macro_packet_append(dest, content);
 }
 
 void gs_packet_quest_list_pack(packet_t *dest, struct gs_packet_quest_list *src)
@@ -252,7 +252,7 @@ void gs_packet_quest_list_pack(packet_t *dest, struct gs_packet_quest_list *src)
 
     type = 0x80;
 
-    packet_append_val(dest, type);
+    macro_packet_append_val(dest, type);
     packet_append_n(dest, src->empty, sizeof(src->empty));
 }
 
@@ -265,8 +265,8 @@ void gs_packet_restart_pack(packet_t *dest, struct gs_packet_restart *src)
 
     type = 0x5f;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->response);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->response);
 }
 
 void gs_packet_revive_pack(packet_t *dest, struct gs_packet_revive *src)
@@ -279,8 +279,8 @@ void gs_packet_revive_pack(packet_t *dest, struct gs_packet_revive *src)
 
     type = 0x07;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->obj_id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->obj_id);
 }
 
 void gs_packet_target_selected_pack(packet_t *dest,
@@ -294,9 +294,9 @@ void gs_packet_target_selected_pack(packet_t *dest,
 
     type = 0xa6;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->target_id);
-    packet_append_val(dest, src->color);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->target_id);
+    macro_packet_append_val(dest, src->color);
 }
 
 void gs_packet_auth_login_pack(packet_t *dest, struct gs_packet_auth_login *src)
@@ -312,80 +312,80 @@ void gs_packet_auth_login_pack(packet_t *dest, struct gs_packet_auth_login *src)
 
     type = 0x13;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->count);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->count);
 
     for (u32_t i = 0; i < src->count; i += 1) {
         character = &src->characters[i];
         name_size = l2_string_bytes(character->name, sizeof(character->name));
 
         packet_append_n(dest, (byte_t *) character->name, name_size);
-        packet_append_val(dest, character->id);
+        macro_packet_append_val(dest, character->id);
         packet_append_n(dest, (byte_t *) character->name, name_size);
-        packet_append_val(dest, character->playOK1);
-        packet_append_val(dest, character->clan_id);
-        packet_append_val(dest, character->empty[0]);
-        packet_append_val(dest, character->sex);
-        packet_append_val(dest, character->race_id);
-        packet_append_val(dest, character->class_id);
-        packet_append_val(dest, character->active);
-        packet_append_val(dest, character->x);
-        packet_append_val(dest, character->y);
-        packet_append_val(dest, character->z);
-        packet_append_val(dest, character->hp);
-        packet_append_val(dest, character->mp);
-        packet_append_val(dest, character->sp);
-        packet_append_val(dest, character->exp);
-        packet_append_val(dest, character->level);
-        packet_append_val(dest, character->karma);
+        macro_packet_append_val(dest, character->playOK1);
+        macro_packet_append_val(dest, character->clan_id);
+        macro_packet_append_val(dest, character->empty[0]);
+        macro_packet_append_val(dest, character->sex);
+        macro_packet_append_val(dest, character->race_id);
+        macro_packet_append_val(dest, character->class_id);
+        macro_packet_append_val(dest, character->active);
+        macro_packet_append_val(dest, character->x);
+        macro_packet_append_val(dest, character->y);
+        macro_packet_append_val(dest, character->z);
+        macro_packet_append_val(dest, character->hp);
+        macro_packet_append_val(dest, character->mp);
+        macro_packet_append_val(dest, character->sp);
+        macro_packet_append_val(dest, character->exp);
+        macro_packet_append_val(dest, character->level);
+        macro_packet_append_val(dest, character->karma);
 
         packet_append_n(dest,
                         (byte_t *) character->empty,
                         9 * sizeof(character->empty[0]));
 
-        packet_append_val(dest, character->under_obj_id);
-        packet_append_val(dest, character->r_ear_obj_id);
-        packet_append_val(dest, character->l_ear_obj_id);
-        packet_append_val(dest, character->neck_obj_id);
-        packet_append_val(dest, character->r_finger_obj_id);
-        packet_append_val(dest, character->l_finger_obj_id);
-        packet_append_val(dest, character->head_obj_id);
-        packet_append_val(dest, character->r_hand_obj_id);
-        packet_append_val(dest, character->l_hand_obj_id);
-        packet_append_val(dest, character->gloves_obj_id);
-        packet_append_val(dest, character->chest_obj_id);
-        packet_append_val(dest, character->legs_obj_id);
-        packet_append_val(dest, character->feet_obj_id);
-        packet_append_val(dest, character->back_obj_id);
-        packet_append_val(dest, character->lr_hand_obj_id);
-        packet_append_val(dest, character->hair_obj_id);
+        macro_packet_append_val(dest, character->under_obj_id);
+        macro_packet_append_val(dest, character->r_ear_obj_id);
+        macro_packet_append_val(dest, character->l_ear_obj_id);
+        macro_packet_append_val(dest, character->neck_obj_id);
+        macro_packet_append_val(dest, character->r_finger_obj_id);
+        macro_packet_append_val(dest, character->l_finger_obj_id);
+        macro_packet_append_val(dest, character->head_obj_id);
+        macro_packet_append_val(dest, character->r_hand_obj_id);
+        macro_packet_append_val(dest, character->l_hand_obj_id);
+        macro_packet_append_val(dest, character->gloves_obj_id);
+        macro_packet_append_val(dest, character->chest_obj_id);
+        macro_packet_append_val(dest, character->legs_obj_id);
+        macro_packet_append_val(dest, character->feet_obj_id);
+        macro_packet_append_val(dest, character->back_obj_id);
+        macro_packet_append_val(dest, character->lr_hand_obj_id);
+        macro_packet_append_val(dest, character->hair_obj_id);
 
-        packet_append_val(dest, character->under);
-        packet_append_val(dest, character->r_ear);
-        packet_append_val(dest, character->l_ear);
-        packet_append_val(dest, character->neck);
-        packet_append_val(dest, character->r_finger);
-        packet_append_val(dest, character->l_finger);
-        packet_append_val(dest, character->head);
-        packet_append_val(dest, character->r_hand);
-        packet_append_val(dest, character->l_hand);
-        packet_append_val(dest, character->gloves);
-        packet_append_val(dest, character->chest);
-        packet_append_val(dest, character->legs);
-        packet_append_val(dest, character->feet);
-        packet_append_val(dest, character->back);
-        packet_append_val(dest, character->lr_hand);
-        packet_append_val(dest, character->hair);
+        macro_packet_append_val(dest, character->under);
+        macro_packet_append_val(dest, character->r_ear);
+        macro_packet_append_val(dest, character->l_ear);
+        macro_packet_append_val(dest, character->neck);
+        macro_packet_append_val(dest, character->r_finger);
+        macro_packet_append_val(dest, character->l_finger);
+        macro_packet_append_val(dest, character->head);
+        macro_packet_append_val(dest, character->r_hand);
+        macro_packet_append_val(dest, character->l_hand);
+        macro_packet_append_val(dest, character->gloves);
+        macro_packet_append_val(dest, character->chest);
+        macro_packet_append_val(dest, character->legs);
+        macro_packet_append_val(dest, character->feet);
+        macro_packet_append_val(dest, character->back);
+        macro_packet_append_val(dest, character->lr_hand);
+        macro_packet_append_val(dest, character->hair);
 
-        packet_append_val(dest, character->hair_style_id);
-        packet_append_val(dest, character->hair_color_id);
-        packet_append_val(dest, character->face);
-        packet_append_val(dest, character->max_hp);
-        packet_append_val(dest, character->max_mp);
-        packet_append_val(dest, character->delete_days);
-        packet_append_val(dest, character->class_id);
-        packet_append_val(dest, character->auto_select);
-        packet_append_val(dest, character->enchant_effect);
+        macro_packet_append_val(dest, character->hair_style_id);
+        macro_packet_append_val(dest, character->hair_color_id);
+        macro_packet_append_val(dest, character->face);
+        macro_packet_append_val(dest, character->max_hp);
+        macro_packet_append_val(dest, character->max_mp);
+        macro_packet_append_val(dest, character->delete_days);
+        macro_packet_append_val(dest, character->class_id);
+        macro_packet_append_val(dest, character->auto_select);
+        macro_packet_append_val(dest, character->enchant_effect);
     }
 }
 
@@ -409,70 +409,70 @@ void gs_packet_char_info_pack(packet_t *dest, struct gs_packet_char_info *src)
     name_size  = l2_string_bytes(src->name, sizeof(src->name));
     title_size = l2_string_bytes(src->title, sizeof(src->title));
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->x);
-    packet_append_val(dest, src->y);
-    packet_append_val(dest, src->z);
-    packet_append_val(dest, src->heading);
-    packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->heading);
+    macro_packet_append_val(dest, src->id);
     packet_append_n(dest, src->name, name_size);
-    packet_append_val(dest, src->race_id);
-    packet_append_val(dest, src->sex);
-    packet_append_val(dest, src->class_id);
-    packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->race_id);
+    macro_packet_append_val(dest, src->sex);
+    macro_packet_append_val(dest, src->class_id);
+    macro_packet_append_val(dest, empty_int);
     packet_append_n(dest, (byte_t *) paperdoll, sizeof(paperdoll));
-    packet_append_val(dest, src->pvp_flag);
-    packet_append_val(dest, src->karma);
-    packet_append_val(dest, src->m_attack_speed);
-    packet_append_val(dest, src->p_attack_speed);
-    packet_append_val(dest, src->pvp_flag);
-    packet_append_val(dest, src->karma);
-    packet_append_val(dest, src->run_speed);
-    packet_append_val(dest, src->walk_speed);
-    packet_append_val(dest, src->swim_run_speed);
-    packet_append_val(dest, src->swim_walk_speed);
-    packet_append_val(dest, src->fly_run_speed);
-    packet_append_val(dest, src->fly_walk_speed);
-    packet_append_val(dest, src->fly_run_speed);
-    packet_append_val(dest, src->fly_walk_speed);
-    packet_append_val(dest, src->movement_multiplier);
-    packet_append_val(dest, src->attack_speed_multiplier);
-    packet_append_val(dest, src->collision_radius);
-    packet_append_val(dest, src->collision_height);
-    packet_append_val(dest, src->hair_style);
-    packet_append_val(dest, src->hair_color);
-    packet_append_val(dest, src->face);
+    macro_packet_append_val(dest, src->pvp_flag);
+    macro_packet_append_val(dest, src->karma);
+    macro_packet_append_val(dest, src->m_attack_speed);
+    macro_packet_append_val(dest, src->p_attack_speed);
+    macro_packet_append_val(dest, src->pvp_flag);
+    macro_packet_append_val(dest, src->karma);
+    macro_packet_append_val(dest, src->run_speed);
+    macro_packet_append_val(dest, src->walk_speed);
+    macro_packet_append_val(dest, src->swim_run_speed);
+    macro_packet_append_val(dest, src->swim_walk_speed);
+    macro_packet_append_val(dest, src->fly_run_speed);
+    macro_packet_append_val(dest, src->fly_walk_speed);
+    macro_packet_append_val(dest, src->fly_run_speed);
+    macro_packet_append_val(dest, src->fly_walk_speed);
+    macro_packet_append_val(dest, src->movement_multiplier);
+    macro_packet_append_val(dest, src->attack_speed_multiplier);
+    macro_packet_append_val(dest, src->collision_radius);
+    macro_packet_append_val(dest, src->collision_height);
+    macro_packet_append_val(dest, src->hair_style);
+    macro_packet_append_val(dest, src->hair_color);
+    macro_packet_append_val(dest, src->face);
     packet_append_n(dest, src->title, title_size);
-    packet_append_val(dest, src->clan_id);
-    packet_append_val(dest, src->clan_crest_id);
-    packet_append_val(dest, src->ally_id);
-    packet_append_val(dest, src->ally_crest_id);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->standing);
-    packet_append_val(dest, src->running);
-    packet_append_val(dest, src->in_combat);
-    packet_append_val(dest, src->alike_dead);
-    packet_append_val(dest, src->invisible);
-    packet_append_val(dest, src->mount_type);
-    packet_append_val(dest, src->private_store_type);
-    packet_append_val(dest, src->cubics);
-    packet_append_val(dest, src->find_party_member);
-    packet_append_val(dest, src->abnormal_effect);
-    packet_append_val(dest, empty_byte);
-    packet_append_val(dest, src->recommendations_left);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->mounted);
-    packet_append_val(dest, empty_byte);
-    packet_append_val(dest, src->clan_crest_large_id);
-    packet_append_val(dest, src->hero_symbol);
-    packet_append_val(dest, src->hero_aura);
-    packet_append_val(dest, src->fishing);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->name_color);
+    macro_packet_append_val(dest, src->clan_id);
+    macro_packet_append_val(dest, src->clan_crest_id);
+    macro_packet_append_val(dest, src->ally_id);
+    macro_packet_append_val(dest, src->ally_crest_id);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->standing);
+    macro_packet_append_val(dest, src->running);
+    macro_packet_append_val(dest, src->in_combat);
+    macro_packet_append_val(dest, src->alike_dead);
+    macro_packet_append_val(dest, src->invisible);
+    macro_packet_append_val(dest, src->mount_type);
+    macro_packet_append_val(dest, src->private_store_type);
+    macro_packet_append_val(dest, src->cubics);
+    macro_packet_append_val(dest, src->find_party_member);
+    macro_packet_append_val(dest, src->abnormal_effect);
+    macro_packet_append_val(dest, empty_byte);
+    macro_packet_append_val(dest, src->recommendations_left);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->mounted);
+    macro_packet_append_val(dest, empty_byte);
+    macro_packet_append_val(dest, src->clan_crest_large_id);
+    macro_packet_append_val(dest, src->hero_symbol);
+    macro_packet_append_val(dest, src->hero_aura);
+    macro_packet_append_val(dest, src->fishing);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->name_color);
 }
 
 void gs_packet_new_char_pack(packet_t *dest, struct gs_packet_new_char *src)
@@ -484,36 +484,36 @@ void gs_packet_new_char_pack(packet_t *dest, struct gs_packet_new_char *src)
 
     type = 0x17;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->count);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->count);
 
     for (u32_t i = 0; i < src->count; i += 1) {
-        packet_append_val(dest, src->templates[i].race);
-        packet_append_val(dest, src->templates[i]._class);
-        packet_append_val(dest, src->templates[i].separator_46[0]);
+        macro_packet_append_val(dest, src->templates[i].race);
+        macro_packet_append_val(dest, src->templates[i]._class);
+        macro_packet_append_val(dest, src->templates[i].separator_46[0]);
 
-        packet_append_val(dest, src->templates[i].str);
-        packet_append_val(dest, src->templates[i].separator_0a[1]);
-        packet_append_val(dest, src->templates[i].separator_46[1]);
+        macro_packet_append_val(dest, src->templates[i].str);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[1]);
+        macro_packet_append_val(dest, src->templates[i].separator_46[1]);
 
-        packet_append_val(dest, src->templates[i].dex);
-        packet_append_val(dest, src->templates[i].separator_0a[2]);
-        packet_append_val(dest, src->templates[i].separator_46[2]);
+        macro_packet_append_val(dest, src->templates[i].dex);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[2]);
+        macro_packet_append_val(dest, src->templates[i].separator_46[2]);
 
-        packet_append_val(dest, src->templates[i].con);
-        packet_append_val(dest, src->templates[i].separator_0a[3]);
-        packet_append_val(dest, src->templates[i].separator_46[3]);
+        macro_packet_append_val(dest, src->templates[i].con);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[3]);
+        macro_packet_append_val(dest, src->templates[i].separator_46[3]);
 
-        packet_append_val(dest, src->templates[i]._int);
-        packet_append_val(dest, src->templates[i].separator_0a[4]);
-        packet_append_val(dest, src->templates[i].separator_46[4]);
+        macro_packet_append_val(dest, src->templates[i]._int);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[4]);
+        macro_packet_append_val(dest, src->templates[i].separator_46[4]);
 
-        packet_append_val(dest, src->templates[i].wit);
-        packet_append_val(dest, src->templates[i].separator_0a[5]);
-        packet_append_val(dest, src->templates[i].separator_46[5]);
+        macro_packet_append_val(dest, src->templates[i].wit);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[5]);
+        macro_packet_append_val(dest, src->templates[i].separator_46[5]);
 
-        packet_append_val(dest, src->templates[i].men);
-        packet_append_val(dest, src->templates[i].separator_0a[0]);
+        macro_packet_append_val(dest, src->templates[i].men);
+        macro_packet_append_val(dest, src->templates[i].separator_0a[0]);
     }
 }
 
@@ -540,52 +540,52 @@ void gs_packet_npc_info_pack(packet_t *dest, struct gs_packet_npc_info *src)
     name_size  = l2_string_bytes(src->name, sizeof(src->name));
     title_size = l2_string_bytes(src->title, sizeof(src->title));
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->id);
-    packet_append_val(dest, src->template_id);
-    packet_append_val(dest, src->attackable);
-    packet_append_val(dest, src->x);
-    packet_append_val(dest, src->y);
-    packet_append_val(dest, src->z);
-    packet_append_val(dest, src->heading);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->m_attack_speed);
-    packet_append_val(dest, src->p_attack_speed);
-    packet_append_val(dest, src->run_speed);
-    packet_append_val(dest, src->walk_speed);
-    packet_append_val(dest, src->swim_run_speed);
-    packet_append_val(dest, src->swim_walk_speed);
-    packet_append_val(dest, src->fly_run_speed);
-    packet_append_val(dest, src->fly_walk_speed);
-    packet_append_val(dest, src->fly_run_speed);
-    packet_append_val(dest, src->fly_walk_speed);
-    packet_append_val(dest, src->magic_multiplier);
-    packet_append_val(dest, p_attack_speed_div);
-    packet_append_val(dest, src->collision_radius);
-    packet_append_val(dest, src->collision_height);
-    packet_append_val(dest, src->r_hand);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->l_hand);
-    packet_append_val(dest, src->name_above_char);
-    packet_append_val(dest, src->running);
-    packet_append_val(dest, src->in_combat);
-    packet_append_val(dest, src->alike_dead);
-    packet_append_val(dest, src->summoned);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, src->template_id);
+    macro_packet_append_val(dest, src->attackable);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->heading);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->m_attack_speed);
+    macro_packet_append_val(dest, src->p_attack_speed);
+    macro_packet_append_val(dest, src->run_speed);
+    macro_packet_append_val(dest, src->walk_speed);
+    macro_packet_append_val(dest, src->swim_run_speed);
+    macro_packet_append_val(dest, src->swim_walk_speed);
+    macro_packet_append_val(dest, src->fly_run_speed);
+    macro_packet_append_val(dest, src->fly_walk_speed);
+    macro_packet_append_val(dest, src->fly_run_speed);
+    macro_packet_append_val(dest, src->fly_walk_speed);
+    macro_packet_append_val(dest, src->magic_multiplier);
+    macro_packet_append_val(dest, p_attack_speed_div);
+    macro_packet_append_val(dest, src->collision_radius);
+    macro_packet_append_val(dest, src->collision_height);
+    macro_packet_append_val(dest, src->r_hand);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->l_hand);
+    macro_packet_append_val(dest, src->name_above_char);
+    macro_packet_append_val(dest, src->running);
+    macro_packet_append_val(dest, src->in_combat);
+    macro_packet_append_val(dest, src->alike_dead);
+    macro_packet_append_val(dest, src->summoned);
     packet_append_n(dest, src->name, name_size);
     packet_append_n(dest, src->title, title_size);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, src->abnormal_effect);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_int);
-    packet_append_val(dest, empty_char);
-    packet_append_val(dest, empty_char);
-    packet_append_val(dest, empty_double);
-    packet_append_val(dest, empty_double);
-    packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, src->abnormal_effect);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_int);
+    macro_packet_append_val(dest, empty_char);
+    macro_packet_append_val(dest, empty_char);
+    macro_packet_append_val(dest, empty_double);
+    macro_packet_append_val(dest, empty_double);
+    macro_packet_append_val(dest, empty_int);
 }
 
 void gs_packet_status_pack(packet_t *dest, struct gs_packet_status *src)
@@ -599,13 +599,13 @@ void gs_packet_status_pack(packet_t *dest, struct gs_packet_status *src)
 
     type = 0x0e;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->obj_id);
-    packet_append_val(dest, src->count);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->obj_id);
+    macro_packet_append_val(dest, src->count);
 
     for (u32_t i = 0; i < src->count; i += 1) {
-        packet_append_val(dest, src->attributes[i].type);
-        packet_append_val(dest, src->attributes[i].value);
+        macro_packet_append_val(dest, src->attributes[i].type);
+        macro_packet_append_val(dest, src->attributes[i].value);
     }
 }
 
@@ -625,133 +625,133 @@ void gs_packet_enter_world_pack(packet_t *dest,
     name_size  = l2_string_bytes(src->name, sizeof(src->name));
     title_size = l2_string_bytes(src->title, sizeof(src->title));
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->x);
-    packet_append_val(dest, src->y);
-    packet_append_val(dest, src->z);
-    packet_append_val(dest, src->heading);
-    packet_append_val(dest, src->id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->heading);
+    macro_packet_append_val(dest, src->id);
     packet_append_n(dest, (byte_t *) src->name, name_size);
-    packet_append_val(dest, src->race_id);
-    packet_append_val(dest, src->sex);
-    packet_append_val(dest, src->class_id);
-    packet_append_val(dest, src->level);
-    packet_append_val(dest, src->exp);
-    packet_append_val(dest, src->str);
-    packet_append_val(dest, src->dex);
-    packet_append_val(dest, src->con);
-    packet_append_val(dest, src->_int);
-    packet_append_val(dest, src->wit);
-    packet_append_val(dest, src->men);
-    packet_append_val(dest, src->max_hp);
-    packet_append_val(dest, src->hp);
-    packet_append_val(dest, src->max_mp);
-    packet_append_val(dest, src->mp);
-    packet_append_val(dest, src->sp);
-    packet_append_val(dest, src->current_load);
-    packet_append_val(dest, src->max_load);
-    packet_append_val(dest, src->unknown);
+    macro_packet_append_val(dest, src->race_id);
+    macro_packet_append_val(dest, src->sex);
+    macro_packet_append_val(dest, src->class_id);
+    macro_packet_append_val(dest, src->level);
+    macro_packet_append_val(dest, src->exp);
+    macro_packet_append_val(dest, src->str);
+    macro_packet_append_val(dest, src->dex);
+    macro_packet_append_val(dest, src->con);
+    macro_packet_append_val(dest, src->_int);
+    macro_packet_append_val(dest, src->wit);
+    macro_packet_append_val(dest, src->men);
+    macro_packet_append_val(dest, src->max_hp);
+    macro_packet_append_val(dest, src->hp);
+    macro_packet_append_val(dest, src->max_mp);
+    macro_packet_append_val(dest, src->mp);
+    macro_packet_append_val(dest, src->sp);
+    macro_packet_append_val(dest, src->current_load);
+    macro_packet_append_val(dest, src->max_load);
+    macro_packet_append_val(dest, src->unknown);
 
-    packet_append_val(dest, src->paperdoll_under);
-    packet_append_val(dest, src->paperdoll_r_ear);
-    packet_append_val(dest, src->paperdoll_l_ear);
-    packet_append_val(dest, src->paperdoll_neck);
-    packet_append_val(dest, src->paperdoll_r_finger);
-    packet_append_val(dest, src->paperdoll_l_finger);
+    macro_packet_append_val(dest, src->paperdoll_under);
+    macro_packet_append_val(dest, src->paperdoll_r_ear);
+    macro_packet_append_val(dest, src->paperdoll_l_ear);
+    macro_packet_append_val(dest, src->paperdoll_neck);
+    macro_packet_append_val(dest, src->paperdoll_r_finger);
+    macro_packet_append_val(dest, src->paperdoll_l_finger);
 
-    packet_append_val(dest, src->paperdoll_head);
+    macro_packet_append_val(dest, src->paperdoll_head);
 
-    packet_append_val(dest, src->paperdoll_r_hand);
-    packet_append_val(dest, src->paperdoll_l_hand);
-    packet_append_val(dest, src->paperdoll_gloves);
-    packet_append_val(dest, src->paperdoll_chest);
-    packet_append_val(dest, src->paperdoll_legs);
-    packet_append_val(dest, src->paperdoll_feet);
-    packet_append_val(dest, src->paperdoll_back);
-    packet_append_val(dest, src->paperdoll_lr_hand);
-    packet_append_val(dest, src->paperdoll_hair);
+    macro_packet_append_val(dest, src->paperdoll_r_hand);
+    macro_packet_append_val(dest, src->paperdoll_l_hand);
+    macro_packet_append_val(dest, src->paperdoll_gloves);
+    macro_packet_append_val(dest, src->paperdoll_chest);
+    macro_packet_append_val(dest, src->paperdoll_legs);
+    macro_packet_append_val(dest, src->paperdoll_feet);
+    macro_packet_append_val(dest, src->paperdoll_back);
+    macro_packet_append_val(dest, src->paperdoll_lr_hand);
+    macro_packet_append_val(dest, src->paperdoll_hair);
 
-    packet_append_val(dest, src->paperdoll_under);
-    packet_append_val(dest, src->paperdoll_r_ear);
-    packet_append_val(dest, src->paperdoll_l_ear);
-    packet_append_val(dest, src->paperdoll_neck);
-    packet_append_val(dest, src->paperdoll_r_finger);
-    packet_append_val(dest, src->paperdoll_l_finger);
+    macro_packet_append_val(dest, src->paperdoll_under);
+    macro_packet_append_val(dest, src->paperdoll_r_ear);
+    macro_packet_append_val(dest, src->paperdoll_l_ear);
+    macro_packet_append_val(dest, src->paperdoll_neck);
+    macro_packet_append_val(dest, src->paperdoll_r_finger);
+    macro_packet_append_val(dest, src->paperdoll_l_finger);
 
-    packet_append_val(dest, src->paperdoll_head);
-    packet_append_val(dest, src->paperdoll_r_hand);
-    packet_append_val(dest, src->paperdoll_l_hand);
-    packet_append_val(dest, src->paperdoll_gloves);
-    packet_append_val(dest, src->paperdoll_chest);
-    packet_append_val(dest, src->paperdoll_legs);
-    packet_append_val(dest, src->paperdoll_feet);
-    packet_append_val(dest, src->paperdoll_back);
-    packet_append_val(dest, src->paperdoll_lr_hand);
-    packet_append_val(dest, src->paperdoll_hair);
+    macro_packet_append_val(dest, src->paperdoll_head);
+    macro_packet_append_val(dest, src->paperdoll_r_hand);
+    macro_packet_append_val(dest, src->paperdoll_l_hand);
+    macro_packet_append_val(dest, src->paperdoll_gloves);
+    macro_packet_append_val(dest, src->paperdoll_chest);
+    macro_packet_append_val(dest, src->paperdoll_legs);
+    macro_packet_append_val(dest, src->paperdoll_feet);
+    macro_packet_append_val(dest, src->paperdoll_back);
+    macro_packet_append_val(dest, src->paperdoll_lr_hand);
+    macro_packet_append_val(dest, src->paperdoll_hair);
 
-    packet_append_val(dest, src->p_attack);
-    packet_append_val(dest, src->p_attack_speed);
-    packet_append_val(dest, src->p_def);
-    packet_append_val(dest, src->evasion_rate);
-    packet_append_val(dest, src->accuracy);
-    packet_append_val(dest, src->critical_hit);
-    packet_append_val(dest, src->m_attack);
-    packet_append_val(dest, src->m_attack_speed);
-    packet_append_val(dest, src->p_attack_speed);
-    packet_append_val(dest, src->m_def);
-    packet_append_val(dest, src->pvp_flag); // 0 = normal, 1 = violet
-    packet_append_val(dest, src->karma);
-    packet_append_val(dest, src->run_speed);
-    packet_append_val(dest, src->walk_speed);
-    packet_append_val(dest, src->run_speed);  // swim_run_speed
-    packet_append_val(dest, src->walk_speed); // swim_walk_speed
-    packet_append_val(dest, src->run_speed);  // fly_run_speed
-    packet_append_val(dest, src->walk_speed); // fly_walk_speed
-    packet_append_val(dest, src->run_speed);  // fly_run_speed
-    packet_append_val(dest, src->walk_speed); // fly_walk_speed
-    packet_append_val(dest, src->movement_speed_multiplier);
-    packet_append_val(dest, src->attack_speed_multiplier);
-    packet_append_val(dest, src->collision_radius);
-    packet_append_val(dest, src->collision_height);
-    packet_append_val(dest, src->hair_style_id);
-    packet_append_val(dest, src->hair_color_id);
-    packet_append_val(dest, src->face);
-    packet_append_val(dest, src->access_level);
+    macro_packet_append_val(dest, src->p_attack);
+    macro_packet_append_val(dest, src->p_attack_speed);
+    macro_packet_append_val(dest, src->p_def);
+    macro_packet_append_val(dest, src->evasion_rate);
+    macro_packet_append_val(dest, src->accuracy);
+    macro_packet_append_val(dest, src->critical_hit);
+    macro_packet_append_val(dest, src->m_attack);
+    macro_packet_append_val(dest, src->m_attack_speed);
+    macro_packet_append_val(dest, src->p_attack_speed);
+    macro_packet_append_val(dest, src->m_def);
+    macro_packet_append_val(dest, src->pvp_flag); // 0 = normal, 1 = violet
+    macro_packet_append_val(dest, src->karma);
+    macro_packet_append_val(dest, src->run_speed);
+    macro_packet_append_val(dest, src->walk_speed);
+    macro_packet_append_val(dest, src->run_speed);  // swim_run_speed
+    macro_packet_append_val(dest, src->walk_speed); // swim_walk_speed
+    macro_packet_append_val(dest, src->run_speed);  // fly_run_speed
+    macro_packet_append_val(dest, src->walk_speed); // fly_walk_speed
+    macro_packet_append_val(dest, src->run_speed);  // fly_run_speed
+    macro_packet_append_val(dest, src->walk_speed); // fly_walk_speed
+    macro_packet_append_val(dest, src->movement_speed_multiplier);
+    macro_packet_append_val(dest, src->attack_speed_multiplier);
+    macro_packet_append_val(dest, src->collision_radius);
+    macro_packet_append_val(dest, src->collision_height);
+    macro_packet_append_val(dest, src->hair_style_id);
+    macro_packet_append_val(dest, src->hair_color_id);
+    macro_packet_append_val(dest, src->face);
+    macro_packet_append_val(dest, src->access_level);
     packet_append_n(dest, (byte_t *) src->title, title_size);
-    packet_append_val(dest, src->clan_id);
-    packet_append_val(dest, src->clan_crest_id);
-    packet_append_val(dest, src->ally_id);
-    packet_append_val(dest, src->ally_crest_id);
-    packet_append_val(dest, src->clan_leader);
-    packet_append_val(dest, src->mount_type);
-    packet_append_val(dest, src->private_store_type);
-    packet_append_val(dest, src->dwarven_craft);
-    packet_append_val(dest, src->pk_kills);
-    packet_append_val(dest, src->pvp_kills);
-    packet_append_val(dest, src->cubics);
-    packet_append_val(dest, src->party_members); // 1 find party
-    packet_append_val(dest, src->abnormal_effect);
+    macro_packet_append_val(dest, src->clan_id);
+    macro_packet_append_val(dest, src->clan_crest_id);
+    macro_packet_append_val(dest, src->ally_id);
+    macro_packet_append_val(dest, src->ally_crest_id);
+    macro_packet_append_val(dest, src->clan_leader);
+    macro_packet_append_val(dest, src->mount_type);
+    macro_packet_append_val(dest, src->private_store_type);
+    macro_packet_append_val(dest, src->dwarven_craft);
+    macro_packet_append_val(dest, src->pk_kills);
+    macro_packet_append_val(dest, src->pvp_kills);
+    macro_packet_append_val(dest, src->cubics);
+    macro_packet_append_val(dest, src->party_members); // 1 find party
+    macro_packet_append_val(dest, src->abnormal_effect);
     packet_append_n(dest, src->char_empty, 1);
-    packet_append_val(dest, src->clan_privileges);
+    macro_packet_append_val(dest, src->clan_privileges);
     packet_append_n(dest, (byte_t *) src->int_empty, sizeof(i32_t) * 7);
-    packet_append_val(dest, src->recommendation_left);
-    packet_append_val(dest, src->recommendation_have);
-    packet_append_val(dest, src->int_empty[0]);
-    packet_append_val(dest, src->inventory_limit);
-    packet_append_val(dest, src->class_id);
-    packet_append_val(dest, src->int_empty[0]);
-    packet_append_val(dest, src->max_cp);
-    packet_append_val(dest, src->cp);
-    packet_append_val(dest, src->mounted);
-    packet_append_val(dest, src->char_empty[0]); // 1 = blue, 2 = red
-    packet_append_val(dest, src->clan_crest_large_id);
-    packet_append_val(dest, src->hero_symbol);
-    packet_append_val(dest, src->hero);
+    macro_packet_append_val(dest, src->recommendation_left);
+    macro_packet_append_val(dest, src->recommendation_have);
+    macro_packet_append_val(dest, src->int_empty[0]);
+    macro_packet_append_val(dest, src->inventory_limit);
+    macro_packet_append_val(dest, src->class_id);
+    macro_packet_append_val(dest, src->int_empty[0]);
+    macro_packet_append_val(dest, src->max_cp);
+    macro_packet_append_val(dest, src->cp);
+    macro_packet_append_val(dest, src->mounted);
+    macro_packet_append_val(dest, src->char_empty[0]); // 1 = blue, 2 = red
+    macro_packet_append_val(dest, src->clan_crest_large_id);
+    macro_packet_append_val(dest, src->hero_symbol);
+    macro_packet_append_val(dest, src->hero);
     packet_append_n(dest, src->char_empty, 1);
-    packet_append_val(dest, src->fish_x);
-    packet_append_val(dest, src->fish_y);
-    packet_append_val(dest, src->fish_z);
-    packet_append_val(dest, src->name_color);
+    macro_packet_append_val(dest, src->fish_x);
+    macro_packet_append_val(dest, src->fish_y);
+    macro_packet_append_val(dest, src->fish_z);
+    macro_packet_append_val(dest, src->name_color);
 }
 
 void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src)
@@ -764,9 +764,9 @@ void gs_packet_say_pack(packet_t *dest, struct gs_packet_say *src)
 
     type = 0x4a;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->character_id);
-    packet_append_val(dest, src->type);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->character_id);
+    macro_packet_append_val(dest, src->type);
     packet_append_n(dest,
                     src->name,
                     l2_string_bytes(src->name, sizeof(src->name)));
@@ -786,8 +786,8 @@ void gs_packet_auto_attack_stop_pack(packet_t *dest,
 
     type = 0x2c;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->target_id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->target_id);
 }
 
 void gs_packet_unselect_target_pack(packet_t *dest,
@@ -801,11 +801,11 @@ void gs_packet_unselect_target_pack(packet_t *dest,
 
     type = 0x2a;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->target_id);
-    packet_append_val(dest, src->target_x);
-    packet_append_val(dest, src->target_y);
-    packet_append_val(dest, src->target_z);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->target_id);
+    macro_packet_append_val(dest, src->target_x);
+    macro_packet_append_val(dest, src->target_y);
+    macro_packet_append_val(dest, src->target_z);
 }
 
 void gs_packet_npc_html_message_pack(packet_t *dest,
@@ -818,8 +818,8 @@ void gs_packet_npc_html_message_pack(packet_t *dest,
 
     type = 0x0f;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->message_id);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->message_id);
     packet_append_n(dest,
                     src->message,
                     l2_string_bytes(src->message, sizeof(src->message)));
@@ -836,8 +836,8 @@ void gs_packet_change_move_type_pack(packet_t *dest,
 
     type = 0x2e;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->obj_id);
-    packet_append_val(dest, src->running);
-    packet_append_val(dest, src->empty);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->obj_id);
+    macro_packet_append_val(dest, src->running);
+    macro_packet_append_val(dest, src->empty);
 }

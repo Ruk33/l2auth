@@ -14,9 +14,9 @@ struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id);
 
 void gs_character_action_failed(struct gs_state *gs, struct gs_character *src);
 
-static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
-                                            struct gs_character *src,
-                                            packet_t *packet);
+void gs_character_broadcast_ignoring_src(struct gs_state *gs,
+                                         struct gs_character *src,
+                                         packet_t *packet);
 
 void gs_character_face_to(struct gs_state *gs,
                           struct gs_character *src,

@@ -7,14 +7,14 @@
 #include "include/gs_client_packets.h"
 #include "include/gs_session.h"
 
-#define gs_session_each(session, state) \
-    UTIL_LIST_EACH(state->list_sessions, struct gs_session, session)
+#define macro_gs_session_each(session, state) \
+    macro_util_list_each(state->list_sessions, struct gs_session, session)
 
 static size_t gs_session_get_free_id(struct gs_state *state)
 {
     size_t max = 0;
 
-    max = UTIL_ARRAY_LEN(state->sessions);
+    max = macro_util_arr_len(state->sessions);
 
     // Don't use id 0, it causes issues with packets
     // sent to the client.
@@ -47,11 +47,11 @@ struct gs_session *gs_session_new(struct gs_state *state,
     new_session->id     = (u32_t) id;
     new_session->socket = socket;
 
-    UTIL_CPY_SRC_BYTES_TO_ARRAY(new_session->encrypt_key, key, sizeof(key));
-    UTIL_CPY_SRC_BYTES_TO_ARRAY(new_session->decrypt_key, key, sizeof(key));
+    macro_util_cpy_bytes_to_arr(new_session->encrypt_key, key, sizeof(key));
+    macro_util_cpy_bytes_to_arr(new_session->decrypt_key, key, sizeof(key));
 
     util_list_add(state->list_sessions,
-                  UTIL_ARRAY_LEN(state->list_sessions),
+                  macro_util_arr_len(state->list_sessions),
                   new_session);
 
     return new_session;
@@ -65,7 +65,7 @@ struct gs_session *gs_session_find(struct gs_state *state,
     assert(state);
     assert(socket);
 
-    gs_session_each(session, state)
+    macro_gs_session_each(session, state)
     {
         if (session->socket == socket) {
             return session;
@@ -87,7 +87,7 @@ void gs_session_update_auth(struct gs_session *dest,
     assert(dest);
     assert(src);
 
-    L2_STRING_ARRAY_TO_CHAR_ARRAY(dest->username, src->username);
+    macro_l2_str_arr_to_char_arr(dest->username, src->username);
 
     dest->loginOK1 = src->loginOK1;
     dest->loginOK2 = src->loginOK2;
@@ -128,7 +128,7 @@ void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
     assert(dest);
     assert(src);
 
-    src_size  = 2 + packet_padded_size(packet_size(src) - 2);
+    src_size  = 2 + macro_packet_padded_size(packet_size(src) - 2);
     body_size = src_size - 2;
     src_body  = packet_body(src);
     dest_body = packet_body(dest);

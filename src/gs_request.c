@@ -56,7 +56,7 @@ static void handle_enter_world(struct gs_state *gs, struct gs_session *session)
     assert(session);
 
     util_set_zero(&enter_world, sizeof(enter_world));
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(response);
 
     character = gs_character_from_session(gs, session);
 
@@ -67,7 +67,7 @@ static void handle_enter_world(struct gs_state *gs, struct gs_session *session)
 
     gs_character_spawn(gs, character);
 
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(enter_world.name, character->name);
+    macro_l2_str_arr_from_char_arr(enter_world.name, character->name);
 
     enter_world.heading       = character->heading;
     enter_world.x             = character->position.x;
@@ -155,8 +155,8 @@ static void handle_auth_login(struct gs_state *gs,
 
     auth_login = (struct gs_packet_auth_login){ 0 };
 
-    UTIL_SET_ZERO_ARRAY(characters);
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(characters);
+    macro_util_set_arr_zero(response);
 
     if (packet) {
         gs_packet_auth_request_unpack(&auth_request, packet);
@@ -164,7 +164,7 @@ static void handle_auth_login(struct gs_state *gs,
     }
 
     username    = session->username;
-    chars_max   = UTIL_ARRAY_LEN(characters);
+    chars_max   = macro_util_arr_len(characters);
     chars_found = storage_get_characters(characters, username, chars_max);
 
     auth_login.count = (u32_t) chars_found;
@@ -172,7 +172,7 @@ static void handle_auth_login(struct gs_state *gs,
     for (size_t i = 0; i < chars_found; i += 1) {
         character = &auth_login.characters[i];
 
-        L2_STRING_ARRAY_FROM_CHAR_ARRAY(character->name, characters[i].name);
+        macro_l2_str_arr_from_char_arr(character->name, characters[i].name);
 
         character->playOK1       = session->playOK1;
         character->active        = 1;
@@ -329,9 +329,9 @@ static void handle_new_character(struct gs_state *gs,
     assert(session);
 
     util_set_zero(&new_char, sizeof(new_char));
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(response);
 
-    new_char.count = (u32_t) UTIL_ARRAY_LEN(templates);
+    new_char.count = (u32_t) macro_util_arr_len(templates);
 
     for (u32_t i = 0; i < new_char.count; i += 1) {
         new_char.templates[new_char.count].race   = templates[i].race;
@@ -366,7 +366,7 @@ static void handle_create_character(struct gs_state *gs,
     assert(session);
     assert(packet);
 
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(response);
 
     gs_packet_create_char_request_unpack(&create_char_request, packet);
     gs_character_from_request(&character, &create_char_request);
@@ -404,7 +404,7 @@ static void handle_selected_character(struct gs_state *gs,
     assert(packet);
 
     util_set_zero(&char_select, sizeof(char_select));
-    UTIL_SET_ZERO_ARRAY(response);
+    macro_util_set_arr_zero(response);
 
     gs_packet_char_select_request_unpack(&char_select_request, packet);
 
@@ -426,8 +426,8 @@ static void handle_selected_character(struct gs_state *gs,
 
     char_select.playOK1 = session->playOK1;
 
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(char_select.name, character.name);
-    L2_STRING_ARRAY_FROM_CHAR_ARRAY(char_select.title, character.title);
+    macro_l2_str_arr_from_char_arr(char_select.name, character.name);
+    macro_l2_str_arr_from_char_arr(char_select.title, character.title);
 
     char_select.id        = character.id;
     char_select.active    = 1;
@@ -687,7 +687,7 @@ void gs_request(struct gs_state *gs,
     // Not sure how useful this may be, but it
     // may help reducing the amount of bytes required to
     // be reset.
-    safe_packet_clean = UTIL_MIN(sizeof(packet), n * 2);
+    safe_packet_clean = macro_util_min(sizeof(packet), n * 2);
     util_set_zero(packet, safe_packet_clean);
 
     gs_session_decrypt(session, packet, buf);
@@ -777,7 +777,7 @@ void gs_request_tick(struct gs_state *gs, double delta)
         return;
     }
 
-    UTIL_LIST_EACH(gs->list_characters, struct gs_character, character)
+    macro_util_list_each(gs->list_characters, struct gs_character, character)
     {
         gs_ai_tick(gs, character, delta);
     }

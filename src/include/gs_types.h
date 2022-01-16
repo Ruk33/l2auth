@@ -94,6 +94,7 @@ struct gs_move_data {
     u32_t ticks_to_move;
     double x_speed_ticks;
     double y_speed_ticks;
+    double z_speed_ticks;
 };
 
 struct gs_ai {

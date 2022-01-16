@@ -152,7 +152,7 @@ struct ls_session *ls_session_new(struct ls_state *ls,
 
     assert(ls);
     assert(socket);
-    assert(ls->session_count < UTIL_ARRAY_LEN(ls->sessions));
+    assert(ls->session_count < macro_util_arr_len(ls->sessions));
 
     ls->session_count += util_recycle_id_get(&id, ls->session_instances);
     session = &ls->sessions[id];

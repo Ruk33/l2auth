@@ -99,7 +99,7 @@ static void on_request(struct platform_socket *src,
         break;
     case PLATFORM_SOCKET_DISCONNECTED:
         printf("login server client disconnected.\n");
-        for (size_t i = 0; i < UTIL_ARRAY_LEN(g_sockets); i += 1) {
+        for (size_t i = 0; i < macro_util_arr_len(g_sockets); i += 1) {
             if (g_sockets[i] == src) {
                 util_recycle_id(g_socket_instances, i);
                 break;
@@ -139,7 +139,7 @@ int main(/* int argc, char **argv */)
     printf("login server started.\n");
 
     if (!platform_socket_listen(*g_sockets,
-                                UTIL_ARRAY_LEN(g_sockets),
+                                macro_util_arr_len(g_sockets),
                                 on_request)) {
         printf("login server socket unable to listen for new connections.\n");
         return 1;

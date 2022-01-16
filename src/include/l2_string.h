@@ -5,25 +5,25 @@
 
 typedef unsigned char l2_string_t;
 
-#define L2_STRING_TO_CHAR_ARRAY(dest, src, sn) \
-    l2_string_to_char((char *) dest,           \
-                      (l2_string_t *) src,     \
-                      sizeof(dest),            \
-                      (size_t) sn,             \
+#define macro_l2_str_to_char_arr(dest, src, sn) \
+    l2_string_to_char((char *) dest,            \
+                      (l2_string_t *) src,      \
+                      sizeof(dest),             \
+                      (size_t) sn,              \
                       (size_t) sn)
 
-#define L2_STRING_ARRAY_TO_CHAR_ARRAY(dest, src) \
-    l2_string_to_char((char *) dest,             \
-                      (l2_string_t *) src,       \
-                      sizeof(dest),              \
-                      sizeof(src),               \
+#define macro_l2_str_arr_to_char_arr(dest, src) \
+    l2_string_to_char((char *) dest,            \
+                      (l2_string_t *) src,      \
+                      sizeof(dest),             \
+                      sizeof(src),              \
                       sizeof(src))
 
-#define L2_STRING_ARRAY_FROM_CHAR_ARRAY(dest, src) \
-    l2_string_from_char((l2_string_t *) dest,      \
-                        (char *) src,              \
-                        sizeof(dest),              \
-                        sizeof(src),               \
+#define macro_l2_str_arr_from_char_arr(dest, src) \
+    l2_string_from_char((l2_string_t *) dest,     \
+                        (char *) src,             \
+                        sizeof(dest),             \
+                        sizeof(src),              \
                         sizeof(src))
 
 // Copy n bytes or until NULL terminator from src to dest.

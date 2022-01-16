@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <math.h>
 #include <time.h>
 
 #include "storage/sqlite.c"

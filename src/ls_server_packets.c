@@ -10,10 +10,10 @@ void ls_packet_init_pack(packet_t *dest, struct ls_packet_init *src)
     assert(dest);
     assert(src);
 
-    packet_append_val(dest, type);
-    packet_append(dest, src->session_id);
-    packet_append(dest, src->protocol);
-    packet_append(dest, src->modulus);
+    macro_packet_append_val(dest, type);
+    macro_packet_append(dest, src->session_id);
+    macro_packet_append(dest, src->protocol);
+    macro_packet_append(dest, src->modulus);
 }
 
 void ls_packet_gg_auth_pack(packet_t *dest, struct ls_packet_gg_auth *src)
@@ -25,8 +25,8 @@ void ls_packet_gg_auth_pack(packet_t *dest, struct ls_packet_gg_auth *src)
 
     type = 0x0b;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->response);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->response);
 }
 
 void ls_packet_ok_pack(packet_t *dest, struct ls_packet_ok *src)
@@ -60,10 +60,10 @@ void ls_packet_ok_pack(packet_t *dest, struct ls_packet_ok *src)
 
     type = 0x03;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->loginOK1);
-    packet_append_val(dest, src->loginOK2);
-    packet_append(dest, after_key);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->loginOK1);
+    macro_packet_append_val(dest, src->loginOK2);
+    macro_packet_append(dest, after_key);
 }
 
 void ls_packet_play_ok_pack(packet_t *dest, struct ls_packet_play_ok *src)
@@ -75,9 +75,9 @@ void ls_packet_play_ok_pack(packet_t *dest, struct ls_packet_play_ok *src)
 
     type = 0x07;
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->playOK1);
-    packet_append_val(dest, src->playOK2);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->playOK1);
+    macro_packet_append_val(dest, src->playOK2);
 }
 
 void ls_packet_server_list_pack(packet_t *dest,
@@ -90,20 +90,20 @@ void ls_packet_server_list_pack(packet_t *dest,
     assert(dest);
     assert(src);
 
-    packet_append_val(dest, type);
-    packet_append_val(dest, src->count);
-    packet_append_val(dest, src->reserved);
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->count);
+    macro_packet_append_val(dest, src->reserved);
 
     for (u8_t i = 0; i < src->count; i += 1) {
-        packet_append_val(dest, src->servers[i].id);
-        packet_append_val(dest, src->servers[i].ip);
-        packet_append_val(dest, src->servers[i].port);
-        packet_append_val(dest, src->servers[i].age_limit);
-        packet_append_val(dest, src->servers[i].pvp);
-        packet_append_val(dest, src->servers[i].players);
-        packet_append_val(dest, src->servers[i].max_players);
-        packet_append_val(dest, src->servers[i].status);
-        packet_append_val(dest, src->servers[i].extra);
-        packet_append_val(dest, src->servers[i].brackets);
+        macro_packet_append_val(dest, src->servers[i].id);
+        macro_packet_append_val(dest, src->servers[i].ip);
+        macro_packet_append_val(dest, src->servers[i].port);
+        macro_packet_append_val(dest, src->servers[i].age_limit);
+        macro_packet_append_val(dest, src->servers[i].pvp);
+        macro_packet_append_val(dest, src->servers[i].players);
+        macro_packet_append_val(dest, src->servers[i].max_players);
+        macro_packet_append_val(dest, src->servers[i].status);
+        macro_packet_append_val(dest, src->servers[i].extra);
+        macro_packet_append_val(dest, src->servers[i].brackets);
     }
 }

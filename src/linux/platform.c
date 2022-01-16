@@ -49,7 +49,7 @@ static struct platform_thread threads[MAX_THREADS] = { 0 };
 
 static struct platform_socket *find_free_socket(void)
 {
-    for (size_t i = 0, max = UTIL_ARRAY_LEN(sockets); i < max; i += 1) {
+    for (size_t i = 0, max = macro_util_arr_len(sockets); i < max; i += 1) {
         if (sockets[i].initialized) {
             continue;
         }
@@ -217,7 +217,7 @@ int platform_socket_listen(struct platform_socket *src,
                            platform_socket_request_cb *cb)
 {
     static struct epoll_event events[64] = { 0 };
-    static byte_t buf[UTIL_MB(5)]        = { 0 };
+    static byte_t buf[macro_util_mb(5)]  = { 0 };
 
     struct platform_socket *socket = 0;
 
@@ -255,7 +255,7 @@ int platform_socket_listen(struct platform_socket *src,
             epoll_ctl(epoll_fd, EPOLL_CTL_ADD, src[i].fd, &event);
         }
 
-        ev_count = epoll_wait(epoll_fd, events, UTIL_ARRAY_LEN(events), -1);
+        ev_count = epoll_wait(epoll_fd, events, macro_util_arr_len(events), -1);
 
         if (ev_count < 0) {
             close(epoll_fd);
@@ -413,7 +413,7 @@ int platform_timer_start(struct platform_timer *src,
             epoll_ctl(epoll_fd, EPOLL_CTL_ADD, src[i].fd, &event);
         }
 
-        ev_count = epoll_wait(epoll_fd, events, UTIL_ARRAY_LEN(events), -1);
+        ev_count = epoll_wait(epoll_fd, events, macro_util_arr_len(events), -1);
 
         if (ev_count < 0) {
             close(epoll_fd);

@@ -8,7 +8,7 @@
 #include "include/gs_client_packets.h"
 #include "include/gs_ai.h"
 
-#define GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs, character, src) \
+#define macro_gs_ai_html_arr_msg(gs, character, src) \
     gs_character_show_npc_html_message(gs, character, src, sizeof(src))
 
 // Packet type from client.
@@ -102,10 +102,10 @@ static void gs_ai_on_npc_interact(struct gs_state *gs,
     // gs_character_face_to(gs, npc, angle);
 
     // Todo: don't hardcode the message.
-    GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs,
-                                      player,
-                                      "<html><body>Hi, this is a "
-                                      "test!</body></html>");
+    macro_gs_ai_html_arr_msg(gs,
+                             player,
+                             "<html><body>Hi, this is a "
+                             "test!</body></html>");
 }
 
 static void gs_ai_go_idle(struct gs_state *gs, struct gs_character *src)
@@ -188,9 +188,9 @@ static void gs_ai_move(struct gs_state *gs,
 // Move src character closer to target if required.
 // If the src is too far, a movement behavior will begin and 1 will be returned.
 // If no movement is required, nothing happens and 0 is returned.
-static int move_to_intereact_with(struct gs_state *gs,
-                                  struct gs_character *src,
-                                  struct gs_character *target)
+static int gs_ai_move_to_interact_with(struct gs_state *gs,
+                                       struct gs_character *src,
+                                       struct gs_character *target)
 {
     vec3 from         = { 0 };
     vec3 to           = { 0 };
@@ -261,7 +261,7 @@ static void gs_ai_attack(struct gs_state *gs,
 
     // If the attacker is too far away
     // from the target, make it walk closer.
-    if (move_to_intereact_with(gs, attacker, target)) {
+    if (gs_ai_move_to_interact_with(gs, attacker, target)) {
         attacker->ai.state = AI_MOVING_TO_ATTACK;
         return;
     }
@@ -300,7 +300,7 @@ static void gs_ai_interact(struct gs_state *gs,
     src->ai.state     = AI_INTERACTING;
 
     // If it's too far, walk closer to the target.
-    if (move_to_intereact_with(gs, src, target)) {
+    if (gs_ai_move_to_interact_with(gs, src, target)) {
         src->ai.state = AI_MOVING_TO_INTERACT;
         return;
     }
@@ -446,7 +446,7 @@ static void gs_ai_handle_say(struct gs_state *gs,
     assert(packet);
 
     gs_packet_say_request_unpack(&say, packet);
-    L2_STRING_TO_CHAR_ARRAY(message, say.message, say.size);
+    macro_l2_str_to_char_arr(message, say.message, say.size);
     gs_character_say(gs, character, message, sizeof(message));
 }
 
@@ -488,9 +488,9 @@ static void gs_ai_handle_bypass_request(struct gs_state *gs,
 
     gs_packet_bypass_request_unpack(&bypass_request, request);
 
-    L2_STRING_TO_CHAR_ARRAY(command,
-                            bypass_request.command,
-                            bypass_request.size);
+    macro_l2_str_to_char_arr(command,
+                             bypass_request.command,
+                             bypass_request.size);
 
     log_normal("command is: %s", command);
 }
@@ -696,7 +696,7 @@ void gs_ai_handle_request(struct gs_state *gs,
     allowed_by_state = g_actions_by_state[character->ai.state];
 
     // Find if the request can be handled by the current AI's state.
-    for (size_t i = 0; i < UTIL_ARRAY_LEN(g_actions_by_state[0]); i += 1) {
+    for (size_t i = 0; i < macro_util_arr_len(g_actions_by_state[0]); i += 1) {
         if (allowed_by_state[i] == packet_type(request)) {
             can_be_handled = 1;
             break;
@@ -734,21 +734,21 @@ void gs_ai_handle_request(struct gs_state *gs,
         gs_ai_handle_val_pos_request(gs, character, request);
         break;
     case request_type_show_map:
-        GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs,
-                                          character,
-                                          "<html><body>And so... a chat window "
-                                          "popped out. <a action=\"bypass -h "
-                                          "npc_42_support player\">Magic "
-                                          "support</a></body></html>");
+        macro_gs_ai_html_arr_msg(gs,
+                                 character,
+                                 "<html><body>And so... a chat window "
+                                 "popped out. <a action=\"bypass -h "
+                                 "npc_42_support player\">Magic "
+                                 "support</a></body></html>");
         gs_character_spawn_random_orc(gs, &character->position);
         break;
     case request_type_bypass:
         gs_ai_handle_bypass_request(gs, character, request);
-        GS_AI_SHOW_NPC_HTML_ARRAY_MESSAGE(gs,
-                                          character,
-                                          "<html><body>It works! even though "
-                                          "it breaks if you send more than 3kb "
-                                          "of data!</body></html>");
+        macro_gs_ai_html_arr_msg(gs,
+                                 character,
+                                 "<html><body>It works! even though "
+                                 "it breaks if you send more than 3kb "
+                                 "of data!</body></html>");
         break;
     case request_type_attack:
         gs_ai_handle_attack_request(gs, character, request);
