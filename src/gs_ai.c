@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <math.h>
 #include <cglm/cglm.h>
 #include "include/config.h"
 #include "include/packet.h"

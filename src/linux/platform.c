@@ -247,7 +247,7 @@ int platform_socket_listen(struct platform_socket *src,
             // EPOLLIN: Ready to read.
             // EPOLLOUT: Ready to write.
             // DO NOT include EPOLLET, the thing just screws things up.
-            event.events   = EPOLLIN; // | EPOLLOUT;
+            event.events   = EPOLLIN;
             event.data.fd  = src[i].fd;
             event.data.ptr = &src[i];
 
@@ -272,10 +272,6 @@ int platform_socket_listen(struct platform_socket *src,
             if (socket->is_server) {
                 cb(socket, PLATFORM_SOCKET_NEW_CONNECTION, 0, 0);
                 continue;
-            }
-
-            if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
-                cb(socket, PLATFORM_SOCKET_READY_TO_WRITE, 0, 0);
             }
 
             if ((events[i].events & EPOLLIN) != EPOLLIN) {
