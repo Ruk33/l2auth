@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <dlfcn.h>
+#include <time.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -27,6 +29,7 @@ struct lib {
 static struct lib lib = { 0 };
 
 static struct gs_state *game_server = 0;
+static struct timeval last_tick = { 0 };
 
 static struct platform_socket *g_sockets[MAX_CLIENTS] = { 0 };
 static size_t g_socket_instances[MAX_CLIENTS]         = { 0 };
@@ -195,6 +198,9 @@ static void on_request(struct platform_socket *socket,
 
 static void on_tick(struct platform_timer *src)
 {
+    struct timeval now = { 0 };
+    suseconds_t delta = 0;
+
     assert(src);
 
     if (!init_gs_lib()) {
@@ -203,7 +209,14 @@ static void on_tick(struct platform_timer *src)
         return;
     }
 
-    lib.on_tick(0.1);
+    gettimeofday(&now, 0);
+    delta = now.tv_usec - last_tick.tv_usec;
+    last_tick = now;
+
+    printf("%f\n", (float) delta / 100);
+
+    // delta in milliseconds
+    lib.on_tick((float) delta / 100);
 }
 
 static void timer_thread(struct platform_thread *thread)
@@ -220,7 +233,7 @@ static void timer_thread(struct platform_thread *thread)
         return;
     }
 
-    if (!platform_timer_init(timer, 100, 1)) {
+    if (!platform_timer_init(timer, 1000, 1)) {
         printf("game server unable to initialize timer.\n");
         platform_thread_kill(thread);
         return;
@@ -246,6 +259,9 @@ int main(/* int argc, char **argv */)
     size_t sockets_len = 0;
 
     game_server = calloc(1, sizeof(*game_server));
+
+    gettimeofday(&last_tick, 0);
+    srand(time(0));
 
     game_server->send_response = send_response;
     game_server->disconnect    = disconnect;

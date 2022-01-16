@@ -417,6 +417,10 @@ int platform_timer_start(struct platform_timer *src,
         }
 
         for (int i = 0; i < ev_count; i += 1) {
+            if ((events[i].events & EPOLLIN) != EPOLLIN) {
+                continue;
+            }
+
             timer = events[i].data.ptr;
 
             if (timer->stopped) {
@@ -428,8 +432,11 @@ int platform_timer_start(struct platform_timer *src,
             cb(timer);
 
             if (timer->repeats) {
+                utmr.it_value.tv_sec    = (long) (1);
+                utmr.it_interval.tv_sec = utmr.it_value.tv_sec;
+                timerfd_settime(timer->fd, 0, &utmr, 0);
                 // Calling timerfd_gettime repeats the timer...
-                timerfd_gettime(timer->fd, &utmr);
+                // timerfd_gettime(timer->fd, &utmr);
             }
         }
     }

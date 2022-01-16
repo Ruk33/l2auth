@@ -387,7 +387,7 @@ void gs_character_validate_position(struct gs_state *gs,
 
     gs_packet_validate_pos_pack(response, &validate_response);
     // gs_character_encrypt_and_send_packet(gs, character, response);
-    gs_character_broadcast_ignoring_src(gs, character, response);
+    gs_character_broadcast_packet(gs, character, response);
 }
 
 void gs_character_spawn_random_orc(struct gs_state *gs,

@@ -91,7 +91,7 @@ void gs_lib_disconnect(struct platform_socket *socket)
 
 void gs_lib_tick(double delta)
 {
-    u64_t old_ticks = 0;
+    // u64_t old_ticks = 0;
     u64_t run_time  = 0;
 
     if (!g_gs) {
@@ -105,11 +105,11 @@ void gs_lib_tick(double delta)
      * code.
      */
 
-    old_ticks        = g_gs->game_ticks;
+    // old_ticks        = g_gs->game_ticks;
     run_time         = time(0) * 1000 - g_gs->game_start_time;
     g_gs->game_ticks = (u64_t) (run_time / MILLIS_IN_TICK);
 
-    if (old_ticks != g_gs->game_ticks) {
-        gs_request_tick(g_gs, delta);
-    }
+    // if (old_ticks != g_gs->game_ticks) {
+    gs_request_tick(g_gs, delta);
+    // }
 }

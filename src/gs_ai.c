@@ -534,12 +534,11 @@ static void gs_ai_update_character_position(struct gs_state *gs,
 
     glm_vec3_sub(target, position, velocity);
     glm_vec3_normalize(velocity);
-    glm_vec3_scale(velocity, character->stats.run_speed, velocity);
+    glm_vec3_scale(velocity, character->stats.run_speed * delta, velocity);
 
-    // (franco.montenegro) Should we consider delta here?
-    character->position.x += velocity[0]; // * delta;
-    character->position.y += velocity[1]; // * delta;
-    character->position.z += velocity[2]; // * delta;
+    character->position.x += velocity[0];
+    character->position.y += velocity[1];
+    character->position.z += velocity[2];
 
     gs_character_validate_position(gs, character);
 }
@@ -590,11 +589,11 @@ void gs_ai_tick(struct gs_state *gs,
     assert(character);
 
     if (character->ai.attack_cd > 0) {
-        character->ai.attack_cd -= delta * 100;
+        character->ai.attack_cd -= delta; // * 100;
     }
 
     if (character->ai.idle_cd > 0) {
-        character->ai.idle_cd -= delta * 100;
+        character->ai.idle_cd -= delta; // * 100;
     }
 
     if (character->ai.target_id) {
@@ -602,7 +601,7 @@ void gs_ai_tick(struct gs_state *gs,
     }
 
     if (character->stats.hp <= 0 && character->revive_after_killed) {
-        character->revive_after_cd -= delta * 100;
+        character->revive_after_cd -= delta; // * 100;
         log_normal("reviving timer: %f", character->revive_after_cd);
         if (character->revive_after_cd <= 0) {
             log_normal("revive!");
@@ -614,7 +613,7 @@ void gs_ai_tick(struct gs_state *gs,
 
     // Check if we need to leave aggro state.
     if (character->ai.leave_agro_cd > 0 && target) {
-        character->ai.leave_agro_cd -= delta * 100;
+        character->ai.leave_agro_cd -= delta; // * 100;
         if (character->ai.leave_agro_cd <= 0) {
             character->ai.leave_agro_cd = 0;
             // (franco.montenegro) How should we handle
