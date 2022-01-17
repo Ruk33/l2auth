@@ -92,7 +92,7 @@ void gs_lib_disconnect(struct platform_socket *socket)
 void gs_lib_tick(double delta)
 {
     // u64_t old_ticks = 0;
-    u64_t run_time  = 0;
+    u64_t run_time = 0;
 
     if (!g_gs) {
         log_normal("game state not initialized. ignoring tick.");
