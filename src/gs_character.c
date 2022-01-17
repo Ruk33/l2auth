@@ -367,27 +367,32 @@ void gs_character_select_target(struct gs_state *gs,
 
     gs_packet_target_selected_pack(response, &selected);
     gs_character_encrypt_and_send_packet(gs, character, response);
+    gs_character_validate_position(gs, character, target);
+    gs_character_validate_position(gs, target, character);
 }
 
 void gs_character_validate_position(struct gs_state *gs,
-                                    struct gs_character *character)
+                                    struct gs_character *src,
+                                    struct gs_character *to)
 {
     struct gs_packet_validate_pos validate_response = { 0 };
 
     packet_t response[64] = { 0 };
 
     assert(gs);
-    assert(character);
+    assert(src);
+    assert(to);
 
-    validate_response.id      = character->id;
-    validate_response.heading = character->heading;
-    validate_response.x       = character->position.x;
-    validate_response.y       = character->position.y;
-    validate_response.z       = character->position.z;
+    validate_response.id      = src->id;
+    validate_response.heading = src->heading;
+    validate_response.x       = src->position.x;
+    validate_response.y       = src->position.y;
+    validate_response.z       = src->position.z;
 
     gs_packet_validate_pos_pack(response, &validate_response);
     // gs_character_encrypt_and_send_packet(gs, character, response);
-    gs_character_broadcast_packet(gs, character, response);
+    // gs_character_broadcast_packet(gs, character, response);
+    gs_character_encrypt_and_send_packet(gs, to, response);
 }
 
 void gs_character_spawn_random_orc(struct gs_state *gs,

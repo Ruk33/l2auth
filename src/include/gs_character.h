@@ -73,9 +73,10 @@ void gs_character_select_target(struct gs_state *gs,
                                 struct gs_character *character,
                                 struct gs_character *target);
 
-// Sends the correct position of a character to the client.
+// Sends the correct position of a character to a client.
 void gs_character_validate_position(struct gs_state *gs,
-                                    struct gs_character *character);
+                                    struct gs_character *src,
+                                    struct gs_character *to);
 
 // Todo: remove function or move it to fun.c file?
 void gs_character_spawn_random_orc(struct gs_state *gs,

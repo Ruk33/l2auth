@@ -10,13 +10,14 @@ enum platform_socket_request_type
     PLATFORM_SOCKET_FAILED_TO_READ,
     PLATFORM_SOCKET_READY_TO_WRITE,
     PLATFORM_SOCKET_DISCONNECTED,
+    PLATFORM_SOCKET_TICK,
 };
 
 struct platform_socket;
 
 struct platform_timer;
 
-struct platform_thread;
+// struct platform_thread;
 
 typedef void platform_socket_request_cb(struct platform_socket *src,
                                         enum platform_socket_request_type type,
@@ -25,7 +26,7 @@ typedef void platform_socket_request_cb(struct platform_socket *src,
 
 typedef void platform_timer_tick_cb(struct platform_timer *src);
 
-typedef void platform_thread_cb(struct platform_thread *thread);
+// typedef void platform_thread_cb(struct platform_thread *thread);
 
 /**
  * Get a new usable socket.
@@ -46,7 +47,7 @@ struct platform_timer *platform_timer_new(void);
  * On success, a new instance is returned.
  * ON error, NULL will be returned.
  */
-struct platform_thread *platform_thread_new(void);
+// struct platform_thread *platform_thread_new(void);
 
 void platform_socket_free(struct platform_socket *src);
 
@@ -112,10 +113,10 @@ void platform_timer_stop(struct platform_timer *src);
 
 void platform_timer_resume(struct platform_timer *src);
 
-int platform_thread_create(struct platform_thread *thread,
-                           platform_thread_cb *cb);
+// int platform_thread_create(struct platform_thread *thread,
+//                            platform_thread_cb *cb);
 
-int platform_thread_kill(struct platform_thread *thread);
+// int platform_thread_kill(struct platform_thread *thread);
 
 /**
  * Simple message logging.

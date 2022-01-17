@@ -372,8 +372,8 @@ static void gs_ai_handle_val_pos_request(struct gs_state *gs,
     // If there is too much difference between the client's
     // position and the server's position, correct the position
     // using the server's position.
-    if (glm_vec3_distance(server_position, client_position) > 100) {
-        gs_character_validate_position(gs, character);
+    if (glm_vec3_distance(server_position, client_position) > 200) {
+        gs_character_validate_position(gs, character, character);
     }
 }
 
@@ -528,7 +528,7 @@ static void gs_ai_update_character_position(struct gs_state *gs,
         character->position     = character->ai.move_data.destination;
         character->ai.move_data = (struct gs_move_data){ 0 };
         gs_ai_go_idle(gs, character);
-        gs_character_validate_position(gs, character);
+        // gs_character_validate_position(gs, character);
         return;
     }
 
@@ -540,7 +540,7 @@ static void gs_ai_update_character_position(struct gs_state *gs,
     character->position.y += velocity[1];
     character->position.z += velocity[2];
 
-    gs_character_validate_position(gs, character);
+    // gs_character_validate_position(gs, character);
 }
 
 static void gs_ai_npc_initiate_idle_walk(struct gs_state *gs,
