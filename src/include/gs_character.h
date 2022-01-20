@@ -43,6 +43,12 @@ void gs_character_revive(struct gs_state *gs,
                          struct gs_character *src,
                          enum gs_packet_revive_request_option where);
 
+void gs_character_send_skill_list(struct gs_state *gs,
+                                  struct gs_character *src);
+
+// (franco.montenegro) Make sure to also get the skill we wanna cast!
+void gs_character_use_skill(struct gs_state *gs, struct gs_character *src);
+
 // Send move packet to client and broadcast it to all players.
 // THIS FUNCTION WON'T update the character's actual position!
 // Todo: make sure the packet gets broadcasted only to close players.

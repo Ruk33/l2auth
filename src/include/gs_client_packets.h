@@ -84,6 +84,12 @@ struct gs_packet_bypass_request {
     size_t size;
 };
 
+struct gs_packet_skill_use_request {
+    u32_t skill_id;
+    u32_t ctrl_pressed;
+    u8_t shift_pressed;
+};
+
 void gs_packet_action_request_unpack(struct gs_packet_action_request *dest,
                                      packet_t *src);
 
@@ -116,5 +122,8 @@ void gs_packet_say_request_unpack(struct gs_packet_say_request *dest,
 
 void gs_packet_bypass_request_unpack(struct gs_packet_bypass_request *dest,
                                      packet_t *src);
+
+void gs_packet_use_skill_request_unpack(struct gs_packet_skill_use_request *dest,
+                                        packet_t *src);
 
 #endif

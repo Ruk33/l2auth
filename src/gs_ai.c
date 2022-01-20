@@ -24,54 +24,61 @@ enum request_type
     request_type_bypass            = 0x21,
     request_type_attack            = 0x0a,
     request_type_revive            = 0x6d,
+    request_skill_list             = 0x3f,
+    request_skill_use              = 0x2f,
 };
 
 // This table/array represents all the actions (requests made by clients)
 // that can be handled depending of the AI's state.
 // It's meant to avoid situations that can't happen. For instance,
 // a dead player can't handle a character walk/movement request.
-static enum request_type g_actions_by_state[][10] = {
+static enum request_type g_actions_by_state[][16] = {
     [AI_IDLE]               = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
-        request_type_show_map,
+        request_type_show_map, request_skill_list, request_skill_use,
     },
     [AI_MOVING]             = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
-        request_type_show_map,
+        request_type_show_map, request_skill_list, request_skill_use,
     },
     [AI_TARGET_SELECTED]    = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
         request_type_show_map, request_type_bypass, request_type_attack,
+        request_skill_list, request_skill_use,
     },
     [AI_MOVING_TO_ATTACK]   = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
-        request_type_show_map, request_type_attack,
+        request_type_show_map, request_type_attack, request_skill_list,
+        request_skill_use,
     },
     [AI_HAS_AGRO]          = {
         request_type_moving, request_type_action, request_type_say, 
         request_type_validate_position, request_type_show_map, request_type_attack,
+        request_skill_list, request_skill_use,
     },
     [AI_LAUNCHED_ATTACK]    = {
         request_type_moving, request_type_action, request_type_say, 
         request_type_validate_position, request_type_show_map, request_type_attack,
+        request_skill_list, request_skill_use,
     },
     [AI_MOVING_TO_INTERACT] = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
-        request_type_show_map,
+        request_type_show_map, request_skill_list, request_skill_use,
     },
     [AI_INTERACTING]        = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
-        request_type_show_map, request_type_attack,
+        request_type_show_map, request_type_attack, request_skill_list,
+        request_skill_use,
     },
     [AI_DEAD]               = {
         request_type_logout, request_type_say, request_type_restart, 
-        request_type_show_map, request_type_revive,
+        request_type_show_map, request_type_revive, request_skill_list,
     },
 };
 
@@ -472,6 +479,37 @@ static void gs_ai_handle_revive_request(struct gs_state *gs,
     gs_ai_on_revive(gs, character);
 }
 
+static void gs_ai_handle_skill_list_request(struct gs_state *gs,
+                                            struct gs_character *character)
+{
+    assert(gs);
+    assert(character);
+    gs_character_send_skill_list(gs, character);
+}
+
+static void gs_ai_handle_skill_use(struct gs_state *gs,
+                                   struct gs_character *character,
+                                   packet_t *request)
+{
+    struct gs_packet_skill_use_request skill_use = { 0 };
+
+    assert(gs);
+    assert(character);
+    assert(request);
+
+    // FIX ME! Ctrl flag doesn't seem to work. Shift flag doesn't seem to work.
+    // If ctrl is pressed, then the shift flag is set to 1...
+    gs_packet_use_skill_request_unpack(&skill_use, request);
+
+    log_normal(
+        "character wants to use skill %d. ctrl pressed? %d, shift pressed? %d",
+        skill_use.skill_id,
+        skill_use.ctrl_pressed,
+        skill_use.shift_pressed);
+
+    gs_character_use_skill(gs, character);
+}
+
 static void gs_ai_handle_bypass_request(struct gs_state *gs,
                                         struct gs_character *character,
                                         packet_t *request)
@@ -753,6 +791,12 @@ void gs_ai_handle_request(struct gs_state *gs,
         break;
     case request_type_revive:
         gs_ai_handle_revive_request(gs, character, request);
+        break;
+    case request_skill_list:
+        gs_ai_handle_skill_list_request(gs, character);
+        break;
+    case request_skill_use:
+        gs_ai_handle_skill_use(gs, character, request);
         break;
     default:
         break;

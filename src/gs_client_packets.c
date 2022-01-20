@@ -220,3 +220,20 @@ void gs_packet_bypass_request_unpack(struct gs_packet_bypass_request *dest,
     dest->command = (l2_string_t *) body;
     dest->size = l2_string_bytes(dest->command, macro_util_max(0, tail - body));
 }
+
+void gs_packet_use_skill_request_unpack(struct gs_packet_skill_use_request *dest,
+                                        packet_t *src)
+{
+    packet_t *body = 0;
+    packet_t *tail = 0;
+
+    assert(dest);
+    assert(src);
+
+    body = gs_packet_body_without_type(src);
+    tail = src + packet_size(src);
+
+    macro_util_read_bytes_val(dest->skill_id, &body, tail - body);
+    macro_util_read_bytes_val(dest->ctrl_pressed, &body, tail - body);
+    macro_util_read_bytes_val(dest->shift_pressed, &body, tail - body);
+}

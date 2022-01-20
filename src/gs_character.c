@@ -243,6 +243,47 @@ void gs_character_revive(struct gs_state *gs,
     }
 }
 
+void gs_character_send_skill_list(struct gs_state *gs, struct gs_character *src)
+{
+    struct gs_packet_skill_list skill_list = { 0 };
+
+    packet_t response[sizeof(skill_list) * 2] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    skill_list.count             = 1;
+    skill_list.skills[0].id      = 30; // Backstab
+    skill_list.skills[0].passive = 0;
+    skill_list.skills[0].level   = 1;
+
+    gs_packet_skill_list_pack(response, &skill_list);
+    gs_character_encrypt_and_send_packet(gs, src, response);
+}
+
+void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
+{
+    struct gs_packet_skill_use skill_use = { 0 };
+
+    packet_t response[sizeof(skill_use) * 2] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    skill_use.src_id      = src->id;
+    skill_use.target_id   = src->ai.target_id;
+    skill_use.skill_id    = 30; // Backstab
+    skill_use.skill_level = 1;
+    skill_use.hit_time    = 15;
+    skill_use.reuse_delay = 15;
+    skill_use.x           = src->position.x;
+    skill_use.y           = src->position.y;
+    skill_use.z           = src->position.z;
+
+    gs_packet_skill_use_pack(response, &skill_use);
+    gs_character_broadcast_packet(gs, src, response);
+}
+
 void gs_character_move(struct gs_state *gs,
                        struct gs_character *character,
                        struct gs_point *p)

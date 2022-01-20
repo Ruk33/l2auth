@@ -486,6 +486,35 @@ struct gs_packet_change_move_type {
     u32_t empty;
 };
 
+struct gs_packet_skill {
+    u32_t passive;
+    u32_t level;
+    u32_t id;
+};
+
+// This packet is sent when the player
+// opens up the skill list.
+struct gs_packet_skill_list {
+    u32_t count;
+    // (franco.montenegro) We shouldn't need more than 32
+    // skills but if we do, just increase the number.
+    struct gs_packet_skill skills[32];
+};
+
+struct gs_packet_skill_use {
+    u32_t src_id;
+    u32_t target_id;
+    u32_t skill_id;
+    u32_t skill_level;
+    u32_t hit_time;
+    u32_t reuse_delay;
+    u32_t x;
+    u32_t y;
+    u32_t z;
+    u16_t empty_short;
+    u32_t empty_int[3];
+};
+
 void gs_packet_begin_rotation_pack(packet_t *dest,
                                    struct gs_packet_begin_rotation *src);
 
@@ -548,5 +577,10 @@ void gs_packet_npc_html_message_pack(packet_t *dest,
 
 void gs_packet_change_move_type_pack(packet_t *dest,
                                      struct gs_packet_change_move_type *src);
+
+void gs_packet_skill_list_pack(packet_t *dest,
+                               struct gs_packet_skill_list *src);
+
+void gs_packet_skill_use_pack(packet_t *dest, struct gs_packet_skill_use *src);
 
 #endif

@@ -841,3 +841,52 @@ void gs_packet_change_move_type_pack(packet_t *dest,
     macro_packet_append_val(dest, src->running);
     macro_packet_append_val(dest, src->empty);
 }
+
+void gs_packet_skill_list_pack(packet_t *dest, struct gs_packet_skill_list *src)
+{
+    byte_t type = 0x00;
+
+    assert(dest);
+    assert(src);
+
+    type = 0x58;
+    macro_packet_append_val(dest, type);
+
+    macro_packet_append_val(dest, src->count);
+
+    for (u32_t i = 0; i < src->count; i += 1) {
+        assert(src->skills[i].id && "skill id is required in skill list.");
+        assert(src->skills[i].level && "skill level is required in skill "
+                                       "list.");
+        macro_packet_append_val(dest, src->skills[i].passive);
+        macro_packet_append_val(dest, src->skills[i].level);
+        macro_packet_append_val(dest, src->skills[i].id);
+    }
+}
+
+void gs_packet_skill_use_pack(packet_t *dest, struct gs_packet_skill_use *src)
+{
+    byte_t type = 0x00;
+
+    assert(dest);
+    assert(src);
+    assert(src->src_id);
+    assert(src->target_id);
+    assert(src->skill_id);
+    assert(src->skill_level);
+
+    type = 0x48;
+
+    macro_packet_append_val(dest, type);
+    macro_packet_append_val(dest, src->src_id);
+    macro_packet_append_val(dest, src->target_id);
+    macro_packet_append_val(dest, src->skill_id);
+    macro_packet_append_val(dest, src->skill_level);
+    macro_packet_append_val(dest, src->hit_time);
+    macro_packet_append_val(dest, src->reuse_delay);
+    macro_packet_append_val(dest, src->x);
+    macro_packet_append_val(dest, src->y);
+    macro_packet_append_val(dest, src->z);
+    macro_packet_append_val(dest, src->empty_short);
+    macro_packet_append_val(dest, src->empty_int);
+}
