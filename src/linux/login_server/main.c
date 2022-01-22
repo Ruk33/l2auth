@@ -10,9 +10,7 @@
 #include <netinet/in.h>
 
 #include "../../include/config.h"
-#include "../../include/util.h"
 #include "../../include/platform.h"
-#include "../../include/ls_types.h"
 
 #include "../../ls_lib.c"
 

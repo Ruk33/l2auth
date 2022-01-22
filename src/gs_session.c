@@ -1,11 +1,7 @@
 #include <assert.h>
 #include "include/config.h"
-#include "include/util.h"
 #include "include/platform.h"
-#include "include/l2_string.h"
 #include "include/gs_types.h"
-#include "include/gs_client_packets.h"
-#include "include/gs_session.h"
 
 #define macro_gs_session_each(session, state) \
     macro_util_list_each(state->list_sessions, struct gs_session, session)
@@ -75,6 +71,8 @@ struct gs_session *gs_session_find(struct gs_state *state,
     return 0;
 }
 
+// Mark the connection as encrypted.
+// This function AFFECTS gs_session_decrypt.
 void gs_session_encrypt_conn(struct gs_session *session)
 {
     assert(session);
@@ -155,6 +153,9 @@ void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
     *((u16_t *) dest) = src_size;
 }
 
+// Decrypt packet if connection is encrypted.
+// If not encrypted, src gets copied to dest.
+// 
 // (franco.montenegro) We SHOULD make sure dest is big enough to hold src.
 void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
 {

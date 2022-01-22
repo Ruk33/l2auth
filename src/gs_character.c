@@ -1,23 +1,19 @@
 #include <assert.h>
 #include "include/config.h"
-#include "include/util.h"
 #include "include/gs_types.h"
-#include "include/gs_server_packets.h"
-#include "include/gs_client_packets.h"
-#include "include/packet.h"
-#include "include/l2_string.h"
-#include "include/gs_session.h"
-#include "include/gs_character.h"
 
 #define macro_gs_character_each(character, state) \
     macro_util_list_each(state->list_characters, struct gs_character, character)
 
+// Checks if a character is a NPC (non playable character, such as merchants)
 int gs_character_is_npc(struct gs_character *src)
 {
     assert(src);
     return src->session ? 0 : 1;
 }
 
+// Get character by id.
+// If not found, NULL is returned.
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 {
     struct gs_character *character = 0;
@@ -131,408 +127,46 @@ static void gs_character_broadcast_packet(struct gs_state *gs,
     }
 }
 
-void gs_character_action_failed(struct gs_state *gs, struct gs_character *src)
+u32_t gs_character_get_free_id(struct gs_state *gs)
 {
-    byte_t type           = 0x00;
-    packet_t response[16] = { 0 };
-
     assert(gs);
-    assert(src);
 
-    type = 0x25;
-    macro_packet_append_val(response, type);
-
-    gs_character_encrypt_and_send_packet(gs, src, response);
-}
-
-void gs_character_face_to(struct gs_state *gs,
-                          struct gs_character *src,
-                          i32_t degree)
-{
-    packet_t response[64]                           = { 0 };
-    struct gs_packet_begin_rotation rotation_packet = { 0 };
-
-    assert(gs);
-    assert(src);
-
-    rotation_packet.obj_id = src->id;
-    rotation_packet.degree = degree;
-    rotation_packet.side   = 1;
-
-    gs_packet_begin_rotation_pack(response, &rotation_packet);
-    gs_character_broadcast_packet(gs, src, response);
-}
-
-void gs_character_say(struct gs_state *gs,
-                      struct gs_character *from,
-                      char *message,
-                      size_t message_size)
-{
-    struct gs_packet_say say = { 0 };
-    packet_t response[256]   = { 0 };
-
-    assert(gs);
-    assert(from);
-    assert(message);
-
-    say.character_id = from->id;
-
-    macro_l2_str_arr_from_char_arr(say.name, from->name);
-    l2_string_from_char(say.message,
-                        message,
-                        sizeof(say.message),
-                        message_size,
-                        message_size);
-
-    gs_packet_say_pack(response, &say);
-    gs_character_broadcast_packet(gs, from, response);
-}
-
-void gs_character_send_status(struct gs_state *gs,
-                              struct gs_character *from,
-                              struct gs_character *to)
-{
-    packet_t response[512] = { 0 };
-
-    struct gs_packet_status status = { 0 };
-
-    struct gs_packet_status_attr attr = { 0 };
-
-    assert(gs);
-    assert(from);
-    assert(to);
-
-    status.obj_id = from->id;
-
-    attr.type            = STATUS_CUR_HP;
-    attr.value           = (i32_t) from->stats.hp;
-    status.attributes[0] = attr;
-
-    attr.type            = STATUS_MAX_HP;
-    attr.value           = (i32_t) from->stats.max_hp;
-    status.attributes[1] = attr;
-
-    status.count = 2;
-
-    gs_packet_status_pack(response, &status);
-    gs_character_broadcast_packet(gs, from, response);
-}
-
-void gs_character_revive(struct gs_state *gs,
-                         struct gs_character *src,
-                         enum gs_packet_revive_request_option where)
-{
-    struct gs_packet_revive revive = { 0 };
-
-    packet_t response[32] = { 0 };
-
-    assert(gs);
-    assert(src);
-
-    revive.obj_id = src->id;
-    gs_packet_revive_pack(response, &revive);
-    gs_character_broadcast_packet(gs, src, response);
-
-    switch (where) {
-    case REVIVE_IN_CLAN_HALL:
-    case REVIVE_IN_CASTLE:
-    case REVIVE_IN_SIEGE_HQ:
-    case REVIVE_IN_FIXED:
-    default:
-        break;
+    // Don't use id 0, it causes issues with packets
+    // sent to the client.
+    for (u64_t i = 1, max = macro_util_arr_len(gs->characters); i < max;
+         i += 1) {
+        if (!gs->characters[i].id) {
+            return (u32_t) i;
+        }
     }
+
+    return 0;
 }
 
-void gs_character_send_skill_list(struct gs_state *gs, struct gs_character *src)
+// "Add" a character to the list of in game characters
+// without broadcasting spawn packet.
+// Only used for players when entering the game so the proper
+// character id can be used for those initial packets
+// sent when entering the world.
+void gs_character_add(struct gs_state *gs, struct gs_character *src)
 {
-    struct gs_packet_skill_list skill_list = { 0 };
+    assert(gs);
+    assert(src);
+    assert(src->id);
 
-    packet_t response[sizeof(skill_list) * 2] = { 0 };
+    gs->characters[src->id] = *src;
+    util_list_add(gs->list_characters,
+                  macro_util_arr_len(gs->list_characters),
+                  &gs->characters[src->id]);
+}
 
+void gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
+{
     assert(gs);
     assert(src);
 
-    skill_list.count             = 1;
-    skill_list.skills[0].id      = 30; // Backstab
-    skill_list.skills[0].passive = 0;
-    skill_list.skills[0].level   = 1;
-
-    gs_packet_skill_list_pack(response, &skill_list);
-    gs_character_encrypt_and_send_packet(gs, src, response);
-}
-
-void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
-{
-    struct gs_packet_skill_use skill_use = { 0 };
-
-    packet_t response[sizeof(skill_use) * 2] = { 0 };
-
-    assert(gs);
-    assert(src);
-
-    skill_use.src_id      = src->id;
-    skill_use.target_id   = src->ai.target_id;
-    skill_use.skill_id    = 30; // Backstab
-    skill_use.skill_level = 1;
-    skill_use.hit_time    = 15;
-    skill_use.reuse_delay = 15;
-    skill_use.x           = src->position.x;
-    skill_use.y           = src->position.y;
-    skill_use.z           = src->position.z;
-
-    gs_packet_skill_use_pack(response, &skill_use);
-    gs_character_broadcast_packet(gs, src, response);
-}
-
-void gs_character_move(struct gs_state *gs,
-                       struct gs_character *character,
-                       struct gs_point *p)
-{
-    struct gs_packet_move move_response = { 0 };
-
-    packet_t packet[64] = { 0 };
-
-    assert(gs);
-    assert(character);
-    assert(p);
-
-    move_response.id     = character->id;
-    move_response.prev_x = character->position.x;
-    move_response.prev_y = character->position.y;
-    move_response.prev_z = character->position.z;
-    move_response.new_x  = character->ai.moving_to.x;
-    move_response.new_y  = character->ai.moving_to.y;
-    move_response.new_z  = character->ai.moving_to.z;
-
-    gs_packet_move_pack(packet, &move_response);
-    gs_character_broadcast_packet(gs, character, packet);
-}
-
-void gs_character_die(struct gs_state *gs, struct gs_character *src)
-{
-    struct gs_packet_die die = { 0 };
-
-    packet_t response[64] = { 0 };
-
-    assert(gs);
-    assert(src);
-
-    die.obj_id     = src->id;
-    die.to_village = 1;
-    die.to_fixed   = 1;
-
-    gs_packet_die_pack(response, &die);
-    gs_character_broadcast_packet(gs, src, response);
-}
-
-// (franco.montenegro) We should rename this function. The attack
-// is launched but the actual hit/damage gets done in the tick
-// function. Otherwise, the damage gets applied even after
-// the hit reached the target.
-void gs_character_launch_attack(struct gs_state *gs,
-                                struct gs_character *attacker,
-                                struct gs_character *target)
-{
-    // (franco.montenegro) auto_attack really means,
-    // "go into aggro mode"
-    struct gs_packet_auto_attack auto_attack = { 0 };
-
-    // (franco.montenegro) this is the packet that
-    // actually launches the attack.
-    struct gs_packet_attack attack  = { 0 };
-    struct gs_packet_attack_hit hit = { 0 };
-
-    packet_t auto_attack_packet[32] = { 0 };
-    packet_t attack_packet[256]     = { 0 };
-
-    double d = 0;
-    double a = 0;
-    i32_t x  = 0;
-    i32_t y  = 0;
-
-    assert(gs);
-    assert(attacker);
-    assert(target);
-
-    auto_attack.target_id = target->id;
-
-    hit.damage    = attacker->stats.p_attack;
-    hit.target_id = target->id;
-
-    attack.attacker_id = attacker->id;
-    attack.attacker_x  = attacker->position.x;
-    attack.attacker_y  = attacker->position.y;
-    attack.attacker_z  = attacker->position.z;
-    attack.hit_count   = 1;
-    attack.hits[0]     = hit;
-
-    gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
-    gs_packet_attack_pack(attack_packet, &attack);
-
-    gs_character_broadcast_packet(gs, attacker, auto_attack_packet);
-    gs_character_broadcast_packet(gs, attacker, attack_packet);
-}
-
-void gs_character_stop_auto_attack(struct gs_state *gs,
-                                   struct gs_character *attacker,
-                                   struct gs_character *target)
-{
-    struct gs_packet_auto_attack_stop auto_attack_stop = { 0 };
-
-    packet_t response[16] = { 0 };
-
-    assert(gs);
-    assert(attacker);
-    assert(target);
-
-    auto_attack_stop.target_id = target->id;
-
-    gs_packet_auto_attack_stop_pack(response, &auto_attack_stop);
-    gs_character_broadcast_packet(gs, attacker, response);
-}
-
-void gs_character_select_target(struct gs_state *gs,
-                                struct gs_character *character,
-                                struct gs_character *target)
-{
-    struct gs_packet_target_selected selected = { 0 };
-
-    packet_t response[32] = { 0 };
-
-    assert(gs);
-    assert(character);
-    assert(target);
-
-    selected.target_id = target->id;
-    selected.color     = 0;
-
-    gs_packet_target_selected_pack(response, &selected);
-    gs_character_encrypt_and_send_packet(gs, character, response);
-    gs_character_validate_position(gs, character, target);
-    gs_character_validate_position(gs, target, character);
-}
-
-void gs_character_validate_position(struct gs_state *gs,
-                                    struct gs_character *src,
-                                    struct gs_character *to)
-{
-    struct gs_packet_validate_pos validate_response = { 0 };
-
-    packet_t response[64] = { 0 };
-
-    assert(gs);
-    assert(src);
-    assert(to);
-
-    validate_response.id      = src->id;
-    validate_response.heading = src->heading;
-    validate_response.x       = src->position.x;
-    validate_response.y       = src->position.y;
-    validate_response.z       = src->position.z;
-
-    gs_packet_validate_pos_pack(response, &validate_response);
-    // gs_character_encrypt_and_send_packet(gs, character, response);
-    // gs_character_broadcast_packet(gs, character, response);
-    gs_character_encrypt_and_send_packet(gs, to, response);
-}
-
-void gs_character_spawn_random_orc(struct gs_state *gs,
-                                   struct gs_point *location)
-{
-    struct gs_character orc = { 0 };
-
-    assert(gs);
-    assert(location);
-
-    orc.id                   = gs_character_get_free_id(gs);
-    orc.template_id          = 7082;
-    orc.position.x           = location->x;
-    orc.position.y           = location->y;
-    orc.position.z           = location->z;
-    orc.collision_radius     = 8;
-    orc.collision_height     = 25;
-    orc.level                = 10;
-    orc.sex                  = 0;
-    orc.stats.hp             = 197;
-    orc.stats.max_hp         = 197;
-    orc.stats.mp             = 102;
-    orc.stats.str            = 40;
-    orc.stats.con            = 43;
-    orc.stats.dex            = 30;
-    orc.stats._int           = 21;
-    orc.stats.wit            = 20;
-    orc.stats.men            = 10;
-    orc.exp                  = 293;
-    orc.sp                   = 10;
-    orc.stats.p_attack       = 41;
-    orc.stats.p_def          = 55;
-    orc.stats.m_attack       = 6;
-    orc.stats.m_def          = 45;
-    orc.stats.p_attack_speed = 249;
-    orc.stats.m_attack_speed = 227;
-    orc.stats.walk_speed     = 45;
-    orc.stats.run_speed      = 110;
-    orc.revive_after_killed  = 1;
-    orc.revive_after_cd      = 30;
-
-    macro_util_cpy_str_arr(orc.name, "Beti");
-    macro_util_cpy_str_arr(orc.title, "Merchant");
-
-    gs_character_spawn(gs, &orc);
-}
-
-void gs_character_from_request(struct gs_character *dest,
-                               struct gs_packet_create_char_request *src)
-{
-    assert(dest);
-    assert(src);
-
-    macro_l2_str_arr_to_char_arr(dest->name, src->name);
-
-    dest->race       = src->race;
-    dest->_class     = src->_class;
-    dest->sex        = src->sex;
-    dest->face       = src->face;
-    dest->hair_color = src->hair_color;
-    dest->hair_style = src->hair_style;
-    dest->stats.con  = src->con;
-    dest->stats.dex  = src->dex;
-    dest->stats.men  = src->men;
-    dest->stats.str  = src->str;
-    dest->stats.wit  = src->wit;
-    dest->stats._int = src->_int;
-
-    // Talking Island
-    dest->position.x = -83968;
-    dest->position.y = 244634;
-    dest->position.z = -3730;
-
-    dest->level                           = 1;
-    dest->exp                             = 50;
-    dest->sp                              = 10;
-    dest->stats.hp                        = 400;
-    dest->stats.mp                        = 400;
-    dest->stats.cp                        = 200;
-    dest->stats.max_hp                    = 400;
-    dest->stats.max_mp                    = 400;
-    dest->stats.max_cp                    = 200;
-    dest->stats.p_attack                  = 42;
-    dest->stats.m_attack                  = 42;
-    dest->stats.p_def                     = 42;
-    dest->stats.m_def                     = 42;
-    dest->stats.evasion_rate              = 2;
-    dest->stats.accuracy                  = 2;
-    dest->stats.critical_hit              = 2;
-    dest->stats.run_speed                 = 120;
-    dest->stats.walk_speed                = 100;
-    dest->stats.p_attack_speed            = 20;
-    dest->stats.m_attack_speed            = 20;
-    dest->stats.movement_speed_multiplier = 1;
-    dest->stats.attack_speed_multiplier   = 1;
-    dest->collision_radius                = 9;
-    dest->collision_height                = 23;
-    dest->max_load                        = 42;
-    dest->name_color                      = 0xFFFFFF;
+    util_list_remove(gs->list_characters, src);
+    *src = (struct gs_character){ 0 };
 }
 
 static void gs_character_set_npc_info(struct gs_packet_npc_info *dest,
@@ -637,12 +271,14 @@ static void gs_character_set_player_info(struct gs_packet_char_info *dest,
     dest->name_color              = 0xFFFFFF;
 }
 
+// Spawn new character (npc or playable) and broadcast packet to all players.
+// Todo: make sure the packet is broadcasted only to close players.
 void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
 {
-    static struct gs_packet_char_info char_info = { 0 };
-    static struct gs_packet_npc_info npc_info   = { 0 };
+    struct gs_packet_char_info char_info = { 0 };
+    struct gs_packet_npc_info npc_info   = { 0 };
 
-    static packet_t response[512] = { 0 };
+    packet_t response[512] = { 0 };
 
     struct gs_character *character = 0;
 
@@ -708,6 +344,433 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
     gs_character_add(gs, spawning);
 }
 
+// Sends the correct position of a character to a client.
+// The client asks the server every 1 sec. the correct player's
+// position. We can fix/sync a player's position by sending this
+// packet.
+void gs_character_validate_position(struct gs_state *gs,
+                                    struct gs_character *src,
+                                    struct gs_character *to)
+{
+    struct gs_packet_validate_pos validate_response = { 0 };
+
+    packet_t response[64] = { 0 };
+
+    assert(gs);
+    assert(src);
+    assert(to);
+
+    validate_response.id      = src->id;
+    validate_response.heading = src->heading;
+    validate_response.x       = src->position.x;
+    validate_response.y       = src->position.y;
+    validate_response.z       = src->position.z;
+
+    gs_packet_validate_pos_pack(response, &validate_response);
+    gs_character_encrypt_and_send_packet(gs, to, response);
+}
+
+void gs_character_action_failed(struct gs_state *gs, struct gs_character *src)
+{
+    byte_t type           = 0x00;
+    packet_t response[16] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    type = 0x25;
+    macro_packet_append_val(response, type);
+
+    gs_character_encrypt_and_send_packet(gs, src, response);
+}
+
+void gs_character_face_to(struct gs_state *gs,
+                          struct gs_character *src,
+                          i32_t degree)
+{
+    packet_t response[64]                           = { 0 };
+    struct gs_packet_begin_rotation rotation_packet = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    rotation_packet.obj_id = src->id;
+    rotation_packet.degree = degree;
+    rotation_packet.side   = 1;
+
+    gs_packet_begin_rotation_pack(response, &rotation_packet);
+    gs_character_broadcast_packet(gs, src, response);
+}
+
+void gs_character_say(struct gs_state *gs,
+                      struct gs_character *from,
+                      char *message,
+                      size_t message_size)
+{
+    struct gs_packet_say say = { 0 };
+    packet_t response[256]   = { 0 };
+
+    assert(gs);
+    assert(from);
+    assert(message);
+
+    say.character_id = from->id;
+
+    macro_l2_str_arr_from_char_arr(say.name, from->name);
+    l2_string_from_char(say.message,
+                        message,
+                        sizeof(say.message),
+                        message_size,
+                        message_size);
+
+    gs_packet_say_pack(response, &say);
+    gs_character_broadcast_packet(gs, from, response);
+}
+
+// Sends hp and max hp info of from to to character.
+// Todo: rename?
+void gs_character_send_status(struct gs_state *gs,
+                              struct gs_character *from,
+                              struct gs_character *to)
+{
+    packet_t response[512] = { 0 };
+
+    struct gs_packet_status status = { 0 };
+
+    struct gs_packet_status_attr attr = { 0 };
+
+    assert(gs);
+    assert(from);
+    assert(to);
+
+    status.obj_id = from->id;
+
+    attr.type            = STATUS_CUR_HP;
+    attr.value           = (i32_t) from->stats.hp;
+    status.attributes[0] = attr;
+
+    attr.type            = STATUS_MAX_HP;
+    attr.value           = (i32_t) from->stats.max_hp;
+    status.attributes[1] = attr;
+
+    status.count = 2;
+
+    gs_packet_status_pack(response, &status);
+    gs_character_broadcast_packet(gs, from, response);
+}
+
+// Revive and teleport character using option sent by client.
+// Of course, this option has to be checked since
+// the player can be cheating.
+// By default, revive to village will be used.
+void gs_character_revive(struct gs_state *gs,
+                         struct gs_character *src,
+                         enum gs_packet_revive_request_option where)
+{
+    struct gs_packet_revive revive = { 0 };
+
+    packet_t response[32] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    revive.obj_id = src->id;
+    gs_packet_revive_pack(response, &revive);
+    gs_character_broadcast_packet(gs, src, response);
+
+    switch (where) {
+    case REVIVE_IN_CLAN_HALL:
+    case REVIVE_IN_CASTLE:
+    case REVIVE_IN_SIEGE_HQ:
+    case REVIVE_IN_FIXED:
+    default:
+        break;
+    }
+}
+
+void gs_character_send_skill_list(struct gs_state *gs, struct gs_character *src)
+{
+    struct gs_packet_skill_list skill_list = { 0 };
+
+    packet_t response[sizeof(skill_list) * 2] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    skill_list.count             = 1;
+    skill_list.skills[0].id      = 30; // Backstab
+    skill_list.skills[0].passive = 0;
+    skill_list.skills[0].level   = 1;
+
+    gs_packet_skill_list_pack(response, &skill_list);
+    gs_character_encrypt_and_send_packet(gs, src, response);
+}
+
+// Todo: Make sure to also get the skill we wanna cast!
+void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
+{
+    struct gs_packet_skill_use skill_use = { 0 };
+
+    packet_t response[sizeof(skill_use) * 2] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    skill_use.src_id      = src->id;
+    skill_use.target_id   = src->ai.target_id;
+    skill_use.skill_id    = 30; // Backstab
+    skill_use.skill_level = 1;
+    skill_use.hit_time    = 15;
+    skill_use.reuse_delay = 15;
+    skill_use.x           = src->position.x;
+    skill_use.y           = src->position.y;
+    skill_use.z           = src->position.z;
+
+    gs_packet_skill_use_pack(response, &skill_use);
+    gs_character_broadcast_packet(gs, src, response);
+}
+
+// Send move packet to client and broadcast it to all players.
+// THIS FUNCTION WON'T update the character's actual position!
+// Todo: make sure the packet gets broadcasted only to close players.
+// Todo: maybe rename function to gs_character_notify_move?
+void gs_character_move(struct gs_state *gs,
+                       struct gs_character *character,
+                       struct gs_point *p)
+{
+    struct gs_packet_move move_response = { 0 };
+
+    packet_t packet[64] = { 0 };
+
+    assert(gs);
+    assert(character);
+    assert(p);
+
+    move_response.id     = character->id;
+    move_response.prev_x = character->position.x;
+    move_response.prev_y = character->position.y;
+    move_response.prev_z = character->position.z;
+    move_response.new_x  = character->ai.moving_to.x;
+    move_response.new_y  = character->ai.moving_to.y;
+    move_response.new_z  = character->ai.moving_to.z;
+
+    gs_packet_move_pack(packet, &move_response);
+    gs_character_broadcast_packet(gs, character, packet);
+}
+
+// (franco.montenegro) Rename. The function's name
+// doesn't represent what the function does. The only
+// thing that it does is to broadcast the character's death
+// and display the "resurrect window"
+void gs_character_die(struct gs_state *gs, struct gs_character *src)
+{
+    struct gs_packet_die die = { 0 };
+
+    packet_t response[64] = { 0 };
+
+    assert(gs);
+    assert(src);
+
+    die.obj_id     = src->id;
+    die.to_village = 1;
+    die.to_fixed   = 1;
+
+    gs_packet_die_pack(response, &die);
+    gs_character_broadcast_packet(gs, src, response);
+}
+
+// Launches auto attack.
+// The damage won't be done until the hit reaches the target,
+// which is performed in the game server tick function.
+//
+// (franco.montenegro) We should rename this function. The attack
+// is launched but the actual hit/damage gets done in the tick
+// function. Otherwise, the damage gets applied even after
+// the hit reached the target.
+void gs_character_launch_attack(struct gs_state *gs,
+                                struct gs_character *attacker,
+                                struct gs_character *target)
+{
+    // (franco.montenegro) auto_attack really means,
+    // "go into aggro mode"
+    struct gs_packet_auto_attack auto_attack = { 0 };
+
+    // (franco.montenegro) this is the packet that
+    // actually launches the attack.
+    struct gs_packet_attack attack  = { 0 };
+    struct gs_packet_attack_hit hit = { 0 };
+
+    packet_t auto_attack_packet[32] = { 0 };
+    packet_t attack_packet[256]     = { 0 };
+
+    double d = 0;
+    double a = 0;
+    i32_t x  = 0;
+    i32_t y  = 0;
+
+    assert(gs);
+    assert(attacker);
+    assert(target);
+
+    auto_attack.target_id = target->id;
+
+    hit.damage    = attacker->stats.p_attack;
+    hit.target_id = target->id;
+
+    attack.attacker_id = attacker->id;
+    attack.attacker_x  = attacker->position.x;
+    attack.attacker_y  = attacker->position.y;
+    attack.attacker_z  = attacker->position.z;
+    attack.hit_count   = 1;
+    attack.hits[0]     = hit;
+
+    gs_packet_auto_attack_pack(auto_attack_packet, &auto_attack);
+    gs_packet_attack_pack(attack_packet, &attack);
+
+    gs_character_broadcast_packet(gs, attacker, auto_attack_packet);
+    gs_character_broadcast_packet(gs, attacker, attack_packet);
+}
+
+void gs_character_stop_auto_attack(struct gs_state *gs,
+                                   struct gs_character *attacker,
+                                   struct gs_character *target)
+{
+    struct gs_packet_auto_attack_stop auto_attack_stop = { 0 };
+
+    packet_t response[16] = { 0 };
+
+    assert(gs);
+    assert(attacker);
+    assert(target);
+
+    auto_attack_stop.target_id = target->id;
+
+    gs_packet_auto_attack_stop_pack(response, &auto_attack_stop);
+    gs_character_broadcast_packet(gs, attacker, response);
+}
+
+void gs_character_select_target(struct gs_state *gs,
+                                struct gs_character *character,
+                                struct gs_character *target)
+{
+    struct gs_packet_target_selected selected = { 0 };
+
+    packet_t response[32] = { 0 };
+
+    assert(gs);
+    assert(character);
+    assert(target);
+
+    selected.target_id = target->id;
+    selected.color     = 0;
+
+    gs_packet_target_selected_pack(response, &selected);
+    gs_character_encrypt_and_send_packet(gs, character, response);
+    gs_character_validate_position(gs, character, target);
+    gs_character_validate_position(gs, target, character);
+}
+
+void gs_character_spawn_random_orc(struct gs_state *gs,
+                                   struct gs_point *location)
+{
+    struct gs_character orc = { 0 };
+
+    assert(gs);
+    assert(location);
+
+    orc.id                   = gs_character_get_free_id(gs);
+    orc.template_id          = 7082;
+    orc.position.x           = location->x;
+    orc.position.y           = location->y;
+    orc.position.z           = location->z;
+    orc.collision_radius     = 8;
+    orc.collision_height     = 25;
+    orc.level                = 10;
+    orc.sex                  = 0;
+    orc.stats.hp             = 197;
+    orc.stats.max_hp         = 197;
+    orc.stats.mp             = 102;
+    orc.stats.str            = 40;
+    orc.stats.con            = 43;
+    orc.stats.dex            = 30;
+    orc.stats._int           = 21;
+    orc.stats.wit            = 20;
+    orc.stats.men            = 10;
+    orc.exp                  = 293;
+    orc.sp                   = 10;
+    orc.stats.p_attack       = 41;
+    orc.stats.p_def          = 55;
+    orc.stats.m_attack       = 6;
+    orc.stats.m_def          = 45;
+    orc.stats.p_attack_speed = 249;
+    orc.stats.m_attack_speed = 227;
+    orc.stats.walk_speed     = 45;
+    orc.stats.run_speed      = 110;
+    orc.revive_after_killed  = 1;
+    orc.revive_after_cd      = 30;
+
+    macro_util_cpy_str_arr(orc.name, "Beti");
+    macro_util_cpy_str_arr(orc.title, "Merchant");
+
+    gs_character_spawn(gs, &orc);
+}
+
+// Utility function that fills dest character using
+// parameters/values sent by the client (through src packet).
+void gs_character_from_request(struct gs_character *dest,
+                               struct gs_packet_create_char_request *src)
+{
+    assert(dest);
+    assert(src);
+
+    macro_l2_str_arr_to_char_arr(dest->name, src->name);
+
+    dest->race       = src->race;
+    dest->_class     = src->_class;
+    dest->sex        = src->sex;
+    dest->face       = src->face;
+    dest->hair_color = src->hair_color;
+    dest->hair_style = src->hair_style;
+    dest->stats.con  = src->con;
+    dest->stats.dex  = src->dex;
+    dest->stats.men  = src->men;
+    dest->stats.str  = src->str;
+    dest->stats.wit  = src->wit;
+    dest->stats._int = src->_int;
+
+    // Talking Island
+    dest->position.x = -83968;
+    dest->position.y = 244634;
+    dest->position.z = -3730;
+
+    dest->level                           = 1;
+    dest->exp                             = 50;
+    dest->sp                              = 10;
+    dest->stats.hp                        = 400;
+    dest->stats.mp                        = 400;
+    dest->stats.cp                        = 200;
+    dest->stats.max_hp                    = 400;
+    dest->stats.max_mp                    = 400;
+    dest->stats.max_cp                    = 200;
+    dest->stats.p_attack                  = 42;
+    dest->stats.m_attack                  = 42;
+    dest->stats.p_def                     = 42;
+    dest->stats.m_def                     = 42;
+    dest->stats.evasion_rate              = 2;
+    dest->stats.accuracy                  = 2;
+    dest->stats.critical_hit              = 2;
+    dest->stats.run_speed                 = 120;
+    dest->stats.walk_speed                = 100;
+    dest->stats.p_attack_speed            = 20;
+    dest->stats.m_attack_speed            = 20;
+    dest->stats.movement_speed_multiplier = 1;
+    dest->stats.attack_speed_multiplier   = 1;
+    dest->collision_radius                = 9;
+    dest->collision_height                = 23;
+    dest->max_load                        = 42;
+    dest->name_color                      = 0xFFFFFF;
+}
+
 void gs_character_restart(struct gs_state *gs, struct gs_character *character)
 {
     struct gs_packet_restart restart = { 0 };
@@ -720,8 +783,7 @@ void gs_character_restart(struct gs_state *gs, struct gs_character *character)
     restart.response = 0x01; // ok!
 
     gs_packet_restart_pack(response, &restart);
-    gs_character_encrypt_and_send_packet(gs, character, response);
-
+    gs_character_broadcast_packet(gs, character, response);
     gs_character_disconnect(gs, character);
 }
 
@@ -730,9 +792,9 @@ void gs_character_show_npc_html_message(struct gs_state *gs,
                                         char *message,
                                         size_t message_size)
 {
-    static struct gs_packet_npc_html_message html_message = { 0 };
+    struct gs_packet_npc_html_message html_message = { 0 };
 
-    static packet_t response[16384] = { 0 };
+    packet_t response[16384] = { 0 };
 
     assert(gs);
     assert(character);
@@ -771,7 +833,8 @@ static void gs_character_broadcast_move_type(struct gs_state *gs,
     gs_character_broadcast_packet(gs, src, response);
 }
 
-void gs_character_walk(struct gs_state *gs, struct gs_character *src)
+// Change character's movement type to be walking.
+void gs_character_switch_to_walk(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
     assert(src);
@@ -779,7 +842,8 @@ void gs_character_walk(struct gs_state *gs, struct gs_character *src)
     gs_character_broadcast_move_type(gs, src);
 }
 
-void gs_character_run(struct gs_state *gs, struct gs_character *src)
+// Change character's movement type to be running.
+void gs_character_switch_to_run(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
     assert(src);
@@ -803,41 +867,4 @@ struct gs_character *gs_character_from_session(struct gs_state *gs,
     }
 
     return 0;
-}
-
-u32_t gs_character_get_free_id(struct gs_state *gs)
-{
-    assert(gs);
-
-    // Don't use id 0, it causes issues with packets
-    // sent to the client.
-    for (u64_t i = 1, max = macro_util_arr_len(gs->characters); i < max;
-         i += 1) {
-        if (!gs->characters[i].id) {
-            return (u32_t) i;
-        }
-    }
-
-    return 0;
-}
-
-void gs_character_add(struct gs_state *gs, struct gs_character *src)
-{
-    assert(gs);
-    assert(src);
-    assert(src->id);
-
-    gs->characters[src->id] = *src;
-    util_list_add(gs->list_characters,
-                  macro_util_arr_len(gs->list_characters),
-                  &gs->characters[src->id]);
-}
-
-void gs_character_disconnect(struct gs_state *gs, struct gs_character *src)
-{
-    assert(gs);
-    assert(src);
-
-    util_list_remove(gs->list_characters, src);
-    *src = (struct gs_character){ 0 };
 }

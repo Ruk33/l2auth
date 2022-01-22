@@ -1,7 +1,6 @@
 #ifndef INCLUDE_LS_TYPES_H
 #define INCLUDE_LS_TYPES_H
 
-#include "util.h"
 #include "config.h"
 
 struct ls_rsa;

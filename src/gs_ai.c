@@ -1,11 +1,7 @@
 #include <assert.h>
 #include <cglm/cglm.h>
 #include "include/config.h"
-#include "include/packet.h"
 #include "include/gs_types.h"
-#include "include/gs_character.h"
-#include "include/gs_client_packets.h"
-#include "include/gs_ai.h"
 
 #define macro_gs_ai_html_arr_msg(gs, character, src) \
     gs_character_show_npc_html_message(gs, character, src, sizeof(src))
@@ -146,7 +142,7 @@ static void gs_ai_on_dead(struct gs_state *gs,
     gs_ai_go_idle(gs, killer);
 
     if (gs_character_is_npc(killer)) {
-        gs_character_walk(gs, killer);
+        gs_character_switch_to_walk(gs, killer);
     }
 }
 
@@ -277,7 +273,7 @@ static void gs_ai_attack(struct gs_state *gs,
     if (gs_character_is_npc(target)) {
         target->ai.state     = AI_HAS_AGRO;
         target->ai.target_id = attacker->id;
-        gs_character_run(gs, target);
+        gs_character_switch_to_run(gs, target);
     }
 
     // (franco.montenegro) Properly calculate this value

@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <sqlite3.h>
-#include "../include/util.h"
 #include "../include/gs_types.h"
 #include "../include/ls_types.h"
 #include "../include/storage.h"

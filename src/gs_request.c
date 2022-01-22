@@ -1,15 +1,7 @@
 #include <assert.h>
-#include "include/util.h"
 #include "include/platform.h"
 #include "include/storage.h"
-#include "include/l2_string.h"
-#include "include/packet.h"
 #include "include/gs_types.h"
-#include "include/gs_server_packets.h"
-#include "include/gs_character.h"
-#include "include/gs_session.h"
-#include "include/gs_ai.h"
-#include "include/gs_request.h"
 
 static void gs_request_initialize_server(struct gs_state *gs)
 {
@@ -23,11 +15,13 @@ static void gs_request_initialize_server(struct gs_state *gs)
 
     gs->is_server_initialized = 1;
 
+    // Run initialization code here!
+
     // Talking island.
-    location.x = -83968;
-    location.y = 244634;
-    location.z = -3730;
-    gs_character_spawn_random_orc(gs, &location);
+    // location.x = -83968;
+    // location.y = 244634;
+    // location.z = -3730;
+    // gs_character_spawn_random_orc(gs, &location);
 }
 
 static void handle_protocol_version(struct gs_state *gs,
@@ -185,7 +179,7 @@ static void handle_auth_login(struct gs_state *gs,
 
         // (franco.montenegro) Blehman, thanks for noticing this value.
         // The character will be auto selected in the character screen.
-        character->auto_select = i == chars_found - 1;
+        character->auto_select = i == (chars_found - 1);
 
         log_normal("%s is auto select: %d",
                    characters[i].name,

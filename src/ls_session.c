@@ -2,10 +2,8 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/blowfish.h>
-#include "include/util.h"
 #include "include/config.h"
 #include "include/platform.h"
-#include "include/ls_session.h"
 
 struct ls_rsa {
     BIGNUM *e;

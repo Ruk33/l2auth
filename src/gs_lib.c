@@ -1,19 +1,18 @@
 #include <assert.h>
 #include <time.h>
 
+#include "util.c"
+#include "packet.c"
+#include "l2_string.c"
 #include "storage/sqlite.c"
-#include "gs_ai.c"
-#include "gs_character.c"
 #include "gs_client_packets.c"
 #include "gs_server_packets.c"
-#include "gs_request.c"
 #include "gs_session.c"
-#include "l2_string.c"
-#include "packet.c"
-#include "util.c"
+#include "gs_character.c"
+#include "gs_ai.c"
+#include "gs_request.c"
 
 #include "include/config.h"
-#include "include/gs_lib.h"
 
 static struct gs_state *g_gs = 0;
 

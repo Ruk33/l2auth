@@ -5,13 +5,8 @@
 #include <openssl/evp.h>
 #include "include/platform.h"
 #include "include/config.h"
-#include "include/util.h"
 #include "include/storage.h"
-#include "include/packet.h"
 #include "include/ls_types.h"
-#include "include/ls_session.h"
-#include "include/ls_server_packets.h"
-#include "include/ls_request.h"
 
 static void handle_gg_auth(struct ls_state *ls, struct ls_session *session)
 {

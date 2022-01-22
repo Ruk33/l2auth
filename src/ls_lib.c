@@ -1,15 +1,12 @@
 #include <assert.h>
-
 #include "include/platform.h"
-#include "include/ls_types.h"
-#include "include/ls_lib.h"
 
 #include "util.c"
 #include "packet.c"
 #include "storage/sqlite.c"
-#include "ls_request.c"
-#include "ls_session.c"
 #include "ls_server_packets.c"
+#include "ls_session.c"
+#include "ls_request.c"
 
 static struct ls_state *g_ls = 0;
 

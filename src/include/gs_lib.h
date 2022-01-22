@@ -1,11 +1,9 @@
 #ifndef INCLUDE_GS_LIB_H
 #define INCLUDE_GS_LIB_H
 
-#include "util.h"
 #include "gs_types.h"
 #include "config.h"
 #include "platform.h"
-#include "gs_character.h"
 
 void gs_lib_load(struct gs_state *gs);
 

@@ -4,7 +4,6 @@
 #include <time.h>
 
 #include "config.h"
-#include "util.h"
 #include "platform.h"
 
 /*
