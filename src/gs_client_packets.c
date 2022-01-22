@@ -10,7 +10,6 @@
 //                 return 0;
 //         }
 
-
 struct gs_packet_action_request {
     u32_t target_id;
     i32_t origin_x;

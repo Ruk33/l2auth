@@ -1361,8 +1361,9 @@ void gs_packet_skill_list_pack(packet_t *dest, struct gs_packet_skill_list *src)
 
     for (u32_t i = 0; i < src->count; i += 1) {
         assert(src->skills[i].id && "skill id is required in skill list.");
-        assert(src->skills[i].level && "skill level is required in skill "
-                                       "list.");
+        assert(src->skills[i].level &&
+               "skill level is required in skill "
+               "list.");
         macro_packet_append_val(dest, src->skills[i].passive);
         macro_packet_append_val(dest, src->skills[i].level);
         macro_packet_append_val(dest, src->skills[i].id);

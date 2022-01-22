@@ -155,7 +155,7 @@ void gs_session_encrypt(struct gs_session *session, byte_t *dest, packet_t *src)
 
 // Decrypt packet if connection is encrypted.
 // If not encrypted, src gets copied to dest.
-// 
+//
 // (franco.montenegro) We SHOULD make sure dest is big enough to hold src.
 void gs_session_decrypt(struct gs_session *session, packet_t *dest, byte_t *src)
 {

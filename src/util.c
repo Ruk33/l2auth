@@ -152,7 +152,7 @@ struct list {
 };
 
 // Set n bytes from dest to 0.
-// 
+//
 // (franco.montenegro) There may be room for improvement
 // in this function, say, instead of copying byte per byte
 // copy chunks (4 bytes at a time using size_t)
