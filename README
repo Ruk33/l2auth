@@ -1,174 +1,113 @@
-== L2 Auth
-Simple Lineage 2 C4 server emulator written in C as a learning exercise.
+L2 AUTH
+    L2auth is a simple Lineage 2 Chronicle 4 (C4) server emulator written in 
+    the C programming language as a learning exercise. The project's objective
+    is not to be a 1:1 implementation with the official servers but rather, 
+    just a fun experiment to see and explore what can be made with it.
 
-== Why does this project exist?
-Because it's fun; because I like Lineage 2 (at least until C4 and Interlude 
-chronicles) and because I like the C programming language and I thought this 
-is an excellent project to work with it.
+COMUNITY
+    - Join our Discord at https://discord.gg/A62eUFfDp6
+    - Watch the development of the project in:
+        - Youtube: https://www.youtube.com/channel/UCmbdpFvxXfxk4KbmUgTAomw
+        - Twitch: https://www.twitch.tv/franco_montenegro
 
-== Discord
-Join our Discord at https://discord.gg/A62eUFfDp6
+QUICK START
+    - Download a release from: https://github.com/Ruk33/l2auth/releases
+    - Start the login server from a terminal with: bash ./loginserver
+    - Start the game server from a terminal with: bash ./gameserver
+    - Run the game (make sure your system or /etc/host file is set for localhost)
+    The login server will listen for connections to localhost using port 2106.
+    The game server will listen for connections to localhost using port 7777.
 
-== Streaming
-If you would like to follow the project's progress, I stream 
-on https://www.twitch.tv/franco_montenegro.
+CONTRIBUTE
+    Just open up an issue detailing what you will be working on, this way
+    we can be more organized with the work. After that, just have 
+    fun working on it.
 
-== Download
-You can download a release from https://github.com/Ruk33/l2auth/releases
-
-== System for Windows 10
-I have uploaded my system folder that works fine in Windows 10. Remember, this
-is for Lineage 2 Chronicle 4.
-
-https://drive.google.com/file/d/18SFuJkZB7y7JlIaxoD4goPjfVwmYhutK/view?usp=sharing
-
-The only update required is to change your hosts file.
-Add the following line:
-
-127.0.0.1 l2authd.lineage2.com
-
-In Windows, the host file can be found in \Windows\System32\drivers\etc\hosts.
-In Linux, the host file can be found in /etc/hosts.
-
-== Compile in Linux
-- Run sh build.sh
-- Run migrations (see Running migrations)
-
-== Compile in Windows
-- Open a CMD terminal
-- Run build.bat
-- Run migrations (see Running migrations)
-
-== Running migrations
-Open a terminal and run:
-bash migrations/sqlite/run.sh build/db
-
-This will create a database in build/db (if required) and run the migration.
-
-== Running seeds
-Open a terminal and run:
-bash seeds/sqlite/run.sh build/db
-
-This will create some initial entries in the database (ie, server like Bartz)
-
-== Start login server
-Run build/login_server. The login server will listen for connections to
-localhost using port 2106.
-
-== Start game server
-Run build/game_server. The game server will listen for connection to
-localhost using port 7777.
-
-== Live changes
-The game server supports changes without having to shutdown or restart
-the server itself.
-
-- Run the game server
-- Make a change
-- Re-build the project.
-
-The new changes will be live.
-
-== Linux Dependencies
-- openssl
-- sqlite3
-- cglm
-
-== Windows dependencies
-- Microsoft Visual Studio (C compiler)
-
-== Game and login server
-This project divides the login server (from where the user can authenticate
-with a username and password) from the game server (where the user can play).
-This is the exact same approach as to what projects like L2J do.
-
-== Files with ls prefix
-The ls prefix stands for login server. Files using this prefix are only
-used by the login server.
-
-== Files with gs prefix
-The gs prefix stands for game server. Files using this prefix are only
-used by the game server.
-
-== Files with os prefix
-The os prefix stands for operating system. Files using this prefix may be used
-by code targeting a specific os (for instance, src/linux/game_server/main.c) and
-may also be included in both, login and game server.
-
-== Files with no prefix
-These are files used by both, the login and game server.
-
-== Game server hot code reload
-The game server logic is implemented as a library. This means it can be
-loaded at runtime allowing for changes to occur and be live without having
-to shut down the server.
-
-== Lineage 2 Protocol
-Lineage 2 uses TCP to send packets.
-
-All integers are little-endian and this project is MEANT to run on little
-endian machines.
-
-The first two bytes of the packet contain the packet size and the third one, 
-usually the packet type.
-
-Other than the first packet, all the login server packets are encrypted with 
-blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000.
-
-== To do
-- [x] Deprecate fork/process for each request.
-- [x] Find a way to upload system folder.
-- [x] Check what's the error when creating a new character (column index out of range)
-- [x] Implement damage
-- [x] Double check the game server when a client gets disconnected
-      The requests are not being handled correctly.
-- [x] Remove/deprecate cmake, it's not worth it.
-- [x] Add build/makefile to rebuild project and database if required.
-- [x] Check work flow. For some reason, I delete the database and needs
-      to be recreated.
-- [x] I think I need to tick every 0.1 seconds instead of 1 second.
-- [x] Fix the movement. Even though now the position is kinda updated,
-      it needs to be more precise.
-- [x] Fix orc ai, it drops the brain on each step.
-- [x] Hotcode reload
-- [x] Display terms of service view
-- [x] Display server list
-- [x] Allow to enter game server
-- [x] Create character
-- [x] Enter world
-- [x] Walk
-- [x] Handle multiple connections
-- [x] Correctly handle multiple packets at once
-- [x] See other players
-- [x] Spawn random orc (spawned when trying to restart :D)
-- [x] Timers
-- [x] Basic attack AI
-        - if target is too far, move closer to it
-        - if in reach, attack
-- [x] Basic NPC AI
-        - if attacked, attack!
-
-== Want to contribute?
-Awesome! Just open up an issue detailing what you will be working on, this way
-we can be more organized with the work. After that, just have fun working on it.
-
-A few rules for contributors:
-- No dynamic memory allocation. Exceptions:
+    A few rules for contributors:
+    - No dynamic memory allocation. Exceptions:
         - Third party libraries
         - Platform specific code (win32, linux, etc. layers)
-- All variables must be initialized
-- No NULL, use 0 (shorter to write)
-- OS related stuff must be inside of the os folder (ie, src/linux)
-- Storage related stuff, must be inside of storage/name.c (ie, storage/sqlite.c)
-- Only 1 thread is used to handle requests
-- Variables exceeding 100 bytes, must be static and zeroed before used
-- The code should be robust enough to handle either bad and good requests without crashing
-- Have fun
+    - All variables must be initialized
+    - No NULL, use 0 (shorter to write)
+    - OS related code must be inside of the os folder (ie, src/linux)
+    - Storage related code, must be inside of storage/name.c (ie, storage/sqlite.c)
+    - Only 1 thread is used to handle requests
+    - The code should be robust enough to handle bad and good requests without crashing
+    - Have fun
 
-== Credits
-- l2jserver (http://l2jserver.com/)
-- http://fursoffers.narod.ru/Packets.htm
-- https://code.google.com/archive/p/l2adenalib/wikis/L2LoginServerProtocol.wiki
+CREDITS
+    - l2jserver: http://l2jserver.com/
+    - http://fursoffers.narod.ru/Packets.htm
+    - https://code.google.com/archive/p/l2adenalib/wikis/L2LoginServerProtocol.wiki
 
-== License
-GPL
+LICENSE
+    GPL
+
+PROJECT DOCUMENTATION
+    The project is split between the login server (where the user can 
+    authenticate with a username and password) from the game server.
+
+    To make it portable to multiple operating systems (Windows, Linux, etc.),
+    the project separates all that platform specific code from the game code.
+    The game server produces a library/dll in order to provide hot code reload.
+    With this, any change in the game server code can be reflected in a 
+    running server without restarting or shutting it down.
+
+    For storage, a similar approach is taken. To support multiple databases,
+    the storage code is separated from the rest of the code. In order to provide 
+    a new storage/database (ie, MySQL, PostgreSQL, etc.), you only need to 
+    create a new file in the storage folder and provide the implementation for
+    the functions declared in src/include/storage.h. After that, just update 
+    gs_lib.c and ls_lib.c to include your implementation instead of sqlite.c.
+
+DEPENDENCIES
+    - openssl: https://www.openssl.org
+    - sqlite3: https://www.sqlite.org
+    - cglm: https://github.com/recp/cglm
+
+COMPILE IN LINUX
+    - Run: bash build.sh
+    - Run migrations and seeds (see below for these two steps)
+
+COMPILE IN WINDOWS
+    Windows builds are not being updated for the moment since I don't have
+    access to a Windows PC. If you would like to contribute on this end, 
+    you are welcome to do so. Thanks!
+
+    - Open a CMD terminal
+    - Run: build.bat
+    - Run migrations and seeds (see below for these two steps)
+
+RUN MIGRATIONS
+    Migrations contain all the schemes for the database (meaning, how should 
+    the information be stored in the database)
+
+    - Run: bash migrations/sqlite/run.sh build/db
+    This will create a database in build/db (if required) and run the migration.
+
+RUN SEEDS
+    Seeds contain some initial data to upload into the database, such as,
+    server information (ie, Bartz)
+
+    - Run: bash seeds/sqlite/run.sh build/db
+    This will create some initial entries in the database build/db.
+
+START LOGIN SERVER
+    - Run: build/login_server
+    The login server will listen for connections to localhost using port 2106.
+
+START GAME SERVER
+    Run: build/game_server
+    The game server will listen for connection to localhost using port 7777.
+
+LINEAGE 2 PROTOCOL
+    Lineage 2 uses TCP to send packets.
+
+    All integers are little-endian and this project is MEANT to run on little
+    endian machines.
+
+    The first two bytes of the packet contain the packet size and the third one, 
+    usually the packet type.
+
+    Other than the first packet, all the login server packets are encrypted with 
+    Blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000
