@@ -110,7 +110,7 @@ static void gs_ctrl_on_npc_interact(struct gs_state *gs,
                                "test!</body></html>");
 }
 
-static void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
+void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
     assert(src);
@@ -157,9 +157,9 @@ static void gs_ctrl_on_revive(struct gs_state *gs, struct gs_character *src)
     gs_character_send_status(gs, src, src);
 }
 
-static void gs_ctrl_move(struct gs_state *gs,
-                         struct gs_character *src,
-                         struct gs_point *where)
+void gs_ctrl_move(struct gs_state *gs,
+                  struct gs_character *src,
+                  struct gs_point *where)
 {
     vec3 from = { 0 };
     vec3 to   = { 0 };
@@ -187,12 +187,9 @@ static void gs_ctrl_move(struct gs_state *gs,
     gs_character_move(gs, src, where);
 }
 
-// Move src character closer to target if required.
-// If the src is too far, a movement behavior will begin and 1 will be returned.
-// If no movement is required, nothing happens and 0 is returned.
-static int gs_ctrl_move_to_interact_with(struct gs_state *gs,
-                                         struct gs_character *src,
-                                         struct gs_character *target)
+int gs_ctrl_move_to_interact_with(struct gs_state *gs,
+                                  struct gs_character *src,
+                                  struct gs_character *target)
 {
     vec3 from         = { 0 };
     vec3 to           = { 0 };
@@ -239,9 +236,9 @@ static int gs_ctrl_move_to_interact_with(struct gs_state *gs,
     return 1;
 }
 
-static void gs_ctrl_attack(struct gs_state *gs,
-                           struct gs_character *attacker,
-                           struct gs_character *target)
+void gs_ctrl_attack(struct gs_state *gs,
+                    struct gs_character *attacker,
+                    struct gs_character *target)
 {
     assert(gs);
     assert(attacker);
@@ -285,9 +282,9 @@ static void gs_ctrl_attack(struct gs_state *gs,
     gs_character_launch_attack(gs, attacker, target);
 }
 
-static void gs_ctrl_interact(struct gs_state *gs,
-                             struct gs_character *src,
-                             struct gs_character *target)
+void gs_ctrl_interact(struct gs_state *gs,
+                      struct gs_character *src,
+                      struct gs_character *target)
 {
     assert(gs);
     assert(src);
@@ -312,9 +309,9 @@ static void gs_ctrl_interact(struct gs_state *gs,
     }
 }
 
-static void gs_ctrl_select_target(struct gs_state *gs,
-                                  struct gs_character *src,
-                                  struct gs_character *target)
+void gs_ctrl_select_target(struct gs_state *gs,
+                           struct gs_character *src,
+                           struct gs_character *target)
 {
     assert(gs);
     assert(src);
@@ -426,18 +423,12 @@ static void gs_ctrl_handle_attack_request(struct gs_state *gs,
 
     target = gs_character_find_by_id(gs, attack.target_id);
 
-    if (!target) {
-        character->ctrl.target_id = 0;
-        gs_ctrl_go_idle(gs, character);
-        return;
-    }
-
     gs_ctrl_attack(gs, character, target);
 }
 
-static void gs_ctrl_handle_say(struct gs_state *gs,
-                               struct gs_character *character,
-                               packet_t *packet)
+static void gs_ctrl_handle_say_request(struct gs_state *gs,
+                                       struct gs_character *character,
+                                       packet_t *packet)
 {
     char message[256] = { 0 };
 
@@ -483,9 +474,9 @@ static void gs_ctrl_handle_skill_list_request(struct gs_state *gs,
     gs_character_send_skill_list(gs, character);
 }
 
-static void gs_ctrl_handle_skill_use(struct gs_state *gs,
-                                     struct gs_character *character,
-                                     packet_t *request)
+static void gs_ctrl_handle_skill_use_request(struct gs_state *gs,
+                                             struct gs_character *character,
+                                             packet_t *request)
 {
     struct gs_packet_skill_use_request skill_use = { 0 };
 
@@ -577,8 +568,8 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
     // gs_character_validate_position(gs, character);
 }
 
-static void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
-                                           struct gs_character *npc)
+void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
+                                    struct gs_character *npc)
 {
     struct gs_point random_point = { 0 };
 
@@ -757,7 +748,7 @@ void gs_ctrl_handle_request(struct gs_state *gs,
     case request_type_logout:
         break;
     case request_type_say:
-        gs_ctrl_handle_say(gs, character, request);
+        gs_ctrl_handle_say_request(gs, character, request);
         break;
     case request_type_restart:
         gs_ctrl_handle_restart_request(gs, character);
@@ -792,7 +783,7 @@ void gs_ctrl_handle_request(struct gs_state *gs,
         gs_ctrl_handle_skill_list_request(gs, character);
         break;
     case request_skill_use:
-        gs_ctrl_handle_skill_use(gs, character, request);
+        gs_ctrl_handle_skill_use_request(gs, character, request);
         break;
     default:
         break;
