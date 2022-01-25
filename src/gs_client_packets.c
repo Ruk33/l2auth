@@ -65,7 +65,7 @@ enum gs_packet_revive_request_option
     REVIVE_IN_CLAN_HALL = 1,
     REVIVE_IN_CASTLE    = 2,
     REVIVE_IN_SIEGE_HQ  = 3,
-    REVIVE_IN_FIXED     = 4,
+    REVIVE_FIXED        = 4,
 };
 
 struct gs_packet_revive_request {

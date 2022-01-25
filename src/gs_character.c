@@ -469,7 +469,7 @@ void gs_character_revive(struct gs_state *gs,
     case REVIVE_IN_CLAN_HALL:
     case REVIVE_IN_CASTLE:
     case REVIVE_IN_SIEGE_HQ:
-    case REVIVE_IN_FIXED:
+    case REVIVE_FIXED:
     default:
         break;
     }

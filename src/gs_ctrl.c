@@ -78,38 +78,6 @@ static enum request_type g_actions_by_state[][16] = {
     },
 };
 
-static void gs_ctrl_on_npc_interact(struct gs_state *gs,
-                                    struct gs_character *npc,
-                                    struct gs_character *player)
-{
-    assert(gs);
-    assert(npc);
-    assert(player);
-
-    // vec3 npc_vec    = { 0 };
-    // vec3 player_vec = { 0 };
-    // float angle     = 0;
-
-    // npc_vec[0] = npc->position.x;
-    // npc_vec[1] = npc->position.y;
-    // npc_vec[2] = npc->position.z;
-
-    // player_vec[0] = player->position.x;
-    // player_vec[1] = player->position.y;
-    // player_vec[2] = player->position.z;
-
-    // angle = glm_vec3_angle(npc_vec, player_vec);
-    // angle = glm_deg(angle);
-
-    // gs_character_face_to(gs, npc, angle);
-
-    // Todo: don't hardcode the message.
-    macro_gs_ctrl_html_arr_msg(gs,
-                               player,
-                               "<html><body>Hi, this is a "
-                               "test!</body></html>");
-}
-
 void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
@@ -125,17 +93,21 @@ void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
     src->ctrl.state = ctrl_state_idle;
 }
 
-static void gs_ctrl_on_dead(struct gs_state *gs,
-                            struct gs_character *dead,
-                            struct gs_character *killer)
+void gs_ctrl_die(struct gs_state *gs,
+                 struct gs_character *dead,
+                 struct gs_character *killer)
 {
     assert(gs);
     assert(dead);
     assert(killer);
 
+    gs_character_die(gs, dead);
+
     dead->ctrl       = (struct gs_ctrl){ 0 };
     dead->ctrl.state = ctrl_state_dead;
 
+    // (franco.montenegro) Not sure if we should update
+    // the killer's state in this function or outside.
     killer->ctrl.move_data     = (struct gs_move_data){ 0 };
     killer->ctrl.leave_agro_cd = 100;
 
@@ -146,7 +118,9 @@ static void gs_ctrl_on_dead(struct gs_state *gs,
     }
 }
 
-static void gs_ctrl_on_revive(struct gs_state *gs, struct gs_character *src)
+void gs_ctrl_revive(struct gs_state *gs,
+                    struct gs_character *src,
+                    enum gs_packet_revive_request_option option)
 {
     assert(gs);
     assert(src);
@@ -154,6 +128,7 @@ static void gs_ctrl_on_revive(struct gs_state *gs, struct gs_character *src)
     src->ctrl     = (struct gs_ctrl){ 0 };
     src->stats.hp = src->stats.max_hp;
 
+    gs_character_revive(gs, src, option);
     gs_character_send_status(gs, src, src);
 }
 
@@ -304,9 +279,14 @@ void gs_ctrl_interact(struct gs_state *gs,
         return;
     }
 
-    if (gs_character_is_npc(target)) {
-        gs_ctrl_on_npc_interact(gs, target, src);
+    if (!gs_character_is_npc(target)) {
+        return;
     }
+
+    macro_gs_ctrl_html_arr_msg(gs,
+                               src,
+                               "<html><body>Hi, this is a "
+                               "test!</body></html>");
 }
 
 void gs_ctrl_select_target(struct gs_state *gs,
@@ -462,8 +442,7 @@ static void gs_ctrl_handle_revive_request(struct gs_state *gs,
     assert(request);
 
     gs_packet_revive_request_unpack(&revive_request, request);
-    gs_character_revive(gs, character, revive_request.option_chosen);
-    gs_ctrl_on_revive(gs, character);
+    gs_ctrl_revive(gs, character, revive_request.option_chosen);
 }
 
 static void gs_ctrl_handle_skill_list_request(struct gs_state *gs,
@@ -553,7 +532,6 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
         character->position       = character->ctrl.move_data.destination;
         character->ctrl.move_data = (struct gs_move_data){ 0 };
         gs_ctrl_go_idle(gs, character);
-        // gs_character_validate_position(gs, character);
         return;
     }
 
@@ -564,8 +542,6 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
     character->position.x += velocity[0];
     character->position.y += velocity[1];
     character->position.z += velocity[2];
-
-    // gs_character_validate_position(gs, character);
 }
 
 void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
@@ -632,7 +608,7 @@ void gs_ctrl_tick(struct gs_state *gs,
             log_normal("revive!");
             // go back to the original value
             character->revive_after_cd = 50;
-            gs_ctrl_on_revive(gs, character);
+            gs_ctrl_revive(gs, character, REVIVE_FIXED);
         }
     }
 
@@ -680,8 +656,7 @@ void gs_ctrl_tick(struct gs_state *gs,
                 gs_character_send_status(gs, target, character);
 
                 if (target->stats.hp == 0) {
-                    gs_character_die(gs, target);
-                    gs_ctrl_on_dead(gs, target, character);
+                    gs_ctrl_die(gs, target, character);
                 }
             } else {
                 gs_ctrl_go_idle(gs, character);
