@@ -40,17 +40,14 @@ static void handle_protocol_version(struct gs_state *gs,
 
 static void handle_enter_world(struct gs_state *gs, struct gs_session *session)
 {
-    static struct gs_packet_enter_world enter_world = { 0 };
+    struct gs_packet_enter_world enter_world = { 0 };
 
-    static packet_t response[1024] = { 0 };
+    packet_t response[1024] = { 0 };
 
     struct gs_character *character = 0;
 
     assert(gs);
     assert(session);
-
-    util_set_zero(&enter_world, sizeof(enter_world));
-    macro_util_set_arr_zero(response);
 
     character = gs_character_from_session(gs, session);
 
@@ -129,12 +126,12 @@ static void handle_auth_login(struct gs_state *gs,
                               struct gs_session *session,
                               packet_t *packet)
 {
-    static struct gs_packet_auth_login auth_login = { 0 };
+    struct gs_packet_auth_login auth_login = { 0 };
 
     // Todo: confirm max amount of characters in lobby.
-    static struct gs_character characters[10] = { 0 };
+    struct gs_character characters[10] = { 0 };
 
-    static packet_t response[4096] = { 0 };
+    packet_t response[4096] = { 0 };
 
     struct gs_packet_auth_login_char *character = 0;
 
@@ -148,9 +145,6 @@ static void handle_auth_login(struct gs_state *gs,
     assert(session);
 
     auth_login = (struct gs_packet_auth_login){ 0 };
-
-    macro_util_set_arr_zero(characters);
-    macro_util_set_arr_zero(response);
 
     if (packet) {
         gs_packet_auth_request_unpack(&auth_request, packet);
@@ -315,15 +309,12 @@ static void handle_new_character(struct gs_state *gs,
                       .men  = 27 } }
     };
 
-    static struct gs_packet_new_char new_char = { 0 };
+    struct gs_packet_new_char new_char = { 0 };
 
-    static packet_t response[1024] = { 0 };
+    packet_t response[1024] = { 0 };
 
     assert(gs);
     assert(session);
-
-    util_set_zero(&new_char, sizeof(new_char));
-    macro_util_set_arr_zero(response);
 
     new_char.count = (u32_t) macro_util_arr_len(templates);
 
@@ -348,7 +339,7 @@ static void handle_create_character(struct gs_state *gs,
                                     struct gs_session *session,
                                     packet_t *packet)
 {
-    static packet_t response[128] = { 0 };
+    packet_t response[128] = { 0 };
 
     struct gs_packet_create_char_request create_char_request = { 0 };
 
@@ -359,8 +350,6 @@ static void handle_create_character(struct gs_state *gs,
     assert(gs);
     assert(session);
     assert(packet);
-
-    macro_util_set_arr_zero(response);
 
     gs_packet_create_char_request_unpack(&create_char_request, packet);
     gs_character_from_request(&character, &create_char_request);
@@ -385,9 +374,9 @@ static void handle_selected_character(struct gs_state *gs,
                                       struct gs_session *session,
                                       packet_t *packet)
 {
-    static struct gs_packet_char_select char_select = { 0 };
+    struct gs_packet_char_select char_select = { 0 };
 
-    static packet_t response[512] = { 0 };
+    packet_t response[512] = { 0 };
 
     struct gs_packet_char_select_request char_select_request = { 0 };
 
@@ -396,9 +385,6 @@ static void handle_selected_character(struct gs_state *gs,
     assert(gs);
     assert(session);
     assert(packet);
-
-    util_set_zero(&char_select, sizeof(char_select));
-    macro_util_set_arr_zero(response);
 
     gs_packet_char_select_request_unpack(&char_select_request, packet);
 
@@ -491,7 +477,7 @@ static void protocol_version_state(struct gs_state *gs,
     switch (packet_type(packet)) {
     case 0x00: // Protocol version
         handle_protocol_version(gs, session);
-        session->state = AUTH_REQUEST;
+        session->state = session_state_auth_request;
         break;
     default:
         log_normal("can't handle packet from protocol version state.");
@@ -510,7 +496,7 @@ static void auth_request_state(struct gs_state *gs,
     switch (packet_type(packet)) {
     case 0x08: // Auth request
         handle_auth_login(gs, session, packet);
-        session->state = CHARACTER_SELECTION;
+        session->state = session_state_character_selection;
         break;
     default:
         log_normal("can't handle packet from auth request state.");
@@ -529,11 +515,11 @@ static void character_selection_state(struct gs_state *gs,
     switch (packet_type(packet)) {
     case 0x0d: // Selected char.
         handle_selected_character(gs, session, packet);
-        session->state = ENTERING_WORLD;
+        session->state = session_state_entering_world;
         break;
     case 0x0e: // New character
         handle_new_character(gs, session);
-        session->state = CREATING_CHARACTER;
+        session->state = session_state_creating_character;
         break;
     default:
         log_normal("can't handle packet from character selection state.");
@@ -552,7 +538,7 @@ static void creating_character_state(struct gs_state *gs,
     switch (packet_type(packet)) {
     case 0x0b: // Create character
         handle_create_character(gs, session, packet);
-        session->state = CHARACTER_SELECTION;
+        session->state = session_state_character_selection;
         break;
     default:
         /*
@@ -580,7 +566,7 @@ static void entering_world_state(struct gs_state *gs,
     case 0x03: // Enter world.
         log_normal("handling enter world.");
         handle_enter_world(gs, session);
-        session->state = IN_WORLD;
+        session->state = session_state_in_world;
         break;
     case 0x63: // Quest list.
         log_normal("handling quest list.");
@@ -619,7 +605,7 @@ static void in_world_state(struct gs_state *gs,
     // restart packet
     if (packet_type(packet) == 0x46) {
         handle_auth_login(gs, session, 0);
-        session->state = CHARACTER_SELECTION;
+        session->state = session_state_character_selection;
     }
 }
 
@@ -648,7 +634,7 @@ void gs_request(struct gs_state *gs,
                 size_t n)
 {
     // 65536 being the limit for a single packet.
-    static packet_t packet[65536] = { 0 };
+    packet_t packet[65536] = { 0 };
 
     struct gs_session *session = 0;
 
@@ -678,32 +664,26 @@ void gs_request(struct gs_state *gs,
         return;
     }
 
-    // Not sure how useful this may be, but it
-    // may help reducing the amount of bytes required to
-    // be reset.
-    safe_packet_clean = macro_util_min(sizeof(packet), n * 2);
-    util_set_zero(packet, safe_packet_clean);
-
     gs_session_decrypt(session, packet, buf);
     gs_session_encrypt_conn(session);
 
     switch (session->state) {
-    case PROTOCOL_VERSION:
+    case session_state_protocol_version:
         protocol_version_state(gs, session, packet);
         break;
-    case AUTH_REQUEST:
+    case session_state_auth_request:
         auth_request_state(gs, session, packet);
         break;
-    case CHARACTER_SELECTION:
+    case session_state_character_selection:
         character_selection_state(gs, session, packet);
         break;
-    case CREATING_CHARACTER:
+    case session_state_creating_character:
         creating_character_state(gs, session, packet);
         break;
-    case ENTERING_WORLD:
+    case session_state_entering_world:
         entering_world_state(gs, session, packet);
         break;
-    case IN_WORLD:
+    case session_state_in_world:
         in_world_state(gs, session, packet);
         break;
     default:

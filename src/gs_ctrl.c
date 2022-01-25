@@ -29,58 +29,58 @@ enum request_type
 // It's meant to avoid situations that can't happen. For instance,
 // a dead player can't handle a character walk/movement request.
 static enum request_type g_actions_by_state[][16] = {
-    [AI_IDLE]               = {
+    [ctrl_state_idle]               = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
         request_type_show_map, request_skill_list, request_skill_use,
     },
-    [AI_MOVING]             = {
+    [ctrl_state_moving]             = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
         request_type_show_map, request_skill_list, request_skill_use,
     },
-    [AI_TARGET_SELECTED]    = {
+    [ctrl_state_target_selected]    = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
         request_type_show_map, request_type_bypass, request_type_attack,
         request_skill_list, request_skill_use,
     },
-    [AI_MOVING_TO_ATTACK]   = {
+    [ctrl_state_moving_to_attack]   = {
         request_type_moving, request_type_action, request_type_logout,
         request_type_say, request_type_restart, request_type_validate_position, 
         request_type_show_map, request_type_attack, request_skill_list,
         request_skill_use,
     },
-    [AI_HAS_AGRO]          = {
+    [ctrl_state_has_aggro]          = {
         request_type_moving, request_type_action, request_type_say, 
         request_type_validate_position, request_type_show_map, request_type_attack,
         request_skill_list, request_skill_use,
     },
-    [AI_LAUNCHED_ATTACK]    = {
+    [ctrl_state_launched_attack]    = {
         request_type_moving, request_type_action, request_type_say, 
         request_type_validate_position, request_type_show_map, request_type_attack,
         request_skill_list, request_skill_use,
     },
-    [AI_MOVING_TO_INTERACT] = {
+    [ctrl_state_moving_to_interact] = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
         request_type_show_map, request_skill_list, request_skill_use,
     },
-    [AI_INTERACTING]        = {
+    [ctrl_state_interacting]        = {
         request_type_moving, request_type_action, request_type_logout, 
         request_type_say, request_type_restart, request_type_validate_position,
         request_type_show_map, request_type_attack, request_skill_list,
         request_skill_use,
     },
-    [AI_DEAD]               = {
+    [ctrl_state_dead]               = {
         request_type_logout, request_type_say, request_type_restart, 
         request_type_show_map, request_type_revive, request_skill_list,
     },
 };
 
 static void gs_ctrl_on_npc_interact(struct gs_state *gs,
-                                  struct gs_character *npc,
-                                  struct gs_character *player)
+                                    struct gs_character *npc,
+                                    struct gs_character *player)
 {
     assert(gs);
     assert(npc);
@@ -105,9 +105,9 @@ static void gs_ctrl_on_npc_interact(struct gs_state *gs,
 
     // Todo: don't hardcode the message.
     macro_gs_ctrl_html_arr_msg(gs,
-                             player,
-                             "<html><body>Hi, this is a "
-                             "test!</body></html>");
+                               player,
+                               "<html><body>Hi, this is a "
+                               "test!</body></html>");
 }
 
 static void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
@@ -115,29 +115,29 @@ static void gs_ctrl_go_idle(struct gs_state *gs, struct gs_character *src)
     assert(gs);
     assert(src);
 
-    src->ai.move_data = (struct gs_move_data){ 0 };
+    src->ctrl.move_data = (struct gs_move_data){ 0 };
 
-    if (src->ai.target_id) {
-        src->ai.state = AI_TARGET_SELECTED;
+    if (src->ctrl.target_id) {
+        src->ctrl.state = ctrl_state_target_selected;
         return;
     }
 
-    src->ai.state = AI_IDLE;
+    src->ctrl.state = ctrl_state_idle;
 }
 
 static void gs_ctrl_on_dead(struct gs_state *gs,
-                          struct gs_character *dead,
-                          struct gs_character *killer)
+                            struct gs_character *dead,
+                            struct gs_character *killer)
 {
     assert(gs);
     assert(dead);
     assert(killer);
 
-    dead->ai       = (struct gs_ctrl){ 0 };
-    dead->ai.state = AI_DEAD;
+    dead->ctrl       = (struct gs_ctrl){ 0 };
+    dead->ctrl.state = ctrl_state_dead;
 
-    killer->ai.move_data     = (struct gs_move_data){ 0 };
-    killer->ai.leave_agro_cd = 100;
+    killer->ctrl.move_data     = (struct gs_move_data){ 0 };
+    killer->ctrl.leave_agro_cd = 100;
 
     gs_ctrl_go_idle(gs, killer);
 
@@ -151,15 +151,15 @@ static void gs_ctrl_on_revive(struct gs_state *gs, struct gs_character *src)
     assert(gs);
     assert(src);
 
-    src->ai       = (struct gs_ctrl){ 0 };
+    src->ctrl     = (struct gs_ctrl){ 0 };
     src->stats.hp = src->stats.max_hp;
 
     gs_character_send_status(gs, src, src);
 }
 
 static void gs_ctrl_move(struct gs_state *gs,
-                       struct gs_character *src,
-                       struct gs_point *where)
+                         struct gs_character *src,
+                         struct gs_point *where)
 {
     vec3 from = { 0 };
     vec3 to   = { 0 };
@@ -176,13 +176,13 @@ static void gs_ctrl_move(struct gs_state *gs,
     to[1] = where->y;
     to[2] = where->z;
 
-    src->ai.moving_to = *where;
-    src->ai.state     = AI_MOVING;
+    src->ctrl.moving_to = *where;
+    src->ctrl.state     = ctrl_state_moving;
 
-    src->ai.move_data.heading         = glm_vec3_angle(from, to);
-    src->ai.move_data.destination     = *where;
-    src->ai.move_data.move_start_time = gs->game_ticks;
-    src->ai.move_data.origin          = src->position;
+    src->ctrl.move_data.heading         = glm_vec3_angle(from, to);
+    src->ctrl.move_data.destination     = *where;
+    src->ctrl.move_data.move_start_time = gs->game_ticks;
+    src->ctrl.move_data.origin          = src->position;
 
     gs_character_move(gs, src, where);
 }
@@ -191,8 +191,8 @@ static void gs_ctrl_move(struct gs_state *gs,
 // If the src is too far, a movement behavior will begin and 1 will be returned.
 // If no movement is required, nothing happens and 0 is returned.
 static int gs_ctrl_move_to_interact_with(struct gs_state *gs,
-                                       struct gs_character *src,
-                                       struct gs_character *target)
+                                         struct gs_character *src,
+                                         struct gs_character *target)
 {
     vec3 from         = { 0 };
     vec3 to           = { 0 };
@@ -240,70 +240,70 @@ static int gs_ctrl_move_to_interact_with(struct gs_state *gs,
 }
 
 static void gs_ctrl_attack(struct gs_state *gs,
-                         struct gs_character *attacker,
-                         struct gs_character *target)
+                           struct gs_character *attacker,
+                           struct gs_character *target)
 {
     assert(gs);
     assert(attacker);
 
     if (!target) {
-        attacker->ai.target_id = 0;
+        attacker->ctrl.target_id = 0;
         gs_ctrl_go_idle(gs, attacker);
         return;
     }
 
-    attacker->ai.target_id = target->id;
-    attacker->ai.state     = AI_HAS_AGRO;
+    attacker->ctrl.target_id = target->id;
+    attacker->ctrl.state     = ctrl_state_has_aggro;
 
     // Prevent multiple attacks if the cool down hasn't
     // expired yet.
-    if (attacker->ai.attack_cd > 0) {
+    if (attacker->ctrl.attack_cd > 0) {
         return;
     }
 
     // If the attacker is too far away
     // from the target, make it walk closer.
     if (gs_ctrl_move_to_interact_with(gs, attacker, target)) {
-        attacker->ai.state = AI_MOVING_TO_ATTACK;
+        attacker->ctrl.state = ctrl_state_moving_to_attack;
         return;
     }
 
     // If the target is an NPC, switch it's
     // state to aggro and attack the attacker.
     if (gs_character_is_npc(target)) {
-        target->ai.state     = AI_HAS_AGRO;
-        target->ai.target_id = attacker->id;
+        target->ctrl.state     = ctrl_state_has_aggro;
+        target->ctrl.target_id = attacker->id;
         gs_character_switch_to_run(gs, target);
     }
 
     // (franco.montenegro) Properly calculate this value
     // based on attack speed.
-    attacker->ai.attack_cd = 10;
+    attacker->ctrl.attack_cd = 10;
     // (franco.montenegro) Do we really need this new state or
     // can we work with just AI_ATTACK?
-    attacker->ai.state = AI_LAUNCHED_ATTACK;
+    attacker->ctrl.state = ctrl_state_launched_attack;
     gs_character_launch_attack(gs, attacker, target);
 }
 
 static void gs_ctrl_interact(struct gs_state *gs,
-                           struct gs_character *src,
-                           struct gs_character *target)
+                             struct gs_character *src,
+                             struct gs_character *target)
 {
     assert(gs);
     assert(src);
 
     if (!target) {
-        src->ai.target_id = 0;
+        src->ctrl.target_id = 0;
         gs_ctrl_go_idle(gs, src);
         return;
     }
 
-    src->ai.target_id = target->id;
-    src->ai.state     = AI_INTERACTING;
+    src->ctrl.target_id = target->id;
+    src->ctrl.state     = ctrl_state_interacting;
 
     // If it's too far, walk closer to the target.
     if (gs_ctrl_move_to_interact_with(gs, src, target)) {
-        src->ai.state = AI_MOVING_TO_INTERACT;
+        src->ctrl.state = ctrl_state_moving_to_interact;
         return;
     }
 
@@ -313,23 +313,23 @@ static void gs_ctrl_interact(struct gs_state *gs,
 }
 
 static void gs_ctrl_select_target(struct gs_state *gs,
-                                struct gs_character *src,
-                                struct gs_character *target)
+                                  struct gs_character *src,
+                                  struct gs_character *target)
 {
     assert(gs);
     assert(src);
     assert(target);
 
-    src->ai.state     = AI_TARGET_SELECTED;
-    src->ai.target_id = target->id;
+    src->ctrl.state     = ctrl_state_target_selected;
+    src->ctrl.target_id = target->id;
 
     gs_character_select_target(gs, src, target);
     gs_character_send_status(gs, target, src);
 }
 
 static void gs_ctrl_handle_move_request(struct gs_state *gs,
-                                      struct gs_character *character,
-                                      packet_t *packet)
+                                        struct gs_character *character,
+                                        packet_t *packet)
 {
     struct gs_packet_move_request move_request = { 0 };
 
@@ -349,8 +349,8 @@ static void gs_ctrl_handle_move_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_val_pos_request(struct gs_state *gs,
-                                         struct gs_character *character,
-                                         packet_t *packet)
+                                           struct gs_character *character,
+                                           packet_t *packet)
 {
     struct gs_packet_validate_pos_request validate_request = { 0 };
 
@@ -381,8 +381,8 @@ static void gs_ctrl_handle_val_pos_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_action_request(struct gs_state *gs,
-                                        struct gs_character *character,
-                                        packet_t *packet)
+                                          struct gs_character *character,
+                                          packet_t *packet)
 {
     struct gs_packet_action_request action = { 0 };
 
@@ -397,12 +397,12 @@ static void gs_ctrl_handle_action_request(struct gs_state *gs,
     target = gs_character_find_by_id(gs, action.target_id);
 
     if (!target) {
-        character->ai.target_id = 0;
+        character->ctrl.target_id = 0;
         gs_ctrl_go_idle(gs, character);
         return;
     }
 
-    if (target->id == character->ai.target_id) {
+    if (target->id == character->ctrl.target_id) {
         gs_ctrl_interact(gs, character, target);
         return;
     }
@@ -411,8 +411,8 @@ static void gs_ctrl_handle_action_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_attack_request(struct gs_state *gs,
-                                        struct gs_character *character,
-                                        packet_t *packet)
+                                          struct gs_character *character,
+                                          packet_t *packet)
 {
     struct gs_packet_attack_request attack = { 0 };
 
@@ -427,7 +427,7 @@ static void gs_ctrl_handle_attack_request(struct gs_state *gs,
     target = gs_character_find_by_id(gs, attack.target_id);
 
     if (!target) {
-        character->ai.target_id = 0;
+        character->ctrl.target_id = 0;
         gs_ctrl_go_idle(gs, character);
         return;
     }
@@ -436,8 +436,8 @@ static void gs_ctrl_handle_attack_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_say(struct gs_state *gs,
-                             struct gs_character *character,
-                             packet_t *packet)
+                               struct gs_character *character,
+                               packet_t *packet)
 {
     char message[256] = { 0 };
 
@@ -453,7 +453,7 @@ static void gs_ctrl_handle_say(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_restart_request(struct gs_state *gs,
-                                         struct gs_character *character)
+                                           struct gs_character *character)
 {
     assert(gs);
     assert(character);
@@ -461,8 +461,8 @@ static void gs_ctrl_handle_restart_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_revive_request(struct gs_state *gs,
-                                        struct gs_character *character,
-                                        packet_t *request)
+                                          struct gs_character *character,
+                                          packet_t *request)
 {
     struct gs_packet_revive_request revive_request = { 0 };
 
@@ -476,7 +476,7 @@ static void gs_ctrl_handle_revive_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_skill_list_request(struct gs_state *gs,
-                                            struct gs_character *character)
+                                              struct gs_character *character)
 {
     assert(gs);
     assert(character);
@@ -484,8 +484,8 @@ static void gs_ctrl_handle_skill_list_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_skill_use(struct gs_state *gs,
-                                   struct gs_character *character,
-                                   packet_t *request)
+                                     struct gs_character *character,
+                                     packet_t *request)
 {
     struct gs_packet_skill_use_request skill_use = { 0 };
 
@@ -507,8 +507,8 @@ static void gs_ctrl_handle_skill_use(struct gs_state *gs,
 }
 
 static void gs_ctrl_handle_bypass_request(struct gs_state *gs,
-                                        struct gs_character *character,
-                                        packet_t *request)
+                                          struct gs_character *character,
+                                          packet_t *request)
 {
     struct gs_packet_bypass_request bypass_request = { 0 };
 
@@ -529,8 +529,8 @@ static void gs_ctrl_handle_bypass_request(struct gs_state *gs,
 }
 
 static void gs_ctrl_update_character_position(struct gs_state *gs,
-                                            struct gs_character *character,
-                                            double delta)
+                                              struct gs_character *character,
+                                              double delta)
 {
     struct gs_move_data *move_data = 0;
 
@@ -541,7 +541,7 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
     assert(gs);
     assert(character);
 
-    move_data = &character->ai.move_data;
+    move_data = &character->ctrl.move_data;
 
     // No need to move.
     if (!move_data->move_start_time) {
@@ -559,8 +559,8 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
     // End movement if the character
     // is really close to the destination target.
     if (glm_vec3_distance(target, position) <= 50) {
-        character->position     = character->ai.move_data.destination;
-        character->ai.move_data = (struct gs_move_data){ 0 };
+        character->position       = character->ctrl.move_data.destination;
+        character->ctrl.move_data = (struct gs_move_data){ 0 };
         gs_ctrl_go_idle(gs, character);
         // gs_character_validate_position(gs, character);
         return;
@@ -578,7 +578,7 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
 }
 
 static void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
-                                         struct gs_character *npc)
+                                           struct gs_character *npc)
 {
     struct gs_point random_point = { 0 };
 
@@ -592,11 +592,11 @@ static void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
         return;
     }
 
-    if (npc->ai.idle_cd > 0) {
+    if (npc->ctrl.idle_cd > 0) {
         return;
     }
 
-    npc->ai.idle_cd = 120;
+    npc->ctrl.idle_cd = 120;
 
     // 33% chance of initiating the wondering/idle walk.
     if (gs->random_i32(1, 100) <= 33) {
@@ -614,24 +614,24 @@ static void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
 }
 
 void gs_ctrl_tick(struct gs_state *gs,
-                struct gs_character *character,
-                double delta)
+                  struct gs_character *character,
+                  double delta)
 {
     struct gs_character *target = 0;
 
     assert(gs);
     assert(character);
 
-    if (character->ai.attack_cd > 0) {
-        character->ai.attack_cd -= delta; // * 100;
+    if (character->ctrl.attack_cd > 0) {
+        character->ctrl.attack_cd -= delta; // * 100;
     }
 
-    if (character->ai.idle_cd > 0) {
-        character->ai.idle_cd -= delta; // * 100;
+    if (character->ctrl.idle_cd > 0) {
+        character->ctrl.idle_cd -= delta; // * 100;
     }
 
-    if (character->ai.target_id) {
-        target = gs_character_find_by_id(gs, character->ai.target_id);
+    if (character->ctrl.target_id) {
+        target = gs_character_find_by_id(gs, character->ctrl.target_id);
     }
 
     if (character->stats.hp <= 0 && character->revive_after_killed) {
@@ -646,10 +646,10 @@ void gs_ctrl_tick(struct gs_state *gs,
     }
 
     // Check if we need to leave aggro state.
-    if (character->ai.leave_agro_cd > 0 && target) {
-        character->ai.leave_agro_cd -= delta; // * 100;
-        if (character->ai.leave_agro_cd <= 0) {
-            character->ai.leave_agro_cd = 0;
+    if (character->ctrl.leave_agro_cd > 0 && target) {
+        character->ctrl.leave_agro_cd -= delta; // * 100;
+        if (character->ctrl.leave_agro_cd <= 0) {
+            character->ctrl.leave_agro_cd = 0;
             // (franco.montenegro) How should we handle
             // the case where the target is null?
             // For instance, it got disconnected.
@@ -658,29 +658,29 @@ void gs_ctrl_tick(struct gs_state *gs,
         }
     }
 
-    switch (character->ai.state) {
-    case AI_IDLE:
+    switch (character->ctrl.state) {
+    case ctrl_state_idle:
         gs_ctrl_npc_initiate_idle_walk(gs, character);
         break;
-    case AI_MOVING:
+    case ctrl_state_moving:
         gs_ctrl_update_character_position(gs, character, delta);
         break;
-    case AI_TARGET_SELECTED:
+    case ctrl_state_target_selected:
         gs_ctrl_update_character_position(gs, character, delta);
         break;
-    case AI_HAS_AGRO:
+    case ctrl_state_has_aggro:
         gs_ctrl_update_character_position(gs, character, delta);
         gs_ctrl_attack(gs, character, target);
         break;
-    case AI_LAUNCHED_ATTACK:
+    case ctrl_state_launched_attack:
         // Find a better way to implement these behaviors
         // Maybe making these many checks will become unmaintainable.
-        if (character->stats.hp > 0 && character->ai.attack_cd <= 0) {
+        if (character->stats.hp > 0 && character->ctrl.attack_cd <= 0) {
             if (target) {
                 // (franco.montenegro) Implement properly.
                 target->stats.hp = target->stats.hp > 30 ? target->stats.hp - 30
                                                          : 0;
-                character->ai.state = AI_HAS_AGRO;
+                character->ctrl.state = ctrl_state_has_aggro;
 
                 // Make sure both, attacker and target
                 // get their status updated.
@@ -697,17 +697,17 @@ void gs_ctrl_tick(struct gs_state *gs,
             }
         }
         break;
-    case AI_MOVING_TO_ATTACK:
+    case ctrl_state_moving_to_attack:
         gs_ctrl_update_character_position(gs, character, delta);
         gs_ctrl_attack(gs, character, target);
         break;
-    case AI_INTERACTING:
+    case ctrl_state_interacting:
         break;
-    case AI_MOVING_TO_INTERACT:
+    case ctrl_state_moving_to_interact:
         gs_ctrl_update_character_position(gs, character, delta);
         gs_ctrl_interact(gs, character, target);
         break;
-    case AI_DEAD:
+    case ctrl_state_dead:
         break;
     default:
         break;
@@ -715,8 +715,8 @@ void gs_ctrl_tick(struct gs_state *gs,
 }
 
 void gs_ctrl_handle_request(struct gs_state *gs,
-                          struct gs_character *character,
-                          packet_t *request)
+                            struct gs_character *character,
+                            packet_t *request)
 {
     enum request_type *allowed_by_state = 0;
     int can_be_handled                  = 0;
@@ -725,7 +725,7 @@ void gs_ctrl_handle_request(struct gs_state *gs,
     assert(character);
     assert(request);
 
-    allowed_by_state = g_actions_by_state[character->ai.state];
+    allowed_by_state = g_actions_by_state[character->ctrl.state];
 
     // Find if the request can be handled by the current AI's state.
     for (size_t i = 0; i < macro_util_arr_len(g_actions_by_state[0]); i += 1) {
@@ -740,7 +740,7 @@ void gs_ctrl_handle_request(struct gs_state *gs,
     if (!can_be_handled) {
         log_normal("unable to handle packet %x by current state.",
                    packet_type(request));
-        log_normal("current state: %d", character->ai.state);
+        log_normal("current state: %d", character->ctrl.state);
         gs_character_action_failed(gs, character);
         return;
     }
@@ -767,20 +767,20 @@ void gs_ctrl_handle_request(struct gs_state *gs,
         break;
     case request_type_show_map:
         macro_gs_ctrl_html_arr_msg(gs,
-                                 character,
-                                 "<html><body>And so... a chat window "
-                                 "popped out. <a action=\"bypass -h "
-                                 "npc_42_support player\">Magic "
-                                 "support</a></body></html>");
+                                   character,
+                                   "<html><body>And so... a chat window "
+                                   "popped out. <a action=\"bypass -h "
+                                   "npc_42_support player\">Magic "
+                                   "support</a></body></html>");
         gs_character_spawn_random_orc(gs, &character->position);
         break;
     case request_type_bypass:
         gs_ctrl_handle_bypass_request(gs, character, request);
         macro_gs_ctrl_html_arr_msg(gs,
-                                 character,
-                                 "<html><body>It works! even though "
-                                 "it breaks if you send more than 3kb "
-                                 "of data!</body></html>");
+                                   character,
+                                   "<html><body>It works! even though "
+                                   "it breaks if you send more than 3kb "
+                                   "of data!</body></html>");
         break;
     case request_type_attack:
         gs_ctrl_handle_attack_request(gs, character, request);

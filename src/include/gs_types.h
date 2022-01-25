@@ -6,55 +6,55 @@
 #include "config.h"
 #include "platform.h"
 
-/*
- * These represent the states of a client's session.
- * It's a state machine, which makes it easier to understand
- * the flow and avoid having to make some checks. For instance,
- * if we are in CHARACTER_SELECTION, we know we have went through
- * PROTOCOL_VERSION and AUTH_REQUEST, so we are dealing with
- * a valid session.
- * Keep these states in order.
- */
+typedef float seconds_t;
+
+// These represent the states of a client's session.
+// It's a state machine, which makes it easier to understand
+// the flow and avoid having to make some checks. For instance,
+// if we are in session_state_character_selection, we know we have
+// went through session_state_protocol_version and session_state_auth_request,
+// so we are dealing with a valid session.
+// Keep these states in order.
 enum gs_session_state
 {
-    PROTOCOL_VERSION,
-    AUTH_REQUEST,
-    CHARACTER_SELECTION,
-    CREATING_CHARACTER,
-    ENTERING_WORLD,
-    IN_WORLD,
+    session_state_protocol_version,
+    session_state_auth_request,
+    session_state_character_selection,
+    session_state_creating_character,
+    session_state_entering_world,
+    session_state_in_world,
 };
 
 enum gs_character_state
 {
-    SPAWN,
+    character_state_spawn,
 };
 
 enum gs_ctrl_state
 {
     // When the character is standing without doing anything.
-    AI_IDLE,
+    ctrl_state_idle,
     // When the character is moving.
-    AI_MOVING,
+    ctrl_state_moving,
     // When the character has a target selected (clicked on it)
-    AI_TARGET_SELECTED,
+    ctrl_state_target_selected,
     // When the character has a target and is getting closer
     // to launch an attack.
-    AI_MOVING_TO_ATTACK,
+    ctrl_state_moving_to_attack,
     // When the character is in an aggressive state. Either
     // it was attacked, or it's waiting for it's cool down
     // to launch a new attack.
-    AI_HAS_AGRO,
+    ctrl_state_has_aggro,
     // When the character just launched an attack.
-    AI_LAUNCHED_ATTACK,
+    ctrl_state_launched_attack,
     // When the character is moving to interact with another character.
-    AI_MOVING_TO_INTERACT,
+    ctrl_state_moving_to_interact,
     // When the character is interacting with another character.
     // For instance, interacting with an NPC could mean, open the
     // dialog window.
-    AI_INTERACTING,
+    ctrl_state_interacting,
     // Yep, exactly what you are thinking.
-    AI_DEAD,
+    ctrl_state_dead,
 };
 
 struct gs_session {
@@ -101,9 +101,9 @@ struct gs_ctrl {
     u32_t target_id;
     struct gs_point moving_to;
     struct gs_move_data move_data;
-    double attack_cd;
-    double idle_cd;
-    double leave_agro_cd;
+    seconds_t attack_cd;
+    seconds_t idle_cd;
+    seconds_t leave_agro_cd;
 };
 
 struct gs_stats {
@@ -144,7 +144,7 @@ struct gs_character {
     u32_t id;
     u32_t template_id;
     struct gs_session *session;
-    struct gs_ctrl ai;
+    struct gs_ctrl ctrl;
     struct gs_point position;
     struct gs_stats stats;
     char title[32];
@@ -164,7 +164,7 @@ struct gs_character {
     double collision_radius;
     double collision_height;
     u8_t running;
-    double revive_after_cd;
+    seconds_t revive_after_cd;
     int revive_after_killed;
 };
 

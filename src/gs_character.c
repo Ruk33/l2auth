@@ -5,14 +5,12 @@
 #define macro_gs_character_each(character, state) \
     macro_util_list_each(state->list_characters, struct gs_character, character)
 
-// Checks if a character is a NPC (non playable character, such as merchants)
 int gs_character_is_npc(struct gs_character *src)
 {
     assert(src);
     return src->session ? 0 : 1;
 }
 
-// Get character by id. If not found, NULL is returned.
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 {
     struct gs_character *character = 0;
@@ -46,8 +44,8 @@ static void gs_character_encrypt_and_send_packet(struct gs_state *gs,
 }
 
 static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
-                                         struct gs_character *src,
-                                         packet_t *packet)
+                                                struct gs_character *src,
+                                                packet_t *packet)
 {
     packet_t response[2048] = { 0 };
 
@@ -270,7 +268,6 @@ static void gs_character_set_player_info(struct gs_packet_char_info *dest,
     dest->name_color              = 0xFFFFFF;
 }
 
-// Spawn new character (npc or playable) and broadcast packet to all players.
 // Todo: make sure the packet is broadcasted only to close players.
 void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
 {
@@ -343,10 +340,6 @@ void gs_character_spawn(struct gs_state *gs, struct gs_character *spawning)
     gs_character_add(gs, spawning);
 }
 
-// Sends the correct position of a character to a client.
-// The client asks the server every 1 sec. the correct player's
-// position. We can fix/sync a player's position by sending this
-// packet.
 void gs_character_validate_position(struct gs_state *gs,
                                     struct gs_character *src,
                                     struct gs_character *to)
@@ -426,7 +419,6 @@ void gs_character_say(struct gs_state *gs,
     gs_character_broadcast_packet(gs, from, response);
 }
 
-// Sends hp and max hp info of from to to character.
 // Todo: rename?
 void gs_character_send_status(struct gs_state *gs,
                               struct gs_character *from,
@@ -458,10 +450,6 @@ void gs_character_send_status(struct gs_state *gs,
     gs_character_broadcast_packet(gs, from, response);
 }
 
-// Revive and teleport character using option sent by client.
-// Of course, this option has to be checked since
-// the player can be cheating.
-// By default, revive to village will be used.
 void gs_character_revive(struct gs_state *gs,
                          struct gs_character *src,
                          enum gs_packet_revive_request_option where)
@@ -516,7 +504,7 @@ void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
     assert(src);
 
     skill_use.src_id      = src->id;
-    skill_use.target_id   = src->ai.target_id;
+    skill_use.target_id   = src->ctrl.target_id;
     skill_use.skill_id    = 30; // Backstab
     skill_use.skill_level = 1;
     skill_use.hit_time    = 15;
@@ -529,8 +517,6 @@ void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
     gs_character_broadcast_packet(gs, src, response);
 }
 
-// Send move packet to client and broadcast it to all players.
-// THIS FUNCTION WON'T update the character's actual position!
 // Todo: make sure the packet gets broadcasted only to close players.
 // Todo: maybe rename function to gs_character_notify_move?
 void gs_character_move(struct gs_state *gs,
@@ -549,18 +535,15 @@ void gs_character_move(struct gs_state *gs,
     move_response.prev_x = character->position.x;
     move_response.prev_y = character->position.y;
     move_response.prev_z = character->position.z;
-    move_response.new_x  = character->ai.moving_to.x;
-    move_response.new_y  = character->ai.moving_to.y;
-    move_response.new_z  = character->ai.moving_to.z;
+    move_response.new_x  = character->ctrl.moving_to.x;
+    move_response.new_y  = character->ctrl.moving_to.y;
+    move_response.new_z  = character->ctrl.moving_to.z;
 
     gs_packet_move_pack(packet, &move_response);
     gs_character_broadcast_packet(gs, character, packet);
 }
 
-// (franco.montenegro) Rename. The function's name
-// doesn't represent what the function does. The only
-// thing that it does is to broadcast the character's death
-// and display the "resurrect window"
+// Todo: Rename.
 void gs_character_die(struct gs_state *gs, struct gs_character *src)
 {
     struct gs_packet_die die = { 0 };
@@ -578,10 +561,6 @@ void gs_character_die(struct gs_state *gs, struct gs_character *src)
     gs_character_broadcast_packet(gs, src, response);
 }
 
-// Launches auto attack.
-// The damage won't be done until the hit reaches the target,
-// which is performed in the game server tick function.
-//
 // (franco.montenegro) We should rename this function. The attack
 // is launched but the actual hit/damage gets done in the tick
 // function. Otherwise, the damage gets applied even after
@@ -832,7 +811,6 @@ static void gs_character_broadcast_move_type(struct gs_state *gs,
     gs_character_broadcast_packet(gs, src, response);
 }
 
-// Change character's movement type to be walking.
 void gs_character_switch_to_walk(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
@@ -841,7 +819,6 @@ void gs_character_switch_to_walk(struct gs_state *gs, struct gs_character *src)
     gs_character_broadcast_move_type(gs, src);
 }
 
-// Change character's movement type to be running.
 void gs_character_switch_to_run(struct gs_state *gs, struct gs_character *src)
 {
     assert(gs);
