@@ -2,6 +2,7 @@
 #include "include/platform.h"
 #include "include/storage.h"
 #include "include/gs_types.h"
+#include "include/gs_api.h"
 
 static void gs_request_initialize_server(struct gs_state *gs)
 {

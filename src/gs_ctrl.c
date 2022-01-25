@@ -2,11 +2,14 @@
 #include <cglm/cglm.h>
 #include "include/config.h"
 #include "include/gs_types.h"
+#include "include/gs_api.h"
 
 #define macro_gs_ctrl_html_arr_msg(gs, character, src) \
     gs_character_show_npc_html_message(gs, character, src, sizeof(src))
 
 // Packet type from client.
+// Todo: move to gs_request along side with all the _request
+// functions in this file.
 enum request_type
 {
     request_type_none              = 0,
@@ -109,7 +112,7 @@ void gs_ctrl_die(struct gs_state *gs,
     // (franco.montenegro) Not sure if we should update
     // the killer's state in this function or outside.
     killer->ctrl.move_data     = (struct gs_move_data){ 0 };
-    killer->ctrl.leave_agro_cd = 100;
+    killer->ctrl.leave_agro_cd = 10;
 
     gs_ctrl_go_idle(gs, killer);
 

@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "include/config.h"
 #include "include/gs_types.h"
+#include "include/gs_api.h"
 
 #define macro_gs_character_each(character, state) \
     macro_util_list_each(state->list_characters, struct gs_character, character)
