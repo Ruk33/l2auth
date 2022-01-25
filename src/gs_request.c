@@ -613,7 +613,7 @@ static void in_world_state(struct gs_state *gs,
         return;
     }
 
-    gs_ai_handle_request(gs, character, packet);
+    gs_ctrl_handle_request(gs, character, packet);
 
     // Todo: refactor. We need to know if the restart was successful.
     // restart packet
@@ -773,6 +773,6 @@ void gs_request_tick(struct gs_state *gs, double delta)
 
     macro_util_list_each(gs->list_characters, struct gs_character, character)
     {
-        gs_ai_tick(gs, character, delta);
+        gs_ctrl_tick(gs, character, delta);
     }
 }

@@ -12,8 +12,7 @@ int gs_character_is_npc(struct gs_character *src)
     return src->session ? 0 : 1;
 }
 
-// Get character by id.
-// If not found, NULL is returned.
+// Get character by id. If not found, NULL is returned.
 struct gs_character *gs_character_find_by_id(struct gs_state *gs, u32_t id)
 {
     struct gs_character *character = 0;
@@ -46,7 +45,7 @@ static void gs_character_encrypt_and_send_packet(struct gs_state *gs,
     gs_session_send_packet(gs, from->session, packet);
 }
 
-void gs_character_broadcast_ignoring_src(struct gs_state *gs,
+static void gs_character_broadcast_ignoring_src(struct gs_state *gs,
                                          struct gs_character *src,
                                          packet_t *packet)
 {

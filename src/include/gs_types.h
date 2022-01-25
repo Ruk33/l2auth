@@ -30,7 +30,7 @@ enum gs_character_state
     SPAWN,
 };
 
-enum gs_ai_state
+enum gs_ctrl_state
 {
     // When the character is standing without doing anything.
     AI_IDLE,
@@ -96,8 +96,8 @@ struct gs_move_data {
     double z_speed_ticks;
 };
 
-struct gs_ai {
-    enum gs_ai_state state;
+struct gs_ctrl {
+    enum gs_ctrl_state state;
     u32_t target_id;
     struct gs_point moving_to;
     struct gs_move_data move_data;
@@ -144,7 +144,7 @@ struct gs_character {
     u32_t id;
     u32_t template_id;
     struct gs_session *session;
-    struct gs_ai ai;
+    struct gs_ctrl ai;
     struct gs_point position;
     struct gs_stats stats;
     char title[32];

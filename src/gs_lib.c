@@ -9,7 +9,7 @@
 #include "gs_server_packets.c"
 #include "gs_session.c"
 #include "gs_character.c"
-#include "gs_ai.c"
+#include "gs_ctrl.c"
 #include "gs_request.c"
 
 #include "include/config.h"
