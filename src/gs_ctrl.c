@@ -484,6 +484,7 @@ static void gs_ctrl_handle_skill_use_request(struct gs_state *gs,
     backstab.hit_time = 5;
     backstab.reuse_delay = 5;
     backstab.mp = 50;
+    backstab.requires_target = 1;
     backstab.requires_back = 1;
 
     gs_character_use_skill(gs, character, &backstab);
