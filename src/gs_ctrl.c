@@ -462,6 +462,9 @@ static void gs_ctrl_handle_skill_use_request(struct gs_state *gs,
 {
     struct gs_packet_skill_use_request skill_use = { 0 };
 
+    // (franco.montenegro) Don't hardcode the skill!
+    struct gs_skill backstab = { 0 };
+
     assert(gs);
     assert(character);
     assert(request);
@@ -476,7 +479,14 @@ static void gs_ctrl_handle_skill_use_request(struct gs_state *gs,
         skill_use.ctrl_pressed,
         skill_use.shift_pressed);
 
-    gs_character_use_skill(gs, character);
+    backstab.id = 30;
+    backstab.level = 1;
+    backstab.hit_time = 5;
+    backstab.reuse_delay = 5;
+    backstab.mp = 50;
+    backstab.requires_back = 1;
+
+    gs_character_use_skill(gs, character, &backstab);
 }
 
 static void gs_ctrl_handle_bypass_request(struct gs_state *gs,

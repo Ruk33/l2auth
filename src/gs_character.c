@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <cglm/cglm.h>
 #include "include/config.h"
 #include "include/gs_types.h"
 #include "include/gs_api.h"
@@ -445,7 +446,15 @@ void gs_character_send_status(struct gs_state *gs,
     attr.value           = (i32_t) from->stats.max_hp;
     status.attributes[1] = attr;
 
-    status.count = 2;
+    attr.type            = STATUS_MAX_MP;
+    attr.value           = (i32_t) from->stats.max_mp;
+    status.attributes[2] = attr;
+
+    attr.type            = STATUS_CUR_MP;
+    attr.value           = (i32_t) from->stats.mp;
+    status.attributes[3] = attr;
+
+    status.count = 4;
 
     gs_packet_status_pack(response, &status);
     gs_character_broadcast_packet(gs, from, response);
@@ -494,22 +503,68 @@ void gs_character_send_skill_list(struct gs_state *gs, struct gs_character *src)
     gs_character_encrypt_and_send_packet(gs, src, response);
 }
 
-// Todo: Make sure to also get the skill we wanna cast!
-void gs_character_use_skill(struct gs_state *gs, struct gs_character *src)
+void gs_character_use_skill(struct gs_state *gs, struct gs_character *src, struct gs_skill *skill)
 {
     struct gs_packet_skill_use skill_use = { 0 };
+
+    struct gs_character *target = 0;
+
+    vec3 src_pos = { 0 };
+    vec3 target_pos = { 0 };
+    vec3 to_target_vec = { 0 };
 
     packet_t response[sizeof(skill_use) * 2] = { 0 };
 
     assert(gs);
     assert(src);
+    assert(skill);
+
+    if ((i32_t) src->stats.mp < skill->mp) {
+        // (franco.montenegro) We may have to send a failure packet, maybe?
+        log_normal("not enough mp to cast skill!");
+        return;
+    }
+
+    // TODO: to be done when items get implemented.
+    // if (skill->requires_dagger && src->weapon.type != "dagger") {
+    //     return;
+    // }
+
+    if (skill->requires_target) {
+        target = gs_character_find_by_id(gs, src->ctrl.target_id);
+
+        if (!target) {
+            log_normal("skill required target but none was found.");
+            return;
+        }
+    }
+
+    if (skill->requires_back) {
+        src_pos[0] = src->position.x;
+        src_pos[1] = src->position.y;
+        src_pos[2] = src->position.z;
+        target_pos[0] = target->position.x;
+        target_pos[1] = target->position.y;
+        target_pos[2] = target->position.z;
+        glm_vec3_sub(target_pos, src_pos, to_target_vec);
+        glm_vec3_normalize(to_target_vec);
+        
+        // (franco.montenegro) DOUBLE CHECK, this is buggy code.
+        if (glm_vec3_dot(to_target_vec, (vec3) {1, 1, 0}) > 0) {
+            log_normal("skill required target's back but it's in front");
+            return;
+        }
+    }
+
+    src->stats.mp -= skill->mp;
+    gs_character_send_status(gs, src, src);
 
     skill_use.src_id      = src->id;
     skill_use.target_id   = src->ctrl.target_id;
-    skill_use.skill_id    = 30; // Backstab
-    skill_use.skill_level = 1;
-    skill_use.hit_time    = 15;
-    skill_use.reuse_delay = 15;
+    skill_use.skill_id    = skill->id;
+    skill_use.skill_level = skill->level;
+    skill_use.hit_time    = skill->hit_time;
+    skill_use.reuse_delay = skill->reuse_delay;
     skill_use.x           = src->position.x;
     skill_use.y           = src->position.y;
     skill_use.z           = src->position.z;

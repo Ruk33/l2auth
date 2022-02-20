@@ -62,10 +62,7 @@ void gs_character_revive(struct gs_state *gs,
 void gs_character_send_skill_list(struct gs_state *gs,
                                   struct gs_character *src);
 
-// Todo: make sure to also request what skill does the
-// character wants to cast. In the meantime, it's hardcoded
-// to use Backstab.
-void gs_character_use_skill(struct gs_state *gs, struct gs_character *src);
+void gs_character_use_skill(struct gs_state *gs, struct gs_character *src, struct gs_skill *skill);
 
 // When a player clicks to move, this is the packet to sent
 // and broadcast to other players so everyone gets notified

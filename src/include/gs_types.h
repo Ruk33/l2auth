@@ -168,6 +168,17 @@ struct gs_character {
     int revive_after_killed;
 };
 
+struct gs_skill {
+    u32_t id;
+    u32_t level;
+    u32_t hit_time;
+    u32_t reuse_delay;
+    i32_t mp;
+    i32_t requires_back;
+    i32_t requires_dagger;
+    i32_t requires_target;
+};
+
 struct gs_state {
     struct gs_session sessions[MAX_CLIENTS];
     struct list list_sessions[MAX_CLIENTS];
