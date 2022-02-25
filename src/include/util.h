@@ -135,6 +135,18 @@
          list_iterator && (name = (type *) list_iterator->value); \
          list_iterator = list_iterator->next)
 
+#define util_macro_buf_from_arr(arr) \
+    (struct buffer) { .buf = arr, .size = sizeof(arr), .used = 0 }
+
+#define util_macro_buf_from_filled_arr(arr) \
+    (struct buffer) { .buf = arr, .size = sizeof(arr), .used = sizeof(arr) }
+
+struct buffer {
+    void *buf;
+    size_t size;
+    size_t used;
+};
+
 struct list {
     struct list *head;
     struct list *next;

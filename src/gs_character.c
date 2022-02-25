@@ -404,6 +404,8 @@ void gs_character_say(struct gs_state *gs,
     struct gs_packet_say say = { 0 };
     packet_t response[256]   = { 0 };
 
+    struct buffer msg_buffer = { 0 };
+
     assert(gs);
     assert(from);
     assert(message);
@@ -411,11 +413,10 @@ void gs_character_say(struct gs_state *gs,
     say.character_id = from->id;
 
     macro_l2_str_arr_from_char_arr(say.name, from->name);
-    l2_string_from_char(say.message,
-                        message,
-                        sizeof(say.message),
-                        message_size,
-                        message_size);
+
+    msg_buffer.buf = message;
+    msg_buffer.size = message_size;
+    l2_string_from_char(&util_macro_buf_from_arr(say.message), &msg_buffer, message_size);
 
     gs_packet_say_pack(response, &say);
     gs_character_broadcast_packet(gs, from, response);
@@ -830,6 +831,8 @@ void gs_character_show_npc_html_message(struct gs_state *gs,
 
     packet_t response[16384] = { 0 };
 
+    struct buffer msg_buffer = { 0 };
+
     assert(gs);
     assert(character);
     assert(message);
@@ -840,10 +843,11 @@ void gs_character_show_npc_html_message(struct gs_state *gs,
 
     html_message.message_id = 1;
 
-    l2_string_from_char(html_message.message,
-                        message,
-                        sizeof(html_message.message),
-                        message_size,
+    msg_buffer.buf = message;
+    msg_buffer.size = message_size;
+
+    l2_string_from_char(&util_macro_buf_from_arr(html_message.message),
+                        &msg_buffer,
                         message_size);
 
     gs_packet_npc_html_message_pack(response, &html_message);

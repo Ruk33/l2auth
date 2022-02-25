@@ -1,3 +1,4 @@
+#include "include/util.h"
 #include "include/gs_client_packets.h"
 
 // Todo: IMPORTANT, we need to check if packets are correct.
@@ -62,20 +63,20 @@ void gs_packet_auth_request_unpack(struct gs_packet_auth_request *dest,
     packet_t *body = 0;
     packet_t *tail = 0;
 
+    struct buffer body_buffer = { 0 };
+
     assert(dest);
     assert(src);
 
     body = gs_packet_body_without_type(src);
     tail = src + packet_size(src);
 
-    l2_string_cpy(dest->username,
-                  (l2_string_t *) body,
-                  sizeof(dest->username),
-                  macro_util_max(0, tail - body),
-                  macro_util_max(0, tail - body));
+    body_buffer.buf = body;
+    body_buffer.size = macro_util_max(0, tail - body);
 
-    body +=
-        l2_string_bytes((l2_string_t *) body, macro_util_max(0, tail - body));
+    l2_string_cpy(&util_macro_buf_from_arr(dest->username), &body_buffer, body_buffer.size);
+
+    body += l2_string_bytes_from_buf(&body_buffer);
 
     macro_util_read_bytes_val(dest->playOK2, &body, tail - body);
     macro_util_read_bytes_val(dest->playOK1, &body, tail - body);
@@ -106,20 +107,20 @@ void gs_packet_create_char_request_unpack(
     packet_t *body = 0;
     packet_t *tail = 0;
 
+    struct buffer body_buffer = { 0 };
+
     assert(dest);
     assert(src);
 
     body = gs_packet_body_without_type(src);
     tail = src + packet_size(src);
 
-    l2_string_cpy(dest->name,
-                  (l2_string_t *) body,
-                  sizeof(dest->name),
-                  macro_util_max(0, tail - body),
-                  macro_util_max(0, tail - body));
+    body_buffer.buf = body;
+    body_buffer.size = macro_util_max(0, tail - body);
 
-    body +=
-        l2_string_bytes((l2_string_t *) body, macro_util_max(0, tail - body));
+    l2_string_cpy(&util_macro_buf_from_arr(dest->name), &body_buffer, body_buffer.size);
+
+    body += l2_string_bytes_from_buf(&body_buffer);
 
     macro_util_read_bytes_val(dest->race, &body, tail - body);
     macro_util_read_bytes_val(dest->sex, &body, tail - body);
@@ -192,14 +193,19 @@ void gs_packet_say_request_unpack(struct gs_packet_say_request *dest,
     packet_t *body = 0;
     packet_t *tail = 0;
 
+    struct buffer body_buffer = { 0 };
+
     assert(dest);
     assert(src);
 
     body = gs_packet_body_without_type(src);
     tail = src + packet_size(src);
 
+    body_buffer.buf = body;
+    body_buffer.size = macro_util_max(0, tail - body);
+
     dest->message = body;
-    dest->size = l2_string_bytes(dest->message, macro_util_max(0, tail - body));
+    dest->size = l2_string_bytes_from_buf(&body_buffer);
 }
 
 void gs_packet_bypass_request_unpack(struct gs_packet_bypass_request *dest,
