@@ -1,6 +1,7 @@
 #ifndef INCLUDE_STORAGE_H
 #define INCLUDE_STORAGE_H
 
+#include <stddef.h>
 #include "gs_types.h"
 #include "ls_types.h"
 

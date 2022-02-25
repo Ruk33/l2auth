@@ -5,6 +5,11 @@
 
 #include "config.h"
 #include "platform.h"
+#include "util.h"
+#include "packet.h"
+#include "l2_string.h"
+#include "gs_server_packets.h"
+#include "gs_client_packets.h"
 
 typedef float seconds_t;
 

@@ -2,6 +2,7 @@
 #define INCLUDE_LS_TYPES_H
 
 #include "config.h"
+#include "platform.h"
 
 struct ls_rsa;
 
