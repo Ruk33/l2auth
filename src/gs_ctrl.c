@@ -3,6 +3,7 @@
 #include "include/config.h"
 #include "include/gs_types.h"
 #include "include/gs_api.h"
+#include "include/util.h"
 
 #define macro_gs_ctrl_html_arr_msg(gs, character, src) \
     gs_character_show_npc_html_message(gs, character, src, sizeof(src))
@@ -183,7 +184,7 @@ int gs_ctrl_move_to_interact_with(struct gs_state *gs,
     assert(target);
 
     // (franco.montenegro) Should this be configurable?
-    range_to_interact = 60;
+    range_to_interact = 20;
 
     from[0] = src->position.x;
     from[1] = src->position.y;
@@ -514,7 +515,7 @@ static void gs_ctrl_handle_bypass_request(struct gs_state *gs,
 
 static void gs_ctrl_update_character_position(struct gs_state *gs,
                                               struct gs_character *character,
-                                              double delta)
+                                              seconds_t delta)
 {
     struct gs_move_data *move_data = 0;
 
@@ -542,7 +543,7 @@ static void gs_ctrl_update_character_position(struct gs_state *gs,
 
     // End movement if the character
     // is really close to the destination target.
-    if (glm_vec3_distance(target, position) <= 50) {
+    if (glm_vec3_distance(target, position) <= 5) {
         character->position       = character->ctrl.move_data.destination;
         character->ctrl.move_data = (struct gs_move_data){ 0 };
         gs_ctrl_go_idle(gs, character);
@@ -596,7 +597,7 @@ void gs_ctrl_npc_initiate_idle_walk(struct gs_state *gs,
 
 void gs_ctrl_tick(struct gs_state *gs,
                   struct gs_character *character,
-                  double delta)
+                  seconds_t delta)
 {
     struct gs_character *target = 0;
 

@@ -15,6 +15,6 @@ void gs_lib_new_req(struct platform_socket *socket, void *buf, size_t n);
 
 void gs_lib_disconnect(struct platform_socket *socket);
 
-void gs_lib_tick(double delta);
+void gs_lib_tick(seconds_t delta);
 
 #endif

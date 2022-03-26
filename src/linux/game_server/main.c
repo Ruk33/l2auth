@@ -35,7 +35,7 @@ struct lib {
     void (*on_new_conn)(struct platform_socket *);
     void (*on_new_req)(struct platform_socket *, void *, size_t);
     void (*on_disconnect)(struct platform_socket *);
-    void (*on_tick)(double);
+    void (*on_tick)(seconds_t);
 };
 
 struct platform_socket {
@@ -416,9 +416,9 @@ static void disconnect(struct platform_socket *socket)
 
 static void on_tick(void)
 {
-    static long last_tick_ms;
+    static long last_tick_ms = 0;
 
-    struct timespec now;
+    struct timespec now = { 0 };
     long now_ms   = 0;
     long delta_ms = 0;
 
@@ -427,11 +427,12 @@ static void on_tick(void)
         return;
     }
 
-    now_ms       = now.tv_nsec / 1.0e6;
-    delta_ms     = macro_util_abs(now_ms - last_tick_ms);
+    // If the timeout used is equal or longer than a second
+    // make sure to use tv_sec, otherwise, use tv_nsec
+    now_ms   = now.tv_sec * 1000;
+    delta_ms = now_ms - last_tick_ms;
     last_tick_ms = now_ms;
 
-    // delta in seconds
     lib.on_tick((float) delta_ms / 1000);
 }
 
@@ -439,10 +440,7 @@ static int init_timer(void)
 {
     u32_t ms_timeout = 0;
 
-    // 30 fps per second
-    // 1/30 = 0.03 seconds
-    // 0.03 seconds to ms = 33 ms
-    ms_timeout = 33;
+    ms_timeout = 1000;
 
     g_timer.fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
 
@@ -487,7 +485,7 @@ int main(/* int argc, char **argv */)
     }
 
     if (!init_timer()) {
-        printf("unable to initalize game server timer.\n");
+        printf("unable to initialize game server timer.\n");
         return 1;
     }
 

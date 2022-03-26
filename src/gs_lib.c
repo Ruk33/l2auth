@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <time.h>
 
+#include "include/util.h"
 #include "util.c"
 #include "packet.c"
 #include "l2_string.c"
@@ -88,7 +89,7 @@ void gs_lib_disconnect(struct platform_socket *socket)
     gs_request_disconnect(g_gs, socket);
 }
 
-void gs_lib_tick(double delta)
+void gs_lib_tick(seconds_t delta)
 {
     // u64_t old_ticks = 0;
     u64_t run_time = 0;

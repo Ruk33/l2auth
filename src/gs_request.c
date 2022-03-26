@@ -743,7 +743,7 @@ void gs_request_disconnect(struct gs_state *gs, struct platform_socket *socket)
     gs_session_disconnected(gs, session);
 }
 
-void gs_request_tick(struct gs_state *gs, double delta)
+void gs_request_tick(struct gs_state *gs, seconds_t delta)
 {
     struct gs_character *character = 0;
 
