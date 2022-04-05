@@ -4,9 +4,7 @@
 u16 packet_size(struct packet *src)
 {
     assert(src);
-    // +2, bytes used to store the entire packet size.
-    // +1, always consider packet type.
-    return 2 + 1 + (((u16 *) src->buf)[0]);
+    return (((u16 *) src->buf)[0]);
 }
 
 u16 packet_padded_size(struct packet *src)
@@ -49,11 +47,11 @@ void packet_body_append(struct packet *dest, struct buffer *src)
     assert(src);
     assert(src->buf);
 
-    // Only body size (without packet type)
     dest_size = (((u16 *) dest->buf)[0]);
-    // +2, skip bytes used for packet size.
-    // +1, skip byte for packet type.
-    tail = dest->buf + 2 + 1;
+    // Leave space for packet size and packet type
+    // if the packet is empty.
+    dest_size = dest_size ? dest_size : 2 + 1;
+    tail = dest->buf + dest_size;
 
     for (size_t i = 0; i < src->used; i += 1) {
         *tail = ((byte *) src->buf)[i];
