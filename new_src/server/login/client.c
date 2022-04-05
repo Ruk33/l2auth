@@ -40,12 +40,8 @@ static int rsa_init(struct rsa *src)
     src->e   = BN_new();
     src->key = RSA_new();
 
-    if (!src->e || !src->key) {
+    if (!src->e || !src->key || !BN_dec2bn(&src->e, "65537")) {
         // Don't worry about leaks (will be cleared in client_free)
-        return 0;
-    }
-
-    if (!BN_dec2bn(&src->e, "65537")) {
         return 0;
     }
 
@@ -107,24 +103,24 @@ static int rsa_scramble_modulo(struct buffer *dest)
 
     n = dest->buf;
 
-    for (int i = 0; i < 4; i++) {
+    for (i32 i = 0; i < 4; i++) {
         temp = n[0x00 + i];
         n[0x00 + i] = n[0x4d + i];
         n[0x4d + i] = temp;
     };
 
     // Step 2 xor first 0x40 bytes with last 0x40 bytes
-    for (int i = 0; i < 0x40; i++) {
+    for (i32 i = 0; i < 0x40; i++) {
         n[i] = (byte) (n[i] ^ n[0x40 + i]);
     };
 
     // Step 3 xor bytes 0x0d-0x10 with bytes 0x34-0x38
-    for (int i = 0; i < 4; i++) {
+    for (i32 i = 0; i < 4; i++) {
         n[0x0d + i] = (byte) (n[0x0d + i] ^ n[0x34 + i]);
     };
 
     // Step 4 xor last 0x40 bytes with first 0x40 bytes
-    for (int i = 0; i < 0x40; i++) {
+    for (i32 i = 0; i < 0x40; i++) {
         n[0x40 + i] = (byte) (n[0x40 + i] ^ n[i]);
     };
 
