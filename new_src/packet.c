@@ -1,22 +1,18 @@
 #include <assert.h>
 #include "include/packet.h"
 
-static void packet_set_size(struct packet *dest, u16 size)
-{
-    assert(dest);
-    ((u16 *) dest->buf)[0] = size;
-}
-
 u16 packet_size(struct packet *src)
 {
     assert(src);
+    // +2, bytes used to store the entire packet size.
     // +1, always consider packet type.
-    return (((u16 *) src->buf)[0]) + 1;
+    return 2 + 1 + (((u16 *) src->buf)[0]);
 }
 
 u16 packet_padded_size(struct packet *src)
 {
     assert(src);
+    // +4, checksum
     return (packet_size(src) + 4 + 7) & (~7);
 }
 
@@ -44,28 +40,29 @@ byte *packet_body(struct packet *src)
     return src->buf + 2;
 }
 
-static byte *packet_tail(struct packet *src)
-{
-    assert(src);
-    return packet_body(src) + packet_size(src);
-}
-
 void packet_body_append(struct packet *dest, struct buffer *src)
 {
+    u16 dest_size = 0;
     byte *tail = 0;
 
     assert(dest);
     assert(src);
     assert(src->buf);
 
-    tail = packet_tail(dest);
+    // Only body size (without packet type)
+    dest_size = (((u16 *) dest->buf)[0]);
+    // +2, skip bytes used for packet size.
+    // +1, skip byte for packet type.
+    tail = dest->buf + 2 + 1;
 
     for (size_t i = 0; i < src->used; i += 1) {
         *tail = ((byte *) src->buf)[i];
         tail += 1;
     }
 
-    packet_set_size(dest, packet_size(dest) + (u16) src->used);
+    // Set new packet body size (without packet type
+    // since it's already considered by packet_size)
+    ((u16 *) dest->buf)[0] = dest_size + (u16) src->used;
 }
 
 void packet_body_u8(struct packet *dest, u8 src)

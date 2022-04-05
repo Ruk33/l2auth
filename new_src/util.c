@@ -1,6 +1,26 @@
 #include <assert.h>
 #include "include/util.h"
 
+size_t cpy_bytes(struct buffer *dest, struct buffer *src, size_t n)
+{
+    size_t max = 0;
+
+    assert(dest);
+    assert(dest->buf);
+    assert(src);
+    assert(src->buf);
+
+    max = n;
+    max = max > dest->size ? dest->size : max;
+    max = max > src->size ? src->size : max;
+
+    for (size_t i = 0; i < max; i += 1) {
+        ((byte *) dest->buf)[i] = ((byte *) src->buf)[i];
+    }
+
+    return max;
+}
+
 void decode32le(u32 *dest, void *src_raw)
 {
     byte *src = 0;

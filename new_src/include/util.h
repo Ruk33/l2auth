@@ -27,6 +27,12 @@ struct buffer {
     size_t used;
 };
 
+// Copy up to n bytes avoiding overflows.
+// If src or dest are smaller than n, that's
+// the amount of bytes copied.
+// Returns the amount of bytes copied.
+size_t cpy_bytes(struct buffer *dest, struct buffer *src, size_t n);
+
 // Encode/decode big/little endian.
 // Buffers (src & dest) must be at least
 // 4 bytes to avoid overflows.

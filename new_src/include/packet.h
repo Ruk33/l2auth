@@ -4,10 +4,10 @@
 #include "util.h"
 
 struct packet {
-    //     2 bytes for packet size
-    //     1 byte for packet type
-    // 65535 max bytes for packet body (can't be bigger)
-    byte buf[2 + 1 + 65535];
+    // 2 bytes for packet size
+    // 1 byte for packet type
+    // Rest of the bytes for packet content
+    byte buf[65535];
 };
 
 // Get the size of the packet which means, the
@@ -15,7 +15,7 @@ struct packet {
 // for the body.
 u16 packet_size(struct packet *src);
 
-// Get the padded/sendable size for the packet.
+// Get padded size so packet size is multiple of 8.
 // This does not represent the real size of the packet
 // and should only be used to send the packet
 // back to the client.
