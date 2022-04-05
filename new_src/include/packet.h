@@ -10,9 +10,10 @@ struct packet {
     byte buf[65535];
 };
 
-// Get the size of the packet which means, the
-// byte of the packet type plus, the bytes used 
-// for the body.
+// Get the full size of the packet which includes:
+// - 2 bytes for packet size
+// - 1 byte for packet type
+// - bytes used for the rest of the packet.
 u16 packet_size(struct packet *src);
 
 // Get padded size so packet size is multiple of 8.
