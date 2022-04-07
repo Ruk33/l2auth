@@ -15,6 +15,8 @@ typedef int32_t i32;
 typedef u8 byte;
 
 #define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 // Buffer from fixed array (ie, char[32])
 #define BFA(arr) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = sizeof(arr) })

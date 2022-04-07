@@ -59,7 +59,10 @@ struct client *login_on_new_connection(struct state *state)
 
     init.session_id = session_id;
     init.protocol = protocol;
-    client_rsa_modulus(client, &BFA(init.modulus.buf));
+    if (!client_rsa_modulus(client, &BFAE(init.modulus.buf))) {
+        printf("unable to copy modulus.\n");
+        printf("this client SHOULD be dropped!\n");
+    }
     
     client->response = (struct packet) { 0 };
     packet_init_to(&client->response, &init);
@@ -109,7 +112,7 @@ void login_on_request(struct state *state, struct client *client, struct buffer 
 
     if (!client_decrypt_packet(client, &client->request.packet, &client->request.packet)) {
         printf("houston, there was a problem decrypting the package.\n");
-        return;
+        // return;
     }
 
     printf("new packet received: %d\n", packet_type(&client->request.packet));

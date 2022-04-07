@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdio.h>
+#include <openssl/err.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/blowfish.h>
@@ -46,9 +48,7 @@ static int rsa_init(struct rsa *src)
         return 0;
     }
 
-    RSA_generate_key_ex(src->key, 1024, src->e, 0);
-
-    return 1;
+    return RSA_generate_key_ex(src->key, 1024, src->e, 0);
 }
 
 static int find_client_keys(struct client *src, struct client_keys **dest)
@@ -69,8 +69,13 @@ static int find_client_keys(struct client *src, struct client_keys **dest)
 static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
 {
     struct client_keys *key = 0;
+    // Must be at least 256 as stated by openssl
+    // documentation.
+    // See https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string.html
+    i8 rsa_err[256] = { 0 };
 
     int size = 0;
+    int result = 0;
 
     assert(client);
     assert(dest);
@@ -87,7 +92,20 @@ static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
         return -1;
     }
 
-    return RSA_private_decrypt(size, src, dest->buf, key->rsa.key, RSA_NO_PADDING);
+    result = RSA_private_decrypt(
+        size,
+        src,
+        dest->buf,
+        key->rsa.key,
+        RSA_NO_PADDING
+    );
+
+    if (result == -1) {
+        ERR_error_string_n(ERR_get_error(), rsa_err, sizeof(rsa_err));
+        printf("decrypt problem: %s\n", rsa_err);
+    }
+
+    return result;
 }
 
 static int rsa_scramble_modulo(struct buffer *dest)
@@ -281,9 +299,7 @@ int client_rsa_modulus(struct client *src, struct buffer *dest)
     return rsa_scramble_modulo(dest);
 }
 
-int client_encrypt_packet(struct client *client,
-                          struct buffer *dest,
-                          struct packet *src)
+int client_encrypt_packet(struct client *client, struct buffer *dest, struct packet *src)
 {
     u16 padded_size = 0;
 
@@ -303,9 +319,7 @@ int client_encrypt_packet(struct client *client,
     );
 }
 
-int client_decrypt_packet(struct client *client,
-                          struct packet *dest,
-                          struct packet *src)
+int client_decrypt_packet(struct client *client, struct packet *dest, struct packet *src)
 {
     struct client_keys *key = 0;
     u16 src_size = 0;
@@ -320,14 +334,19 @@ int client_decrypt_packet(struct client *client,
         return 0;
     }
 
-    // Copy packet size (without including the packet size header)
-    src_size = packet_size(src) - 2;
+    // Packet size without including the packet size header.
+    src_size = MAX(0, packet_size(src) - 2);
+
+    if (!src_size) {
+        return 0;
+    }
+
     *((u16 *) dest->buf) = src_size;
 
     // Copy decrypted packet body.
     blowfish_succeed = blowfish_decrypt(
         client,
-        &B(packet_body(dest), sizeof(*dest) - 2, 0),
+        &B(packet_body(dest), sizeof(dest->buf) - 2, 0),
         &B(packet_body(src), src_size, src_size)
     );
 
@@ -338,7 +357,7 @@ int client_decrypt_packet(struct client *client,
     // Copy decrypted content (ignoring byte containing packet type).
     return rsa_decrypt(
         client,
-        &B(packet_body(dest) + 1, sizeof(*dest) - 3, 0),
+        &B(packet_body(dest) + 1, sizeof(dest->buf) - 3, 0),
         packet_body(dest) + 1
-    );
+    ) != -1;
 }

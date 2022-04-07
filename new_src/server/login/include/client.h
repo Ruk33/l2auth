@@ -34,14 +34,10 @@ int client_rsa_modulus(struct client *src, struct buffer *dest);
 
 // On success, 1 is returned.
 // On error, 0 is returned.
-int client_encrypt_packet(struct client *client,
-                          struct buffer *dest,
-                          struct packet *src);
+int client_encrypt_packet(struct client *client, struct buffer *dest, struct packet *src);
 
 // On success, 1 is returned.
 // On error, 0 is returned.
-int client_decrypt_packet(struct client *client,
-                          struct packet *dest,
-                          struct packet *src);
+int client_decrypt_packet(struct client *client, struct packet *dest, struct packet *src);
 
 #endif
