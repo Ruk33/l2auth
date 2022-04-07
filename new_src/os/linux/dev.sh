@@ -1,2 +1,2 @@
 #!/bin/bash
-gcc login_server.c -lcrypto -lpthread
+gcc -Wall -Wextra login_server.c -lcrypto -lpthread

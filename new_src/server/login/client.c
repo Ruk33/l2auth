@@ -72,7 +72,7 @@ static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
     // Must be at least 256 as stated by openssl
     // documentation.
     // See https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string.html
-    i8 rsa_err[256] = { 0 };
+    char rsa_err[256] = { 0 };
 
     int size = 0;
     int result = 0;
@@ -88,7 +88,7 @@ static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
 
     size = RSA_size(key->rsa.key);
 
-    if (dest->size < size) {
+    if (dest->size < (size_t) size) {
         return -1;
     }
 
@@ -164,11 +164,11 @@ static int blowfish_encrypt(struct client *client,
         return 0;
     }
 
-    if (dest->size < (src->used + 7) & (~7)) {
+    if (dest->size < ((src->used + 7) & (~7))) {
         return 0;
     }
 
-    for (size_t i = 0, iters = (src->used + 7) & (~7); i < iters; i += 8) {
+    for (size_t i = 0, iters = ((src->used + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
         decode32le(&tmp, ((byte *) src->buf) + i);
         encode32be(((byte *) dest->buf) + i, tmp);
@@ -209,11 +209,11 @@ static int blowfish_decrypt(struct client *client,
         return 0;
     }
 
-    if (dest->size < (src->used + 7) & (~7)) {
+    if (dest->size < ((src->used + 7) & (~7))) {
         return 0;
     }
 
-    for (size_t i = 0, iters = (src->used + 7) & (~7); i < iters; i += 8) {
+    for (size_t i = 0, iters = ((src->used + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
         decode32le(&tmp, ((byte *) src->buf) + i);
         encode32be(((byte *) dest->buf) + i, tmp);
@@ -291,7 +291,7 @@ int client_rsa_modulus(struct client *src, struct buffer *dest)
 
     RSA_get0_key(key->rsa.key, &n, 0, 0);
 
-    if (BN_num_bytes(n) > dest->size) {
+    if ((size_t) BN_num_bytes(n) > dest->size) {
         return 0;
     }
 

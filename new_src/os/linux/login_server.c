@@ -170,7 +170,7 @@ static int unix_socket_listen(struct unix_socket *server)
     ssize_t read = 0;
 
     int work = 0;
-    time_t now = 0;
+    // time_t now = 0;
 
     g_epoll_fd = epoll_create1(0);
 
@@ -193,7 +193,7 @@ static int unix_socket_listen(struct unix_socket *server)
 
         pthread_mutex_lock(&g_thread_mutex);
 
-        now = time(0);
+        // now = time(0);
 
         // Drop connections that are taking too long (more than 10 seconds)
         for (size_t i = 0; i < ARR_LEN(g_sockets); i += 1) {
@@ -301,6 +301,9 @@ static void *thread_func(void *arg)
 {
     struct unix_socket *socket = 0;
 
+    // Suppress unused warning.
+    arg = arg;
+
     while (1) {
         pthread_mutex_lock(&g_thread_mutex);
         socket = find_socket_with_work();
@@ -344,6 +347,10 @@ int main(int argc, char **argv)
 {
     static struct unix_socket server = { 0 };
     u16 port = 2106;
+
+    // Suppress unused warning.
+    argc = argc;
+    argv = argv;
 
     if (!unix_socket_init(&server, port, ARR_LEN(g_sockets))) {
         printf("unable to initialize socket.\n");

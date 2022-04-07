@@ -45,9 +45,9 @@ struct client *login_on_new_connection(struct state *state)
     struct packet_init init = { 0 };
 
     // Todo: re-check from where does this session id comes from.
-    struct session_id session_id = { 0xfd, 0x8a, 0x22, 0x00 };
+    struct session_id session_id = {{ 0xfd, 0x8a, 0x22, 0x00 }};
     // Chronicle 4 protocol only :)
-    struct protocol protocol = { 0x5a, 0x78, 0x00, 0x00 };
+    struct protocol protocol = {{ 0x5a, 0x78, 0x00, 0x00 }};
 
     assert(state);
     printf("houston this is server here, we got a new client\n");
