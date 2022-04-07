@@ -14,8 +14,12 @@ typedef int32_t i32;
 
 typedef u8 byte;
 
+#define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
+
 // Buffer from fixed array (ie, char[32])
 #define BFA(arr) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = sizeof(arr) })
+// Buffer from fixed array but marked as empty (used = 0)
+#define BFAE(arr) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = 0 })
 // Buffer from value (ie, int)
 #define BFV(val) ((struct buffer) { .buf = &(val), .size = sizeof(val), .used = sizeof(val) })
 // Buffer
@@ -27,10 +31,13 @@ struct buffer {
     size_t used;
 };
 
-// Copy up to n bytes avoiding overflows.
+// Copy (starting from `used` property from dest buffer) 
+// up to n bytes avoiding overflows.
 // If src or dest are smaller than n, that's
 // the amount of bytes copied.
 // Returns the amount of bytes copied.
+// NOTE: This function WILL update and USE the 
+// `used` property from dest buffer.
 size_t cpy_bytes(struct buffer *dest, struct buffer *src, size_t n);
 
 // Encode/decode big/little endian.

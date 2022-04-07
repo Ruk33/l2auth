@@ -15,7 +15,8 @@ size_t cpy_bytes(struct buffer *dest, struct buffer *src, size_t n)
     max = max > src->used ? src->used : max;
 
     for (size_t i = 0; i < max; i += 1) {
-        ((byte *) dest->buf)[i] = ((byte *) src->buf)[i];
+        ((byte *) dest->buf)[dest->used] = ((byte *) src->buf)[i];
+        dest->used += 1;
     }
 
     return max;

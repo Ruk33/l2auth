@@ -6,7 +6,8 @@
 #include "include/client.h"
 
 #ifndef MAX_CLIENTS
-#error MAX_CLIENTS must be defined as an int.
+#define MAX_CLIENTS (32)
+// #error MAX_CLIENTS must be defined as an int.
 #endif
 
 struct rsa {
@@ -319,14 +320,13 @@ int client_decrypt_packet(struct client *client,
         return 0;
     }
 
-    src_size = packet_size(src);
-
-    // Copy packet size.
+    // Copy packet size (without including the packet size header)
+    src_size = packet_size(src) - 2;
     *((u16 *) dest->buf) = src_size;
 
     // Copy decrypted packet body.
     blowfish_succeed = blowfish_decrypt(
-        &key->blowfish,
+        client,
         &B(packet_body(dest), sizeof(*dest) - 2, 0),
         &B(packet_body(src), src_size, src_size)
     );
@@ -337,8 +337,8 @@ int client_decrypt_packet(struct client *client,
 
     // Copy decrypted content (ignoring byte containing packet type).
     return rsa_decrypt(
-        &key->rsa,
+        client,
         &B(packet_body(dest) + 1, sizeof(*dest) - 3, 0),
-        &B(packet_body(dest) + 1, sizeof(*dest) - 3, 0)
+        packet_body(dest) + 1
     );
 }

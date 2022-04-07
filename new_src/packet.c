@@ -4,14 +4,15 @@
 u16 packet_size(struct packet *src)
 {
     assert(src);
-    return (((u16 *) src->buf)[0]);
+    return ((u16 *) src->buf)[0];
 }
 
 u16 packet_padded_size(struct packet *src)
 {
     assert(src);
+    // +2, bytes used for packet size header.
     // +4, checksum
-    return (packet_size(src) + 4 + 7) & (~7);
+    return ((packet_size(src) + 4 + 7) & (~7)) + 2;
 }
 
 u8 packet_type(struct packet *src)
@@ -19,7 +20,7 @@ u8 packet_type(struct packet *src)
     assert(src);
     // 0 & 1 = packet size
     // 2 = packet type
-    return ((u8 *) src->buf)[2];
+    return src->buf[2];
 }
 
 void packet_set_type(struct packet *dest, u8 type)
@@ -27,7 +28,7 @@ void packet_set_type(struct packet *dest, u8 type)
     assert(dest);
     // 0 & 1 = packet size
     // 2 = packet type
-    ((u8 *) dest->buf)[2] = type;
+    dest->buf[2] = type;
 }
 
 byte *packet_body(struct packet *src)
@@ -47,19 +48,19 @@ void packet_body_append(struct packet *dest, struct buffer *src)
     assert(src);
     assert(src->buf);
 
-    dest_size = (((u16 *) dest->buf)[0]);
-    // Leave space for packet size and packet type
-    // if the packet is empty.
-    dest_size = dest_size ? dest_size : 2 + 1;
-    tail = dest->buf + dest_size;
+    dest_size = packet_size(dest);
+    // If the packet is empty, leave space
+    // for the packet type header.
+    dest_size = dest_size ? dest_size : 1;
+    // +2 skip packet size header.
+    tail = dest->buf + 2 + dest_size;
 
     for (size_t i = 0; i < src->used; i += 1) {
         *tail = ((byte *) src->buf)[i];
         tail += 1;
     }
 
-    // Set new packet body size (without packet type
-    // since it's already considered by packet_size)
+    // Set new packet size.
     ((u16 *) dest->buf)[0] = dest_size + (u16) src->used;
 }
 
