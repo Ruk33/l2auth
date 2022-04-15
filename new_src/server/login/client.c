@@ -66,7 +66,7 @@ static int find_client_keys(struct client *src, struct client_keys **dest)
     return 0;
 }
 
-static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
+static int rsa_decrypt(struct client *client, struct packet *src)
 {
     struct client_keys *key = 0;
     // Must be at least 256 as stated by openssl
@@ -78,24 +78,19 @@ static int rsa_decrypt(struct client *client, struct buffer *dest, byte *src)
     int result = 0;
 
     assert(client);
-    assert(dest);
-    assert(dest->buf);
     assert(src);
 
     if (!find_client_keys(client, &key)) {
+        printf("unable to find client rsa key, failing to decrypt.\n");
         return -1;
     }
 
     size = RSA_size(key->rsa.key);
 
-    if (dest->size < (size_t) size) {
-        return -1;
-    }
-
     result = RSA_private_decrypt(
         size,
-        src,
-        dest->buf,
+        packet_body(src) + 1,
+        packet_body(src) + 1,
         key->rsa.key,
         RSA_NO_PADDING
     );
@@ -191,47 +186,44 @@ static int blowfish_encrypt(struct client *client,
     return 1;
 }
 
-static int blowfish_decrypt(struct client *client, 
-                            struct buffer *dest, 
-                            struct buffer *src)
+static int blowfish_decrypt(struct client *client, struct packet *src)
 {
     struct client_keys *key = 0;
 
     u32 tmp = 0;
 
     assert(client);
-    assert(dest);
-    assert(dest->buf);
     assert(src);
-    assert(src->buf);
 
     if (!find_client_keys(client, &key)) {
+        printf("blowfish key not found for client. unable to decrypt.\n");
         return 0;
     }
 
-    if (dest->size < ((src->used + 7) & (~7))) {
+    if (!packet_size(src)) {
+        printf("decrypting empty packet with blowfish? failing.\n");
         return 0;
     }
 
-    for (size_t i = 0, iters = ((src->used + 7) & (~7)); i < iters; i += 8) {
+    for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
-        decode32le(&tmp, ((byte *) src->buf) + i);
-        encode32be(((byte *) dest->buf) + i, tmp);
-        decode32le(&tmp, ((byte *) src->buf) + i + 4);
-        encode32be(((byte *) dest->buf) + i + 4, tmp);
+        decode32le(&tmp, packet_body(src) + i);
+        encode32be(packet_body(src) + i, tmp);
+        decode32le(&tmp, packet_body(src) + i + 4);
+        encode32be(packet_body(src) + i + 4, tmp);
 
         BF_ecb_encrypt(
-            ((byte *) dest->buf) + i,
-            ((byte *) dest->buf) + i,
+            packet_body(src) + i,
+            packet_body(src) + i,
             &key->blowfish.key,
             BF_DECRYPT
         );
 
         // Back to little endian (endianess used by Lineage 2)
-        decode32be(&tmp, ((byte *) dest->buf) + i);
-        encode32le(((byte *) dest->buf) + i, tmp);
-        decode32be(&tmp, ((byte *) dest->buf) + i + 4);
-        encode32le(((byte *) dest->buf) + i + 4, tmp);
+        decode32be(&tmp, packet_body(src) + i);
+        encode32le(packet_body(src) + i, tmp);
+        decode32be(&tmp, packet_body(src) + i + 4);
+        encode32le(packet_body(src) + i + 4, tmp);
     }
 
     return 1;
@@ -344,20 +336,12 @@ int client_decrypt_packet(struct client *client, struct packet *dest, struct pac
     *((u16 *) dest->buf) = src_size;
 
     // Copy decrypted packet body.
-    blowfish_succeed = blowfish_decrypt(
-        client,
-        &B(packet_body(dest), sizeof(dest->buf) - 2, 0),
-        &B(packet_body(src), src_size, src_size)
-    );
+    blowfish_succeed = blowfish_decrypt(client, dest);
 
     if (!blowfish_succeed) {
         return 0;
     }
 
     // Copy decrypted content (ignoring byte containing packet type).
-    return rsa_decrypt(
-        client,
-        &B(packet_body(dest) + 1, sizeof(dest->buf) - 3, 0),
-        packet_body(dest) + 1
-    ) != -1;
+    return rsa_decrypt(client, dest) != -1;
 }

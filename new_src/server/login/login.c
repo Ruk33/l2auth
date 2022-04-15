@@ -73,7 +73,11 @@ struct client *login_on_new_connection(struct state *state)
 void login_on_disconnect(struct state *state, struct client *src)
 {
     assert(state);
-    assert(src);
+
+    if (!src) {
+        return;
+    }
+
     client_free(src);
     state_release_client(state, src);
 }
@@ -91,7 +95,7 @@ void login_on_request(struct state *state, struct client *client, struct buffer 
     req_packet = &client->request.packet;
 
     cpy_bytes(
-        &B(req_packet->buf, sizeof(req_packet->buf), client->request.received),
+        &BFAU(req_packet->buf, client->request.received),
         req,
         req->used
     );

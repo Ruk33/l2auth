@@ -11,7 +11,6 @@ struct packet {
 };
 
 // Get the full size of the packet which includes:
-// - 2 bytes for packet size
 // - 1 byte for packet type
 // - bytes used for the rest of the packet.
 u16 packet_size(struct packet *src);

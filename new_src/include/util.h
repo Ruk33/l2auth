@@ -2,7 +2,8 @@
 #define UTIL_H
 
 #include <stddef.h> // size_t
-#include <stdint.h>
+#include <stdint.h> // fixed int types
+#include <stdio.h> // printf
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -14,6 +15,8 @@ typedef int32_t i32;
 
 typedef u8 byte;
 
+#define TODO(msg) (printf("todo (%s:%d) %s\n", __FILE__, __LINE__, (msg)));
+
 #define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -22,6 +25,8 @@ typedef u8 byte;
 #define BFA(arr) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = sizeof(arr) })
 // Buffer from fixed array but marked as empty (used = 0)
 #define BFAE(arr) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = 0 })
+// Buffer from fixed array but marked with u bytes used.
+#define BFAU(arr, u) ((struct buffer) { .buf = (arr), .size = sizeof(arr), .used = (u) })
 // Buffer from value (ie, int)
 #define BFV(val) ((struct buffer) { .buf = &(val), .size = sizeof(val), .used = sizeof(val) })
 // Buffer

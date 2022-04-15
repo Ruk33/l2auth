@@ -37,7 +37,7 @@ struct unix_socket {
     byte buf_write[65535];
     size_t read_size;
     size_t write_size;
-    time_t initiated_at;
+    time_t last_packet_received_at;
     struct client *client;
 };
 
@@ -77,12 +77,7 @@ static int unix_socket_init(struct unix_socket *src, u16 port, int max)
 
     // Make the socket reusable.
     reusable_enable = 1;
-
-    if (setsockopt(src->fd,
-                   SOL_SOCKET,
-                   SO_REUSEADDR,
-                   &reusable_enable,
-                   sizeof(int)) < 0) {
+    if (setsockopt(src->fd, SOL_SOCKET, SO_REUSEADDR, &reusable_enable, sizeof(int)) < 0) {
         goto abort;
     }
 
@@ -126,7 +121,7 @@ static int unix_socket_accept(struct unix_socket *dest, struct unix_socket *src)
 
     dest->fd = accept(src->fd, address_p, &addrlen);
     dest->used = 1;
-    dest->initiated_at = time(0);
+    dest->last_packet_received_at = time(0);
 
     if (dest->fd < 0) {
         *dest = (struct unix_socket){ 0 };
@@ -170,11 +165,12 @@ static int unix_socket_listen(struct unix_socket *server)
     ssize_t read = 0;
 
     int work = 0;
-    // time_t now = 0;
+    time_t now = 0;
 
     g_epoll_fd = epoll_create1(0);
 
     if (g_epoll_fd < 0) {
+        printf("unable to create epoll.\n");
         return 0;
     }
 
@@ -182,27 +178,33 @@ static int unix_socket_listen(struct unix_socket *server)
     event.data.ptr = server;
 
     epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, server->fd, &event);
+    
+    printf("listening for new connections.\n");
 
     while (1) {
         ev_count = epoll_wait(g_epoll_fd, events, ARR_LEN(events), -1);
 
         if (ev_count < 0) {
+            printf("epoll_wait failed, closing the server.\n");
             close(g_epoll_fd);
             return 0;
         }
 
-        pthread_mutex_lock(&g_thread_mutex);
+        if (pthread_mutex_lock(&g_thread_mutex) != 0) {
+            printf("failed to acquire mutex lock. this error is NOT being handled properly\n");
+        }
 
-        // now = time(0);
+        now = time(0);
 
         // Drop connections that are taking too long (more than 10 seconds)
         for (size_t i = 0; i < ARR_LEN(g_sockets); i += 1) {
             if (!g_sockets[i].has_work) {
                 continue;
             }
-            // if (g_sockets[i].served >= 5 || now - g_sockets[i].initiated_at > 5) {
-            //     unix_socket_close(&g_sockets[i]);
-            // }
+            if ((now - g_sockets[i].last_packet_received_at) > 10) {
+                printf("closing connection with client that took more than 10 secs to send another packet.\n");
+                unix_socket_close(&g_sockets[i]);
+            }
         }
 
         work = 0;
@@ -213,6 +215,7 @@ static int unix_socket_listen(struct unix_socket *server)
             if (socket == server) {
                 socket = find_free_socket();
                 if (unix_socket_accept(socket, server)) {
+                    printf("new connection accepted.\n");
                     socket->client = login_on_new_connection(&g_state);
                     if (socket->client) {
                         // Or... instead of hardcoding we could check
@@ -221,6 +224,7 @@ static int unix_socket_listen(struct unix_socket *server)
                         socket->has_work = 1;
                         work = 1;
                     } else {
+                        printf("no client returned for connection. closing it.\n");
                         unix_socket_close(socket);
                     }
                 }
@@ -228,6 +232,7 @@ static int unix_socket_listen(struct unix_socket *server)
             }
 
             if ((events[i].events & EPOLLERR) == EPOLLERR) {
+                printf("error in connection event, closing the connection.\n");
                 login_on_disconnect(&g_state, socket->client);
                 unix_socket_close(socket);
                 continue;
@@ -239,14 +244,16 @@ static int unix_socket_listen(struct unix_socket *server)
 
             read = recv(
                 socket->fd,
+                socket->buf_read,
+                sizeof(socket->buf_read),
                 // Safe since read_size is capped
                 // socket->buf_read + socket->read_size,
-                socket->buf_read,
-                sizeof(socket->buf_read) - socket->read_size,
+                // sizeof(socket->buf_read) - socket->read_size,
                 0
             );
 
             if (read == 0) {
+                printf("closing connection as requested by client.\n");
                 login_on_disconnect(&g_state, socket->client);
                 unix_socket_close(socket);
                 continue;
@@ -257,17 +264,19 @@ static int unix_socket_listen(struct unix_socket *server)
                     socket->partial = 1;
                     continue;
                 }
+                printf("failed to read packet from client, closing connection.\n");
                 login_on_disconnect(&g_state, socket->client);
                 unix_socket_close(socket);
                 continue;
             }
 
-            socket->read_size += (size_t) read;
+            socket->read_size = (size_t) read;
             if (socket->read_size > sizeof(socket->buf_read)) {
                 printf("warning, client sent more data than what we can read.\n");
                 socket->read_size = sizeof(socket->buf_read);
             }
             socket->has_work = 1;
+            socket->last_packet_received_at = now;
             // Assume since we got a chunk of response it's
             // ready to process. Let the login layer decide
             // if it's complete or not.
@@ -277,9 +286,13 @@ static int unix_socket_listen(struct unix_socket *server)
         }
 
         if (work) {
-            pthread_cond_signal(&g_thread_cond);
+            if (pthread_cond_signal(&g_thread_cond) != 0) {
+                printf("thread signal failed. this error isn't handled properly.\n");
+            }
         }
-        pthread_mutex_unlock(&g_thread_mutex);
+        if (pthread_mutex_unlock(&g_thread_mutex) != 0) {
+            printf("mutex unlock failed. this error isn't handled properly.\n");
+        }
     }
 
     close(g_epoll_fd);
@@ -305,10 +318,16 @@ static void *thread_func(void *arg)
     arg = arg;
 
     while (1) {
-        pthread_mutex_lock(&g_thread_mutex);
+        if (pthread_mutex_lock(&g_thread_mutex) != 0) {
+            printf("unable to get mutex lock from thread func.\n");
+            continue;
+        }
         socket = find_socket_with_work();
         if (!socket) {
-            pthread_cond_wait(&g_thread_cond, &g_thread_mutex);
+            if (pthread_cond_wait(&g_thread_cond, &g_thread_mutex) != 0) {
+                printf("cond wait failed from thread func.\n");
+                continue;
+            }
             socket = find_socket_with_work();
         }
         if (socket) {
@@ -336,8 +355,12 @@ static void *thread_func(void *arg)
                 // Check the entire packet was sent!
                 send(socket->fd, socket->buf_write, socket->write_size, 0);
             }
+
+            socket->has_work = 0;
         }
-        pthread_mutex_unlock(&g_thread_mutex);
+        if (pthread_mutex_unlock(&g_thread_mutex) != 0) {
+            printf("mutex unlock failed from thread func, this error is not being handled properly.\n");
+        }
     }
 
     return 0;
