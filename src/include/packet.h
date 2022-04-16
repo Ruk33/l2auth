@@ -1,43 +1,56 @@
-#ifndef INCLUDE_PACKET_H
-#define INCLUDE_PACKET_H
+#ifndef PACKET_H
+#define PACKET_H
 
-#include <stddef.h>
-#include "platform.h"
+#include "util.h"
 
-/**
- * Packets need to be multiple of 8
- * Not only that, we need to reserve
- * 4 bytes for checksum.
- *
- * Example:
- *
- * packet size = 5 (includes byte from packet type)
- * checksum = 4
- * packet size + checksum = 9
- * padded = macro_packet_padded_size(packet size + checksum) = 16
- *
- * padded (16) is now safe to use as packet size.
- */
-#define macro_packet_padded_size(size) \
-    (((size_t) (size + 4 + 7)) & ((size_t) (~7)))
+struct packet {
+    // 2 bytes for packet size
+    // 1 byte for packet type
+    // Rest of the bytes for packet content
+    byte buf[65535];
+};
 
-#define macro_packet_append(dest, src) \
-    packet_append_n((packet_t *) dest, (byte_t *) (src), sizeof(src))
+// Get the full size of the packet which includes:
+// - 1 byte for packet type
+// - bytes used for the rest of the packet.
+u16 packet_size(struct packet *src);
 
-#define macro_packet_append_val(dest, src) \
-    packet_append_n((packet_t *) dest, (byte_t *) &(src), sizeof(src))
+// Get padded size so packet size is multiple of 8.
+// This does not represent the real size of the packet
+// and should only be used to send the packet
+// back to the client.
+u16 packet_padded_size(struct packet *src);
 
-typedef byte_t packet_t;
+// Get the packet type.
+u8 packet_type(struct packet *src);
 
-// Get packet full size (including headers).
-u16_t packet_size(packet_t *src);
+// Set the packet type.
+void packet_set_type(struct packet *src, u8 type);
 
-u8_t packet_type(packet_t *src);
+// Get the pointer to where the body of
+// the packet begins (which is in the
+// type's byte)
+byte *packet_body(struct packet *src);
 
-// Get pointer to packet body.
-packet_t *packet_body(packet_t *src);
+// Append n bytes to the end of the packet.
+void packet_body_append(struct packet *dest, void *src, size_t n);
 
-// Append n bytes from src to dest.
-void packet_append_n(packet_t *dest, byte_t *src, size_t n);
+// Append u8 to body.
+void packet_body_u8(struct packet *dest, u8 src);
+
+// Append u16 to body.
+void packet_body_u16(struct packet *dest, u16 src);
+
+// Append u32 to body.
+void packet_body_u32(struct packet *dest, u32 src);
+
+// Append i8 to body.
+void packet_body_i8(struct packet *dest, i8 src);
+
+// Append i16 to body.
+void packet_body_i16(struct packet *dest, i16 src);
+
+// Append i32 to body.
+void packet_body_i32(struct packet *dest, i32 src);
 
 #endif
