@@ -36,24 +36,24 @@ void packet_set_type(struct packet *src, u8 type);
 byte *packet_body(struct packet *src);
 
 // Append n bytes to the end of the packet.
-void packet_body_append(struct packet *dest, void *src, size_t n);
+void packet_write(struct packet *dest, void *src, size_t n);
 
 // Append u8 to body.
-void packet_body_u8(struct packet *dest, u8 src);
+void packet_write_u8(struct packet *dest, u8 src);
 
 // Append u16 to body.
-void packet_body_u16(struct packet *dest, u16 src);
+void packet_write_u16(struct packet *dest, u16 src);
 
 // Append u32 to body.
-void packet_body_u32(struct packet *dest, u32 src);
+void packet_write_u32(struct packet *dest, u32 src);
 
 // Append i8 to body.
-void packet_body_i8(struct packet *dest, i8 src);
+void packet_write_i8(struct packet *dest, i8 src);
 
 // Append i16 to body.
-void packet_body_i16(struct packet *dest, i16 src);
+void packet_write_i16(struct packet *dest, i16 src);
 
 // Append i32 to body.
-void packet_body_i32(struct packet *dest, i32 src);
+void packet_write_i32(struct packet *dest, i32 src);
 
 #endif

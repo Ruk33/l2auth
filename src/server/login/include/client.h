@@ -19,6 +19,7 @@ struct client_request {
 };
 
 struct client {
+    size_t id;
     struct client_username username;
     struct client_request request;
     struct packet response;

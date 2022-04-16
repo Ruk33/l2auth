@@ -33,10 +33,9 @@ struct unix_socket {
     int used;
     int has_work;
     int partial;
-    // byte buf_read[65535];
-    // byte buf_write[65535];
-    // size_t read_size;
-    // size_t write_size;
+    byte buf_write[65535];
+    size_t sent;
+    size_t write_size;
     time_t last_packet_received_at;
     struct client *client;
 };
@@ -66,7 +65,7 @@ static int unix_socket_init(struct unix_socket *src, u16 port, int max)
 
     int reusable_enable = 0;
 
-    src->fd   = socket(AF_INET, SOCK_STREAM, 0);
+    src->fd = socket(AF_INET, SOCK_STREAM, 0);
     src->used = 1;
 
     if (src->fd < 0) {
@@ -155,6 +154,42 @@ static struct unix_socket *find_free_socket(void)
     return 0;
 }
 
+static void unix_socket_flush(struct unix_socket *socket)
+{
+    ssize_t sent = 0;
+
+    assert(socket);
+
+    if (!socket->write_size) {
+        return;
+    }
+
+    sent = send(
+        socket->fd,
+        socket->buf_write + socket->sent,
+        socket->write_size - socket->sent,
+        0
+    );
+
+    socket->sent += MAX(0, sent);
+
+    // If the entire packet has been sent, reset the counter.
+    if (socket->write_size == socket->sent) {
+        socket->write_size = 0;
+        socket->sent = 0;
+    }
+}
+
+static void unix_socket_write(struct unix_socket *socket, byte *buf, size_t n)
+{
+    assert(socket);
+    assert(buf);
+
+    // Append buf to the end of the write buffer.
+    memcpy(socket->buf_write + socket->write_size, buf, n);
+    socket->write_size += n;
+}
+
 static int unix_socket_listen(struct unix_socket *server)
 {
     static struct epoll_event events[MAX_SOCKETS] = { 0 };
@@ -236,6 +271,10 @@ static int unix_socket_listen(struct unix_socket *server)
                 login_on_disconnect(&g_state, socket->client);
                 unix_socket_close(socket);
                 continue;
+            }
+
+            if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
+                unix_socket_flush(socket);
             }
 
             if ((events[i].events & EPOLLIN) != EPOLLIN) {
@@ -328,13 +367,12 @@ static void *thread_func(void *arg)
                 socket->partial = socket->client->request.is_partial;
             }
             if (packet_size(&socket->client->response)) {
-                // Check the entire packet was sent!
-                send(
-                    socket->fd,
+                unix_socket_write(
+                    socket,
                     socket->client->response.buf,
-                    packet_size(&socket->client->response),
-                    0
+                    packet_size(&socket->client->response)
                 );
+                unix_socket_flush(socket);
             }
 
             socket->has_work = 0;

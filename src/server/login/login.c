@@ -76,11 +76,13 @@ static void on_request_server_list(struct state *state, struct client *client)
 
     printf("handling request server list.\n");
 
-    if (!inet_pton(AF_INET, "127.0.0.1", &(sa.sin_addr))) {
-        printf("unable to parse game server ip, the client SHOULD be dropped.\n");
+    if (inet_pton(AF_INET, "127.0.0.1", &(sa.sin_addr))) {
+        server_list.count = 1;
+    } else {
+        server_list.count = 0;
+        printf("unable to parse game server ip, no servers will be sent.\n");
     }
 
-    server_list.count = 1;
     server_list.servers[0].age_limit = 18;
     server_list.servers[0].brackets = 0;
     server_list.servers[0].extra = 0;
@@ -109,18 +111,24 @@ struct client *login_on_new_connection(struct state *state)
     struct protocol protocol = {{ 0x5a, 0x78, 0x00, 0x00 }};
 
     assert(state);
-    printf("houston this is server here, we got a new client\n");
+    printf("houston this is server here, we got a new client.\n");
 
     client = state_get_free_client(state);
-    if (!client || !client_init(client)) {
-        printf("unable to get a free client instance, this client SHOULD be dropped.\n");
+    if (!client) {
+        printf("unable to get a free client instance.\n");
+        return 0;
+    }
+    if (!client_init(client)) {
+        printf("unable to initialize client.\n");
+        state_release_client(state, client);
         return 0;
     }
 
     init.session_id = session_id;
     init.protocol = protocol;
     if (!client_rsa_modulus(client, &init.modulus)) {
-        printf("unable to copy modulus, this client SHOULD be dropped!\n");
+        printf("unable to copy modulus. the client will be dropped.\n");
+        state_release_client(state, client);
         return 0;
     }
 
@@ -137,7 +145,6 @@ void login_on_disconnect(struct state *state, struct client *src)
         return;
     }
 
-    client_free(src);
     state_release_client(state, src);
 }
 
