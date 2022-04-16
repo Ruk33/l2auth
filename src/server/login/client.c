@@ -273,14 +273,6 @@ int client_rsa_modulus(struct client *src, struct client_modulus *dest)
     return rsa_scramble_modulo(dest);
 }
 
-void client_gen_ok_ids(struct client *src)
-{
-    assert(src);
-    src->playOK1 = 1994;
-    src->playOK2 = 4991;
-    TODO("get random login ok 1 and login ok 2 instead of hardcoding the values.");
-}
-
 int client_encrypt_packet(struct client *client, struct packet *src)
 {
     int blowfish_succeed = 0;

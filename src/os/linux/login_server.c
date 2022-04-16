@@ -1,16 +1,17 @@
-#include <arpa/inet.h>
 #include <assert.h>
-#include <dlfcn.h>
+#include <stdlib.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
-#include <unistd.h>
-#include <time.h>
 #include "../../include/util.h"
 #include "../../include/packet.h"
 #include "../../server/login/include/client.h"
@@ -253,9 +254,8 @@ static int unix_socket_listen(struct unix_socket *server)
                     printf("new connection accepted.\n");
                     socket->client = login_on_new_connection(&g_state);
                     if (socket->client) {
-                        // Or... instead of hardcoding we could check
-                        // for any response and then assign has work
-                        // based on it.
+                        socket->client->playOK1 = rand();
+                        socket->client->playOK2 = rand();
                         socket->has_work = 1;
                         work = 1;
                     } else {
@@ -393,6 +393,8 @@ int main(int argc, char **argv)
     // Suppress unused warning.
     argc = argc;
     argv = argv;
+
+    srand(time(0));
 
     if (!unix_socket_init(&server, port, ARR_LEN(g_sockets))) {
         printf("unable to initialize socket.\n");

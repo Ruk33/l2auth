@@ -39,9 +39,6 @@ void client_free(struct client *src);
 // On error, 0 is returned.
 int client_rsa_modulus(struct client *src, struct client_modulus *dest);
 
-// Generate ok keys 1 and 2 for the client.
-void client_gen_ok_ids(struct client *src);
-
 // On success, 1 is returned.
 // On error, 0 is returned.
 int client_encrypt_packet(struct client *client, struct packet *src);

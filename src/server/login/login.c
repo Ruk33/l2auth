@@ -40,7 +40,6 @@ static void on_auth_login(struct state *state, struct client *client)
     );
     TODO("validate username and password are corrects before granting access.");
 
-    client_gen_ok_ids(client);
     ok_response.loginOK1 = client->playOK1;
     ok_response.loginOK2 = client->playOK2;
 
