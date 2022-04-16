@@ -13,6 +13,9 @@ struct packet {
 // Get the full size of the packet which includes:
 // - 1 byte for packet type
 // - bytes used for the rest of the packet.
+// When the packet comes from the client, the packet
+// size will also include two additional bytes
+// for the entire packet size.
 u16 packet_size(struct packet *src);
 
 // Get padded size so packet size is multiple of 8.

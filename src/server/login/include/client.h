@@ -22,6 +22,8 @@ struct client {
     struct client_username username;
     struct client_request request;
     struct packet response;
+    i32 playOK1;
+    i32 playOK2;
 };
 
 // On success, 1 is returned.
@@ -35,6 +37,9 @@ void client_free(struct client *src);
 // On success, 1 is returned.
 // On error, 0 is returned.
 int client_rsa_modulus(struct client *src, struct client_modulus *dest);
+
+// Generate ok keys 1 and 2 for the client.
+void client_gen_ok_ids(struct client *src);
 
 // On success, 1 is returned.
 // On error, 0 is returned.

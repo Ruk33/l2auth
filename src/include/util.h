@@ -15,23 +15,16 @@ typedef int32_t i32;
 
 typedef u8 byte;
 
-#define TODO(msg) (printf("todo (%s:%d) %s\n", __FILE__, __LINE__, (msg)));
+#define TODO(msg) (printf("\nTODO (%s line %d)\n  %s\n\n", __FILE__, __LINE__, (msg)))
 
 #define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-// Encode/decode big/little endian.
-// Buffers (src & dest) must be at least
-// 4 bytes to avoid overflows.
-//
-// Decode little endian from src to dest.
-void decode32le(u32 *dest, void *src);
-// Decode big endian from src to dest.
-void decode32be(u32 *dest, void *src);
-// Encode little endian to dest.
-void encode32le(void *dest, u32 src);
-// Encode big endian to dest.
-void encode32be(void *dest, u32 src);
+#define CPY_STR(dest_arr, src) (cpy_str((i8 *)(dest_arr), (i8 *)(src), sizeof(dest_arr)))
+
+// Copy up to n bytes or null terminator.
+// Destination is guarantee to end up with a null terminator.
+void cpy_str(i8 *dest, i8 *src, size_t n);
 
 #endif

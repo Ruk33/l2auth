@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <endian.h>
 #include <openssl/err.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
@@ -151,10 +152,10 @@ static int blowfish_encrypt(struct client *client, struct packet *src)
 
     for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
-        decode32le(&tmp, packet_body(src) + i);
-        encode32be(packet_body(src) + i, tmp);
-        decode32le(&tmp, packet_body(src) + i + 4);
-        encode32be(packet_body(src) + i + 4, tmp);
+        tmp = *((u32 *)(packet_body(src) + i));
+        *((u32 *)(packet_body(src) + i)) = htobe32(tmp);
+        tmp = *((u32 *)(packet_body(src) + i + 4));
+        *((u32 *)(packet_body(src) + i + 4)) = htobe32(tmp);
 
         BF_ecb_encrypt(
             packet_body(src) + i,
@@ -163,10 +164,10 @@ static int blowfish_encrypt(struct client *client, struct packet *src)
         );
 
         // Back to little endian (endianess used by Lineage 2)
-        decode32be(&tmp, packet_body(src) + i);
-        encode32le(packet_body(src) + i, tmp);
-        decode32be(&tmp, packet_body(src) + i + 4);
-        encode32le(packet_body(src) + i + 4, tmp);
+        tmp = be32toh(*((u32 *)(packet_body(src) + i)));
+        *((u32 *)(packet_body(src) + i)) = tmp;
+        tmp = be32toh(*((u32 *)(packet_body(src) + i + 4)));
+        *((u32 *)(packet_body(src) + i + 4)) = tmp;
     }
 
     return 1;
@@ -193,10 +194,10 @@ static int blowfish_decrypt(struct client *client, struct packet *src)
 
     for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
-        decode32le(&tmp, packet_body(src) + i);
-        encode32be(packet_body(src) + i, tmp);
-        decode32le(&tmp, packet_body(src) + i + 4);
-        encode32be(packet_body(src) + i + 4, tmp);
+        tmp = *((u32 *)(packet_body(src) + i));
+        *((u32 *)(packet_body(src) + i)) = htobe32(tmp);
+        tmp = *((u32 *)(packet_body(src) + i + 4));
+        *((u32 *)(packet_body(src) + i + 4)) = htobe32(tmp);
 
         BF_ecb_encrypt(
             packet_body(src) + i,
@@ -206,10 +207,10 @@ static int blowfish_decrypt(struct client *client, struct packet *src)
         );
 
         // Back to little endian (endianess used by Lineage 2)
-        decode32be(&tmp, packet_body(src) + i);
-        encode32le(packet_body(src) + i, tmp);
-        decode32be(&tmp, packet_body(src) + i + 4);
-        encode32le(packet_body(src) + i + 4, tmp);
+        tmp = be32toh(*((u32 *)(packet_body(src) + i)));
+        *((u32 *)(packet_body(src) + i)) = tmp;
+        tmp = be32toh(*((u32 *)(packet_body(src) + i + 4)));
+        *((u32 *)(packet_body(src) + i + 4)) = tmp;
     }
 
     return 1;
@@ -270,6 +271,14 @@ int client_rsa_modulus(struct client *src, struct client_modulus *dest)
     BN_bn2bin(n, dest->buf);
 
     return rsa_scramble_modulo(dest);
+}
+
+void client_gen_ok_ids(struct client *src)
+{
+    assert(src);
+    src->playOK1 = 1994;
+    src->playOK2 = 4991;
+    TODO("get random login ok 1 and login ok 2 instead of hardcoding the values.");
 }
 
 int client_encrypt_packet(struct client *client, struct packet *src)

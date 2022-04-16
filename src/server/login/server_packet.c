@@ -11,7 +11,11 @@ void packet_init_to(struct packet *dest, struct packet_init *src)
     packet_body_append(dest, src->session_id.buf, sizeof(src->session_id.buf));
     packet_body_append(dest, src->protocol.buf, sizeof(src->protocol.buf));
     packet_body_append(dest, src->modulus.buf, sizeof(src->modulus.buf));
+
+    // Add additional two bytes for the packet size.
+    // NOT ideal...
     packet_body_i16(dest, 0);
+    TODO("don't add two extra bytes for the packet size header in the init packet");
 }
 
 void packet_gg_auth_to(struct packet *dest, struct packet_gg_auth *src)
@@ -44,7 +48,7 @@ void packet_ok_to(struct packet *dest, struct packet_ok *src)
     packet_body_append(dest, after_key, sizeof(after_key));
 }
 
-void packet_play_ok(struct packet *dest, struct packet_play_ok *src)
+void packet_play_ok_to(struct packet *dest, struct packet_play_ok *src)
 {
     assert(dest);
     assert(src);
