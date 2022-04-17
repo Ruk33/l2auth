@@ -56,4 +56,7 @@ void packet_write_i16(struct packet *dest, i16 src);
 // Append i32 to body.
 void packet_write_i32(struct packet *dest, i32 src);
 
+// Append double to body.
+void packet_write_d(struct packet *dest, double src);
+
 #endif

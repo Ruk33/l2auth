@@ -98,3 +98,9 @@ void packet_write_i32(struct packet *dest, i32 src)
     assert(dest);
     packet_write(dest, &src, sizeof(src));
 }
+
+void packet_write_d(struct packet *dest, double src)
+{
+    assert(dest);
+    packet_write(dest, &src, sizeof(src));
+}

@@ -15,6 +15,8 @@ typedef int32_t i32;
 
 typedef u8 byte;
 
+typedef float seconds;
+
 #define TODO(msg) (printf("\nTODO (%s line %d)\n  %s\n\n", __FILE__, __LINE__, (msg)))
 
 #define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
