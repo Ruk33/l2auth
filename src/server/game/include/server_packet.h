@@ -437,13 +437,9 @@ void packet_revive_to(struct packet *dest, struct packet_revive *src);
 
 void packet_target_selected_to(struct packet *dest, struct packet_target_selected *src);
 
-void packet_auth_login_char_to(struct packet *dest, struct packet_auth_login_char *src);
-
 void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src);
 
 void packet_char_info_to(struct packet *dest, struct packet_char_info *src);
-
-void packet_new_char_template_to(struct packet *dest, struct packet_new_char_template *src);
 
 void packet_new_char_to(struct packet *dest, struct packet_new_char *src);
 

@@ -34,7 +34,44 @@ void packet_d0_to(struct packet *dest, struct packet_d0 *src)
     packet_write_u32(dest, src->manor_size);
 }
 
-void packet_char_select_to(struct packet *dest, struct packet_char_select *src);
+void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x15);
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
+    packet_write_u32(dest, src->id);
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
+    packet_write_i32(dest, src->playOK1);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->sex);
+    packet_write_u32(dest, src->race_id);
+    packet_write_u32(dest, src->class_id);
+    packet_write_u32(dest, src->active);
+    packet_write_i32(dest, src->position.x);
+    packet_write_i32(dest, src->position.y);
+    packet_write_i32(dest, src->position.z);
+    packet_write_d(dest, src->hp);
+    packet_write_d(dest, src->mp);
+    packet_write_u32(dest, src->sp);
+    packet_write_u32(dest, src->exp);
+    packet_write_u32(dest, src->level);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_i32(dest, src->attrs._int);
+    packet_write_i32(dest, src->attrs.str);
+    packet_write_i32(dest, src->attrs.con);
+    packet_write_i32(dest, src->attrs.men);
+    packet_write_i32(dest, src->attrs.dex);
+    packet_write_i32(dest, src->attrs.wit);
+    for (int i = 0; i < 36; i += 1) {
+        packet_write_u32(dest, 0);
+    }
+    packet_write_u32(dest, src->game_time);
+    for (int i = 0; i < 15; i += 1) {
+        packet_write_u32(dest, 0);
+    }
+}
 
 void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src)
 {
@@ -86,8 +123,6 @@ void packet_target_selected_to(struct packet *dest, struct packet_target_selecte
     packet_write_u32(dest, src->target_id);
     packet_write_u32(dest, src->color);
 }
-
-void packet_auth_login_char_to(struct packet *dest, struct packet_auth_login_char *src);
 
 void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src)
 {
@@ -179,13 +214,160 @@ void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src)
     }
 }
 
-void packet_char_info_to(struct packet *dest, struct packet_char_info *src);
+void packet_char_info_to(struct packet *dest, struct packet_char_info *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x03);
+    packet_write_i32(dest, src->position.x);
+    packet_write_i32(dest, src->position.y);
+    packet_write_i32(dest, src->position.z);
+    packet_write_i32(dest, src->position.heading);
+    packet_write_u32(dest, src->id);
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
+    packet_write_u32(dest, src->race_id);
+    packet_write_u32(dest, src->sex);
+    packet_write_u32(dest, src->class_id);
+    packet_write_u32(dest, 0);
+    // Paperdoll?
+    for (int i = 0; i < 10; i += 1) {
+        packet_write_u32(dest, 0);
+    }
+    packet_write_u32(dest, src->pvp_flag);
+    packet_write_u32(dest, src->karma);
+    packet_write_u32(dest, src->m_attack_speed);
+    packet_write_u32(dest, src->p_attack_speed);
+    packet_write_u32(dest, src->pvp_flag);
+    packet_write_u32(dest, src->karma);
+    packet_write_u32(dest, src->run_speed);
+    packet_write_u32(dest, src->walk_speed);
+    packet_write_u32(dest, src->swim_run_speed);
+    packet_write_u32(dest, src->swim_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_d(dest, src->movement_multiplier);
+    packet_write_d(dest, src->attack_speed_multiplier);
+    packet_write_d(dest, src->collision_radius);
+    packet_write_d(dest, src->collision_height);
+    packet_write_u32(dest, src->hair_style);
+    packet_write_u32(dest, src->hair_color);
+    packet_write_u32(dest, src->face);
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
+    packet_write_u32(dest, src->clan_id);
+    packet_write_u32(dest, src->clan_crest_id);
+    packet_write_u32(dest, src->ally_id);
+    packet_write_u32(dest, src->ally_crest_id);
+    packet_write_u32(dest, 0);
+    packet_write_u8(dest, src->standing);
+    packet_write_u8(dest, src->running);
+    packet_write_u8(dest, src->in_combat);
+    packet_write_u8(dest, src->alike_dead);
+    packet_write_u8(dest, src->invisible);
+    packet_write_u8(dest, src->mount_type);
+    packet_write_u8(dest, src->private_store_type);
+    packet_write_u16(dest, src->cubics);
+    packet_write_u8(dest, src->find_party_member);
+    packet_write_u32(dest, src->abnormal_effect);
+    packet_write_u8(dest, 0);
+    packet_write_u16(dest, src->recommendations_left);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u8(dest, src->mounted);
+    packet_write_u8(dest, 0);
+    packet_write_u32(dest, src->clan_crest_large_id);
+    packet_write_u8(dest, src->hero_symbol);
+    packet_write_u8(dest, src->hero_aura);
+    packet_write_u8(dest, src->fishing);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->name_color);
+}
 
-void packet_new_char_template_to(struct packet *dest, struct packet_new_char_template *src);
+void packet_new_char_to(struct packet *dest, struct packet_new_char *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x17);
+    packet_write_u32(dest, src->count);
+    for (u32 i = 0; i < src->count; i += 1) {
+        packet_write_u32(dest, src->templates[i].race_id);
+        packet_write_u32(dest, src->templates[i].class_id);
+        packet_write_u32(dest, 0);
 
-void packet_new_char_to(struct packet *dest, struct packet_new_char *src);
+        packet_write_u32(dest, src->templates[i].attrs.str);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, src->templates[i].attrs.dex);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, src->templates[i].attrs.con);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, src->templates[i].attrs._int);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, src->templates[i].attrs.wit);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, 0);
+        packet_write_u32(dest, src->templates[i].attrs.men);
+        packet_write_u32(dest, 0);
+    }
+}
 
-void packet_npc_info_to(struct packet *dest, struct packet_npc_info *src);
+void packet_npc_info_to(struct packet *dest, struct packet_npc_info *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x16);
+    packet_write_u32(dest, src->id);
+    packet_write_u32(dest, src->template_id);
+    packet_write_u32(dest, src->attackable);
+    packet_write_i32(dest, src->position.x);
+    packet_write_i32(dest, src->position.y);
+    packet_write_i32(dest, src->position.z);
+    packet_write_i32(dest, src->position.heading);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->m_attack_speed);
+    packet_write_u32(dest, src->p_attack_speed);
+    packet_write_u32(dest, src->run_speed);
+    packet_write_u32(dest, src->walk_speed);
+    packet_write_u32(dest, src->swim_run_speed);
+    packet_write_u32(dest, src->swim_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_d(dest, src->magic_multiplier);
+    packet_write_d(dest, (double) src->p_attack_speed / 277.478340719);
+    packet_write_d(dest, src->collision_radius);
+    packet_write_u32(dest, src->r_hand);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->l_hand);
+    packet_write_u8(dest, src->name_above_char);
+    packet_write_u8(dest, src->running);
+    packet_write_u8(dest, src->in_combat);
+    packet_write_u8(dest, src->alike_dead);
+    packet_write_u8(dest, src->summoned);
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->abnormal_effect);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    packet_write_u8(dest, 0);
+    packet_write_u8(dest, 0);
+    packet_write_d(dest, 0);
+    packet_write_d(dest, 0);
+    packet_write_u32(dest, 0);
+}
 
 void packet_status_to(struct packet *dest, struct packet_status *src)
 {
@@ -200,7 +382,134 @@ void packet_status_to(struct packet *dest, struct packet_status *src)
     }
 }
 
-void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src);
+void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x04);
+    packet_write_i32(dest, src->position.x);
+    packet_write_i32(dest, src->position.y);
+    packet_write_i32(dest, src->position.z);
+    packet_write_i32(dest, src->position.heading);
+    packet_write_u32(dest, src->id);
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
+    packet_write_u32(dest, src->race_id);
+    packet_write_u32(dest, src->sex);
+    packet_write_u32(dest, src->class_id);
+    packet_write_u32(dest, src->level);
+    packet_write_u32(dest, src->exp);
+    packet_write_i32(dest, src->attrs.str);
+    packet_write_i32(dest, src->attrs.dex);
+    packet_write_i32(dest, src->attrs.con);
+    packet_write_i32(dest, src->attrs._int);
+    packet_write_i32(dest, src->attrs.wit);
+    packet_write_i32(dest, src->attrs.men);
+    packet_write_u32(dest, src->max_hp);
+    packet_write_u32(dest, src->hp);
+    packet_write_u32(dest, src->max_mp);
+    packet_write_u32(dest, src->mp);
+    packet_write_u32(dest, src->sp);
+    packet_write_u32(dest, src->current_load);
+    packet_write_u32(dest, src->max_load);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->paperdoll_under);
+    packet_write_u32(dest, src->paperdoll_r_ear);
+    packet_write_u32(dest, src->paperdoll_l_ear);
+    packet_write_u32(dest, src->paperdoll_neck);
+    packet_write_u32(dest, src->paperdoll_r_finger);
+    packet_write_u32(dest, src->paperdoll_l_finger);
+    packet_write_u32(dest, src->paperdoll_head);
+    packet_write_u32(dest, src->paperdoll_r_hand);
+    packet_write_u32(dest, src->paperdoll_l_hand);
+    packet_write_u32(dest, src->paperdoll_gloves);
+    packet_write_u32(dest, src->paperdoll_chest);
+    packet_write_u32(dest, src->paperdoll_legs);
+    packet_write_u32(dest, src->paperdoll_feet);
+    packet_write_u32(dest, src->paperdoll_back);
+    packet_write_u32(dest, src->paperdoll_lr_hand);
+    packet_write_u32(dest, src->paperdoll_hair);
+    packet_write_u32(dest, src->paperdoll_under);
+    packet_write_u32(dest, src->paperdoll_r_ear);
+    packet_write_u32(dest, src->paperdoll_l_ear);
+    packet_write_u32(dest, src->paperdoll_neck);
+    packet_write_u32(dest, src->paperdoll_r_finger);
+    packet_write_u32(dest, src->paperdoll_l_finger);
+    packet_write_u32(dest, src->paperdoll_head);
+    packet_write_u32(dest, src->paperdoll_r_hand);
+    packet_write_u32(dest, src->paperdoll_l_hand);
+    packet_write_u32(dest, src->paperdoll_gloves);
+    packet_write_u32(dest, src->paperdoll_chest);
+    packet_write_u32(dest, src->paperdoll_legs);
+    packet_write_u32(dest, src->paperdoll_feet);
+    packet_write_u32(dest, src->paperdoll_back);
+    packet_write_u32(dest, src->paperdoll_lr_hand);
+    packet_write_u32(dest, src->paperdoll_hair);
+    packet_write_u32(dest, src->p_attack);
+    packet_write_u32(dest, src->p_attack_speed);
+    packet_write_u32(dest, src->p_def);
+    packet_write_u32(dest, src->evasion_rate);
+    packet_write_u32(dest, src->accuracy);
+    packet_write_u32(dest, src->critical_hit);
+    packet_write_u32(dest, src->m_attack);
+    packet_write_u32(dest, src->m_attack_speed);
+    packet_write_u32(dest, src->p_attack_speed);
+    packet_write_u32(dest, src->m_def);
+    packet_write_u32(dest, src->pvp_flag);
+    packet_write_u32(dest, src->karma);
+    packet_write_u32(dest, src->run_speed);
+    packet_write_u32(dest, src->walk_speed);
+    packet_write_u32(dest, src->swim_run_speed);
+    packet_write_u32(dest, src->swim_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_u32(dest, src->fly_run_speed);
+    packet_write_u32(dest, src->fly_walk_speed);
+    packet_write_d(dest, src->movement_speed_multiplier);
+    packet_write_d(dest, src->attack_speed_multiplier);
+    packet_write_d(dest, src->collision_radius);
+    packet_write_d(dest, src->collision_height);
+    packet_write_u32(dest, src->hair_style_id);
+    packet_write_u32(dest, src->hair_color_id);
+    packet_write_u32(dest, src->face);
+    packet_write_i32(dest, src->access_level);
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
+    packet_write_u32(dest, src->clan_id);
+    packet_write_u32(dest, src->clan_crest_id);
+    packet_write_u32(dest, src->ally_id);
+    packet_write_u32(dest, src->ally_crest_id);
+    packet_write_u32(dest, src->clan_leader);
+    packet_write_u8(dest, src->mount_type);
+    packet_write_u8(dest, src->private_store_type);
+    packet_write_u8(dest, src->dwarven_craft);
+    packet_write_u32(dest, src->pk_kills);
+    packet_write_u32(dest, src->pvp_kills);
+    packet_write_u16(dest, src->cubics);
+    packet_write_u8(dest, src->party_members);
+    packet_write_u32(dest, src->abnormal_effect);
+    packet_write_u8(dest, 0);
+    packet_write_u32(dest, src->clan_privileges);
+    for (int i = 0; i < 7; i += 1) {
+        packet_write_u32(dest, 0);
+    }
+    packet_write_u16(dest, src->recommendation_left);
+    packet_write_u16(dest, src->recommendation_have);
+    packet_write_u32(dest, 0);
+    packet_write_u16(dest, src->inventory_limit);
+    packet_write_u32(dest, src->class_id);
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, src->max_cp);
+    packet_write_u32(dest, src->cp);
+    packet_write_u8(dest, src->mounted);
+    packet_write_u8(dest, 0); // 1 = blue, 2 = red
+    packet_write_u32(dest, src->clan_crest_large_id);
+    packet_write_u8(dest, src->hero_symbol);
+    packet_write_u8(dest, src->hero);
+    packet_write_u8(dest, 0);
+    packet_write_i32(dest, src->fish_x);
+    packet_write_i32(dest, src->fish_y);
+    packet_write_i32(dest, src->fish_z);
+    packet_write_u32(dest, src->name_color);
+}
 
 void packet_say_to(struct packet *dest, struct packet_say *src)
 {
