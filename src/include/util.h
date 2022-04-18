@@ -29,4 +29,6 @@ typedef float seconds;
 // Destination is guarantee to end up with a null terminator.
 void cpy_str(i8 *dest, i8 *src, size_t n);
 
+void cpy_bytes(byte *dest, byte *src, size_t n);
+
 #endif

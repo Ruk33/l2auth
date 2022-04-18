@@ -62,12 +62,14 @@ struct packet_validate_pos_request {
 };
 
 struct packet_say_request {
-    l2_string *message;
+    // Check maximum length.
+    l2_string message[256];
     size_t size;
 };
 
 struct packet_bypass_request {
-    l2_string *command;
+    // Check maximum size.
+    l2_string command[128];
     size_t size;
 };
 

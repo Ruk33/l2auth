@@ -14,3 +14,15 @@ void cpy_str(i8 *dest, i8 *src, size_t n)
     // null terminator.
     *dest = 0;
 }
+
+void cpy_bytes(byte *dest, byte *src, size_t n)
+{
+    assert(dest);
+    assert(src);
+    while (n) {
+        *dest = *src;
+        dest += 1;
+        src += 1;
+        n -= 1;
+    }
+}

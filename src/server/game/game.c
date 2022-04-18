@@ -54,6 +54,111 @@ static void on_auth_request(struct state *state, struct client *client)
     client_encrypt(client, &client->response);
 }
 
+static void on_select_char(struct state *state, struct client *client)
+{
+    struct packet_char_select_request request = { 0 };
+    struct packet_char_select char_select = { 0 };
+    struct character character = { 0 };
+
+    assert(state);
+    assert(client);
+
+    packet_char_select_request_from(&request, &client->request);
+    state_add_player(state, client, &character);
+
+    L2_STRING_FROM_CHAR(char_select.name.buf, "franco");
+    L2_STRING_FROM_CHAR(char_select.title.buf, "yep");
+    char_select.playOK1 = 1994;
+    char_select.id = 1;
+    char_select.active = 1;
+    char_select.race_id = 1;
+    char_select.class_id = 1;
+    char_select.exp = 10;
+    char_select.sp = 10;
+    char_select.level = 1;
+    char_select.hp = 100;
+    char_select.mp = 100;
+    char_select.attrs.con = 10;
+    char_select.attrs.dex = 10;
+    char_select.attrs.men = 10;
+    char_select.attrs.str = 10;
+    char_select.attrs.wit = 10;
+    char_select.attrs._int = 10;
+    char_select.sex = 1;
+    // Talking Island
+    char_select.position.x = -83968;
+    char_select.position.y = 244634;
+    char_select.position.z = -3730;
+    char_select.game_time = 42;
+
+    packet_char_select_to(&client->response, &char_select);
+    client_encrypt(client, &client->response);
+}
+
+static void on_auto_ss_bsps(struct state *state, struct client *client)
+{
+    struct packet_d0 d0 = { 0 };
+
+    assert(state);
+    assert(client);
+
+    packet_d0_to(&client->response, &d0);
+    client_encrypt(client, &client->response);
+}
+
+static void on_quest_list(struct state *state, struct client *client)
+{
+    struct packet_quest_list quest = { 0 };
+
+    assert(state);
+    assert(client);
+
+    packet_quest_list_to(&client->response, &quest);
+    client_encrypt(client, &client->response);
+}
+
+static void on_enter_world(struct state *state, struct client *client)
+{
+    struct packet_enter_world enter_world = { 0 };
+
+    assert(state);
+    assert(client);
+
+    L2_STRING_FROM_CHAR(enter_world.name.buf, "franco");
+    enter_world.position.heading = 1;
+    enter_world.position.x = -83968;
+    enter_world.position.y = 244634;
+    enter_world.position.z = -3730;
+    enter_world.id = 1;
+    enter_world.race_id = 1;
+    enter_world.sex = 1;
+    enter_world.class_id = 1;
+    enter_world.level = 1;
+    enter_world.exp = 1;
+    enter_world.attrs.str = 10;
+    enter_world.attrs.dex = 10;
+    enter_world.attrs.con = 10;
+    enter_world.attrs._int = 10;
+    enter_world.attrs.wit = 10;
+    enter_world.attrs.men = 10;
+    enter_world.hp = 10;
+    enter_world.mp = 10;
+    enter_world.max_hp = 10;
+    enter_world.max_mp = 10;
+    enter_world.cp = 10;
+    enter_world.max_cp = 10;
+    enter_world.sp = 10;
+    enter_world.exp = 10;
+    enter_world.p_attack = 10;
+    enter_world.m_attack = 10;
+    enter_world.p_def = 10;
+    enter_world.m_def = 10;
+    enter_world.evasion_rate = 10;
+    
+
+    packet_enter_world_to(&client->response, &enter_world);
+}
+
 struct client *game_on_new_connection(struct state *state)
 {
     struct client *client = 0;
@@ -102,6 +207,20 @@ void game_on_request(struct state *state, struct client *client)
         break;
     case 0x08: // Auth request
         on_auth_request(state, client);
+        break;
+    case 0x0d: // Selected char.
+        on_select_char(state, client);
+        break;
+    case 0xd0: // Auto ss bsps.
+        on_auto_ss_bsps(state, client);
+        break;
+    case 0x63: // Quest list.
+        on_quest_list(state, client);
+        break;
+    case 0x03: // Enter world.
+        on_enter_world(state, client);
+        break;
+    case 0x0e: // New character
         break;
     default:
         printf("i don't recognize that packet, ignoring.\n");

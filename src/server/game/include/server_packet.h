@@ -34,6 +34,10 @@ struct packet_char_select {
     u32 game_time;
 };
 
+struct packet_quest_list {
+    byte empty[7];
+};
+
 struct packet_validate_pos {
     u32 id;
     struct char_pos position;
@@ -426,6 +430,8 @@ void packet_protocol_version_to(struct packet *dest, struct packet_protocol_vers
 void packet_d0_to(struct packet *dest, struct packet_d0 *src);
 
 void packet_char_select_to(struct packet *dest, struct packet_char_select *src);
+
+void packet_quest_list_to(struct packet *dest, struct packet_quest_list *src);
 
 void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src);
 

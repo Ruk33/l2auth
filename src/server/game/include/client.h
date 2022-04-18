@@ -25,4 +25,6 @@ void client_init(struct client *src);
 
 void client_decrypt(struct client *client, struct packet *src);
 
+void client_encrypt(struct client *client, struct packet *src);
+
 #endif

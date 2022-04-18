@@ -73,6 +73,14 @@ void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
     }
 }
 
+void packet_quest_list_to(struct packet *dest, struct packet_quest_list *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x80);
+    packet_write(dest, src->empty, sizeof(src->empty));
+}
+
 void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src)
 {
     assert(dest);
@@ -411,7 +419,7 @@ void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src)
     packet_write_u32(dest, src->sp);
     packet_write_u32(dest, src->current_load);
     packet_write_u32(dest, src->max_load);
-    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0x28);
     packet_write_u32(dest, src->paperdoll_under);
     packet_write_u32(dest, src->paperdoll_r_ear);
     packet_write_u32(dest, src->paperdoll_l_ear);
