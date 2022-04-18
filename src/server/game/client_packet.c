@@ -104,7 +104,7 @@ void packet_revive_request_from(struct packet_revive_request *dest, struct packe
     assert(src);
 
     packet_read_init(&reader, src);
-    packet_read_i32(&dest->option_chosen, &reader);
+    packet_read_i32((i32 *) &dest->option_chosen, &reader);
 }
 
 void packet_validate_pos_request_from(struct packet_validate_pos_request *dest, struct packet *src)

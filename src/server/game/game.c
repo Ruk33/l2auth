@@ -154,9 +154,26 @@ static void on_enter_world(struct state *state, struct client *client)
     enter_world.p_def = 10;
     enter_world.m_def = 10;
     enter_world.evasion_rate = 10;
-    
+    enter_world.accuracy = 10;
+    enter_world.critical_hit = 10;
+    enter_world.hair_style_id = 1;
+    enter_world.hair_color_id = 1;
+    enter_world.face = 1;
+    enter_world.inventory_limit = 10;
+    enter_world.run_speed = 10;
+    enter_world.walk_speed = 10;
+    enter_world.p_attack_speed = 10;
+    enter_world.m_attack_speed = 10;
+    enter_world.movement_speed_multiplier = 1;
+    enter_world.attack_speed_multiplier = 1;
+    enter_world.collision_radius = 10;
+    enter_world.collision_height = 10;
+    enter_world.name_color = 0xFFFFFF;
+    enter_world.current_load = 1;
+    enter_world.max_load = 10;
 
     packet_enter_world_to(&client->response, &enter_world);
+    client_encrypt(client, &client->response);
 }
 
 struct client *game_on_new_connection(struct state *state)

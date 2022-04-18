@@ -21,10 +21,11 @@
 
 #include "../../util.c"
 #include "../../packet.c"
+#include "../../server/game/packet_read.c"
 #include "../../server/game/l2_string.c"
 #include "../../server/game/state.c"
 #include "../../server/game/client.c"
-// #include "../../server/game/client_packet.c"
+#include "../../server/game/client_packet.c"
 #include "../../server/game/server_packet.c"
 #include "../../server/game/game.c"
 
