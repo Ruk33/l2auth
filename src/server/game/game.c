@@ -63,6 +63,8 @@ static void on_select_char(struct state *state, struct client *client)
     assert(state);
     assert(client);
 
+    printf("handling char select.\n");
+
     packet_char_select_request_from(&request, &client->request);
     state_add_player(state, client, &character);
 
@@ -102,6 +104,7 @@ static void on_auto_ss_bsps(struct state *state, struct client *client)
     assert(state);
     assert(client);
 
+    printf("handling auto ss bsps.\n");
     packet_d0_to(&client->response, &d0);
     client_encrypt(client, &client->response);
 }
@@ -113,6 +116,7 @@ static void on_quest_list(struct state *state, struct client *client)
     assert(state);
     assert(client);
 
+    printf("handling quest list.\n");
     packet_quest_list_to(&client->response, &quest);
     client_encrypt(client, &client->response);
 }
@@ -123,6 +127,8 @@ static void on_enter_world(struct state *state, struct client *client)
 
     assert(state);
     assert(client);
+
+    printf("handling enter world.\n");
 
     L2_STRING_FROM_CHAR(enter_world.name.buf, "franco");
     enter_world.position.heading = 1;
@@ -205,7 +211,9 @@ void game_on_request(struct state *state, struct client *client)
     assert(state);
     assert(client);
 
+    printf("new chunk of request.\n");
     client->partial = packet_size(&client->request) != client->received;
+    client->response = (struct packet) { 0 };
 
     if (client->partial) {
         printf("found partial chunk.\n");
@@ -213,10 +221,8 @@ void game_on_request(struct state *state, struct client *client)
     }
 
     client->received = 0;
-
     client_decrypt(client, &client->request);
     client->conn_encrypted = 1;
-    client->response = (struct packet) { 0 };
 
     switch (packet_type(&client->request)) {
     case 0x00: // Protocol version

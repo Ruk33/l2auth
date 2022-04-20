@@ -25,10 +25,10 @@ void client_encrypt(struct client *client, struct packet *src)
     assert(client);
     assert(src);
 
-    src_size = packet_size(src);
+    src_size = packet_padded_size(src);
     src_body = packet_body(src);
 
-    for (u16 i = 0; i < src_size; i++) {
+    for (u16 i = 0; i < (src_size - 2); i++) {
         temp2 = src_body[i] & 0xff;
         src_body[i] = (byte) (temp2 ^ client->encrypt_key.buf[i & 7] ^ temp);
         temp = src_body[i];
@@ -39,7 +39,7 @@ void client_encrypt(struct client *client, struct packet *src)
     old |= ((u32) client->encrypt_key.buf[2] << 0x10 & 0xff0000);
     old |= ((u32) client->encrypt_key.buf[3] << 0x18 & 0xff000000);
 
-    old += src_size;
+    old += (src_size - 2);
 
     client->encrypt_key.buf[0] = (byte) (old & 0xff);
     client->encrypt_key.buf[1] = (byte) (old >> 0x08 & 0xff);
@@ -47,7 +47,7 @@ void client_encrypt(struct client *client, struct packet *src)
     client->encrypt_key.buf[3] = (byte) (old >> 0x18 & 0xff);
 
     // Update packet size.
-    *((u16 *) src) = packet_padded_size(src);
+    *((u16 *) src) = src_size;
 }
 
 void client_decrypt(struct client *client, struct packet *src)

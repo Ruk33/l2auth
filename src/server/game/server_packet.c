@@ -43,6 +43,7 @@ void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
     packet_write_u32(dest, src->id);
     packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
     packet_write_i32(dest, src->playOK1);
+    packet_write_u32(dest, src->clan_id);
     packet_write_u32(dest, 0);
     packet_write_u32(dest, src->sex);
     packet_write_u32(dest, src->race_id);
@@ -64,11 +65,11 @@ void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
     packet_write_i32(dest, src->attrs.men);
     packet_write_i32(dest, src->attrs.dex);
     packet_write_i32(dest, src->attrs.wit);
-    for (int i = 0; i < 36; i += 1) {
+    for (int i = 0; i < 37; i += 1) {
         packet_write_u32(dest, 0);
     }
     packet_write_u32(dest, src->game_time);
-    for (int i = 0; i < 15; i += 1) {
+    for (int i = 0; i < 16; i += 1) {
         packet_write_u32(dest, 0);
     }
 }
