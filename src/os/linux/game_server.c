@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
 #include <fcntl.h>
-#include <pthread.h>
-#include <unistd.h>
 #include <dlfcn.h>
+#include <unistd.h>
+#include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/epoll.h>
@@ -29,27 +28,17 @@
 #include "../../server/game/server_packet.c"
 #include "../../server/game/game.c"
 
-#define MAX_THREADS 2
+#ifndef MAX_SOCKETS
 #define MAX_SOCKETS 512
+#endif
 
 struct unix_socket {
     int fd;
-    int used;
-    int has_work;
-    int partial;
-    byte buf_write[65535];
+    byte buf_write[KB(4)];
     size_t sent;
     size_t write_size;
     struct client *client;
 };
-
-static pthread_t g_threads[MAX_THREADS] = { 0 };
-static pthread_mutex_t g_thread_mutex   = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t g_thread_cond     = PTHREAD_COND_INITIALIZER;
-
-static int g_epoll_fd = 0;
-static struct unix_socket g_sockets[MAX_SOCKETS] = { 0 };
-static struct state g_state = { 0 };
 
 static void unix_socket_set_non_block(int fd)
 {
@@ -69,7 +58,6 @@ static int unix_socket_init(struct unix_socket *src, u16 port, int max)
     int reusable_enable = 0;
 
     src->fd = socket(AF_INET, SOCK_STREAM, 0);
-    src->used = 1;
 
     if (src->fd < 0) {
         goto abort;
@@ -112,17 +100,13 @@ static int unix_socket_accept(struct unix_socket *dest, struct unix_socket *src)
     struct sockaddr *address_p = 0;
     socklen_t addrlen = 0;
 
-    struct epoll_event event = { 0 };
-
     if (!dest) {
         printf("unable to accept new client. too many clients?\n");
         return 0;
     }
 
     address_p = (struct sockaddr *) &address;
-
     dest->fd = accept(src->fd, address_p, &addrlen);
-    dest->used = 1;
 
     if (dest->fd < 0) {
         *dest = (struct unix_socket){ 0 };
@@ -131,29 +115,14 @@ static int unix_socket_accept(struct unix_socket *dest, struct unix_socket *src)
     }
 
     unix_socket_set_non_block(dest->fd);
-
-    event.events = EPOLLIN | EPOLLET;
-    event.data.ptr = dest;
-
-    return epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, dest->fd, &event) != -1;
+    return 1;
 }
 
 static void unix_socket_close(struct unix_socket *socket)
 {
-    epoll_ctl(g_epoll_fd, EPOLL_CTL_DEL, socket->fd, 0);
     shutdown(socket->fd, SHUT_RDWR);
     close(socket->fd);
     *socket = (struct unix_socket){ 0 };
-}
-
-static struct unix_socket *find_free_socket(void)
-{
-    for (size_t i = 0; i < ARR_LEN(g_sockets); i += 1) {
-        if (!g_sockets[i].used) {
-            return &g_sockets[i];
-        }
-    }
-    return 0;
 }
 
 static void unix_socket_flush(struct unix_socket *socket)
@@ -188,185 +157,188 @@ static void unix_socket_write(struct unix_socket *socket, byte *buf, size_t n)
     assert(buf);
 
     // Append buf to the end of the write buffer.
-    memcpy(socket->buf_write + socket->write_size, buf, n);
+    cpy_bytes(socket->buf_write + socket->write_size, buf, n);
     socket->write_size += n;
+}
+
+static void sighandler(int signum)
+{
+    printf("caught signal %d, coming out...\n", signum);
+}
+
+static void fork_and_listen(struct unix_socket *server)
+{
+    static struct state state = { 0 };
+    struct unix_socket client = { 0 };
+
+    pid_t pid = 0;
+
+    struct epoll_event events[8] = { 0 };
+    struct epoll_event event = { 0 };
+    int epoll_fd = 0;
+    int ev_count = 0;
+
+    ssize_t read = 0;
+
+    if (!unix_socket_accept(&client, server)) {
+        printf("unable to accept new client.\n");
+        return;
+    }
+
+    pid = fork();
+    switch (pid) {
+    case -1: // Something went wrong
+        printf("unable to fork. closing the connection.\n");
+        unix_socket_close(&client);
+        break;
+    case 0: // Child
+        break;
+    default: // Parent
+        printf("handling new connection in process %d.\n", pid);
+        return;
+    }
+
+    signal(SIGTERM, sighandler);
+
+    epoll_fd = epoll_create1(0);
+    if (epoll_fd < 0) {
+        printf("unable to create epoll from client. closing connection.\n");
+        unix_socket_close(&client);
+        exit(EXIT_FAILURE);
+    }
+
+    event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    event.data.ptr = &client;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client.fd, &event) == -1) {
+        printf("failed to epoll add. closing the connection.\n");
+        unix_socket_close(&client);
+        close(epoll_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    client.client = game_on_new_connection(&state);
+    if (!client.client) {
+        printf("client couldn't initialize. closing the connection.\n");
+        unix_socket_close(&client);
+        close(epoll_fd);
+        exit(EXIT_FAILURE);
+    }
+    unix_socket_write(
+        &client,
+        client.client->response.buf,
+        packet_size(&client.client->response)
+    );
+    unix_socket_flush(&client);
+
+    while (1) {
+        ev_count = epoll_wait(epoll_fd, events, ARR_LEN(events), -1);
+
+        if (ev_count < 0) {
+            printf("epoll_wait failed, closing the client. closing connection.\n");
+            game_on_disconnect(&state, client.client);
+            unix_socket_close(&client);
+            close(epoll_fd);
+            exit(EXIT_FAILURE);
+        }
+
+        for (int i = 0; i < ev_count; i += 1) {
+            if ((events[i].events & EPOLLIN) == EPOLLIN) {
+                unix_socket_flush(&client);
+            }
+
+            if ((events[i].events & EPOLLOUT) != EPOLLOUT) {
+                continue;
+            }
+            
+            read = recv(
+                client.fd,
+                client.client->request.buf + client.client->received,
+                sizeof(client.client->request.buf) - client.client->received,
+                0
+            );
+
+            if (read == 0) {
+                printf("closing connection as requested by client.\n");
+                game_on_disconnect(&state, client.client);
+                unix_socket_close(&client);
+                close(epoll_fd);
+                exit(EXIT_SUCCESS);
+            }
+
+            if (read < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    continue;
+                }
+                printf("failed to read packet from client, closing connection.\n");
+                game_on_disconnect(&state, client.client);
+                unix_socket_close(&client);
+                close(epoll_fd);
+                exit(EXIT_FAILURE);
+            }
+
+            client.client->received += (size_t) read;
+            game_on_request(&state, client.client);
+
+            if (packet_size(&client.client->response)) {
+                unix_socket_write(
+                    &client,
+                    client.client->response.buf,
+                    packet_size(&client.client->response)
+                );
+                unix_socket_flush(&client);
+            }
+        }
+    }
+
+    unix_socket_close(&client);
+    close(epoll_fd);
+    exit(EXIT_SUCCESS);
 }
 
 static int unix_socket_listen(struct unix_socket *server)
 {
     static struct epoll_event events[MAX_SOCKETS] = { 0 };
     struct epoll_event event = { 0 };
+    int epoll_fd = 0;
     int ev_count = 0;
 
-    struct unix_socket *socket = 0;
-    ssize_t read = 0;
+    assert(server);
 
-    int work = 0;
+    epoll_fd = epoll_create1(0);
 
-    g_epoll_fd = epoll_create1(0);
-
-    if (g_epoll_fd < 0) {
-        printf("unable to create epoll.\n");
+    if (epoll_fd < 0) {
+        printf("unable to create epoll. server can't start.\n");
         return 0;
     }
 
-    event.events = EPOLLIN;
+    event.events = EPOLLIN | EPOLLET;
     event.data.ptr = server;
 
-    epoll_ctl(g_epoll_fd, EPOLL_CTL_ADD, server->fd, &event);
-    
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server->fd, &event) == -1) {
+        printf("unable to add server socket to epoll. server can't start.\n");
+        return 0;
+    }
     printf("listening for new connections.\n");
 
     while (1) {
-        ev_count = epoll_wait(g_epoll_fd, events, ARR_LEN(events), -1);
+        ev_count = epoll_wait(epoll_fd, events, ARR_LEN(events), -1);
 
         if (ev_count < 0) {
             printf("epoll_wait failed, closing the server.\n");
-            close(g_epoll_fd);
-            return 0;
+            break;
         }
-
-        if (pthread_mutex_lock(&g_thread_mutex) != 0) {
-            printf("failed to acquire mutex lock. this error is NOT being handled properly\n");
-        }
-
-        work = 0;
 
         for (int i = 0; i < ev_count; i += 1) {
-            socket = (struct unix_socket *) events[i].data.ptr;
-
-            if (socket == server) {
-                socket = find_free_socket();
-                if (unix_socket_accept(socket, server)) {
-                    printf("new connection accepted.\n");
-                    socket->client = game_on_new_connection(&g_state);
-                    if (socket->client) {
-                        socket->has_work = 1;
-                        work = 1;
-                    } else {
-                        printf("no client returned for connection. closing it.\n");
-                        unix_socket_close(socket);
-                    }
-                }
-                continue;
+            if ((events[i].events & EPOLLIN) == EPOLLIN) {
+                fork_and_listen(server);
             }
-
-            if ((events[i].events & EPOLLERR) == EPOLLERR) {
-                printf("error in connection event, closing the connection.\n");
-                game_on_disconnect(&g_state, socket->client);
-                unix_socket_close(socket);
-                continue;
-            }
-
-            if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
-                unix_socket_flush(socket);
-            }
-
-            if ((events[i].events & EPOLLIN) != EPOLLIN) {
-                continue;
-            }
-
-            read = recv(
-                socket->fd,
-                socket->client->request.buf + socket->client->received,
-                sizeof(socket->client->request.buf) - socket->client->received,
-                0
-            );
-
-            if (read == 0) {
-                printf("closing connection as requested by client.\n");
-                game_on_disconnect(&g_state, socket->client);
-                unix_socket_close(socket);
-                continue;
-            }
-
-            if (read < 0) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    socket->partial = 1;
-                    continue;
-                }
-                printf("failed to read packet from client, closing connection.\n");
-                game_on_disconnect(&g_state, socket->client);
-                unix_socket_close(socket);
-                continue;
-            }
-
-            socket->client->received += (size_t) read;
-            socket->has_work = 1;
-            // Assume since we got a chunk of response it's
-            // ready to process. Let the login layer decide
-            // if it's complete or not.
-            socket->partial = 0;
-
-            work = 1;
-        }
-
-        if (work) {
-            if (pthread_cond_signal(&g_thread_cond) != 0) {
-                printf("thread signal failed. this error isn't handled properly.\n");
-            }
-        }
-        if (pthread_mutex_unlock(&g_thread_mutex) != 0) {
-            printf("mutex unlock failed. this error isn't handled properly.\n");
         }
     }
 
-    close(g_epoll_fd);
+    unix_socket_close(server);
+    close(epoll_fd);
 
     return 1;
-}
-
-static struct unix_socket *find_socket_with_work(void)
-{
-    for (size_t i = 0; i < ARR_LEN(g_sockets); i += 1) {
-        if (g_sockets[i].has_work && !g_sockets[i].partial) {
-            return &g_sockets[i];
-        }
-    }
-    return 0;
-}
-
-static void *thread_func(void *arg)
-{
-    struct unix_socket *socket = 0;
-
-    // Suppress unused warning.
-    arg = arg;
-
-    while (1) {
-        if (pthread_mutex_lock(&g_thread_mutex) != 0) {
-            printf("unable to get mutex lock from thread func.\n");
-            continue;
-        }
-        socket = find_socket_with_work();
-        if (!socket) {
-            if (pthread_cond_wait(&g_thread_cond, &g_thread_mutex) != 0) {
-                printf("cond wait failed from thread func.\n");
-            }
-            socket = find_socket_with_work();
-        }
-        if (socket) {
-            if (socket->client->received) {
-                game_on_request(&g_state, socket->client);
-                socket->partial = socket->client->partial;
-            }
-            if (packet_size(&socket->client->response)) {
-                unix_socket_write(
-                    socket,
-                    socket->client->response.buf,
-                    packet_size(&socket->client->response)
-                );
-                unix_socket_flush(socket);
-            }
-
-            socket->has_work = 0;
-        }
-        if (pthread_mutex_unlock(&g_thread_mutex) != 0) {
-            printf("mutex unlock failed from thread func, this error is not being handled properly.\n");
-        }
-    }
-
-    return 0;
 }
 
 int main(int argc, char **argv)
@@ -380,16 +352,9 @@ int main(int argc, char **argv)
 
     srand(time(0));
 
-    if (!unix_socket_init(&server, port, ARR_LEN(g_sockets))) {
+    if (!unix_socket_init(&server, port, MAX_SOCKETS)) {
         printf("unable to initialize socket.\n");
         return 1;
-    }
-
-    for (size_t i = 0; i < ARR_LEN(g_threads); i += 1) {
-        if (pthread_create(&g_threads[i], 0, thread_func, 0) != 0) {
-            printf("unable to initialize thread.\n");
-            return 1;
-        }
     }
 
     if (!unix_socket_listen(&server)) {

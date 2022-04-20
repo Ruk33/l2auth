@@ -19,6 +19,8 @@ typedef float seconds;
 
 #define TODO(msg) (printf("\nTODO (%s line %d)\n  %s\n\n", __FILE__, __LINE__, (msg)))
 
+#define KB(x) ((x) * 1024)
+
 #define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
