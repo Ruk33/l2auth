@@ -33,4 +33,10 @@ void cpy_str(i8 *dest, i8 *src, size_t n);
 
 void cpy_bytes(byte *dest, byte *src, size_t n);
 
+// We can't use endian.h in Windows (apparently)
+// so let's go ahead and implement these for
+// the sake of simplicity.
+u32 be32tole(u32 src);
+u32 le32tobe(u32 src);
+
 #endif
