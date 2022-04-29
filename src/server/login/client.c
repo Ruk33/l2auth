@@ -152,9 +152,9 @@ static int blowfish_encrypt(struct client *client, struct packet *src)
     for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
         tmp = *((u32 *)(packet_body(src) + i));
-        *((u32 *)(packet_body(src) + i)) = letobe32(tmp);
+        *((u32 *)(packet_body(src) + i)) = le32tobe(tmp);
         tmp = *((u32 *)(packet_body(src) + i + 4));
-        *((u32 *)(packet_body(src) + i + 4)) = letobe32(tmp);
+        *((u32 *)(packet_body(src) + i + 4)) = le32tobe(tmp);
 
         BF_ecb_encrypt(
             packet_body(src) + i,
@@ -194,9 +194,9 @@ static int blowfish_decrypt(struct client *client, struct packet *src)
     for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
         // Blowfish uses big endian
         tmp = *((u32 *)(packet_body(src) + i));
-        *((u32 *)(packet_body(src) + i)) = htobe32(tmp);
+        *((u32 *)(packet_body(src) + i)) = le32tobe(tmp);
         tmp = *((u32 *)(packet_body(src) + i + 4));
-        *((u32 *)(packet_body(src) + i + 4)) = htobe32(tmp);
+        *((u32 *)(packet_body(src) + i + 4)) = le32tobe(tmp);
 
         BF_ecb_encrypt(
             packet_body(src) + i,
@@ -206,9 +206,9 @@ static int blowfish_decrypt(struct client *client, struct packet *src)
         );
 
         // Back to little endian (endianess used by Lineage 2)
-        tmp = be32toh(*((u32 *)(packet_body(src) + i)));
+        tmp = be32tole(*((u32 *)(packet_body(src) + i)));
         *((u32 *)(packet_body(src) + i)) = tmp;
-        tmp = be32toh(*((u32 *)(packet_body(src) + i + 4)));
+        tmp = be32tole(*((u32 *)(packet_body(src) + i + 4)));
         *((u32 *)(packet_body(src) + i + 4)) = tmp;
     }
 

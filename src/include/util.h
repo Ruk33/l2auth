@@ -3,7 +3,7 @@
 
 #include <stddef.h> // size_t
 #include <stdint.h> // fixed int types
-#include <stdio.h> // printf
+#include <stdio.h>  // printf
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -17,7 +17,12 @@ typedef u8 byte;
 
 typedef float seconds;
 
-#define TODO(msg) (printf("\nTODO (%s line %d)\n  %s\n\n", __FILE__, __LINE__, (msg)))
+#define TODO(...)                                           \
+    do {                                                    \
+        printf("\nTODO (%s line %d)\n", __FILE__, __LINE__);\
+        printf(__VA_ARGS__);                                \
+        printf("\n");                                       \
+    } while (0)
 
 #define KB(x) ((x) * 1024)
 
@@ -26,6 +31,11 @@ typedef float seconds;
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #define CPY_STR(dest_arr, src) (cpy_str((i8 *)(dest_arr), (i8 *)(src), sizeof(dest_arr)))
+
+struct ipv4 {
+    // Maximum, 255.255.255.255, 15 + NULL terminator = 16, quick math.
+    char buf[16];
+};
 
 // Copy up to n bytes or null terminator.
 // Destination is guarantee to end up with a null terminator.
@@ -38,5 +48,9 @@ void cpy_bytes(byte *dest, byte *src, size_t n);
 // the sake of simplicity.
 u32 be32tole(u32 src);
 u32 le32tobe(u32 src);
+
+// Convert text representation of IPv4 to u32.
+// On success, 1 is returned.
+int ipv4_to_u32(u32 *dest, struct ipv4 *src);
 
 #endif

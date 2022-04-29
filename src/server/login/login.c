@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <stdio.h>
-#include <arpa/inet.h>
 #include "../../include/util.h"
 #include "../../include/packet.h"
 #include "include/server_packet.h"
@@ -68,14 +67,15 @@ static void on_login_server(struct state *state, struct client *client)
 static void on_request_server_list(struct state *state, struct client *client)
 {
     struct packet_server_list server_list = { 0 };
-    struct sockaddr_in sa = { 0 };
+    struct ipv4 localhost = {{ "127.0.0.1" }};
+    u32 ip = 0;
 
     assert(state);
     assert(client);
 
     printf("handling request server list.\n");
 
-    if (inet_pton(AF_INET, "127.0.0.1", &(sa.sin_addr))) {
+    if (ipv4_to_u32(&ip, &localhost)) {
         server_list.count = 1;
     } else {
         server_list.count = 0;
@@ -86,13 +86,13 @@ static void on_request_server_list(struct state *state, struct client *client)
     server_list.servers[0].brackets = 0;
     server_list.servers[0].extra = 0;
     server_list.servers[0].id = 1;
-    server_list.servers[0].ip = (u32) sa.sin_addr.s_addr;
+    server_list.servers[0].ip = ip;
     server_list.servers[0].max_players = 32;
     server_list.servers[0].players = 5;
     server_list.servers[0].port = 7777;
     server_list.servers[0].pvp = 1;
     server_list.servers[0].status = 1;
-    TODO("don't hardcode game servers.");
+    TODO("don't hardcode game servers. sending %d (127.0.0.1) as ip.", ip);
 
     printf("sending server list.\n");
     packet_server_list_to(&client->response, &server_list);
