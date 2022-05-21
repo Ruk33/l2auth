@@ -65,7 +65,7 @@ static void on_select_char(struct state *state, struct client *client)
 
 	printf("handling char select.\n");
 
-	packet_char_select_request_from(&request, &client->request);
+	client_packet_char_select_request_decode(&request, &client->request);
 	state_add_player(state, client, &character);
 
 	L2_STRING_FROM_CHAR(char_select.name.buf, "franco");

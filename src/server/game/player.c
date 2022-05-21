@@ -11,7 +11,7 @@ static void on_move(struct client *client)
 	assert(client);
 	assert(client->character);
 
-	packet_move_request_from(&request, &client->request);
+	client_packet_move_request_decode(&request, &client->request);
 	character_move(client->character, &request.position);
 }
 

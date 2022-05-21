@@ -6,13 +6,13 @@
 #include "l2_string.h"
 #include "types.h"
 
-struct packet_action_request {
+struct client_packet_action {
     u32 target_id;
     struct char_pos origin_pos;
     u8 action; // 0 = click, 1 = shift click
 };
 
-struct packet_attack_request {
+struct client_packet_attack {
     u32 target_id;
     struct char_pos origin_pos;
     u8 action; // 0 = click, 1 = shift click
@@ -79,26 +79,26 @@ struct packet_skill_use_request {
     u8 shift_pressed;
 };
 
-void packet_action_request_from(struct packet_action_request *dest, struct packet *src);
+void client_packet_action_request_decode(struct client_packet_action *dest, struct packet *src);
 
-void packet_attack_request_from(struct packet_attack_request *dest, struct packet *src);
+void client_packet_attack_request_decode(struct client_packet_attack *dest, struct packet *src);
 
-void packet_auth_request_from(struct packet_auth_request *dest, struct packet *src);
+void client_packet_auth_request_decode(struct packet_auth_request *dest, struct packet *src);
 
-void packet_char_select_request_from(struct packet_char_select_request *dest, struct packet *src);
+void client_packet_char_select_request_decode(struct packet_char_select_request *dest, struct packet *src);
 
-void packet_create_char_request_from(struct packet_create_char_request *dest, struct packet *src);
+void client_packet_create_char_request_decode(struct packet_create_char_request *dest, struct packet *src);
 
-void packet_move_request_from(struct packet_move_request *dest, struct packet *src);
+void client_packet_move_request_decode(struct packet_move_request *dest, struct packet *src);
 
-void packet_revive_request_from(struct packet_revive_request *dest, struct packet *src);
+void client_packet_revive_request_decode(struct packet_revive_request *dest, struct packet *src);
 
-void packet_validate_pos_request_from(struct packet_validate_pos_request *dest, struct packet *src);
+void client_packet_validate_pos_request_decode(struct packet_validate_pos_request *dest, struct packet *src);
 
-void packet_say_request_from(struct packet_say_request *dest, struct packet *src);
+void client_packet_say_request_decode(struct packet_say_request *dest, struct packet *src);
 
-void packet_bypass_request_from(struct packet_bypass_request *dest, struct packet *src);
+void client_packet_bypass_request_decode(struct packet_bypass_request *dest, struct packet *src);
 
-void packet_skill_use_request_from(struct packet_skill_use_request *dest, struct packet *src);
+void client_packet_skill_use_request_decode(struct packet_skill_use_request *dest, struct packet *src);
 
 #endif
