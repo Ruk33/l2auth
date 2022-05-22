@@ -6,15 +6,15 @@
 #include "l2_string.h"
 #include "types.h"
 
-struct packet_protocol_version {
+struct server_packet_protocol_version {
     byte content[9];
 };
 
-struct packet_d0 {
+struct server_packet_d0 {
     u32 manor_size;
 };
 
-struct packet_char_select {
+struct server_packet_select_character {
     u32 id;
     i32 playOK1;
     u32 race_id;
@@ -34,35 +34,35 @@ struct packet_char_select {
     u32 game_time;
 };
 
-struct packet_quest_list {
+struct server_packet_quest_list {
     byte empty[7];
 };
 
-struct packet_validate_pos {
+struct server_packet_validate_position {
     u32 id;
     struct char_pos position;
 };
 
-struct packet_move {
+struct server_packet_move {
     u32 id;
     struct char_pos prev_pos;
     struct char_pos new_pos;
 };
 
-struct packet_restart {
+struct server_packet_restart {
     i32 response;
 };
 
-struct packet_revive {
+struct server_packet_revive {
     u32 obj_id;
 };
 
-struct packet_target_selected {
+struct server_packet_select_target {
     u32 target_id;
     u32 color;
 };
 
-struct packet_auth_login_char {
+struct server_packet_auth_login_char {
     u32 id;
     struct char_name name;
     i32 playOK1;
@@ -120,13 +120,13 @@ struct packet_auth_login_char {
     u8 enchant_effect;
 };
 
-struct packet_auth_login {
+struct server_packet_auth_login {
     u32 count;
-    // Todo: confirm how many characters a user can have in the lobby.
-    struct packet_auth_login_char characters[10];
+    // TODO: confirm how many characters a user can have in the lobby.
+    struct server_packet_auth_login_char characters[10];
 };
 
-struct packet_char_info {
+struct server_packet_char_info {
     u32 id;
     struct char_pos position;
     struct char_name name;
@@ -174,18 +174,18 @@ struct packet_char_info {
     u32 name_color;
 };
 
-struct packet_new_char_template {
+struct server_packet_new_char_template {
     u32 race_id;
     u32 class_id;
     struct char_attr attrs;
 };
 
-struct packet_new_char {
+struct server_packet_new_char {
     u32 count;
-    struct packet_new_char_template templates[10];
+    struct server_packet_new_char_template templates[10];
 };
 
-struct packet_npc_info {
+struct server_packet_npc_info {
     u32 id;
     u32 template_id;
     u32 attackable;
@@ -216,7 +216,7 @@ struct packet_npc_info {
     u8 team_circle;
 };
 
-enum packet_status_type
+enum server_packet_status_type
 {
     STATUS_LEVEL = 0x01,
     STATUS_EXP   = 0x02,
@@ -252,18 +252,18 @@ enum packet_status_type
     STATUS_MAX_CP = 0x22,
 };
 
-struct packet_status_attr {
-    enum packet_status_type type;
+struct server_packet_status_attr {
+    enum server_packet_status_type type;
     u32 value;
 };
 
-struct packet_status {
+struct server_packet_status {
     u32 obj_id;
-    struct packet_status_attr attributes[35];
+    struct server_packet_status_attr attributes[35];
     u32 count;
 };
 
-struct packet_enter_world {
+struct server_packet_enter_world {
     u32 id;
     struct char_pos position;
     struct char_name name;
@@ -354,37 +354,37 @@ struct packet_enter_world {
     u32 name_color;
 };
 
-struct packet_say {
+struct server_packet_say {
     u32 obj_id;
     u32 type;
-    // Todo: double check name and message limits.
+    // TODO: double check name and message limits.
     struct char_name name;
     struct char_message message;
 };
 
-struct packet_attack_hit {
+struct server_packet_attack_hit {
     u32 target_id;
     u32 damage;
     u8 flags;
 };
 
-struct packet_attack {
+struct server_packet_attack {
     u32 attacker_id;
     struct char_pos attacker_pos;
-    struct packet_attack_hit hits[10];
+    struct server_packet_attack_hit hits[10];
     u16 hit_count;
 };
 
-struct packet_auto_attack_stop {
+struct server_packet_stop_auto_attack {
     u32 target_id;
 };
 
-struct packet_unselect_target {
+struct server_packet_deselect_target {
     u32 target_id;
     struct char_pos target_pos;
 };
 
-struct packet_die {
+struct server_packet_die {
     u32 obj_id;
     u32 to_village;
     u32 to_hideaway;
@@ -394,28 +394,28 @@ struct packet_die {
     u32 to_fixed;
 };
 
-struct packet_npc_html_message {
+struct server_packet_npc_html_message {
     u32 message_id;
     struct npc_window_message message;
 };
 
-struct packet_change_move_type {
+struct server_packet_change_move_type {
     u32 obj_id;
     u32 running;
 };
 
-struct packet_skill {
+struct server_packet_skill {
     u32 id;
     u32 passive;
     u32 level;
 };
 
-struct packet_skill_list {
-    struct packet_skill skills[32];
+struct server_packet_skill_list {
+    struct server_packet_skill skills[32];
     u32 count;
 };
 
-struct packet_skill_use {
+struct server_packet_use_skill {
     u32 src_id;
     u32 target_id;
     u32 skill_id;
@@ -425,52 +425,52 @@ struct packet_skill_use {
     struct char_pos position;
 };
 
-void packet_protocol_version_to(struct packet *dest, struct packet_protocol_version *src);
+void server_packet_protocol_version_encode(struct packet *dest, struct server_packet_protocol_version *src);
 
-void packet_d0_to(struct packet *dest, struct packet_d0 *src);
+void server_packet_d0_encode(struct packet *dest, struct server_packet_d0 *src);
 
-void packet_char_select_to(struct packet *dest, struct packet_char_select *src);
+void server_packet_select_character_encode(struct packet *dest, struct server_packet_select_character *src);
 
-void packet_quest_list_to(struct packet *dest, struct packet_quest_list *src);
+void server_packet_quest_list_encode(struct packet *dest, struct server_packet_quest_list *src);
 
-void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src);
+void server_packet_validate_position_encode(struct packet *dest, struct server_packet_validate_position *src);
 
-void packet_move_to(struct packet *dest, struct packet_move *src);
+void server_packet_move_encode(struct packet *dest, struct server_packet_move *src);
 
-void packet_restart_to(struct packet *dest, struct packet_restart *src);
+void server_packet_restart_encode(struct packet *dest, struct server_packet_restart *src);
 
-void packet_revive_to(struct packet *dest, struct packet_revive *src);
+void server_packet_revive_encode(struct packet *dest, struct server_packet_revive *src);
 
-void packet_target_selected_to(struct packet *dest, struct packet_target_selected *src);
+void server_packet_select_target_encode(struct packet *dest, struct server_packet_select_target *src);
 
-void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src);
+void server_packet_auth_login_encode(struct packet *dest, struct server_packet_auth_login *src);
 
-void packet_char_info_to(struct packet *dest, struct packet_char_info *src);
+void server_packet_char_info_encode(struct packet *dest, struct server_packet_char_info *src);
 
-void packet_new_char_to(struct packet *dest, struct packet_new_char *src);
+void server_packet_new_char_encode(struct packet *dest, struct server_packet_new_char *src);
 
-void packet_npc_info_to(struct packet *dest, struct packet_npc_info *src);
+void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc_info *src);
 
-void packet_status_to(struct packet *dest, struct packet_status *src);
+void server_packet_status_encode(struct packet *dest, struct server_packet_status *src);
 
-void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src);
+void server_packet_enter_world_encode(struct packet *dest, struct server_packet_enter_world *src);
 
-void packet_say_to(struct packet *dest, struct packet_say *src);
+void server_packet_say_encode(struct packet *dest, struct server_packet_say *src);
 
-void packet_attack_to(struct packet *dest, struct packet_attack *src);
+void server_packet_attack_encode(struct packet *dest, struct server_packet_attack *src);
 
-void packet_auto_attack_stop_to(struct packet *dest, struct packet_auto_attack_stop *src);
+void server_packet_stop_auto_attack_encode(struct packet *dest, struct server_packet_stop_auto_attack *src);
 
-void packet_unselect_target_to(struct packet *dest, struct packet_unselect_target *src);
+void server_packet_deselect_target_encode(struct packet *dest, struct server_packet_deselect_target *src);
 
-void packet_die_to(struct packet *dest, struct packet_die *src);
+void server_packet_die_encode(struct packet *dest, struct server_packet_die *src);
 
-void packet_npc_html_message_to(struct packet *dest, struct packet_npc_html_message *src);
+void server_packet_npc_html_message_encode(struct packet *dest, struct server_packet_npc_html_message *src);
 
-void packet_change_move_type_to(struct packet *dest, struct packet_change_move_type *src);
+void server_packet_change_move_type_encode(struct packet *dest, struct server_packet_change_move_type *src);
 
-void packet_skill_list_to(struct packet *dest, struct packet_skill_list *src);
+void server_packet_skill_list_encode(struct packet *dest, struct server_packet_skill_list *src);
 
-void packet_skill_use_to(struct packet *dest, struct packet_skill_use *src);
+void server_packet_use_skill_encode(struct packet *dest, struct server_packet_use_skill *src);
 
 #endif

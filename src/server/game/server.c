@@ -6,23 +6,23 @@
 #include "include/client.h"
 #include "include/server_packet.h"
 #include "include/client_packet.h"
-#include "include/game.h"
+#include "include/server.h"
 
 static void on_protocol_version(struct state *state, struct client *client)
 {
-	struct packet_protocol_version protocol = {0};
+	struct server_packet_protocol_version protocol = {0};
 
 	assert(state);
 	assert(client);
 
 	printf("handling protocol version.\n");
-	packet_protocol_version_to(&client->response, &protocol);
+	server_packet_protocol_version_encode(&client->response, &protocol);
 }
 
 static void on_auth_request(struct state *state, struct client *client)
 {
 	// struct packet_auth_request auth_request = { 0 };
-	struct packet_auth_login auth_login = {0};
+	struct server_packet_auth_login auth_login = {0};
 
 	assert(state);
 	assert(client);
@@ -50,14 +50,14 @@ static void on_auth_request(struct state *state, struct client *client)
 	auth_login.characters[0].sp = 10;
 	auth_login.characters[0].exp = 10;
 
-	packet_auth_login_to(&client->response, &auth_login);
+	server_packet_auth_login_encode(&client->response, &auth_login);
 	client_encrypt(client, &client->response);
 }
 
 static void on_select_char(struct state *state, struct client *client)
 {
-	struct packet_char_select_request request = {0};
-	struct packet_char_select char_select = {0};
+	struct client_packet_select_character request = {0};
+	struct server_packet_select_character char_select = {0};
 	struct character character = {0};
 
 	assert(state);
@@ -93,37 +93,37 @@ static void on_select_char(struct state *state, struct client *client)
 	char_select.position.z = -3730;
 	char_select.game_time = 42;
 
-	packet_char_select_to(&client->response, &char_select);
+	server_packet_select_character_encode(&client->response, &char_select);
 	client_encrypt(client, &client->response);
 }
 
 static void on_auto_ss_bsps(struct state *state, struct client *client)
 {
-	struct packet_d0 d0 = {0};
+	struct server_packet_d0 d0 = {0};
 
 	assert(state);
 	assert(client);
 
 	printf("handling auto ss bsps.\n");
-	packet_d0_to(&client->response, &d0);
+	server_packet_d0_encode(&client->response, &d0);
 	client_encrypt(client, &client->response);
 }
 
 static void on_quest_list(struct state *state, struct client *client)
 {
-	struct packet_quest_list quest = {0};
+	struct server_packet_quest_list quest = {0};
 
 	assert(state);
 	assert(client);
 
 	printf("handling quest list.\n");
-	packet_quest_list_to(&client->response, &quest);
+	server_packet_quest_list_encode(&client->response, &quest);
 	client_encrypt(client, &client->response);
 }
 
 static void on_enter_world(struct state *state, struct client *client)
 {
-	struct packet_enter_world enter_world = {0};
+	struct server_packet_enter_world enter_world = {0};
 
 	assert(state);
 	assert(client);
@@ -178,7 +178,7 @@ static void on_enter_world(struct state *state, struct client *client)
 	enter_world.current_load = 1;
 	enter_world.max_load = 10;
 
-	packet_enter_world_to(&client->response, &enter_world);
+	server_packet_enter_world_encode(&client->response, &enter_world);
 	client_encrypt(client, &client->response);
 }
 

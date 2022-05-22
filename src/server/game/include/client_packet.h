@@ -18,7 +18,7 @@ struct client_packet_attack {
     u8 action; // 0 = click, 1 = shift click
 };
 
-struct packet_auth_request {
+struct client_packet_auth {
     struct username username;
     i32 playOK1;
     i32 playOK2;
@@ -26,11 +26,11 @@ struct packet_auth_request {
     i32 loginOK2;
 };
 
-struct packet_char_select_request {
+struct client_packet_select_character {
     u32 index;
 };
 
-struct packet_create_char_request {
+struct client_packet_create_character {
     struct char_name name;
     u32 race_id;
     u32 sex;
@@ -41,11 +41,11 @@ struct packet_create_char_request {
     u32 face;
 };
 
-struct packet_move_request {
+struct client_packet_move {
     struct char_pos position;
 };
 
-enum packet_revive_request_option
+enum client_packet_packet_revive_option
 {
     REVIVE_IN_CLAN_HALL = 1,
     REVIVE_IN_CASTLE    = 2,
@@ -53,27 +53,27 @@ enum packet_revive_request_option
     REVIVE_FIXED        = 4,
 };
 
-struct packet_revive_request {
-    enum packet_revive_request_option option_chosen;
+struct client_packet_revive {
+    enum client_packet_packet_revive_option option_chosen;
 };
 
-struct packet_validate_pos_request {
+struct client_packet_validate_position {
     struct char_pos position;
 };
 
-struct packet_say_request {
+struct client_packet_say {
     // Check maximum length.
     l2_string message[256];
     size_t size;
 };
 
-struct packet_bypass_request {
-    // Check maximum size.
+struct client_packet_bypass {
+    // TODO: Check maximum size.
     l2_string command[128];
     size_t size;
 };
 
-struct packet_skill_use_request {
+struct client_packet_use_skill {
     u32 skill_id;
     u32 ctrl_pressed;
     u8 shift_pressed;
@@ -83,22 +83,22 @@ void client_packet_action_request_decode(struct client_packet_action *dest, stru
 
 void client_packet_attack_request_decode(struct client_packet_attack *dest, struct packet *src);
 
-void client_packet_auth_request_decode(struct packet_auth_request *dest, struct packet *src);
+void client_packet_auth_request_decode(struct client_packet_auth *dest, struct packet *src);
 
-void client_packet_char_select_request_decode(struct packet_char_select_request *dest, struct packet *src);
+void client_packet_char_select_request_decode(struct client_packet_select_character *dest, struct packet *src);
 
-void client_packet_create_char_request_decode(struct packet_create_char_request *dest, struct packet *src);
+void client_packet_create_char_request_decode(struct client_packet_create_character *dest, struct packet *src);
 
-void client_packet_move_request_decode(struct packet_move_request *dest, struct packet *src);
+void client_packet_move_request_decode(struct client_packet_move *dest, struct packet *src);
 
-void client_packet_revive_request_decode(struct packet_revive_request *dest, struct packet *src);
+void client_packet_revive_request_decode(struct client_packet_revive *dest, struct packet *src);
 
-void client_packet_validate_pos_request_decode(struct packet_validate_pos_request *dest, struct packet *src);
+void client_packet_validate_pos_request_decode(struct client_packet_validate_position *dest, struct packet *src);
 
-void client_packet_say_request_decode(struct packet_say_request *dest, struct packet *src);
+void client_packet_say_request_decode(struct client_packet_say *dest, struct packet *src);
 
-void client_packet_bypass_request_decode(struct packet_bypass_request *dest, struct packet *src);
+void client_packet_bypass_request_decode(struct client_packet_bypass *dest, struct packet *src);
 
-void client_packet_skill_use_request_decode(struct packet_skill_use_request *dest, struct packet *src);
+void client_packet_skill_use_request_decode(struct client_packet_use_skill *dest, struct packet *src);
 
 #endif

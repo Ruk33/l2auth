@@ -1,12 +1,10 @@
 #include "include/types.h"
 #include "include/client.h"
 #include "include/client_packet.h"
-#include "include/character.h"
-#include "include/player.h"
 
 static void on_move(struct client *client)
 {
-	struct packet_move_request request = { 0 };
+	struct client_packet_move request = { 0 };
 
 	assert(client);
 	assert(client->character);

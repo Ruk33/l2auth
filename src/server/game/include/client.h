@@ -3,7 +3,6 @@
 
 #include "../../../include/util.h"
 #include "../../../include/packet.h"
-#include "character.h"
 
 struct key {
     byte buf[8];

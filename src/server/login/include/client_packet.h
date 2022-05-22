@@ -12,11 +12,11 @@ struct password {
     i8 buf[16];
 };
 
-struct packet_auth_login {
+struct server_packet_auth_login {
     struct username username;
     struct password password;
 };
 
-void packet_auth_login_from(struct packet_auth_login *dest, struct packet *src);
+void packet_auth_login_from(struct server_packet_auth_login *dest, struct packet *src);
 
 #endif

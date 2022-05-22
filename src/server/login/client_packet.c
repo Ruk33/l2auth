@@ -3,7 +3,7 @@
 #include "../../include/packet.h"
 #include "include/client_packet.h"
 
-void packet_auth_login_from(struct packet_auth_login *dest, struct packet *src)
+void packet_auth_login_from(struct server_packet_auth_login *dest, struct packet *src)
 {
     byte *content = 0;
     byte *username = 0;

@@ -24,7 +24,7 @@ static void on_gg_auth(struct state *state, struct client *client)
 
 static void on_auth_login(struct state *state, struct client *client)
 {
-    struct packet_auth_login auth_login = { 0 };
+    struct server_packet_auth_login auth_login = { 0 };
     struct packet_ok ok_response = { 0 };
 
     assert(state);

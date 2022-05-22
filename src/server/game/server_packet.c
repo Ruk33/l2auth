@@ -4,7 +4,7 @@
 #include "include/l2_string.h"
 #include "include/server_packet.h"
 
-void packet_protocol_version_to(struct packet *dest, struct packet_protocol_version *src)
+void server_packet_protocol_version_encode(struct packet *dest, struct server_packet_protocol_version *src)
 {
     byte content[] = {
         0x01,
@@ -25,7 +25,7 @@ void packet_protocol_version_to(struct packet *dest, struct packet_protocol_vers
     packet_write_u16(dest, 0);
 }
 
-void packet_d0_to(struct packet *dest, struct packet_d0 *src)
+void server_packet_d0_encode(struct packet *dest, struct server_packet_d0 *src)
 {
     assert(dest);
     assert(src);
@@ -34,7 +34,7 @@ void packet_d0_to(struct packet *dest, struct packet_d0 *src)
     packet_write_u32(dest, src->manor_size);
 }
 
-void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
+void server_packet_select_character_encode(struct packet *dest, struct server_packet_select_character *src)
 {
     assert(dest);
     assert(src);
@@ -74,7 +74,7 @@ void packet_char_select_to(struct packet *dest, struct packet_char_select *src)
     }
 }
 
-void packet_quest_list_to(struct packet *dest, struct packet_quest_list *src)
+void server_packet_quest_list_encode(struct packet *dest, struct server_packet_quest_list *src)
 {
     assert(dest);
     assert(src);
@@ -82,7 +82,7 @@ void packet_quest_list_to(struct packet *dest, struct packet_quest_list *src)
     packet_write(dest, src->empty, sizeof(src->empty));
 }
 
-void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src)
+void server_packet_validate_position_encode(struct packet *dest, struct server_packet_validate_position *src)
 {
     assert(dest);
     assert(src);
@@ -94,7 +94,7 @@ void packet_validate_pos_to(struct packet *dest, struct packet_validate_pos *src
     packet_write_i32(dest, src->position.heading);
 }
 
-void packet_move_to(struct packet *dest, struct packet_move *src)
+void server_packet_move_encode(struct packet *dest, struct server_packet_move *src)
 {
     assert(dest);
     assert(src);
@@ -108,7 +108,7 @@ void packet_move_to(struct packet *dest, struct packet_move *src)
     packet_write_i32(dest, src->prev_pos.z);
 }
 
-void packet_restart_to(struct packet *dest, struct packet_restart *src)
+void server_packet_restart_encode(struct packet *dest, struct server_packet_restart *src)
 {
     assert(dest);
     assert(src);
@@ -116,7 +116,7 @@ void packet_restart_to(struct packet *dest, struct packet_restart *src)
     packet_write_i32(dest, src->response);
 }
 
-void packet_revive_to(struct packet *dest, struct packet_revive *src)
+void server_packet_revive_encode(struct packet *dest, struct server_packet_revive *src)
 {
     assert(dest);
     assert(src);
@@ -124,7 +124,7 @@ void packet_revive_to(struct packet *dest, struct packet_revive *src)
     packet_write_i32(dest, src->obj_id);
 }
 
-void packet_target_selected_to(struct packet *dest, struct packet_target_selected *src)
+void server_packet_select_target_encode(struct packet *dest, struct server_packet_select_target *src)
 {
     assert(dest);
     assert(src);
@@ -133,9 +133,9 @@ void packet_target_selected_to(struct packet *dest, struct packet_target_selecte
     packet_write_u32(dest, src->color);
 }
 
-void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src)
+void server_packet_auth_login_encode(struct packet *dest, struct server_packet_auth_login *src)
 {
-    struct packet_auth_login_char *character = 0;
+    struct server_packet_auth_login_char *character = 0;
 
     assert(dest);
     assert(src);
@@ -223,7 +223,7 @@ void packet_auth_login_to(struct packet *dest, struct packet_auth_login *src)
     }
 }
 
-void packet_char_info_to(struct packet *dest, struct packet_char_info *src)
+void server_packet_char_info_encode(struct packet *dest, struct server_packet_char_info *src)
 {
     assert(dest);
     assert(src);
@@ -296,7 +296,7 @@ void packet_char_info_to(struct packet *dest, struct packet_char_info *src)
     packet_write_u32(dest, src->name_color);
 }
 
-void packet_new_char_to(struct packet *dest, struct packet_new_char *src)
+void server_packet_new_char_encode(struct packet *dest, struct server_packet_new_char *src)
 {
     assert(dest);
     assert(src);
@@ -327,7 +327,7 @@ void packet_new_char_to(struct packet *dest, struct packet_new_char *src)
     }
 }
 
-void packet_npc_info_to(struct packet *dest, struct packet_npc_info *src)
+void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc_info *src)
 {
     assert(dest);
     assert(src);
@@ -378,7 +378,7 @@ void packet_npc_info_to(struct packet *dest, struct packet_npc_info *src)
     packet_write_u32(dest, 0);
 }
 
-void packet_status_to(struct packet *dest, struct packet_status *src)
+void server_packet_status_encode(struct packet *dest, struct server_packet_status *src)
 {
     assert(dest);
     assert(src);
@@ -391,7 +391,7 @@ void packet_status_to(struct packet *dest, struct packet_status *src)
     }
 }
 
-void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src)
+void server_packet_enter_world_encode(struct packet *dest, struct server_packet_enter_world *src)
 {
     assert(dest);
     assert(src);
@@ -520,7 +520,7 @@ void packet_enter_world_to(struct packet *dest, struct packet_enter_world *src)
     packet_write_u32(dest, src->name_color);
 }
 
-void packet_say_to(struct packet *dest, struct packet_say *src)
+void server_packet_say_encode(struct packet *dest, struct server_packet_say *src)
 {
     assert(dest);
     assert(src);
@@ -531,7 +531,7 @@ void packet_say_to(struct packet *dest, struct packet_say *src)
     packet_write(dest, src->message.buf, l2_string_size(src->message.buf));
 }
 
-void packet_attack_to(struct packet *dest, struct packet_attack *src)
+void server_packet_attack_encode(struct packet *dest, struct server_packet_attack *src)
 {
     assert(dest);
     assert(src);
@@ -552,7 +552,7 @@ void packet_attack_to(struct packet *dest, struct packet_attack *src)
     }
 }
 
-void packet_auto_attack_stop_to(struct packet *dest, struct packet_auto_attack_stop *src)
+void server_packet_stop_auto_attack_encode(struct packet *dest, struct server_packet_stop_auto_attack *src)
 {
     assert(dest);
     assert(src);
@@ -560,7 +560,7 @@ void packet_auto_attack_stop_to(struct packet *dest, struct packet_auto_attack_s
     packet_write_u32(dest, src->target_id);
 }
 
-void packet_unselect_target_to(struct packet *dest, struct packet_unselect_target *src)
+void server_packet_deselect_target_encode(struct packet *dest, struct server_packet_deselect_target *src)
 {
     assert(dest);
     assert(src);
@@ -571,7 +571,7 @@ void packet_unselect_target_to(struct packet *dest, struct packet_unselect_targe
     packet_write_i32(dest, src->target_pos.z);
 }
 
-void packet_die_to(struct packet *dest, struct packet_die *src)
+void server_packet_die_encode(struct packet *dest, struct server_packet_die *src)
 {
     assert(dest);
     assert(src);
@@ -585,7 +585,7 @@ void packet_die_to(struct packet *dest, struct packet_die *src)
     packet_write_u32(dest, src->to_fixed);
 }
 
-void packet_npc_html_message_to(struct packet *dest, struct packet_npc_html_message *src)
+void server_packet_npc_html_message_encode(struct packet *dest, struct server_packet_npc_html_message *src)
 {
     assert(dest);
     assert(src);
@@ -594,7 +594,7 @@ void packet_npc_html_message_to(struct packet *dest, struct packet_npc_html_mess
     packet_write(dest, src->message.buf, l2_string_size(src->message.buf));
 }
 
-void packet_change_move_type_to(struct packet *dest, struct packet_change_move_type *src)
+void server_packet_change_move_type_encode(struct packet *dest, struct server_packet_change_move_type *src)
 {
     assert(dest);
     assert(src);
@@ -604,7 +604,7 @@ void packet_change_move_type_to(struct packet *dest, struct packet_change_move_t
     packet_write_u32(dest, 0);
 }
 
-void packet_skill_list_to(struct packet *dest, struct packet_skill_list *src)
+void server_packet_skill_list_encode(struct packet *dest, struct server_packet_skill_list *src)
 {
     assert(dest);
     assert(src);
@@ -617,7 +617,7 @@ void packet_skill_list_to(struct packet *dest, struct packet_skill_list *src)
     }
 }
 
-void packet_skill_use_to(struct packet *dest, struct packet_skill_use *src)
+void server_packet_use_skill_encode(struct packet *dest, struct server_packet_use_skill *src)
 {
     assert(dest);
     assert(src);
