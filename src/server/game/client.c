@@ -98,6 +98,10 @@ void client_queue_response(struct client *client, struct packet *src)
 	assert(client);
 	assert(src);
 
+	if (client->response_queue_count == ARR_LEN(client->response_queue)) {
+		client->response_queue_count = 0;
+	}
+
 	encrypted_packet = &client->response_queue[client->response_queue_count];
 	client_encrypt(client, encrypted_packet);
 

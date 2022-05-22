@@ -214,7 +214,7 @@ void server_on_request(struct state *state, struct client *client)
 
 	printf("new chunk of request.\n");
 	client->partial = packet_size(&client->request) != client->received;
-	client->response = (struct packet){0};
+	client->response = (struct packet) { 0 };
 
 	if (client->partial) {
 		printf("found partial chunk.\n");
@@ -255,7 +255,7 @@ void server_on_request(struct state *state, struct client *client)
 		break;
 	}
 
-	client->request = (struct packet){0};
+	client->request = (struct packet) { 0 };
 }
 
 void server_on_tick(struct state *state, seconds delta)

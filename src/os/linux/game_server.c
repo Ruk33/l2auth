@@ -161,12 +161,14 @@ static void on_new_connection(struct unix_socket *dest, struct state *state, int
 	assert(dest);
 	assert(state);
 
+	printf("new connection.\n");
+
 	if (!unix_socket_accept(dest, server_fd)) {
 		printf("unable to accept new client.\n");
 		return;
 	}
 
-	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = EPOLLIN | EPOLLOUT;
 	event.data.ptr = dest;
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, dest->fd, &event) == -1) {
 		printf("failed to epoll add. closing the connection.\n");
@@ -180,16 +182,11 @@ static void on_new_connection(struct unix_socket *dest, struct state *state, int
 		unix_socket_close(dest);
 		return;
 	}
-
-	// Send initial packet.
-	unix_socket_write(dest, dest->client->response.buf, packet_size(&dest->client->response));
-	unix_socket_flush(dest);
 }
 
 static void on_read(struct state *state, struct unix_socket *client)
 {
 	ssize_t tmp = 0;
-	size_t read = 0;
 
 	assert(state);
 	assert(client);
@@ -203,11 +200,11 @@ static void on_read(struct state *state, struct unix_socket *client)
 			sizeof(client->client->request.buf) - client->client->received,
 			0
 		);
-		read += tmp > 0 ? ((size_t) tmp) : 0;
+		client->client->received += tmp > 0 ? ((size_t) tmp) : 0;
 	}
 
 	// Connection is closed.
-	if (read == 0) {
+	if (client->client->received == 0) {
 		printf("closing connection as requested by client.\n");
 		server_on_disconnect(state, client->client);
 		unix_socket_close(client);
@@ -221,7 +218,6 @@ static void on_read(struct state *state, struct unix_socket *client)
 		return;
 	}
 
-	client->client->received += read;
 	server_on_request(state, client->client);
 
 	if (!packet_size(&client->client->response)) {
@@ -265,7 +261,7 @@ static int unix_socket_listen(int server_fd)
 		return 0;
 	}
 
-	timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+	timer_fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
 
 	if (timer_fd < 0) {
 		printf("unable to create timer. server can't start.\n");
@@ -273,13 +269,15 @@ static int unix_socket_listen(int server_fd)
 	}
 
 	// Start the timer.
-	utmr.it_value.tv_nsec = (long) (3.3e+8);
+	// utmr.it_value.tv_nsec = (long) (3.3e+8);
 	// For some reason, interval doesn't seem to be working.
 	// utmr.it_interval.tv_nsec = (long) (3.3e+8);
+	utmr.it_value.tv_sec = 1; // 1 sec.
+	// utmr.it_interval.tv_sec = 1; // 1 sec.
 	timerfd_settime(timer_fd, 0, &utmr, 0);
 
 	// Add timer to epoll.
-	event.events = EPOLLIN | EPOLLET;
+	event.events = EPOLLIN;
 	event.data.fd = timer_fd;
 
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event) == -1) {
@@ -288,7 +286,7 @@ static int unix_socket_listen(int server_fd)
 	}
 
 	// Add server socket to epoll.
-	event.events = EPOLLIN | EPOLLET;
+	event.events = EPOLLIN;
 	event.data.fd = server_fd;
 
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) == -1) {
@@ -306,15 +304,31 @@ static int unix_socket_listen(int server_fd)
 		}
 
 		for (int i = 0; i < ev_count; i += 1) {
-			if (events[i].data.fd == server_fd) {
+			if (events[i].data.fd == server_fd && (events[i].events & EPOLLIN) == EPOLLIN) {
 				on_new_connection(&clients[client_count], &state, server_fd, epoll_fd);
 				client_count += 1;
 				continue;
 			}
-			if (events[i].data.fd == timer_fd) {
+			if (events[i].data.fd == timer_fd && (events[i].events & EPOLLIN) == EPOLLIN) {
 				// Start the timer again.
 				timerfd_settime(timer_fd, 0, &utmr, 0);
 				server_on_tick(&state, 0.3f);
+				
+				// Handle queue responses.
+				for (size_t n = 0; n < client_count; n += 1) {
+					if (!clients[n].client->character)
+						continue;
+					for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1) {
+						unix_socket_write(
+							&clients[n],
+							clients[n].client->response_queue[z].buf,
+							packet_size(&clients[n].client->response_queue[z])
+						);
+					}
+					clients[n].client->response_queue_count = 0;
+					unix_socket_flush(&clients[n]);
+				}
+
 				continue;
 			}
 			if ((events[i].events & EPOLLIN) == EPOLLIN) {

@@ -8,11 +8,11 @@ static void on_move(struct state *state, struct client *client)
 {
 	struct client_packet_move request = { 0 };
 	struct server_packet_move response = { 0 };
-	struct packet packet = { 0 };
 
 	assert(client);
 	assert(client->character);
 
+	printf("handling movement.\n");
 	client_packet_move_request_decode(&request, &client->request);
 	character_start_movement(client->character, &request.position);
 
@@ -20,8 +20,9 @@ static void on_move(struct state *state, struct client *client)
 	response.id = client->character->id;
 	response.prev_pos = client->character->position;
 	response.new_pos = request.position;
-	server_packet_move_encode(&packet, &response);
-	state_broadcast_packet(state, &packet);
+	server_packet_move_encode(&client->response, &response);
+	state_broadcast_packet(state, &client->response);
+	client_encrypt(client, &client->response);
 }
 
 void player_on_request(struct state *state, struct client *client)
