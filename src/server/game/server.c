@@ -6,6 +6,7 @@
 #include "include/client.h"
 #include "include/server_packet.h"
 #include "include/client_packet.h"
+#include "include/player_request.h"
 #include "include/server.h"
 
 static void on_protocol_version(struct state *state, struct client *client)
@@ -247,7 +248,7 @@ void server_on_request(struct state *state, struct client *client)
 		break;
 	default:
 		if (client->character) {
-			server_on_request(state, client);
+			player_on_request(state, client);
 		} else {
 			printf("i don't recognize that packet, ignoring.\n");
 		}
@@ -260,5 +261,9 @@ void server_on_request(struct state *state, struct client *client)
 void server_on_tick(struct state *state, seconds delta)
 {
 	assert(state);
-	delta = delta;
+	for (size_t i = 0; i < state->client_count; i += 1) {
+		if (!state->clients[i].character)
+			continue;
+		player_on_tick(state, &state->clients[i], delta);
+	}
 }

@@ -6,9 +6,10 @@
 #include <fcntl.h>
 #include <dlfcn.h>
 #include <unistd.h>
-#include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/time.h>
+#include <sys/timerfd.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include "../../include/util.h"
@@ -52,24 +53,24 @@ static void unix_socket_set_non_block(int fd)
 	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
-static int unix_socket_init(struct unix_socket *src, u16 port, int max)
+static int unix_socket_init(int *dest, u16 port, int max)
 {
 	struct sockaddr_in address = { 0 };
 	struct sockaddr *address_p = 0;
 
 	int reusable_enable = 0;
 
-	src->fd = socket(AF_INET, SOCK_STREAM, 0);
+	*dest = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (src->fd < 0) {
+	if (*dest < 0) {
 		goto abort;
 	}
 
-	unix_socket_set_non_block(src->fd);
+	unix_socket_set_non_block(*dest);
 
 	// Make the socket reusable.
 	reusable_enable = 1;
-	if (setsockopt(src->fd, SOL_SOCKET, SO_REUSEADDR, &reusable_enable, sizeof(int)) < 0) {
+	if (setsockopt(*dest, SOL_SOCKET, SO_REUSEADDR, &reusable_enable, sizeof(int)) < 0) {
 		goto abort;
 	}
 
@@ -79,24 +80,22 @@ static int unix_socket_init(struct unix_socket *src, u16 port, int max)
 
 	address_p = (struct sockaddr *) &address;
 
-	if (bind(src->fd, address_p, sizeof(address)) < 0) {
+	if (bind(*dest, address_p, sizeof(address)) < 0) {
 		goto abort;
 	}
 
-	if (listen(src->fd, max) < 0) {
+	if (listen(*dest, max) < 0) {
 		goto abort;
 	}
 
 	return 1;
 
 abort:
-	close(src->fd);
-	*src = (struct unix_socket){ 0 };
-
+	close(*dest);
 	return 0;
 }
 
-static int unix_socket_accept(struct unix_socket *dest, struct unix_socket *src)
+static int unix_socket_accept(struct unix_socket *dest, int server_fd)
 {
 	struct sockaddr_in address = { 0 };
 	struct sockaddr *address_p = 0;
@@ -108,7 +107,7 @@ static int unix_socket_accept(struct unix_socket *dest, struct unix_socket *src)
 	}
 
 	address_p = (struct sockaddr *) &address;
-	dest->fd = accept(src->fd, address_p, &addrlen);
+	dest->fd = accept(server_fd, address_p, &addrlen);
 
 	if (dest->fd < 0) {
 		*dest = (struct unix_socket){ 0 };
@@ -129,17 +128,14 @@ static void unix_socket_close(struct unix_socket *socket)
 
 static void unix_socket_flush(struct unix_socket *socket)
 {
-	ssize_t sent = 0;
+	ssize_t tmp = 0;
 
 	assert(socket);
 
-	if (!socket->write_size) {
-		return;
+	while (tmp != -1 && socket->write_size > socket->sent) {
+		tmp = send(socket->fd, socket->buf_write + socket->sent, socket->write_size - socket->sent, 0);
+		socket->sent += MAX(0, tmp);
 	}
-
-	sent = send(socket->fd, socket->buf_write + socket->sent, socket->write_size - socket->sent, 0);
-
-	socket->sent += MAX(0, sent);
 
 	// If the entire packet has been sent, reset the counter.
 	if (socket->write_size == socket->sent) {
@@ -158,148 +154,109 @@ static void unix_socket_write(struct unix_socket *socket, byte *buf, size_t n)
 	socket->write_size += n;
 }
 
-static void sighandler(int signum)
+static void on_new_connection(struct unix_socket *dest, struct state *state, int server_fd, int epoll_fd)
 {
-	printf("caught signal %d, coming out...\n", signum);
-}
-
-static void fork_and_listen(struct unix_socket *server)
-{
-	static struct state state = { 0 };
-	struct unix_socket client = { 0 };
-
-	pid_t pid = 0;
-
-	struct epoll_event events[8] = { 0 };
 	struct epoll_event event = { 0 };
-	int epoll_fd = 0;
-	int ev_count = 0;
 
-	ssize_t read = 0;
+	assert(dest);
+	assert(state);
 
-	if (!unix_socket_accept(&client, server)) {
+	if (!unix_socket_accept(dest, server_fd)) {
 		printf("unable to accept new client.\n");
 		return;
 	}
 
-	pid = fork();
-	switch (pid) {
-		case -1: // Something went wrong
-		printf("unable to fork. closing the connection.\n");
-		unix_socket_close(&client);
-		break;
-	case 0: // Child
-		break;
-	default: // Parent
-		printf("handling new connection in process %d.\n", pid);
+	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	event.data.ptr = dest;
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, dest->fd, &event) == -1) {
+		printf("failed to epoll add. closing the connection.\n");
+		unix_socket_close(dest);
 		return;
 	}
 
-	signal(SIGTERM, sighandler);
-
-	epoll_fd = epoll_create1(0);
-	if (epoll_fd < 0) {
-		printf("unable to create epoll from client. closing connection.\n");
-		unix_socket_close(&client);
-		exit(EXIT_FAILURE);
-	}
-
-	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	event.data.ptr = &client;
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client.fd, &event) == -1) {
-		printf("failed to epoll add. closing the connection.\n");
-		unix_socket_close(&client);
-		close(epoll_fd);
-		exit(EXIT_FAILURE);
-	}
-
-	client.client = server_on_new_connection(&state);
-	if (!client.client) {
+	dest->client = server_on_new_connection(state);
+	if (!dest->client) {
 		printf("client couldn't initialize. closing the connection.\n");
-		unix_socket_close(&client);
-		close(epoll_fd);
-		exit(EXIT_FAILURE);
-	}
-	unix_socket_write(
-		&client,
-		client.client->response.buf,
-		packet_size(&client.client->response)
-	);
-	unix_socket_flush(&client);
-
-	while (1) {
-		ev_count = epoll_wait(epoll_fd, events, ARR_LEN(events), -1);
-
-		if (ev_count < 0) {
-			printf("epoll_wait failed, closing the client. closing connection.\n");
-			server_on_disconnect(&state, client.client);
-			unix_socket_close(&client);
-			close(epoll_fd);
-			exit(EXIT_FAILURE);
-		}
-
-		for (int i = 0; i < ev_count; i += 1) {
-			if ((events[i].events & EPOLLIN) == EPOLLIN) {
-				unix_socket_flush(&client);
-			}
-
-			if ((events[i].events & EPOLLOUT) != EPOLLOUT) {
-				continue;
-			}
-			
-			read = recv(
-				client.fd,
-				client.client->request.buf + client.client->received,
-				sizeof(client.client->request.buf) - client.client->received,
-				0
-			);
-
-			if (read == 0) {
-				printf("closing connection as requested by client.\n");
-				server_on_disconnect(&state, client.client);
-				unix_socket_close(&client);
-				close(epoll_fd);
-				exit(EXIT_SUCCESS);
-			}
-
-			if (read < 0) {
-				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					continue;
-				}
-				printf("failed to read packet from client, closing connection.\n");
-				server_on_disconnect(&state, client.client);
-				unix_socket_close(&client);
-				close(epoll_fd);
-				exit(EXIT_FAILURE);
-			}
-
-			client.client->received += (size_t) read;
-			server_on_request(&state, client.client);
-
-			if (packet_size(&client.client->response)) {
-				unix_socket_write(
-					&client,
-					client.client->response.buf,
-					packet_size(&client.client->response)
-				);
-				unix_socket_flush(&client);
-			}
-		}
+		unix_socket_close(dest);
+		return;
 	}
 
-	unix_socket_close(&client);
-	close(epoll_fd);
-	exit(EXIT_SUCCESS);
+	// Send initial packet.
+	unix_socket_write(dest, dest->client->response.buf, packet_size(&dest->client->response));
+	unix_socket_flush(dest);
 }
 
-static int unix_socket_listen(struct unix_socket *server)
+static void on_read(struct state *state, struct unix_socket *client)
+{
+	ssize_t tmp = 0;
+	size_t read = 0;
+
+	assert(state);
+	assert(client);
+
+	// Read until the call "blocks"
+	// This ensures no bytes are left waiting to be consumed.
+	while (tmp != -1) {
+		tmp = recv(
+			client->fd,
+			client->client->request.buf + client->client->received,
+			sizeof(client->client->request.buf) - client->client->received,
+			0
+		);
+		read += tmp > 0 ? ((size_t) tmp) : 0;
+	}
+
+	// Connection is closed.
+	if (read == 0) {
+		printf("closing connection as requested by client.\n");
+		server_on_disconnect(state, client->client);
+		unix_socket_close(client);
+		return;
+	}
+
+	if (errno != EAGAIN) {
+		printf("failed to read request, closing connection.\n");
+		server_on_disconnect(state, client->client);
+		unix_socket_close(client);
+		return;
+	}
+
+	client->client->received += read;
+	server_on_request(state, client->client);
+
+	if (!packet_size(&client->client->response)) {
+		return;
+	}
+
+	unix_socket_write(
+		client,
+		client->client->response.buf,
+		packet_size(&client->client->response)
+	);
+	unix_socket_flush(client);
+}
+
+static void on_write(struct unix_socket *client)
+{
+	assert(client);
+	unix_socket_flush(client);
+}
+
+static int unix_socket_listen(int server_fd)
 {
 	static struct epoll_event events[MAX_SOCKETS] = { 0 };
-	struct epoll_event event = { 0 };
+	static struct unix_socket clients[MAX_SOCKETS] = { 0 };
+	static struct state state = { 0 };
+
 	int epoll_fd = 0;
+	int timer_fd = 0;
+
+	struct itimerspec utmr = { 0 };
+
+	struct epoll_event event = { 0 };
 	int ev_count = 0;
 
-	assert(server);
+	size_t client_count = 0;
 
 	epoll_fd = epoll_create1(0);
 
@@ -308,10 +265,33 @@ static int unix_socket_listen(struct unix_socket *server)
 		return 0;
 	}
 
-	event.events = EPOLLIN | EPOLLET;
-	event.data.ptr = server;
+	timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
 
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server->fd, &event) == -1) {
+	if (timer_fd < 0) {
+		printf("unable to create timer. server can't start.\n");
+		return 0;
+	}
+
+	// Start the timer.
+	utmr.it_value.tv_nsec = (long) (3.3e+8);
+	// For some reason, interval doesn't seem to be working.
+	// utmr.it_interval.tv_nsec = (long) (3.3e+8);
+	timerfd_settime(timer_fd, 0, &utmr, 0);
+
+	// Add timer to epoll.
+	event.events = EPOLLIN | EPOLLET;
+	event.data.fd = timer_fd;
+
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, timer_fd, &event) == -1) {
+		printf("unable to add timer to epoll. server can't start.\n");
+		return 0;
+	}
+
+	// Add server socket to epoll.
+	event.events = EPOLLIN | EPOLLET;
+	event.data.fd = server_fd;
+
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) == -1) {
 		printf("unable to add server socket to epoll. server can't start.\n");
 		return 0;
 	}
@@ -326,13 +306,27 @@ static int unix_socket_listen(struct unix_socket *server)
 		}
 
 		for (int i = 0; i < ev_count; i += 1) {
+			if (events[i].data.fd == server_fd) {
+				on_new_connection(&clients[client_count], &state, server_fd, epoll_fd);
+				client_count += 1;
+				continue;
+			}
+			if (events[i].data.fd == timer_fd) {
+				// Start the timer again.
+				timerfd_settime(timer_fd, 0, &utmr, 0);
+				server_on_tick(&state, 0.3f);
+				continue;
+			}
 			if ((events[i].events & EPOLLIN) == EPOLLIN) {
-				fork_and_listen(server);
+				on_read(&state, events[i].data.ptr);
+			}
+			if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
+				on_write(events[i].data.ptr);
 			}
 		}
 	}
 
-	unix_socket_close(server);
+	close(server_fd);
 	close(epoll_fd);
 
 	return 1;
@@ -340,7 +334,7 @@ static int unix_socket_listen(struct unix_socket *server)
 
 int main(int argc, char **argv)
 {
-	static struct unix_socket server = { 0 };
+	int server_fd = 0;
 	u16 port = 7777;
 
 	// Suppress unused warning.
@@ -349,12 +343,12 @@ int main(int argc, char **argv)
 
 	srand(time(0));
 
-	if (!unix_socket_init(&server, port, MAX_SOCKETS)) {
+	if (!unix_socket_init(&server_fd, port, MAX_SOCKETS)) {
 		printf("unable to initialize socket.\n");
 		return 1;
 	}
 
-	if (!unix_socket_listen(&server)) {
+	if (!unix_socket_listen(server_fd)) {
 		printf("unable to listen for requests.\n");
 		return 1;
 	}
