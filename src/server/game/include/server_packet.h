@@ -20,17 +20,17 @@ struct server_packet_select_character {
 	u32 race_id;
 	u32 class_id;
 	u32 clan_id;
-	struct l2_char_name name;
-	struct l2_char_title title;
+	struct l2_character_name name;
+	struct l2_character_title title;
 	u32 sex;
 	u32 active;
-	struct char_pos position;
+	struct character_position position;
 	double hp;
 	double mp;
 	u32 sp;
 	u32 exp;
 	u32 level;
-	struct char_attr attrs;
+	struct character_attr attrs;
 	u32 game_time;
 };
 
@@ -40,13 +40,13 @@ struct server_packet_quest_list {
 
 struct server_packet_validate_position {
 	u32 id;
-	struct char_pos position;
+	struct character_position position;
 };
 
 struct server_packet_move {
 	u32 id;
-	struct char_pos prev_pos;
-	struct char_pos new_pos;
+	struct character_position prev_pos;
+	struct character_position new_pos;
 };
 
 struct server_packet_restart {
@@ -64,14 +64,14 @@ struct server_packet_select_target {
 
 struct server_packet_auth_login_char {
 	u32 id;
-	struct l2_char_name name;
+	struct l2_character_name name;
 	i32 playOK1;
 	u32 clan_id;
 	u32 sex;
 	u32 race_id;
 	u32 class_id;
 	u32 active;
-	struct char_pos position;
+	struct character_position position;
 	double hp;
 	double mp;
 	double max_hp;
@@ -128,9 +128,9 @@ struct server_packet_auth_login {
 
 struct server_packet_char_info {
 	u32 id;
-	struct char_pos position;
-	struct l2_char_name name;
-	struct l2_char_title title;
+	struct character_position position;
+	struct l2_character_name name;
+	struct l2_character_title title;
 	u32 race_id;
 	u32 sex;
 	u32 class_id;
@@ -177,7 +177,7 @@ struct server_packet_char_info {
 struct server_packet_new_char_template {
 	u32 race_id;
 	u32 class_id;
-	struct char_attr attrs;
+	struct character_attr attrs;
 };
 
 struct server_packet_new_char {
@@ -189,7 +189,7 @@ struct server_packet_npc_info {
 	u32 id;
 	u32 template_id;
 	u32 attackable;
-	struct char_pos position;
+	struct character_position position;
 	u32 m_attack_speed;
 	u32 p_attack_speed;
 	u32 run_speed;
@@ -209,8 +209,8 @@ struct server_packet_npc_info {
 	u8 in_combat;
 	u8 alike_dead;
 	u8 summoned;
-	struct l2_char_name name;
-	struct l2_char_title title;
+	struct l2_character_name name;
+	struct l2_character_title title;
 	u32 karma;
 	u32 abnormal_effect;
 	u8 team_circle;
@@ -265,14 +265,14 @@ struct server_packet_status {
 
 struct server_packet_enter_world {
 	u32 id;
-	struct char_pos position;
-	struct l2_char_name name;
+	struct character_position position;
+	struct l2_character_name name;
 	u32 race_id;
 	u32 sex;
 	u32 class_id;
 	u32 level;
 	u32 exp;
-	struct char_attr attrs;
+	struct character_attr attrs;
 	u32 max_hp;
 	u32 hp;
 	u32 max_mp;
@@ -323,7 +323,7 @@ struct server_packet_enter_world {
 	u32 hair_color_id;
 	u32 face;
 	i32 access_level;
-	struct l2_char_title title;
+	struct l2_character_title title;
 	u32 clan_id;
 	u32 clan_crest_id;
 	u32 ally_id;
@@ -358,8 +358,8 @@ struct server_packet_say {
 	u32 obj_id;
 	u32 type;
 	// TODO: double check name and message limits.
-	struct l2_char_name name;
-	struct l2_char_message message;
+	struct l2_character_name name;
+	struct l2_character_message message;
 };
 
 struct server_packet_attack_hit {
@@ -370,7 +370,7 @@ struct server_packet_attack_hit {
 
 struct server_packet_attack {
 	u32 attacker_id;
-	struct char_pos attacker_pos;
+	struct character_position attacker_pos;
 	struct server_packet_attack_hit hits[10];
 	u16 hit_count;
 };
@@ -381,7 +381,7 @@ struct server_packet_stop_auto_attack {
 
 struct server_packet_deselect_target {
 	u32 target_id;
-	struct char_pos target_pos;
+	struct character_position target_pos;
 };
 
 struct server_packet_die {
@@ -396,7 +396,7 @@ struct server_packet_die {
 
 struct server_packet_npc_html_message {
 	u32 message_id;
-	struct l2_npc_html_message message;
+	struct l2_npc_dialog message;
 };
 
 struct server_packet_change_move_type {
@@ -422,7 +422,7 @@ struct server_packet_use_skill {
 	u32 skill_level;
 	u32 hit_time;
 	u32 reuse_delay;
-	struct char_pos position;
+	struct character_position position;
 };
 
 void server_packet_protocol_version_encode(struct packet *dest, struct server_packet_protocol_version *src);

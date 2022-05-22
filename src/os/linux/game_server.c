@@ -20,12 +20,13 @@
 
 #include "../../packet.c"
 #include "../../util.c"
+#include "../../server/game/character.c"
 #include "../../server/game/client_packet.c"
 #include "../../server/game/client.c"
 #include "../../server/game/server.c"
 #include "../../server/game/l2_string.c"
 #include "../../server/game/packet_read.c"
-#include "../../server/game/player.c"
+#include "../../server/game/player_request.c"
 #include "../../server/game/server_packet.c"
 #include "../../server/game/state.c"
 
@@ -212,7 +213,7 @@ static void fork_and_listen(struct unix_socket *server)
 		exit(EXIT_FAILURE);
 	}
 
-	client.client = game_on_new_connection(&state);
+	client.client = server_on_new_connection(&state);
 	if (!client.client) {
 		printf("client couldn't initialize. closing the connection.\n");
 		unix_socket_close(&client);
@@ -231,7 +232,7 @@ static void fork_and_listen(struct unix_socket *server)
 
 		if (ev_count < 0) {
 			printf("epoll_wait failed, closing the client. closing connection.\n");
-			game_on_disconnect(&state, client.client);
+			server_on_disconnect(&state, client.client);
 			unix_socket_close(&client);
 			close(epoll_fd);
 			exit(EXIT_FAILURE);
@@ -255,7 +256,7 @@ static void fork_and_listen(struct unix_socket *server)
 
 			if (read == 0) {
 				printf("closing connection as requested by client.\n");
-				game_on_disconnect(&state, client.client);
+				server_on_disconnect(&state, client.client);
 				unix_socket_close(&client);
 				close(epoll_fd);
 				exit(EXIT_SUCCESS);
@@ -266,14 +267,14 @@ static void fork_and_listen(struct unix_socket *server)
 					continue;
 				}
 				printf("failed to read packet from client, closing connection.\n");
-				game_on_disconnect(&state, client.client);
+				server_on_disconnect(&state, client.client);
 				unix_socket_close(&client);
 				close(epoll_fd);
 				exit(EXIT_FAILURE);
 			}
 
 			client.client->received += (size_t) read;
-			game_on_request(&state, client.client);
+			server_on_request(&state, client.client);
 
 			if (packet_size(&client.client->response)) {
 				unix_socket_write(

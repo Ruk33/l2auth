@@ -1,10 +1,11 @@
 #include <assert.h>
 #include "../../include/util.h"
+#include "include/types.h"
 #include "include/client.h"
 
 void client_init(struct client *src)
 {
-	struct key key = {{ 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 }};
+	struct crypt_key key = {{ 0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87 }};
 
 	assert(src);
 
@@ -88,4 +89,17 @@ void client_decrypt(struct client *client, struct packet *src)
 	client->decrypt_key.buf[1] = (byte) (old >> 0x08 & 0xff);
 	client->decrypt_key.buf[2] = (byte) (old >> 0x10 & 0xff);
 	client->decrypt_key.buf[3] = (byte) (old >> 0x18 & 0xff);
+}
+
+void client_queue_response(struct client *client, struct packet *src)
+{
+	struct packet *encrypted_packet = 0;
+
+	assert(client);
+	assert(src);
+
+	encrypted_packet = &client->response_queue[client->response_queue_count];
+	client_encrypt(client, encrypted_packet);
+
+	client->response_queue_count += 1;
 }

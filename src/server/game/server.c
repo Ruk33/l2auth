@@ -182,7 +182,7 @@ static void on_enter_world(struct state *state, struct client *client)
 	client_encrypt(client, &client->response);
 }
 
-struct client *game_on_new_connection(struct state *state)
+struct client *server_on_new_connection(struct state *state)
 {
 	struct client *client = 0;
 
@@ -200,13 +200,13 @@ struct client *game_on_new_connection(struct state *state)
 	return client;
 }
 
-void game_on_disconnect(struct state *state, struct client *src)
+void server_on_disconnect(struct state *state, struct client *src)
 {
 	assert(state);
 	assert(src);
 }
 
-void game_on_request(struct state *state, struct client *client)
+void server_on_request(struct state *state, struct client *client)
 {
 	assert(state);
 	assert(client);
@@ -247,7 +247,7 @@ void game_on_request(struct state *state, struct client *client)
 		break;
 	default:
 		if (client->character) {
-			player_on_request(client);
+			server_on_request(state, client);
 		} else {
 			printf("i don't recognize that packet, ignoring.\n");
 		}
@@ -257,7 +257,7 @@ void game_on_request(struct state *state, struct client *client)
 	client->request = (struct packet){0};
 }
 
-void game_on_tick(struct state *state, seconds delta)
+void server_on_tick(struct state *state, seconds delta)
 {
 	assert(state);
 	delta = delta;

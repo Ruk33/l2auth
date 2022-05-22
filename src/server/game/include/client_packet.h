@@ -8,13 +8,13 @@
 
 struct client_packet_action {
 	u32 target_id;
-	struct char_pos origin_pos;
+	struct character_position origin_pos;
 	u8 action; // 0 = click, 1 = shift click
 };
 
 struct client_packet_attack {
 	u32 target_id;
-	struct char_pos origin_pos;
+	struct character_position origin_pos;
 	u8 action; // 0 = click, 1 = shift click
 };
 
@@ -31,18 +31,18 @@ struct client_packet_select_character {
 };
 
 struct client_packet_create_character {
-	struct l2_char_name name;
+	struct l2_character_name name;
 	u32 race_id;
 	u32 sex;
 	u32 class_id;
-	struct char_attr attrs;
+	struct character_attr attrs;
 	u32 hair_style;
 	u32 hair_color;
 	u32 face;
 };
 
 struct client_packet_move {
-	struct char_pos position;
+	struct character_position position;
 };
 
 enum client_packet_packet_revive_option
@@ -58,7 +58,7 @@ struct client_packet_revive {
 };
 
 struct client_packet_validate_position {
-	struct char_pos position;
+	struct character_position position;
 };
 
 struct client_packet_say {

@@ -51,6 +51,25 @@ void state_release_client(struct state *state, struct client *src)
 {
 	assert(state);
 	assert(src);
+
 	recycle_id(state->recycled_clients, src->id);
 	*src = (struct client) { 0 };
+
+	state->character_count -= 1;
+	state->client_count -= 1;
+}
+
+void state_broadcast_packet(struct state *state, struct packet *packet)
+{
+	struct client *client = 0;
+
+	assert(state);
+	assert(packet);
+
+	for (size_t i = 0; i < state->client_count; i += 1) {
+		client = &state->clients[i];
+		if (!client->conn_encrypted)
+			continue;
+		client_queue_response(client, packet);
+	}
 }
