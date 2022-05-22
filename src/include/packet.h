@@ -4,10 +4,10 @@
 #include "util.h"
 
 struct packet {
-    // 2 bytes for packet size
-    // 1 byte for packet type
-    // Rest of the bytes for packet content
-    byte buf[65535];
+	// 2 bytes for packet size
+	// 1 byte for packet type
+	// Rest of the bytes for packet content
+	byte buf[65535];
 };
 
 // Get the full size of the packet which includes:

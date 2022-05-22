@@ -7,76 +7,76 @@
 #include "types.h"
 
 struct client_packet_action {
-    u32 target_id;
-    struct char_pos origin_pos;
-    u8 action; // 0 = click, 1 = shift click
+	u32 target_id;
+	struct char_pos origin_pos;
+	u8 action; // 0 = click, 1 = shift click
 };
 
 struct client_packet_attack {
-    u32 target_id;
-    struct char_pos origin_pos;
-    u8 action; // 0 = click, 1 = shift click
+	u32 target_id;
+	struct char_pos origin_pos;
+	u8 action; // 0 = click, 1 = shift click
 };
 
 struct client_packet_auth {
-    struct username username;
-    i32 playOK1;
-    i32 playOK2;
-    i32 loginOK1;
-    i32 loginOK2;
+	struct l2_username username;
+	i32 playOK1;
+	i32 playOK2;
+	i32 loginOK1;
+	i32 loginOK2;
 };
 
 struct client_packet_select_character {
-    u32 index;
+	u32 index;
 };
 
 struct client_packet_create_character {
-    struct char_name name;
-    u32 race_id;
-    u32 sex;
-    u32 class_id;
-    struct char_attr attrs;
-    u32 hair_style;
-    u32 hair_color;
-    u32 face;
+	struct l2_char_name name;
+	u32 race_id;
+	u32 sex;
+	u32 class_id;
+	struct char_attr attrs;
+	u32 hair_style;
+	u32 hair_color;
+	u32 face;
 };
 
 struct client_packet_move {
-    struct char_pos position;
+	struct char_pos position;
 };
 
 enum client_packet_packet_revive_option
 {
-    REVIVE_IN_CLAN_HALL = 1,
-    REVIVE_IN_CASTLE    = 2,
-    REVIVE_IN_SIEGE_HQ  = 3,
-    REVIVE_FIXED        = 4,
+	REVIVE_IN_CLAN_HALL	= 1,
+	REVIVE_IN_CASTLE	= 2,
+	REVIVE_IN_SIEGE_HQ	= 3,
+	REVIVE_FIXED		= 4,
 };
 
 struct client_packet_revive {
-    enum client_packet_packet_revive_option option_chosen;
+	enum client_packet_packet_revive_option option_chosen;
 };
 
 struct client_packet_validate_position {
-    struct char_pos position;
+	struct char_pos position;
 };
 
 struct client_packet_say {
-    // Check maximum length.
-    l2_string message[256];
-    size_t size;
+	// Check maximum length.
+	l2_string message[256];
+	size_t size;
 };
 
 struct client_packet_bypass {
-    // TODO: Check maximum size.
-    l2_string command[128];
-    size_t size;
+	// TODO: Check maximum size.
+	l2_string command[128];
+	size_t size;
 };
 
 struct client_packet_use_skill {
-    u32 skill_id;
-    u32 ctrl_pressed;
-    u8 shift_pressed;
+	u32 skill_id;
+	u32 ctrl_pressed;
+	u8 shift_pressed;
 };
 
 void client_packet_action_request_decode(struct client_packet_action *dest, struct packet *src);

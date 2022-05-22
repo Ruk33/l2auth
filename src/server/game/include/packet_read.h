@@ -7,8 +7,8 @@
 #include "l2_string.h"
 
 struct packet_read {
-    struct packet *packet;
-    byte *tail;
+	struct packet *packet;
+	byte *tail;
 };
 
 void packet_read_init(struct packet_read *reader, struct packet *packet);

@@ -5,19 +5,19 @@
 #include "../../../include/packet.h"
 
 struct key {
-    byte buf[8];
+	byte buf[8];
 };
 
 struct client {
-    size_t id;
-    struct character *character;
-    struct key encrypt_key;
-    struct key decrypt_key;
-    struct packet response;
-    struct packet request;
-    size_t received;
-    int partial;
-    int conn_encrypted;
+	size_t id;
+	struct character *character;
+	struct key encrypt_key;
+	struct key decrypt_key;
+	struct packet response;
+	struct packet request;
+	size_t received;
+	int partial;
+	int conn_encrypted;
 };
 
 void client_init(struct client *src);

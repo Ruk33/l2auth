@@ -16,6 +16,6 @@
 
 int main(int argc, char **argv)
 {
-    printf("yep\n");
-    return 0;
+	printf("yep\n");
+	return 0;
 }

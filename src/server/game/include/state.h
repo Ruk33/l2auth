@@ -1,14 +1,15 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include "types.h"
 #include "client.h"
 
 struct state {
-    struct client clients[1024];
-    size_t recycled_clients[1024];
-    size_t client_count;
-    size_t recycled_characters[1024];
-    size_t character_count;
+	struct client clients[1024];
+	size_t recycled_clients[1024];
+	size_t client_count;
+	size_t recycled_characters[1024];
+	size_t character_count;
 };
 
 struct client *state_get_free_client(struct state *src);

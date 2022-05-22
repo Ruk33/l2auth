@@ -5,26 +5,26 @@
 #include "../../../include/packet.h"
 
 struct client_modulus {
-    byte buf[128];
+	byte buf[128];
 };
 
 struct client_username {
-    i8 buf[16];
+	i8 buf[16];
 };
 
 struct client_request {
-    struct packet packet;
-    size_t received;
-    int is_partial;
+	struct packet packet;
+	size_t received;
+	int is_partial;
 };
 
 struct client {
-    size_t id;
-    struct client_username username;
-    struct client_request request;
-    struct packet response;
-    i32 playOK1;
-    i32 playOK2;
+	size_t id;
+	struct client_username username;
+	struct client_request request;
+	struct packet response;
+	i32 playOK1;
+	i32 playOK2;
 };
 
 // On success, 1 is returned.

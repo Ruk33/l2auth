@@ -4,17 +4,17 @@
 #include "../../../include/util.h"
 #include "../../../include/packet.h"
 
-struct username {
-    i8 buf[14];
+struct l2_username {
+	i8 buf[14];
 };
 
 struct password {
-    i8 buf[16];
+	i8 buf[16];
 };
 
 struct server_packet_auth_login {
-    struct username username;
-    struct password password;
+	struct l2_username username;
+	struct password password;
 };
 
 void packet_auth_login_from(struct server_packet_auth_login *dest, struct packet *src);

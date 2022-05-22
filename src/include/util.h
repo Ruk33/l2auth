@@ -17,12 +17,12 @@ typedef u8 byte;
 
 typedef float seconds;
 
-#define TODO(...)                                           \
-    do {                                                    \
-        printf("\nTODO (%s line %d)\n", __FILE__, __LINE__);\
-        printf(__VA_ARGS__);                                \
-        printf("\n");                                       \
-    } while (0)
+#define TODO(...)							\
+	do {								\
+		printf("\nTODO (%s line %d)\n", __FILE__, __LINE__);	\
+		printf(__VA_ARGS__);					\
+		printf("\n");						\
+	} while (0)
 
 #define KB(x) ((x) * 1024)
 
@@ -33,8 +33,8 @@ typedef float seconds;
 #define CPY_STR(dest_arr, src) (cpy_str((i8 *)(dest_arr), (i8 *)(src), sizeof(dest_arr)))
 
 struct ipv4 {
-    // Maximum, 255.255.255.255, 15 + NULL terminator = 16, quick math.
-    char buf[16];
+	// Maximum, 255.255.255.255, 15 + NULL terminator = 16, quick math.
+	char buf[16];
 };
 
 // Copy up to n bytes or null terminator.
