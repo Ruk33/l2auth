@@ -79,26 +79,26 @@ struct client_packet_use_skill {
 	u8 shift_pressed;
 };
 
-void client_packet_action_request_decode(struct client_packet_action *dest, struct packet *src);
+void client_packet_action_decode(struct client_packet_action *dest, struct packet *src);
 
-void client_packet_attack_request_decode(struct client_packet_attack *dest, struct packet *src);
+void client_packet_attack_decode(struct client_packet_attack *dest, struct packet *src);
 
-void client_packet_auth_request_decode(struct client_packet_auth *dest, struct packet *src);
+void client_packet_auth_decode(struct client_packet_auth *dest, struct packet *src);
 
-void client_packet_char_select_request_decode(struct client_packet_select_character *dest, struct packet *src);
+void client_packet_select_character_decode(struct client_packet_select_character *dest, struct packet *src);
 
-void client_packet_create_char_request_decode(struct client_packet_create_character *dest, struct packet *src);
+void client_packet_create_char_decode(struct client_packet_create_character *dest, struct packet *src);
 
-void client_packet_move_request_decode(struct client_packet_move *dest, struct packet *src);
+void client_packet_move_decode(struct client_packet_move *dest, struct packet *src);
 
-void client_packet_revive_request_decode(struct client_packet_revive *dest, struct packet *src);
+void client_packet_revive_decode(struct client_packet_revive *dest, struct packet *src);
 
-void client_packet_validate_pos_request_decode(struct client_packet_validate_position *dest, struct packet *src);
+void client_packet_validate_position_decode(struct client_packet_validate_position *dest, struct packet *src);
 
-void client_packet_say_request_decode(struct client_packet_say *dest, struct packet *src);
+void client_packet_say_decode(struct client_packet_say *dest, struct packet *src);
 
-void client_packet_bypass_request_decode(struct client_packet_bypass *dest, struct packet *src);
+void client_packet_bypass_decode(struct client_packet_bypass *dest, struct packet *src);
 
-void client_packet_skill_use_request_decode(struct client_packet_use_skill *dest, struct packet *src);
+void client_packet_use_skill_decode(struct client_packet_use_skill *dest, struct packet *src);
 
 #endif

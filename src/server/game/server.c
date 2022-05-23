@@ -30,7 +30,7 @@ static void on_auth_request(struct state *state, struct client *client)
 	assert(client);
 
 	printf("handling auth request.\n");
-	client_packet_auth_request_decode(&request, &client->request);
+	client_packet_auth_decode(&request, &client->request);
 	l2_string_to_char(client->username.buf, request.username.buf, sizeof(client->username.buf));
 
 	response.count = (u32) db_get_account_characters(
@@ -55,7 +55,7 @@ static void on_select_char(struct state *state, struct client *client)
 
 	printf("handling char select.\n");
 
-	client_packet_char_select_request_decode(&request, &client->request);
+	client_packet_select_character_decode(&request, &client->request);
 	
 	db_get_account_characters(characters, &client->username, ARR_LEN(characters));
 	character = &characters[request.index];

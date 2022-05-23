@@ -4,7 +4,7 @@
 #include "include/packet_read.h"
 #include "include/client_packet.h"
 
-void client_packet_action_request_decode(struct client_packet_action *dest, struct packet *src)
+void client_packet_action_decode(struct client_packet_action *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -19,7 +19,7 @@ void client_packet_action_request_decode(struct client_packet_action *dest, stru
 	packet_read_u8(&dest->action, &reader);
 }
 
-void client_packet_attack_request_decode(struct client_packet_attack *dest, struct packet *src)
+void client_packet_attack_decode(struct client_packet_attack *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -34,7 +34,7 @@ void client_packet_attack_request_decode(struct client_packet_attack *dest, stru
 	packet_read_u8(&dest->action, &reader);
 }
 
-void client_packet_auth_request_decode(struct client_packet_auth *dest, struct packet *src)
+void client_packet_auth_decode(struct client_packet_auth *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -49,7 +49,7 @@ void client_packet_auth_request_decode(struct client_packet_auth *dest, struct p
 	packet_read_i32(&dest->loginOK2, &reader);
 }
 
-void client_packet_char_select_request_decode(struct client_packet_select_character *dest, struct packet *src)
+void client_packet_select_character_decode(struct client_packet_select_character *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -60,7 +60,7 @@ void client_packet_char_select_request_decode(struct client_packet_select_charac
 	packet_read_u32(&dest->index, &reader);
 }
 
-void client_packet_create_char_request_decode(struct client_packet_create_character *dest, struct packet *src)
+void client_packet_create_char_decode(struct client_packet_create_character *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -83,7 +83,7 @@ void client_packet_create_char_request_decode(struct client_packet_create_charac
 	packet_read_u32(&dest->face, &reader);
 }
 
-void client_packet_move_request_decode(struct client_packet_move *dest, struct packet *src)
+void client_packet_move_decode(struct client_packet_move *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -96,7 +96,7 @@ void client_packet_move_request_decode(struct client_packet_move *dest, struct p
 	packet_read_i32(&dest->position.z, &reader);
 }
 
-void client_packet_revive_request_decode(struct client_packet_revive *dest, struct packet *src)
+void client_packet_revive_decode(struct client_packet_revive *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -107,7 +107,7 @@ void client_packet_revive_request_decode(struct client_packet_revive *dest, stru
 	packet_read_i32((i32 *) &dest->option_chosen, &reader);
 }
 
-void client_packet_validate_pos_request_decode(struct client_packet_validate_position *dest, struct packet *src)
+void client_packet_validate_position_decode(struct client_packet_validate_position *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -121,7 +121,7 @@ void client_packet_validate_pos_request_decode(struct client_packet_validate_pos
 	packet_read_i32(&dest->position.heading, &reader);
 }
 
-void client_packet_say_request_decode(struct client_packet_say *dest, struct packet *src)
+void client_packet_say_decode(struct client_packet_say *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -132,7 +132,7 @@ void client_packet_say_request_decode(struct client_packet_say *dest, struct pac
 	dest->size = packet_read_str(dest->message, &reader, sizeof(dest->message));
 }
 
-void client_packet_bypass_request_decode(struct client_packet_bypass *dest, struct packet *src)
+void client_packet_bypass_decode(struct client_packet_bypass *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 
@@ -143,7 +143,7 @@ void client_packet_bypass_request_decode(struct client_packet_bypass *dest, stru
 	dest->size = packet_read_str(dest->command, &reader, sizeof(dest->command));
 }
 
-void client_packet_skill_use_request_decode(struct client_packet_use_skill *dest, struct packet *src)
+void client_packet_use_skill_decode(struct client_packet_use_skill *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 

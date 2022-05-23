@@ -13,7 +13,7 @@ static void on_move(struct state *state, struct client *client)
 	assert(client->character);
 
 	printf("handling movement.\n");
-	client_packet_move_request_decode(&request, &client->request);
+	client_packet_move_decode(&request, &client->request);
 	character_start_movement(client->character, &request.position);
 
 	// Broadcast movement to other players.
