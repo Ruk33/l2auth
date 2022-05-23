@@ -15,11 +15,13 @@ size_t packet_read_bytes(byte *dest, struct packet_read *src, size_t n)
 {
 	assert(dest);
 	assert(src);
-	if (src->packet->buf + packet_size(src->packet) < src->tail + n) {
+
+	if (src->packet->buf + packet_size(src->packet) < src->tail + n)
 		return 0;
-	}
+
 	cpy_bytes(dest, src->tail, n);
 	src->tail += n;
+	
 	return n;
 }
 

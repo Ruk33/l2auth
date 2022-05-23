@@ -24,6 +24,7 @@
 #include "../../server/game/character.c"
 #include "../../server/game/client_packet.c"
 #include "../../server/game/client.c"
+#include "../../server/game/db_unix.c"
 #include "../../server/game/server.c"
 #include "../../server/game/l2_string.c"
 #include "../../server/game/packet_read.c"
@@ -62,17 +63,15 @@ static int unix_socket_init(int *dest, u16 port, int max)
 
 	*dest = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (*dest < 0) {
+	if (*dest < 0)
 		goto abort;
-	}
 
 	unix_socket_set_non_block(*dest);
 
 	// Make the socket reusable.
 	reusable_enable = 1;
-	if (setsockopt(*dest, SOL_SOCKET, SO_REUSEADDR, &reusable_enable, sizeof(int)) < 0) {
+	if (setsockopt(*dest, SOL_SOCKET, SO_REUSEADDR, &reusable_enable, sizeof(int)) < 0)
 		goto abort;
-	}
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
@@ -80,13 +79,11 @@ static int unix_socket_init(int *dest, u16 port, int max)
 
 	address_p = (struct sockaddr *) &address;
 
-	if (bind(*dest, address_p, sizeof(address)) < 0) {
+	if (bind(*dest, address_p, sizeof(address)) < 0)
 		goto abort;
-	}
 
-	if (listen(*dest, max) < 0) {
+	if (listen(*dest, max) < 0)
 		goto abort;
-	}
 
 	return 1;
 
@@ -133,7 +130,12 @@ static void unix_socket_flush(struct unix_socket *socket)
 	assert(socket);
 
 	while (tmp != -1 && socket->write_size > socket->sent) {
-		tmp = send(socket->fd, socket->buf_write + socket->sent, socket->write_size - socket->sent, 0);
+		tmp = send(
+			socket->fd,
+			socket->buf_write + socket->sent,
+			socket->write_size - socket->sent,
+			0
+		);
 		socket->sent += MAX(0, tmp);
 	}
 
@@ -149,6 +151,11 @@ static void unix_socket_write(struct unix_socket *socket, byte *buf, size_t n)
 	assert(socket);
 	assert(buf);
 
+	if (socket->write_size + n > ARR_LEN(socket->buf_write)) {
+		printf("warning, prevented buf overflow in unix_socket_write.\n");
+		return;
+	}
+
 	// Append buf to the end of the write buffer.
 	cpy_bytes(socket->buf_write + socket->write_size, buf, n);
 	socket->write_size += n;
@@ -161,7 +168,7 @@ static void on_new_connection(struct unix_socket *dest, struct state *state, int
 	assert(dest);
 	assert(state);
 
-	printf("new connection.\n");
+	printf("detected new connection.\n");
 
 	if (!unix_socket_accept(dest, server_fd)) {
 		printf("unable to accept new client.\n");
@@ -247,6 +254,9 @@ static int unix_socket_listen(int server_fd)
 	int epoll_fd = 0;
 	int timer_fd = 0;
 
+	int can_read = 0;
+	int can_write = 0;
+
 	struct itimerspec utmr = { 0 };
 
 	struct epoll_event event = { 0 };
@@ -268,12 +278,8 @@ static int unix_socket_listen(int server_fd)
 		return 0;
 	}
 
-	// Start the timer.
-	// utmr.it_value.tv_nsec = (long) (3.3e+8);
-	// For some reason, interval doesn't seem to be working.
-	// utmr.it_interval.tv_nsec = (long) (3.3e+8);
-	utmr.it_value.tv_sec = 1; // 1 sec.
-	// utmr.it_interval.tv_sec = 1; // 1 sec.
+	// Start the timer to run every second.
+	utmr.it_value.tv_sec = 1;
 	timerfd_settime(timer_fd, 0, &utmr, 0);
 
 	// Add timer to epoll.
@@ -304,39 +310,41 @@ static int unix_socket_listen(int server_fd)
 		}
 
 		for (int i = 0; i < ev_count; i += 1) {
-			if (events[i].data.fd == server_fd && (events[i].events & EPOLLIN) == EPOLLIN) {
+			can_read = (events[i].events & EPOLLIN) == EPOLLIN;
+			can_write = (events[i].events & EPOLLOUT) == EPOLLOUT;
+
+			if (events[i].data.fd == server_fd && can_read) {
 				on_new_connection(&clients[client_count], &state, server_fd, epoll_fd);
 				client_count += 1;
 				continue;
 			}
-			if (events[i].data.fd == timer_fd && (events[i].events & EPOLLIN) == EPOLLIN) {
+			if (events[i].data.fd == timer_fd && can_read) {
 				// Start the timer again.
 				timerfd_settime(timer_fd, 0, &utmr, 0);
 				server_on_tick(&state, 0.3f);
 				
 				// Handle queue responses.
 				for (size_t n = 0; n < client_count; n += 1) {
+					// Ignore clients that are not playing.
 					if (!clients[n].client->character)
 						continue;
-					for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1) {
+					for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1)
 						unix_socket_write(
 							&clients[n],
 							clients[n].client->response_queue[z].buf,
 							packet_size(&clients[n].client->response_queue[z])
 						);
-					}
 					clients[n].client->response_queue_count = 0;
 					unix_socket_flush(&clients[n]);
 				}
 
 				continue;
 			}
-			if ((events[i].events & EPOLLIN) == EPOLLIN) {
+			if (can_read)
 				on_read(&state, events[i].data.ptr);
-			}
-			if ((events[i].events & EPOLLOUT) == EPOLLOUT) {
+
+			if (can_write)
 				on_write(events[i].data.ptr);
-			}
 		}
 	}
 
@@ -346,14 +354,10 @@ static int unix_socket_listen(int server_fd)
 	return 1;
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	int server_fd = 0;
 	u16 port = 7777;
-
-	// Suppress unused warning.
-	argc = argc;
-	argv = argv;
 
 	srand(time(0));
 

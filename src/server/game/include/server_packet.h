@@ -62,68 +62,10 @@ struct server_packet_select_target {
 	u32 color;
 };
 
-struct server_packet_auth_login_char {
-	u32 id;
-	struct l2_character_name name;
-	i32 playOK1;
-	u32 clan_id;
-	u32 sex;
-	u32 race_id;
-	u32 class_id;
-	u32 active;
-	struct character_position position;
-	double hp;
-	double mp;
-	double max_hp;
-	double max_mp;
-	u32 sp;
-	u32 exp;
-	u32 level;
-	u32 karma;
-	u32 under_obj_id;
-	u32 r_ear_obj_id;
-	u32 l_ear_obj_id;
-	u32 neck_obj_id;
-	u32 r_finger_obj_id;
-	u32 l_finger_obj_id;
-	u32 head_obj_id;
-	u32 r_hand_obj_id;
-	u32 l_hand_obj_id;
-	u32 gloves_obj_id;
-	u32 chest_obj_id;
-	u32 legs_obj_id;
-	u32 feet_obj_id;
-	u32 back_obj_id;
-	u32 lr_hand_obj_id;
-	u32 hair_obj_id;
-	u32 under;
-	u32 r_ear;
-	u32 l_ear;
-	u32 neck;
-	u32 r_finger;
-	u32 l_finger;
-	u32 head;
-	u32 r_hand;
-	u32 l_hand;
-	u32 gloves;
-	u32 chest;
-	u32 legs;
-	u32 feet;
-	u32 back;
-	u32 lr_hand;
-	u32 hair;
-	u32 hair_style_id;
-	u32 hair_color_id;
-	u32 face;
-	u32 delete_days;
-	u32 auto_select;
-	u8 enchant_effect;
-};
-
 struct server_packet_auth_login {
 	u32 count;
 	// TODO: confirm how many characters a user can have in the lobby.
-	struct server_packet_auth_login_char characters[10];
+	struct character characters[10];
 };
 
 struct server_packet_char_info {

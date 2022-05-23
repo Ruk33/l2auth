@@ -65,13 +65,11 @@ void server_packet_select_character_encode(struct packet *dest, struct server_pa
 	packet_write_i32(dest, src->attrs.men);
 	packet_write_i32(dest, src->attrs.dex);
 	packet_write_i32(dest, src->attrs.wit);
-	for (int i = 0; i < 37; i += 1) {
+	for (int i = 0; i < 37; i += 1)
 		packet_write_u32(dest, 0);
-	}
 	packet_write_u32(dest, src->game_time);
-	for (int i = 0; i < 16; i += 1) {
+	for (int i = 0; i < 16; i += 1)
 		packet_write_u32(dest, 0);
-	}
 }
 
 void server_packet_quest_list_encode(struct packet *dest, struct server_packet_quest_list *src)
@@ -135,7 +133,7 @@ void server_packet_select_target_encode(struct packet *dest, struct server_packe
 
 void server_packet_auth_login_encode(struct packet *dest, struct server_packet_auth_login *src)
 {
-	struct server_packet_auth_login_char *character = 0;
+	struct character *character = 0;
 
 	assert(dest);
 	assert(src);
@@ -145,7 +143,6 @@ void server_packet_auth_login_encode(struct packet *dest, struct server_packet_a
 
 	for (u32 i = 0; i < src->count; i += 1) {
 		character = &src->characters[i];
-		L2_STRING_FROM_CHAR(character->name.buf, "foo");
 
 		packet_write(dest, character->name.buf, l2_string_size(character->name.buf));
 		packet_write_u32(dest, character->id);
@@ -239,9 +236,8 @@ void server_packet_char_info_encode(struct packet *dest, struct server_packet_ch
 	packet_write_u32(dest, src->class_id);
 	packet_write_u32(dest, 0);
 	// Paperdoll?
-	for (int i = 0; i < 10; i += 1) {
+	for (int i = 0; i < 10; i += 1)
 		packet_write_u32(dest, 0);
-	}
 	packet_write_u32(dest, src->pvp_flag);
 	packet_write_u32(dest, src->karma);
 	packet_write_u32(dest, src->m_attack_speed);
@@ -497,9 +493,8 @@ void server_packet_enter_world_encode(struct packet *dest, struct server_packet_
 	packet_write_u32(dest, src->abnormal_effect);
 	packet_write_u8(dest, 0);
 	packet_write_u32(dest, src->clan_privileges);
-	for (int i = 0; i < 7; i += 1) {
+	for (int i = 0; i < 7; i += 1)
 		packet_write_u32(dest, 0);
-	}
 	packet_write_u16(dest, src->recommendation_left);
 	packet_write_u16(dest, src->recommendation_have);
 	packet_write_u32(dest, 0);

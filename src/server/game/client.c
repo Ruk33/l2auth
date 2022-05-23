@@ -9,6 +9,7 @@ void client_init(struct client *src)
 
 	assert(src);
 
+	TODO("dont hardcode client's id to be 1.");
 	src->id = 1;
 	src->encrypt_key = key;
 	src->decrypt_key = key;
@@ -63,9 +64,8 @@ void client_decrypt(struct client *client, struct packet *src)
 	assert(client);
 	assert(src);
 
-	if (!client->conn_encrypted) {
+	if (!client->conn_encrypted)
 		return;
-	}
 
 	body_size = packet_size(src);
 	body_size = body_size > 1 ? body_size - 2 : body_size;
@@ -98,9 +98,8 @@ void client_queue_response(struct client *client, struct packet *src)
 	assert(client);
 	assert(src);
 
-	if (client->response_queue_count == ARR_LEN(client->response_queue)) {
+	if (client->response_queue_count == ARR_LEN(client->response_queue))
 		client->response_queue_count = 0;
-	}
 
 	encrypted_packet = &client->response_queue[client->response_queue_count];
 	client_encrypt(client, encrypted_packet);
