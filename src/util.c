@@ -27,7 +27,7 @@ void cpy_bytes(byte *dest, byte *src, size_t n)
 	}
 }
 
-u32 be32tole(u32 src)
+u32 be32_to_le(u32 src)
 {
 	return (
 		((src >> 24) & 0xff)		|
@@ -37,7 +37,7 @@ u32 be32tole(u32 src)
 	);
 }
 
-u32 le32tobe(u32 src)
+u32 le32_to_be(u32 src)
 {
 	return (
 		((src & 0x000000ff) << 24)	|

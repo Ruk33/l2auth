@@ -117,14 +117,18 @@ struct server_packet_char_info {
 };
 
 struct server_packet_new_char_template {
-	u32 race_id;
-	u32 class_id;
-	struct character_attr attrs;
+	u32 race;
+	u32 _class;
+	struct character_attr stats;
 };
 
-struct server_packet_new_char {
+struct server_packet_show_creation_screen {
 	u32 count;
 	struct server_packet_new_char_template templates[10];
+};
+
+struct server_packet_create_character {
+	u32 response;
 };
 
 struct server_packet_npc_info {
@@ -389,7 +393,9 @@ void server_packet_auth_login_encode(struct packet *dest, struct server_packet_a
 
 void server_packet_char_info_encode(struct packet *dest, struct server_packet_char_info *src);
 
-void server_packet_new_char_encode(struct packet *dest, struct server_packet_new_char *src);
+void server_packet_show_creation_screen_encode(struct packet *dest, struct server_packet_show_creation_screen *src);
+
+void server_packet_create_character_encode(struct packet *dest, struct server_packet_create_character *src);
 
 void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc_info *src);
 

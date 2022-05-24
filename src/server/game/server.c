@@ -10,6 +10,159 @@
 #include "include/db.h"
 #include "include/server.h"
 
+static struct server_packet_new_char_template character_templates[] = {
+        // Human fighter
+        {
+		.race   = 0,
+		._class = 0,
+		.stats  = {
+			.str  = 40,
+			.dex  = 30,
+			.con  = 43,
+			._int = 21,
+			.wit  = 11,
+			.men  = 25
+		}
+	},
+
+        // Human fighter copy
+        // Not sure why the clients requires it...
+        {
+		.race   = 0,
+		._class = 0,
+		.stats  = {
+			.str  = 40,
+			.dex  = 30,
+			.con  = 43,
+			._int = 21,
+			.wit  = 11,
+			.men  = 25
+		}
+	},
+
+        // Human mage
+        {
+		.race   = 0,
+		._class = 10,
+		.stats  = {
+			.str  = 22,
+			.dex  = 21,
+			.con  = 27,
+			._int = 41,
+			.wit  = 20,
+			.men  = 39
+		}
+	},
+
+        // Elf fighter
+        {
+		.race   = 1,
+		._class = 18,
+		.stats  = {
+			.str  = 36,
+			.dex  = 35,
+			.con  = 36,
+			._int = 23,
+			.wit  = 14,
+			.men  = 26
+		}
+	},
+
+        // Elf mage
+        {
+		.race   = 1,
+		._class = 25,
+		.stats  = {
+			.str  = 21,
+			.dex  = 24,
+			.con  = 25,
+			._int = 37,
+			.wit  = 23,
+			.men  = 40
+		}
+	},
+
+        // Dark elf fighter
+        {
+		.race   = 2,
+		._class = 31,
+		.stats  = {
+			.str  = 41,
+			.dex  = 34,
+			.con  = 32,
+			._int = 25,
+			.wit  = 12,
+			.men  = 26
+		}
+	},
+
+        // Dark elf mage
+        {
+		.race   = 2,
+		._class = 38,
+		.stats  = {
+			.str  = 23,
+			.dex  = 23,
+			.con  = 24,
+			._int = 44,
+			.wit  = 19,
+			.men  = 37
+		}
+	},
+
+        // Orc fighter
+        {
+		.race   = 3,
+		._class = 44,
+		.stats  = {
+			.str  = 40,
+			.dex  = 26,
+			.con  = 47,
+			._int = 18,
+			.wit  = 12,
+			.men  = 27
+		}
+	},
+
+        // Orc mage
+        {
+		.race   = 3,
+		._class = 49,
+		.stats  = {
+			.str  = 27,
+			.dex  = 24,
+			.con  = 31,
+			._int = 31,
+			.wit  = 15,
+			.men  = 42
+		}
+	},
+
+        // Dwarf
+        {
+		.race   = 4,
+		._class = 53,
+		.stats  = {
+			.str  = 39,
+			.dex  = 29,
+			.con  = 45,
+			._int = 20,
+			.wit  = 10,
+			.men  = 27
+		}
+	}
+};
+
+static struct server_packet_new_char_template *get_character_template_by_class(u32 class_id)
+{
+	for (size_t i = 0; i < ARR_LEN(character_templates); i += 1) {
+		if (character_templates[i]._class == class_id) {
+			return &character_templates[i];
+		}
+	}
+	return 0;
+}
+
 static void on_protocol_version(struct state *state, struct client *client)
 {
 	struct server_packet_protocol_version protocol = {0};
@@ -160,6 +313,91 @@ static void on_enter_world(struct state *state, struct client *client)
 	client_encrypt(client, &client->response);
 }
 
+static void on_show_creation_screen(struct state *state, struct client *client)
+{
+	struct server_packet_show_creation_screen response = { 0 };
+	// struct client_packet_create_character request = { 0 };
+
+	assert(state);
+	assert(client);
+
+	// client_packet_create_char_decode(&request, &client->request);
+	response.count = ARR_LEN(character_templates);
+	for (u32 i = 0; i < response.count; i += 1) {
+		response.templates[i] = character_templates[i];
+	}
+
+	server_packet_show_creation_screen_encode(&client->response, &response);
+	client_encrypt(client, &client->response);
+}
+
+static void on_create_character(struct state *state, struct client *client)
+{
+	struct client_packet_create_character request = { 0 };
+	// struct server_packet_create_character response = { 0 };
+	struct server_packet_auth_login response = { 0 };
+	struct character character = { 0 };
+	struct server_packet_new_char_template *template = 0;
+
+	char name[32] = { 0 };
+
+	assert(state);
+	assert(client);
+	TODO(
+		"When creating the character, check if the character's "
+		"name is available, if not, send "
+		"server_packet_create_character response error."
+	);
+
+	client_packet_create_character_decode(&request, &client->request);
+	l2_string_to_char(name, request.name.buf, sizeof(name));
+
+	printf(
+		"create new character with name %s, "
+		"race: %d, "
+		"sex: %d, "
+		"class: %d, "
+		"hair style: %d, "
+		"hair color: %d, "
+		"face: %d",
+		name,
+		request.race_id,
+		request.sex,
+		request.class_id,
+		request.hair_style,
+		request.hair_color,
+		request.face
+	);
+
+	template = get_character_template_by_class(request.class_id);
+
+	if (template) {
+		character.name = request.name;
+		character.race_id = request.race_id;
+		character.sex = request.sex;
+		character.class_id = request.class_id;
+		character.hair_style_id = request.hair_style;
+		character.hair_color_id = request.hair_color;
+		character.face = request.face;
+		character.attrs = template->stats;
+		// Talking island.
+		character.position.x = -83968;
+		character.position.y = 244634;
+		character.position.z = -3730;
+
+		db_save_character(&client->username, &character);
+	}
+
+	response.count = (u32) db_get_account_characters(
+		response.characters,
+		&client->username,
+		ARR_LEN(response.characters)
+	);
+
+	server_packet_auth_login_encode(&client->response, &response);
+	client_encrypt(client, &client->response);
+}
+
 struct client *server_on_new_connection(struct state *state)
 {
 	struct client *client = 0;
@@ -223,7 +461,11 @@ void server_on_request(struct state *state, struct client *client)
 	case 0x03: // Enter world.
 		on_enter_world(state, client);
 		break;
-	case 0x0e: // New character
+	case 0x0e: // From lobby, create new character
+		on_show_creation_screen(state, client);
+		break;
+	case 0x0b: // Create new character
+		on_create_character(state, client);
 		break;
 	default:
 		if (client->character)

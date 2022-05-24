@@ -51,6 +51,12 @@ struct character_attr {
 	i32 wit;
 };
 
+struct character_template {
+	u32 race;
+	u32 _class;
+	struct character_attr stats;
+};
+
 enum character_state {
 	IDLE,
 	MOVING,

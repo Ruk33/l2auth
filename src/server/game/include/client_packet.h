@@ -87,7 +87,7 @@ void client_packet_auth_decode(struct client_packet_auth *dest, struct packet *s
 
 void client_packet_select_character_decode(struct client_packet_select_character *dest, struct packet *src);
 
-void client_packet_create_char_decode(struct client_packet_create_character *dest, struct packet *src);
+void client_packet_create_character_decode(struct client_packet_create_character *dest, struct packet *src);
 
 void client_packet_move_decode(struct client_packet_move *dest, struct packet *src);
 

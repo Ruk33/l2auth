@@ -292,35 +292,43 @@ void server_packet_char_info_encode(struct packet *dest, struct server_packet_ch
 	packet_write_u32(dest, src->name_color);
 }
 
-void server_packet_new_char_encode(struct packet *dest, struct server_packet_new_char *src)
+void server_packet_show_creation_screen_encode(struct packet *dest, struct server_packet_show_creation_screen *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x17);
 	packet_write_u32(dest, src->count);
 	for (u32 i = 0; i < src->count; i += 1) {
-		packet_write_u32(dest, src->templates[i].race_id);
-		packet_write_u32(dest, src->templates[i].class_id);
+		packet_write_u32(dest, src->templates[i].race);
+		packet_write_u32(dest, src->templates[i]._class);
 		packet_write_u32(dest, 0);
 
-		packet_write_u32(dest, src->templates[i].attrs.str);
+		packet_write_u32(dest, src->templates[i].stats.str);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].attrs.dex);
+		packet_write_u32(dest, src->templates[i].stats.dex);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].attrs.con);
+		packet_write_u32(dest, src->templates[i].stats.con);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].attrs._int);
+		packet_write_u32(dest, src->templates[i].stats._int);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].attrs.wit);
+		packet_write_u32(dest, src->templates[i].stats.wit);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].attrs.men);
+		packet_write_u32(dest, src->templates[i].stats.men);
 		packet_write_u32(dest, 0);
 	}
+}
+
+void server_packet_create_character_encode(struct packet *dest, struct server_packet_create_character *src)
+{
+	assert(dest);
+	assert(src);
+	packet_set_type(dest, 0x19);
+	packet_write_u32(dest, src->response);
 }
 
 void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc_info *src)

@@ -60,7 +60,7 @@ void client_packet_select_character_decode(struct client_packet_select_character
 	packet_read_u32(&dest->index, &reader);
 }
 
-void client_packet_create_char_decode(struct client_packet_create_character *dest, struct packet *src)
+void client_packet_create_character_decode(struct client_packet_create_character *dest, struct packet *src)
 {
 	struct packet_read reader = { 0 };
 

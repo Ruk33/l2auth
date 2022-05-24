@@ -13,7 +13,7 @@
 struct account {
 	// TODO: check limits for both, account name
 	// and characters in lobby.
-	char name[16];
+	struct username name;
 	struct character characters[10];
 	size_t character_count;
 };
@@ -85,9 +85,18 @@ static void close_conn(struct conn *src)
 	munmap(src->db, src->file_stat.st_size);
 }
 
+// static struct account *find_account(struct conn *conn, struct username *username)
+// {
+// 	assert(conn);
+// 	conn = conn;
+// 	username = username;
+// 	return 0;
+// }
+
 size_t db_get_account_characters(struct character *dest, struct username *username, size_t max)
 {
 	struct conn conn = { 0 };
+	int account_exists = 0;
 	size_t found = 0;
 
 	assert(dest);
@@ -97,15 +106,45 @@ size_t db_get_account_characters(struct character *dest, struct username *userna
 		return 0;
 
 	for (size_t i = 0; i < conn.db->account_count; i += 1) {
-		if (strncmp(username->buf, conn.db->accounts[i].name, sizeof(username->buf)) != 0)
+		if (strncmp(username->buf, conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
 			continue;
 		
+		account_exists = 1;
 		found = conn.db->accounts[i].character_count;
 
 		for (size_t n = 0; n < max; n += 1)
 			dest[n] = conn.db->accounts[i].characters[n];
+		
+		break;
+	}
+
+	if (!account_exists) {
+		conn.db->accounts[conn.db->account_count].name = *username;
+		conn.db->account_count += 1;
 	}
 
 	close_conn(&conn);
 	return found;
+}
+
+void db_save_character(struct username *username, struct character *src)
+{
+	struct conn conn = { 0 };
+
+	assert(username);
+	assert(src);
+
+	if (!open_conn(&conn))
+		return;
+
+	for (size_t i = 0; i < conn.db->account_count; i += 1) {
+		if (strncmp(username->buf, conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
+			continue;
+
+		conn.db->accounts[i].characters[conn.db->accounts[i].character_count] = *src;
+		conn.db->accounts[i].character_count += 1;
+		break;
+	}
+
+	close_conn(&conn);
 }
