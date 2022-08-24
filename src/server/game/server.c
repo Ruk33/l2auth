@@ -11,8 +11,8 @@
 #include "include/server.h"
 
 static struct server_packet_new_char_template character_templates[] = {
-        // Human fighter
-        {
+    // Human fighter
+    {
 		.race   = 0,
 		._class = 0,
 		.stats  = {
@@ -24,10 +24,10 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 25
 		}
 	},
-
-        // Human fighter copy
-        // Not sure why the clients requires it...
-        {
+    
+    // Human fighter copy
+    // Not sure why the clients requires it...
+    {
 		.race   = 0,
 		._class = 0,
 		.stats  = {
@@ -39,9 +39,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 25
 		}
 	},
-
-        // Human mage
-        {
+    
+    // Human mage
+    {
 		.race   = 0,
 		._class = 10,
 		.stats  = {
@@ -53,9 +53,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 39
 		}
 	},
-
-        // Elf fighter
-        {
+    
+    // Elf fighter
+    {
 		.race   = 1,
 		._class = 18,
 		.stats  = {
@@ -67,9 +67,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 26
 		}
 	},
-
-        // Elf mage
-        {
+    
+    // Elf mage
+    {
 		.race   = 1,
 		._class = 25,
 		.stats  = {
@@ -81,9 +81,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 40
 		}
 	},
-
-        // Dark elf fighter
-        {
+    
+    // Dark elf fighter
+    {
 		.race   = 2,
 		._class = 31,
 		.stats  = {
@@ -95,9 +95,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 26
 		}
 	},
-
-        // Dark elf mage
-        {
+    
+    // Dark elf mage
+    {
 		.race   = 2,
 		._class = 38,
 		.stats  = {
@@ -109,9 +109,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 37
 		}
 	},
-
-        // Orc fighter
-        {
+    
+    // Orc fighter
+    {
 		.race   = 3,
 		._class = 44,
 		.stats  = {
@@ -123,9 +123,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 27
 		}
 	},
-
-        // Orc mage
-        {
+    
+    // Orc mage
+    {
 		.race   = 3,
 		._class = 49,
 		.stats  = {
@@ -137,9 +137,9 @@ static struct server_packet_new_char_template character_templates[] = {
 			.men  = 42
 		}
 	},
-
-        // Dwarf
-        {
+    
+    // Dwarf
+    {
 		.race   = 4,
 		._class = 53,
 		.stats  = {
@@ -166,10 +166,10 @@ static struct server_packet_new_char_template *get_character_template_by_class(u
 static void on_protocol_version(struct state *state, struct client *client)
 {
 	struct server_packet_protocol_version protocol = {0};
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling protocol version.\n");
 	server_packet_protocol_version_encode(&client->response, &protocol);
 }
@@ -178,20 +178,20 @@ static void on_auth_request(struct state *state, struct client *client)
 {
 	struct client_packet_auth request = { 0 };
 	struct server_packet_auth_login response = { 0 };
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling auth request.\n");
 	client_packet_auth_decode(&request, &client->request);
 	l2_string_to_char(client->username.buf, request.username.buf, sizeof(client->username.buf));
-
+    
 	response.count = (u32) db_get_account_characters(
-		response.characters,
-		&client->username,
-		ARR_LEN(response.characters)
-	);
-
+                                                     response.characters,
+                                                     &client->username,
+                                                     ARR_LEN(response.characters)
+                                                     );
+    
 	server_packet_auth_login_encode(&client->response, &response);
 	client_encrypt(client, &client->response);
 }
@@ -202,19 +202,19 @@ static void on_select_char(struct state *state, struct client *client)
 	struct server_packet_select_character response = { 0 };
 	struct character characters[10] = { 0 };
 	struct character *character = 0;
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling char select.\n");
-
+    
 	client_packet_select_character_decode(&request, &client->request);
 	
 	db_get_account_characters(characters, &client->username, ARR_LEN(characters));
 	character = &characters[request.index];
-
+    
 	state_add_player(state, client, character);
-
+    
 	response.name = character->name;
 	response.title = character->title;
 	response.playOK1 = 1994;
@@ -230,7 +230,7 @@ static void on_select_char(struct state *state, struct client *client)
 	response.attrs = character->attrs;
 	response.sex = character->sex;
 	response.position = character->position;
-
+    
 	server_packet_select_character_encode(&client->response, &response);
 	client_encrypt(client, &client->response);
 }
@@ -238,10 +238,10 @@ static void on_select_char(struct state *state, struct client *client)
 static void on_auto_ss_bsps(struct state *state, struct client *client)
 {
 	struct server_packet_d0 d0 = {0};
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling auto ss bsps.\n");
 	server_packet_d0_encode(&client->response, &d0);
 	client_encrypt(client, &client->response);
@@ -250,10 +250,10 @@ static void on_auto_ss_bsps(struct state *state, struct client *client)
 static void on_quest_list(struct state *state, struct client *client)
 {
 	struct server_packet_quest_list quest = {0};
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling quest list.\n");
 	server_packet_quest_list_encode(&client->response, &quest);
 	client_encrypt(client, &client->response);
@@ -262,12 +262,12 @@ static void on_quest_list(struct state *state, struct client *client)
 static void on_enter_world(struct state *state, struct client *client)
 {
 	struct server_packet_enter_world enter_world = { 0 };
-
+    
 	assert(state);
 	assert(client);
-
+    
 	printf("handling enter world.\n");
-
+    
 	enter_world.name = client->character->name;
 	enter_world.title = client->character->title;
 	enter_world.position = client->character->position;
@@ -308,7 +308,7 @@ static void on_enter_world(struct state *state, struct client *client)
 	enter_world.name_color = client->character->name_color;
 	enter_world.current_load = client->character->current_load;
 	enter_world.max_load = client->character->max_load;
-
+    
 	server_packet_enter_world_encode(&client->response, &enter_world);
 	client_encrypt(client, &client->response);
 }
@@ -317,16 +317,16 @@ static void on_show_creation_screen(struct state *state, struct client *client)
 {
 	struct server_packet_show_creation_screen response = { 0 };
 	// struct client_packet_create_character request = { 0 };
-
+    
 	assert(state);
 	assert(client);
-
+    
 	// client_packet_create_char_decode(&request, &client->request);
 	response.count = ARR_LEN(character_templates);
 	for (u32 i = 0; i < response.count; i += 1) {
 		response.templates[i] = character_templates[i];
 	}
-
+    
 	server_packet_show_creation_screen_encode(&client->response, &response);
 	client_encrypt(client, &client->response);
 }
@@ -338,40 +338,37 @@ static void on_create_character(struct state *state, struct client *client)
 	struct server_packet_auth_login response = { 0 };
 	struct character character = { 0 };
 	struct server_packet_new_char_template *template = 0;
-
+    
 	char name[32] = { 0 };
-
+    
 	assert(state);
 	assert(client);
-	TODO(
-		"When creating the character, check if the character's "
-		"name is available, if not, send "
-		"server_packet_create_character response error."
-	);
-
+	TODO("When creating the character, check if the character's "
+         "name is available, if not, send "
+         "server_packet_create_character response error.");
+    
 	client_packet_create_character_decode(&request, &client->request);
 	l2_string_to_char(name, request.name.buf, sizeof(name));
-
-	printf(
-		"create new character with name %s, "
-		"race: %d, "
-		"sex: %d, "
-		"class: %d, "
-		"hair style: %d, "
-		"hair color: %d, "
-		"face: %d",
-		name,
-		request.race_id,
-		request.sex,
-		request.class_id,
-		request.hair_style,
-		request.hair_color,
-		request.face
-	);
-
+    
+	printf("create new character with name %s, "
+           "race: %d, "
+           "sex: %d, "
+           "class: %d, "
+           "hair style: %d, "
+           "hair color: %d, "
+           "face: %d\n",
+           name,
+           request.race_id,
+           request.sex,
+           request.class_id,
+           request.hair_style,
+           request.hair_color,
+           request.face);
+    
 	template = get_character_template_by_class(request.class_id);
-
+    
 	if (template) {
+        printf("template found.\n");
 		character.name = request.name;
 		character.race_id = request.race_id;
 		character.sex = request.sex;
@@ -380,20 +377,24 @@ static void on_create_character(struct state *state, struct client *client)
 		character.hair_color_id = request.hair_color;
 		character.face = request.face;
 		character.attrs = template->stats;
+        character.hp = 40;
+        character.mp = 40;
+        character.max_hp = 40;
+        character.max_mp = 40;
+        character.level = 1;
 		// Talking island.
 		character.position.x = -83968;
 		character.position.y = 244634;
 		character.position.z = -3730;
-
+        
 		db_save_character(&client->username, &character);
 	}
-
-	response.count = (u32) db_get_account_characters(
-		response.characters,
-		&client->username,
-		ARR_LEN(response.characters)
-	);
-
+    
+	response.count = 
+    (u32) db_get_account_characters(response.characters,
+                                    &client->username,
+                                    ARR_LEN(response.characters));
+    
 	server_packet_auth_login_encode(&client->response, &response);
 	client_encrypt(client, &client->response);
 }
@@ -401,18 +402,18 @@ static void on_create_character(struct state *state, struct client *client)
 struct client *server_on_new_connection(struct state *state)
 {
 	struct client *client = 0;
-
+    
 	assert(state);
-
+    
 	client = state_get_free_client(state);
-
+    
 	if (!client) {
 		printf("no free client found.\n");
 		return 0;
 	}
-
+    
 	client_init(client);
-
+    
 	return client;
 }
 
@@ -428,53 +429,53 @@ void server_on_request(struct state *state, struct client *client)
 {
 	assert(state);
 	assert(client);
-
+    
 	printf("new chunk of request.\n");
 	client->partial = packet_size(&client->request) != client->received;
 	client->response = (struct packet) { 0 };
-
+    
 	if (client->partial) {
 		printf("found partial chunk.\n");
 		return;
 	}
-
+    
 	client->received = 0;
 	client_decrypt(client, &client->request);
 	client->conn_encrypted = 1;
-
+    
 	switch (packet_type(&client->request)) {
-	case 0x00: // Protocol version
+        case 0x00: // Protocol version
 		on_protocol_version(state, client);
 		break;
-	case 0x08: // Auth request
+        case 0x08: // Auth request
 		on_auth_request(state, client);
 		break;
-	case 0x0d: // Selected char.
+        case 0x0d: // Selected char.
 		on_select_char(state, client);
 		break;
-	case 0xd0: // Auto ss bsps.
+        case 0xd0: // Auto ss bsps.
 		on_auto_ss_bsps(state, client);
 		break;
-	case 0x63: // Quest list.
+        case 0x63: // Quest list.
 		on_quest_list(state, client);
 		break;
-	case 0x03: // Enter world.
+        case 0x03: // Enter world.
 		on_enter_world(state, client);
 		break;
-	case 0x0e: // From lobby, create new character
+        case 0x0e: // From lobby, create new character
 		on_show_creation_screen(state, client);
 		break;
-	case 0x0b: // Create new character
+        case 0x0b: // Create new character
 		on_create_character(state, client);
 		break;
-	default:
+        default:
 		if (client->character)
 			player_on_request(state, client);
 		else
 			printf("i don't recognize that packet, ignoring.\n");
 		break;
 	}
-
+    
 	client->request = (struct packet) { 0 };
 }
 
