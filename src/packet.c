@@ -4,15 +4,18 @@
 u16 packet_size(struct packet *src)
 {
 	assert(src);
-	return ((u16 *) src->buf)[0];
+	u16 result = *((u16 *) src->buf);
+	return result;
 }
 
 u16 packet_padded_size(struct packet *src)
 {
 	assert(src);
-	// +2, bytes used for packet size header.
+	// +2, two bytes used for packet size
 	// +4, checksum
-	return ((packet_size(src) + 4 + 7) & (~7)) + 2;
+	// +7 & ~7 (make the entire packet multiple of 8)
+	u16 result = ((packet_size(src) + 4 + 7) & (~7)) + 2;
+	return result;
 }
 
 u8 packet_type(struct packet *src)
@@ -34,9 +37,40 @@ void packet_set_type(struct packet *dest, u8 type)
 byte *packet_body(struct packet *src)
 {
 	assert(src);
-	// 0 & 1 = packet size
+	// 2 first bytes are packet size (u16)
 	// Body begins from byte 2
 	return src->buf + 2;
+}
+
+int packet_add_checksum(struct packet *src)
+{
+	u32 chksum = 0;
+	u16 count = packet_size(src) - 2;
+	byte *data = packet_body(src);
+	u16 i = 0;
+	for (i = 0; i < count; i += 4) {
+		u32 ecx = data[i] & 0xff;
+		ecx |= (data[i + 1] << 8) & 0xff00;
+		ecx |= (data[i + 2] << 0x10) & 0xff0000;
+		ecx |= (data[i + 3] << 0x18) & 0xff000000;
+		chksum ^= ecx;
+	}
+
+	u32 ecx = data[i] & 0xff;
+	ecx |= (data[i + 1] << 8) & 0xff00;
+	ecx |= (data[i + 2] << 0x10) & 0xff0000;
+	ecx |= (data[i + 3] << 0x18) & 0xff000000;
+
+	data[i] = chksum & 0xff;
+	data[i + 1] = (chksum >>0x08) & 0xff;
+	data[i + 2] = (chksum >>0x10) & 0xff;
+	data[i + 3] = (chksum >>0x18) & 0xff;
+
+	*((u16 *) src->buf) = packet_size(src) + 4;
+
+	int result = ecx == chksum;	
+	TODO("checksum was: %d", result);
+	return result;
 }
 
 void packet_write(struct packet *dest, void *src, size_t n)
@@ -49,9 +83,10 @@ void packet_write(struct packet *dest, void *src, size_t n)
 
 	dest_size = packet_size(dest);
 	// If the packet is empty, leave space
-	// for the packet type header.
+	// for the 2 bytes used as the length
+	// of the packet and the byte used for
+	// the type.
 	dest_size = MAX(1, dest_size);
-	// +2 skip packet size header.
 	tail = packet_body(dest) + dest_size;
 
 	for (size_t i = 0; i < n; i += 1) {

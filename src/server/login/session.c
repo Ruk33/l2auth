@@ -5,7 +5,7 @@
 #include <openssl/rsa.h>
 #include <openssl/blowfish.h>
 #include "../../include/util.h"
-#include "include/client.h"
+#include "include/session.h"
 
 #ifndef MAX_CLIENTS
 #define MAX_CLIENTS (32)
@@ -21,13 +21,13 @@ struct blowfish {
 	BF_KEY key;
 };
 
-struct client_keys {
-	struct client *client;
+struct session_keys {
+	struct session *session;
 	struct rsa rsa;
 	struct blowfish blowfish;
 };
 
-static struct client_keys keys[MAX_CLIENTS] = { 0 };
+static struct session_keys keys[MAX_CLIENTS] = {0};
 
 static void blowfish_init(struct blowfish *src)
 {
@@ -40,7 +40,7 @@ static int rsa_init(struct rsa *src)
 {
 	assert(src);
 
-	src->e   = BN_new();
+	src->e = BN_new();
 	src->key = RSA_new();
 
 	if (!src->e || !src->key || !BN_dec2bn(&src->e, "65537")) {
@@ -51,13 +51,13 @@ static int rsa_init(struct rsa *src)
 	return RSA_generate_key_ex(src->key, 1024, src->e, 0);
 }
 
-static int find_client_keys(struct client *src, struct client_keys **dest)
+static int find_client_keys(struct session *src, struct session_keys **dest)
 {
 	assert(src);
 	assert(dest);
 
 	for (size_t i = 0; i < MAX_CLIENTS; i += 1) {
-		if (keys[i].client == src) {
+		if (keys[i].session == src) {
 			*dest = &keys[i];
 			return 1;
 		}
@@ -66,21 +66,21 @@ static int find_client_keys(struct client *src, struct client_keys **dest)
 	return 0;
 }
 
-static int rsa_decrypt(struct client *client, struct packet *src)
+static int rsa_decrypt(struct session *session, struct packet *src)
 {
-	struct client_keys *key = 0;
+	struct session_keys *key = 0;
 	// Must be at least 256 as stated by openssl
 	// documentation.
 	// See https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string.html
-	char rsa_err[256] = { 0 };
+	char rsa_err[256] = {0};
 
 	int size = 0;
 	int result = 0;
 
-	assert(client);
+	assert(session);
 	assert(src);
 
-	if (!find_client_keys(client, &key)) {
+	if (!find_client_keys(session, &key)) {
 		printf("unable to find client rsa key, failing to decrypt.\n");
 		return -1;
 	}
@@ -103,7 +103,7 @@ static int rsa_decrypt(struct client *client, struct packet *src)
 	return result;
 }
 
-static int rsa_scramble_modulo(struct client_modulus *dest)
+static int rsa_scramble_modulo(struct rsa_modulus *dest)
 {
 	byte temp = 0;
 	byte *n = 0;
@@ -113,8 +113,8 @@ static int rsa_scramble_modulo(struct client_modulus *dest)
 	n = dest->buf;
 
 	for (i32 i = 0; i < 4; i++) {
-		temp = n[0x00 + i];
-		n[0x00 + i] = n[0x4d + i];
+		temp = n[i];
+		n[i] = n[0x4d + i];
 		n[0x4d + i] = temp;
 	};
 
@@ -136,18 +136,17 @@ static int rsa_scramble_modulo(struct client_modulus *dest)
 	return 1;
 }
 
-static int blowfish_encrypt(struct client *client, struct packet *src)
+static int blowfish_encrypt(struct session *session, struct packet *src)
 {
-	struct client_keys *key = 0;
+	assert(session);
+	assert(src);
+
+	struct session_keys *key = 0;
 
 	u32 tmp = 0;
 
-	assert(client);
-	assert(src);
-
-	if (!find_client_keys(client, &key)) {
+	if (!find_client_keys(session, &key))
 		return 0;
-	}
 
 	for (size_t i = 0, iters = ((packet_size(src) + 7) & (~7)); i < iters; i += 8) {
 		// Blowfish uses big endian
@@ -172,16 +171,16 @@ static int blowfish_encrypt(struct client *client, struct packet *src)
 	return 1;
 }
 
-static int blowfish_decrypt(struct client *client, struct packet *src)
+static int blowfish_decrypt(struct session *session, struct packet *src)
 {
-	struct client_keys *key = 0;
+	assert(session);
+	assert(src);
+
+	struct session_keys *key = 0;
 
 	u32 tmp = 0;
 
-	assert(client);
-	assert(src);
-
-	if (!find_client_keys(client, &key)) {
+	if (!find_client_keys(session, &key)) {
 		printf("blowfish key not found for client. unable to decrypt.\n");
 		return 0;
 	}
@@ -215,56 +214,59 @@ static int blowfish_decrypt(struct client *client, struct packet *src)
 	return 1;
 }
 
-int client_init(struct client *src)
+int session_init(struct session *src)
 {
-	struct client_keys *key = 0;
+	struct session_keys *key = 0;
 
 	assert(src);
 
 	// Find free usable keys.
 	for (size_t i = 0; i < MAX_CLIENTS; i += 1) {
-		if (!keys[i].client) {
+		if (!keys[i].session) {
 			key = &keys[i];
-			key->client = src;
+			key->session = src;
 			break;
 		}
 	}
 
 	if (!key || !rsa_init(&key->rsa)) {
-		client_free(src);
+		session_release(src);
 		return 0;
 	}
 
 	blowfish_init(&key->blowfish);
+	src->active = 1;
+
 	return 1;
 }
 
-void client_free(struct client *src)
+void session_release(struct session *src)
 {
-	struct client_keys *key = 0;
-
 	assert(src);
 
+	struct session_keys *key = 0;
+
 	if (find_client_keys(src, &key)) {
-		if (key->rsa.key) RSA_free(key->rsa.key);
-		if (key->rsa.e) BN_free(key->rsa.e);
-		*key = (struct client_keys) { 0 };
+		if (key->rsa.key)
+			RSA_free(key->rsa.key);
+		if (key->rsa.e)
+			BN_free(key->rsa.e);
+		*key = (struct session_keys) {0};
 	}
 
-	*src = (struct client) { 0 };
+	*src = (struct session) {0};
 }
 
-int client_rsa_modulus(struct client *src, struct client_modulus *dest)
+int session_rsa_modulus(struct rsa_modulus *dest, struct session *src)
 {
-	struct client_keys *key = 0;
-	const BIGNUM *n = 0;
-
 	assert(src);
 	assert(dest);
 
-	if (!find_client_keys(src, &key)) {
+	struct session_keys *key = 0;
+	const BIGNUM *n = 0;
+
+	if (!find_client_keys(src, &key))
 		return 0;
-	}
 
 	RSA_get0_key(key->rsa.key, &n, 0, 0);
 	BN_bn2bin(n, dest->buf);
@@ -272,32 +274,30 @@ int client_rsa_modulus(struct client *src, struct client_modulus *dest)
 	return rsa_scramble_modulo(dest);
 }
 
-int client_encrypt_packet(struct client *client, struct packet *src)
+int session_encrypt_packet(struct session *session, struct packet *src)
 {
-	int blowfish_succeed = 0;
-	assert(client);
+	assert(session);
 	assert(src);
 
-	blowfish_succeed = blowfish_encrypt(client, src);
+	int blowfish_succeed = blowfish_encrypt(session, src);
 
 	if (blowfish_succeed) {
+		// packet_add_checksum(src);
 		*((u16 *) src->buf) = packet_padded_size(src);
 	}
 
 	return blowfish_succeed;
 }
 
-int client_decrypt_packet(struct client *client, struct packet *src)
+int session_decrypt_packet(struct session *session, struct packet *src)
 {
-	struct client_keys *key = 0;
-	u16 src_size = 0;
-
-	int blowfish_succeed = 0;
-
-	assert(client);
+	assert(session);
 	assert(src);
 
-	if (!find_client_keys(client, &key)) {
+	struct session_keys *key = 0;
+	u16 src_size = 0;
+
+	if (!find_client_keys(session, &key)) {
 		return 0;
 	}
 
@@ -309,12 +309,9 @@ int client_decrypt_packet(struct client *client, struct packet *src)
 	}
 
 	// Copy decrypted packet body.
-	blowfish_succeed = blowfish_decrypt(client, src);
-
-	if (!blowfish_succeed) {
+	if (!blowfish_decrypt(session, src))
 		return 0;
-	}
 
 	// Copy decrypted content (ignoring byte containing packet type).
-	return rsa_decrypt(client, src) != -1;
+	return rsa_decrypt(session, src) != -1;
 }

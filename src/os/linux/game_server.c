@@ -29,6 +29,7 @@
 #include "../../server/game/l2_string.c"
 #include "../../server/game/packet_read.c"
 #include "../../server/game/player_request.c"
+#include "../../server/game/random_unix.c"
 #include "../../server/game/server_packet.c"
 #include "../../server/game/state.c"
 

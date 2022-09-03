@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "../../include/util.h"
 #include "include/types.h"
+#include "include/random.h"
 #include "include/client.h"
 
 void client_init(struct client *src)
@@ -9,8 +10,7 @@ void client_init(struct client *src)
 
 	assert(src);
 
-	TODO("dont hardcode client's id to be 1.");
-	src->id = 1;
+	src->id = random_u32();
 	src->encrypt_key = key;
 	src->decrypt_key = key;
 }
@@ -27,9 +27,12 @@ void client_encrypt(struct client *client, struct packet *src)
 	assert(client);
 	assert(src);
 
+	// packet_add_checksum(src);
+
 	src_size = packet_padded_size(src);
 	src_body = packet_body(src);
 
+	// -2, ignore first two bytes of packet size.
 	for (u16 i = 0; i < (src_size - 2); i++) {
 		temp2 = src_body[i] & 0xff;
 		src_body[i] = (byte) (temp2 ^ client->encrypt_key.buf[i & 7] ^ temp);

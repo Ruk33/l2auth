@@ -1,3 +1,13 @@
+// This is just a quick storage method intended
+// to be easy to use and for development only.
+// The way it works is, write the bytes of a
+// to-be-saved struct in a file. in order to 
+// retrieve data, just read those bytes back
+// and cast it back to the struct.
+// NOTE, this particular implementation is
+// made for unix only but should be fairly easy
+// adapting it for Windows (if that ever happens)
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>	
@@ -11,10 +21,9 @@
 #include "include/db.h"
 
 struct account {
-	// TODO: check limits for both, account name
-	// and characters in lobby.
 	struct username name;
-	struct character characters[10];
+	// Confirmed by @esti from Discord. Thanks.
+	struct character characters[7];
 	size_t character_count;
 };
 

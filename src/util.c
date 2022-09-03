@@ -49,7 +49,7 @@ u32 le32_to_be(u32 src)
 
 int ipv4_to_u32(u32 *dest, struct ipv4 *src)
 {
-	char *buf = 0;
+	i8 *buf = 0;
 	u32 tmp = 0;
 
 	assert(dest);

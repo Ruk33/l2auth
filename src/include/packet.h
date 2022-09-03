@@ -4,12 +4,7 @@
 #include "util.h"
 
 struct packet {
-	// 2 bytes for packet size
-	// 1 byte for packet type
-	// Rest of the bytes for packet content
-	// If we need more space (which I doubt) just increase it.
-	// The maximum should be 65536.
-	byte buf[8192];
+    byte buf[8192];
 };
 
 // Get the full size of the packet which includes:
@@ -36,6 +31,8 @@ void packet_set_type(struct packet *src, u8 type);
 // the packet begins (which is in the
 // type's byte)
 byte *packet_body(struct packet *src);
+
+int packet_add_checksum(struct packet *src);
 
 // Append n bytes to the end of the packet.
 void packet_write(struct packet *dest, void *src, size_t n);

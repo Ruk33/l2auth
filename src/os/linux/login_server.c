@@ -14,17 +14,15 @@
 #include <sys/socket.h>
 #include "../../include/util.h"
 #include "../../include/packet.h"
-#include "../../server/login/include/client.h"
-#include "../../server/login/include/state.h"
-#include "../../server/login/include/login.h"
+#include "../../server/login/include/session.h"
+#include "../../server/login/include/server.h"
 
 #include "../../util.c"
 #include "../../packet.c"
-#include "../../server/login/state.c"
-#include "../../server/login/client.c"
-#include "../../server/login/client_packet.c"
-#include "../../server/login/server_packet.c"
-#include "../../server/login/login.c"
+#include "../../server/login/session.c"
+#include "../../server/login/packet_decoder.c"
+#include "../../server/login/packet_encoder.c"
+#include "../../server/login/server.c"
 
 #define MAX_SOCKETS 512
 
@@ -38,7 +36,7 @@ struct unix_socket {
 	byte buf_write[1024];
 	size_t written;
 	size_t write_size;
-	struct client *client;
+	struct session *session;
 };
 
 static void print_errno(void)
@@ -224,14 +222,14 @@ static void unix_socket_accept_and_fork(int server_fd)
 	}
 
 	printf("connection accepted. sending initial packet.\n");
-	client.client = login_on_new_connection(&state);
-	if (client.client) {
-		client.client->playOK1 = rand();
-		client.client->playOK2 = rand();
+	client.session = server_create_connection(&state);
+	if (client.session) {
+		client.session->play_ok1 = rand();
+		client.session->play_ok2 = rand();
 		unix_socket_write(
 			&client,
-			client.client->response.buf,
-			packet_size(&client.client->response)
+			client.session->response.buf,
+			packet_size(&client.session->response)
 		);
 		unix_socket_flush(&client);
 	} else {
@@ -254,8 +252,8 @@ do_read:
 
 	read = recv(
 		client.fd,
-		client.client->request.packet.buf + client.client->request.received,
-		sizeof(client.client->request.packet.buf) - client.client->request.received,
+		client.session->request.packet.buf + client.session->request.received,
+		sizeof(client.session->request.packet.buf) - client.session->request.received,
 		0
 	);
 
@@ -268,23 +266,23 @@ do_read:
 		goto abort;
 	}
 
-	client.client->request.received += (size_t) read;
-	login_on_request(&state, client.client);
+	client.session->request.received += (size_t) read;
+	server_on_request(&state, client.session);
 
 	// Keep reading if the packet isn't completed.
-	if (client.client->request.is_partial) {
+	if (client.session->request.is_partial) {
 		goto do_read;
 	}
 
 	// Reset the read counter when the entire
 	// packet has been read.
-	client.client->request.received = 0;
+	client.session->request.received = 0;
 
-	if (packet_size(&client.client->response)) {
+	if (packet_size(&client.session->response)) {
 		unix_socket_write(
 			&client,
-			client.client->response.buf,
-			packet_size(&client.client->response)
+			client.session->response.buf,
+			packet_size(&client.session->response)
 		);
 		unix_socket_flush(&client);
 	}
@@ -292,12 +290,13 @@ do_read:
 	goto do_read;
 
 success:
-	login_on_disconnect(&state, client.client);
+	server_on_disconnect(&state, client.session);
 	unix_socket_close(&client);
 	exit(EXIT_SUCCESS);
 
 abort:
-	if (client.client) login_on_disconnect(&state, client.client);
+	if (client.session)
+		server_on_disconnect(&state, client.session);
 	unix_socket_close(&client);
 	exit(EXIT_FAILURE);	
 }
