@@ -24,13 +24,23 @@ typedef float seconds;
 		printf("\n"); \
 	} while (0)
 
-#define KB(x) ((x) * 1024)
+#define KB(x) \
+	(((size_t) x) * (size_t) 1024)
 
-#define ARR_LEN(arr) (sizeof(arr) / sizeof(*(arr)))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define ARR_LEN(arr) \
+	(sizeof(arr) / sizeof(*(arr)))
 
-#define CPY_STR(dest_arr, src) (cpy_str((i8 *)(dest_arr), (i8 *)(src), sizeof(dest_arr)))
+#define MIN(a, b) \
+	((a) < (b) ? (a) : (b))
+
+#define MAX(a, b) \
+	((a) > (b) ? (a) : (b))
+
+#define FOREACH(type, name, arr) \
+	for (type *name = arr; name < arr + ARR_LEN(arr); name++)
+
+#define CPY_STR(dest_arr, src) \
+	cpy_str((i8 *)(dest_arr), (i8 *)(src), sizeof(dest_arr))
 
 struct ipv4 {
 	i8 buf[sizeof("255.255.255.255")];

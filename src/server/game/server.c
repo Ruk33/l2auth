@@ -386,8 +386,9 @@ static void on_create_character(struct state *state, struct session *session)
 		character.position.x = -83968;
 		character.position.y = 244634;
 		character.position.z = -3730;
-        
+
 		save_character(&session->username, &character);
+		printf("character created and saved.\n");
 	}
     
 	response.count = (u32) get_account_characters(
@@ -395,6 +396,7 @@ static void on_create_character(struct state *state, struct session *session)
 		&session->username,
 		ARR_LEN(response.characters)
 	);
+	printf("%d characters found from account %s.\n", response.count, (char *) session->username.buf);
     
 	encode_auth_login(&session->response, &response);
 	encrypt_packet(session, &session->response);
@@ -406,10 +408,10 @@ struct session *server_on_new_connection(struct state *state)
     
 	// Find free session.
 	struct session *session = 0;
-	for (size_t i = 0; i < ARR_LEN(state->sessions); i += 1) {
-		if (state->sessions[i].id)
+	FOREACH(struct session, x, state->sessions) {
+		if (x->id)
 			continue;
-		session = state->sessions + i;
+		session = x;
 		break;
 	}
     

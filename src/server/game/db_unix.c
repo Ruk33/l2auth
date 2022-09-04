@@ -104,26 +104,26 @@ static void close_conn(struct conn *src)
 
 size_t get_account_characters(struct character *dest, struct username *username, size_t max)
 {
-	struct conn conn = { 0 };
-	int account_exists = 0;
-	size_t found = 0;
-
 	assert(dest);
 	assert(username);
+
+	struct conn conn = {0};
+	int account_exists = 0;
+	size_t found = 0;
 
 	if (!open_conn(&conn))
 		return 0;
 
-	for (size_t i = 0; i < conn.db->account_count; i += 1) {
-		if (strncmp((char *) username->buf, (char *) conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
+	FOREACH(struct account, account, conn.db->accounts) {
+		if (strncmp((char *) username->buf, (char *) account->name.buf, sizeof(username->buf)) != 0)
 			continue;
-		
+
 		account_exists = 1;
-		found = conn.db->accounts[i].character_count;
+		found = account->character_count;
 
 		for (size_t n = 0; n < max; n += 1)
-			dest[n] = conn.db->accounts[i].characters[n];
-		
+			dest[n] = account->characters[n];
+
 		break;
 	}
 
@@ -138,20 +138,19 @@ size_t get_account_characters(struct character *dest, struct username *username,
 
 void save_character(struct username *username, struct character *src)
 {
-	struct conn conn = { 0 };
-
 	assert(username);
 	assert(src);
 
+	struct conn conn = {0};
 	if (!open_conn(&conn))
 		return;
 
-	for (size_t i = 0; i < conn.db->account_count; i += 1) {
-		if (strncmp((char *) username->buf, (char *) conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
+	FOREACH(struct account, account, conn.db->accounts) {
+		if (strncmp((char *) username->buf, (char *) account->name.buf, sizeof(username->buf)) != 0)
 			continue;
 
-		conn.db->accounts[i].characters[conn.db->accounts[i].character_count] = *src;
-		conn.db->accounts[i].character_count += 1;
+		account->characters[account->character_count] = *src;
+		account->character_count += 1;
 		break;
 	}
 
