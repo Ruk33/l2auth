@@ -3,8 +3,8 @@
 
 #include "types.h"
 
-void character_start_movement(struct character *src, struct character_position *position);
+void move_character_towards(struct character *src, struct v3 position);
 
-void character_tick(struct character *src, seconds delta);
+void update_character(struct state *state, struct character *src, seconds delta);
 
 #endif

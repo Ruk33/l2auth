@@ -2,10 +2,12 @@
 #include "../../include/util.h"
 #include "../../include/packet.h"
 #include "include/l2_string.h"
-#include "include/server_packet.h"
+#include "include/packet_encoder.h"
 
-void server_packet_protocol_version_encode(struct packet *dest, struct server_packet_protocol_version *src)
+void encode_protocol_version(struct packet *dest, struct protocol_version *src)
 {
+	assert(dest);
+	assert(src);
 	byte content[] = {
 		0x01,
 		// crypt key
@@ -18,14 +20,12 @@ void server_packet_protocol_version_encode(struct packet *dest, struct server_pa
 		0x54,
 		0x87,
 	};
-	assert(dest);
-	assert(src);
 	packet_set_type(dest, 0x00);
 	packet_write(dest, content, sizeof(content));
 	packet_write_u16(dest, 0);
 }
 
-void server_packet_d0_encode(struct packet *dest, struct server_packet_d0 *src)
+void encode_d0(struct packet *dest, struct d0 *src)
 {
 	assert(dest);
 	assert(src);
@@ -34,7 +34,7 @@ void server_packet_d0_encode(struct packet *dest, struct server_packet_d0 *src)
 	packet_write_u32(dest, src->manor_size);
 }
 
-void server_packet_select_character_encode(struct packet *dest, struct server_packet_select_character *src)
+void encode_select_character(struct packet *dest, struct select_character *src)
 {
 	assert(dest);
 	assert(src);
@@ -42,7 +42,7 @@ void server_packet_select_character_encode(struct packet *dest, struct server_pa
 	packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
 	packet_write_u32(dest, src->id);
 	packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
-	packet_write_i32(dest, src->playOK1);
+	packet_write_u32(dest, src->play_ok1);
 	packet_write_u32(dest, src->clan_id);
 	packet_write_u32(dest, 0);
 	packet_write_u32(dest, src->sex);
@@ -72,7 +72,7 @@ void server_packet_select_character_encode(struct packet *dest, struct server_pa
 		packet_write_u32(dest, 0);
 }
 
-void server_packet_quest_list_encode(struct packet *dest, struct server_packet_quest_list *src)
+void encode_quest_list(struct packet *dest, struct quest_list *src)
 {
 	assert(dest);
 	assert(src);
@@ -80,7 +80,7 @@ void server_packet_quest_list_encode(struct packet *dest, struct server_packet_q
 	packet_write(dest, src->empty, sizeof(src->empty));
 }
 
-void server_packet_validate_position_encode(struct packet *dest, struct server_packet_validate_position *src)
+void encode_validate_position(struct packet *dest, struct validate_position *src)
 {
 	assert(dest);
 	assert(src);
@@ -89,40 +89,40 @@ void server_packet_validate_position_encode(struct packet *dest, struct server_p
 	packet_write_i32(dest, src->position.x);
 	packet_write_i32(dest, src->position.y);
 	packet_write_i32(dest, src->position.z);
-	packet_write_i32(dest, src->position.heading);
+	packet_write_i32(dest, src->heading);
 }
 
-void server_packet_move_encode(struct packet *dest, struct server_packet_move *src)
+void encode_move(struct packet *dest, struct move *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x01);
 	packet_write_u32(dest, src->id);
-	packet_write_i32(dest, src->new_pos.x);
-	packet_write_i32(dest, src->new_pos.y);
-	packet_write_i32(dest, src->new_pos.z);
-	packet_write_i32(dest, src->prev_pos.x);
-	packet_write_i32(dest, src->prev_pos.y);
-	packet_write_i32(dest, src->prev_pos.z);
+	packet_write_i32(dest, src->new_position.x);
+	packet_write_i32(dest, src->new_position.y);
+	packet_write_i32(dest, src->new_position.z);
+	packet_write_i32(dest, src->prev_position.x);
+	packet_write_i32(dest, src->prev_position.y);
+	packet_write_i32(dest, src->prev_position.z);
 }
 
-void server_packet_restart_encode(struct packet *dest, struct server_packet_restart *src)
+void encode_restart(struct packet *dest, struct restart *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x5f);
-	packet_write_i32(dest, src->response);
+	packet_write_u32(dest, src->response);
 }
 
-void server_packet_revive_encode(struct packet *dest, struct server_packet_revive *src)
+void encode_revive(struct packet *dest, struct revive *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x07);
-	packet_write_i32(dest, src->obj_id);
+	packet_write_u32(dest, src->obj_id);
 }
 
-void server_packet_select_target_encode(struct packet *dest, struct server_packet_select_target *src)
+void encode_select_target(struct packet *dest, struct select_target *src)
 {
 	assert(dest);
 	assert(src);
@@ -131,32 +131,30 @@ void server_packet_select_target_encode(struct packet *dest, struct server_packe
 	packet_write_u32(dest, src->color);
 }
 
-void server_packet_auth_login_encode(struct packet *dest, struct server_packet_auth_login *src)
+void encode_auth_login(struct packet *dest, struct auth_login *src)
 {
-	struct character *character = 0;
-
 	assert(dest);
 	assert(src);
-	
+
 	packet_set_type(dest, 0x13);
 	packet_write_u32(dest, src->count);
 
 	for (u32 i = 0; i < src->count; i += 1) {
-		character = &src->characters[i];
+		struct character *character = &src->characters[i];
 
 		packet_write(dest, character->name.buf, l2_string_size(character->name.buf));
 		packet_write_u32(dest, character->id);
 		packet_write(dest, character->name.buf, l2_string_size(character->name.buf));
-		packet_write_i32(dest, character->playOK1);
+		packet_write_u32(dest, character->play_ok1);
 		packet_write_u32(dest, character->clan_id);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, character->sex);
 		packet_write_u32(dest, character->race_id);
 		packet_write_u32(dest, character->class_id);
 		packet_write_u32(dest, character->active);
-		packet_write_u32(dest, character->position.x);
-		packet_write_u32(dest, character->position.y);
-		packet_write_u32(dest, character->position.z);
+		packet_write_i32(dest, character->position.x);
+		packet_write_i32(dest, character->position.y);
+		packet_write_i32(dest, character->position.z);
 		packet_write_d(dest, character->hp);
 		packet_write_d(dest, character->mp);
 		packet_write_u32(dest, character->sp);
@@ -191,26 +189,26 @@ void server_packet_auth_login_encode(struct packet *dest, struct server_packet_a
 		packet_write_u32(dest, character->lr_hand_obj_id);
 		packet_write_u32(dest, character->hair_obj_id);
 
-		packet_write_u32(dest, character->under);
-		packet_write_u32(dest, character->r_ear);
-		packet_write_u32(dest, character->l_ear);
-		packet_write_u32(dest, character->neck);
-		packet_write_u32(dest, character->r_finger);
-		packet_write_u32(dest, character->l_finger);
-		packet_write_u32(dest, character->head);
-		packet_write_u32(dest, character->r_hand);
-		packet_write_u32(dest, character->l_hand);
-		packet_write_u32(dest, character->gloves);
-		packet_write_u32(dest, character->chest);
-		packet_write_u32(dest, character->legs);
-		packet_write_u32(dest, character->feet);
-		packet_write_u32(dest, character->back);
-		packet_write_u32(dest, character->lr_hand);
-		packet_write_u32(dest, character->hair);
+		packet_write_u32(dest, character->under_id);
+		packet_write_u32(dest, character->r_ear_id);
+		packet_write_u32(dest, character->l_ear_id);
+		packet_write_u32(dest, character->neck_id);
+		packet_write_u32(dest, character->r_finger_id);
+		packet_write_u32(dest, character->l_finger_id);
+		packet_write_u32(dest, character->head_id);
+		packet_write_u32(dest, character->r_hand_id);
+		packet_write_u32(dest, character->l_hand_id);
+		packet_write_u32(dest, character->gloves_id);
+		packet_write_u32(dest, character->chest_id);
+		packet_write_u32(dest, character->legs_id);
+		packet_write_u32(dest, character->feet_id);
+		packet_write_u32(dest, character->back_id);
+		packet_write_u32(dest, character->lr_hand_id);
+		packet_write_u32(dest, character->hair_id);
 
 		packet_write_u32(dest, character->hair_style_id);
 		packet_write_u32(dest, character->hair_color_id);
-		packet_write_u32(dest, character->face);
+		packet_write_u32(dest, character->face_id);
 		packet_write_d(dest, character->max_hp);
 		packet_write_d(dest, character->max_mp);
 		packet_write_u32(dest, character->delete_days);
@@ -220,7 +218,7 @@ void server_packet_auth_login_encode(struct packet *dest, struct server_packet_a
 	}
 }
 
-void server_packet_char_info_encode(struct packet *dest, struct server_packet_char_info *src)
+void encode_character_info(struct packet *dest, struct character_info *src)
 {
 	assert(dest);
 	assert(src);
@@ -228,7 +226,7 @@ void server_packet_char_info_encode(struct packet *dest, struct server_packet_ch
 	packet_write_i32(dest, src->position.x);
 	packet_write_i32(dest, src->position.y);
 	packet_write_i32(dest, src->position.z);
-	packet_write_i32(dest, src->position.heading);
+	packet_write_i32(dest, src->heading);
 	packet_write_u32(dest, src->id);
 	packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
 	packet_write_u32(dest, src->race_id);
@@ -256,9 +254,9 @@ void server_packet_char_info_encode(struct packet *dest, struct server_packet_ch
 	packet_write_d(dest, src->attack_speed_multiplier);
 	packet_write_d(dest, src->collision_radius);
 	packet_write_d(dest, src->collision_height);
-	packet_write_u32(dest, src->hair_style);
-	packet_write_u32(dest, src->hair_color);
-	packet_write_u32(dest, src->face);
+	packet_write_u32(dest, src->hair_style_id);
+	packet_write_u32(dest, src->hair_color_id);
+	packet_write_u32(dest, src->face_id);
 	packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
 	packet_write_u32(dest, src->clan_id);
 	packet_write_u32(dest, src->clan_crest_id);
@@ -292,38 +290,38 @@ void server_packet_char_info_encode(struct packet *dest, struct server_packet_ch
 	packet_write_u32(dest, src->name_color);
 }
 
-void server_packet_show_creation_screen_encode(struct packet *dest, struct server_packet_show_creation_screen *src)
+void encode_show_creation_screen(struct packet *dest, struct show_creation_screen *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x17);
 	packet_write_u32(dest, src->count);
 	for (u32 i = 0; i < src->count; i += 1) {
-		packet_write_u32(dest, src->templates[i].race);
-		packet_write_u32(dest, src->templates[i]._class);
+		packet_write_u32(dest, src->templates[i].race_id);
+		packet_write_u32(dest, src->templates[i].class_id);
 		packet_write_u32(dest, 0);
 
-		packet_write_u32(dest, src->templates[i].stats.str);
+		packet_write_u32(dest, src->templates[i].attrs.str);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].stats.dex);
+		packet_write_u32(dest, src->templates[i].attrs.dex);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].stats.con);
+		packet_write_u32(dest, src->templates[i].attrs.con);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].stats._int);
+		packet_write_u32(dest, src->templates[i].attrs._int);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].stats.wit);
+		packet_write_u32(dest, src->templates[i].attrs.wit);
 		packet_write_u32(dest, 0);
 		packet_write_u32(dest, 0);
-		packet_write_u32(dest, src->templates[i].stats.men);
+		packet_write_u32(dest, src->templates[i].attrs.men);
 		packet_write_u32(dest, 0);
 	}
 }
 
-void server_packet_create_character_encode(struct packet *dest, struct server_packet_create_character *src)
+void encode_create_character(struct packet *dest, struct create_character *src)
 {
 	assert(dest);
 	assert(src);
@@ -331,7 +329,7 @@ void server_packet_create_character_encode(struct packet *dest, struct server_pa
 	packet_write_u32(dest, src->response);
 }
 
-void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc_info *src)
+void encode_npc_info(struct packet *dest, struct npc_info *src)
 {
 	assert(dest);
 	assert(src);
@@ -342,7 +340,7 @@ void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc
 	packet_write_i32(dest, src->position.x);
 	packet_write_i32(dest, src->position.y);
 	packet_write_i32(dest, src->position.z);
-	packet_write_i32(dest, src->position.heading);
+	packet_write_i32(dest, src->heading);
 	packet_write_u32(dest, 0);
 	packet_write_u32(dest, src->m_attack_speed);
 	packet_write_u32(dest, src->p_attack_speed);
@@ -357,9 +355,9 @@ void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc
 	packet_write_d(dest, src->magic_multiplier);
 	packet_write_d(dest, (double) src->p_attack_speed / 277.478340719);
 	packet_write_d(dest, src->collision_radius);
-	packet_write_u32(dest, src->r_hand);
+	packet_write_u32(dest, src->r_hand_id);
 	packet_write_u32(dest, 0);
-	packet_write_u32(dest, src->l_hand);
+	packet_write_u32(dest, src->l_hand_id);
 	packet_write_u8(dest, src->name_above_char);
 	packet_write_u8(dest, src->running);
 	packet_write_u8(dest, src->in_combat);
@@ -382,7 +380,7 @@ void server_packet_npc_info_encode(struct packet *dest, struct server_packet_npc
 	packet_write_u32(dest, 0);
 }
 
-void server_packet_status_encode(struct packet *dest, struct server_packet_status *src)
+void encode_status_list(struct packet *dest, struct status_list *src)
 {
 	assert(dest);
 	assert(src);
@@ -390,12 +388,12 @@ void server_packet_status_encode(struct packet *dest, struct server_packet_statu
 	packet_write_u32(dest, src->obj_id);
 	packet_write_u32(dest, src->count);
 	for (u32 i = 0; i < src->count; i += 1) {
-		packet_write_u32(dest, src->attributes[i].type);
-		packet_write_u32(dest, src->attributes[i].value);
+		packet_write_u32(dest, src->statuses[i].type);
+		packet_write_u32(dest, src->statuses[i].value);
 	}
 }
 
-void server_packet_enter_world_encode(struct packet *dest, struct server_packet_enter_world *src)
+void encode_enter_world(struct packet *dest, struct enter_world *src)
 {
 	assert(dest);
 	assert(src);
@@ -403,7 +401,7 @@ void server_packet_enter_world_encode(struct packet *dest, struct server_packet_
 	packet_write_i32(dest, src->position.x);
 	packet_write_i32(dest, src->position.y);
 	packet_write_i32(dest, src->position.z);
-	packet_write_i32(dest, src->position.heading);
+	packet_write_i32(dest, src->heading);
 	packet_write_u32(dest, src->id);
 	packet_write(dest, src->name.buf, l2_string_size(src->name.buf));
 	packet_write_u32(dest, src->race_id);
@@ -425,38 +423,38 @@ void server_packet_enter_world_encode(struct packet *dest, struct server_packet_
 	packet_write_u32(dest, src->current_load);
 	packet_write_u32(dest, src->max_load);
 	packet_write_u32(dest, 0x28);
-	packet_write_u32(dest, src->paperdoll_under);
-	packet_write_u32(dest, src->paperdoll_r_ear);
-	packet_write_u32(dest, src->paperdoll_l_ear);
-	packet_write_u32(dest, src->paperdoll_neck);
-	packet_write_u32(dest, src->paperdoll_r_finger);
-	packet_write_u32(dest, src->paperdoll_l_finger);
-	packet_write_u32(dest, src->paperdoll_head);
-	packet_write_u32(dest, src->paperdoll_r_hand);
-	packet_write_u32(dest, src->paperdoll_l_hand);
-	packet_write_u32(dest, src->paperdoll_gloves);
-	packet_write_u32(dest, src->paperdoll_chest);
-	packet_write_u32(dest, src->paperdoll_legs);
-	packet_write_u32(dest, src->paperdoll_feet);
-	packet_write_u32(dest, src->paperdoll_back);
-	packet_write_u32(dest, src->paperdoll_lr_hand);
-	packet_write_u32(dest, src->paperdoll_hair);
-	packet_write_u32(dest, src->paperdoll_under);
-	packet_write_u32(dest, src->paperdoll_r_ear);
-	packet_write_u32(dest, src->paperdoll_l_ear);
-	packet_write_u32(dest, src->paperdoll_neck);
-	packet_write_u32(dest, src->paperdoll_r_finger);
-	packet_write_u32(dest, src->paperdoll_l_finger);
-	packet_write_u32(dest, src->paperdoll_head);
-	packet_write_u32(dest, src->paperdoll_r_hand);
-	packet_write_u32(dest, src->paperdoll_l_hand);
-	packet_write_u32(dest, src->paperdoll_gloves);
-	packet_write_u32(dest, src->paperdoll_chest);
-	packet_write_u32(dest, src->paperdoll_legs);
-	packet_write_u32(dest, src->paperdoll_feet);
-	packet_write_u32(dest, src->paperdoll_back);
-	packet_write_u32(dest, src->paperdoll_lr_hand);
-	packet_write_u32(dest, src->paperdoll_hair);
+	packet_write_u32(dest, src->paperdoll_under_id);
+	packet_write_u32(dest, src->paperdoll_r_ear_id);
+	packet_write_u32(dest, src->paperdoll_l_ear_id);
+	packet_write_u32(dest, src->paperdoll_neck_id);
+	packet_write_u32(dest, src->paperdoll_r_finger_id);
+	packet_write_u32(dest, src->paperdoll_l_finger_id);
+	packet_write_u32(dest, src->paperdoll_head_id);
+	packet_write_u32(dest, src->paperdoll_r_hand_id);
+	packet_write_u32(dest, src->paperdoll_l_hand_id);
+	packet_write_u32(dest, src->paperdoll_gloves_id);
+	packet_write_u32(dest, src->paperdoll_chest_id);
+	packet_write_u32(dest, src->paperdoll_legs_id);
+	packet_write_u32(dest, src->paperdoll_feet_id);
+	packet_write_u32(dest, src->paperdoll_back_id);
+	packet_write_u32(dest, src->paperdoll_lr_hand_id);
+	packet_write_u32(dest, src->paperdoll_hair_id);
+	packet_write_u32(dest, src->paperdoll_under_id);
+	packet_write_u32(dest, src->paperdoll_r_ear_id);
+	packet_write_u32(dest, src->paperdoll_l_ear_id);
+	packet_write_u32(dest, src->paperdoll_neck_id);
+	packet_write_u32(dest, src->paperdoll_r_finger_id);
+	packet_write_u32(dest, src->paperdoll_l_finger_id);
+	packet_write_u32(dest, src->paperdoll_head_id);
+	packet_write_u32(dest, src->paperdoll_r_hand_id);
+	packet_write_u32(dest, src->paperdoll_l_hand_id);
+	packet_write_u32(dest, src->paperdoll_gloves_id);
+	packet_write_u32(dest, src->paperdoll_chest_id);
+	packet_write_u32(dest, src->paperdoll_legs_id);
+	packet_write_u32(dest, src->paperdoll_feet_id);
+	packet_write_u32(dest, src->paperdoll_back_id);
+	packet_write_u32(dest, src->paperdoll_lr_hand_id);
+	packet_write_u32(dest, src->paperdoll_hair_id);
 	packet_write_u32(dest, src->p_attack);
 	packet_write_u32(dest, src->p_attack_speed);
 	packet_write_u32(dest, src->p_def);
@@ -483,7 +481,7 @@ void server_packet_enter_world_encode(struct packet *dest, struct server_packet_
 	packet_write_d(dest, src->collision_height);
 	packet_write_u32(dest, src->hair_style_id);
 	packet_write_u32(dest, src->hair_color_id);
-	packet_write_u32(dest, src->face);
+	packet_write_u32(dest, src->face_id);
 	packet_write_i32(dest, src->access_level);
 	packet_write(dest, src->title.buf, l2_string_size(src->title.buf));
 	packet_write_u32(dest, src->clan_id);
@@ -523,7 +521,7 @@ void server_packet_enter_world_encode(struct packet *dest, struct server_packet_
 	packet_write_u32(dest, src->name_color);
 }
 
-void server_packet_say_encode(struct packet *dest, struct server_packet_say *src)
+void encode_say(struct packet *dest, struct say *src)
 {
 	assert(dest);
 	assert(src);
@@ -534,7 +532,7 @@ void server_packet_say_encode(struct packet *dest, struct server_packet_say *src
 	packet_write(dest, src->message.buf, l2_string_size(src->message.buf));
 }
 
-void server_packet_attack_encode(struct packet *dest, struct server_packet_attack *src)
+void encode_attack(struct packet *dest, struct attack *src)
 {
 	assert(dest);
 	assert(src);
@@ -555,7 +553,7 @@ void server_packet_attack_encode(struct packet *dest, struct server_packet_attac
 	}
 }
 
-void server_packet_stop_auto_attack_encode(struct packet *dest, struct server_packet_stop_auto_attack *src)
+void encode_stop_auto_attack(struct packet *dest, struct stop_auto_attack *src)
 {
 	assert(dest);
 	assert(src);
@@ -563,18 +561,18 @@ void server_packet_stop_auto_attack_encode(struct packet *dest, struct server_pa
 	packet_write_u32(dest, src->target_id);
 }
 
-void server_packet_deselect_target_encode(struct packet *dest, struct server_packet_deselect_target *src)
+void encode_deselect_target(struct packet *dest, struct deselect_target *src)
 {
 	assert(dest);
 	assert(src);
 	packet_set_type(dest, 0x2a);
 	packet_write_u32(dest, src->target_id);
-	packet_write_i32(dest, src->target_pos.x);
-	packet_write_i32(dest, src->target_pos.y);
-	packet_write_i32(dest, src->target_pos.z);
+	packet_write_i32(dest, src->target_position.x);
+	packet_write_i32(dest, src->target_position.y);
+	packet_write_i32(dest, src->target_position.z);
 }
 
-void server_packet_die_encode(struct packet *dest, struct server_packet_die *src)
+void encode_die(struct packet *dest, struct die *src)
 {
 	assert(dest);
 	assert(src);
@@ -588,7 +586,7 @@ void server_packet_die_encode(struct packet *dest, struct server_packet_die *src
 	packet_write_u32(dest, src->to_fixed);
 }
 
-void server_packet_npc_html_message_encode(struct packet *dest, struct server_packet_npc_html_message *src)
+void encode_npc_html_message(struct packet *dest, struct npc_html_message *src)
 {
 	assert(dest);
 	assert(src);
@@ -597,7 +595,7 @@ void server_packet_npc_html_message_encode(struct packet *dest, struct server_pa
 	packet_write(dest, src->message.buf, l2_string_size(src->message.buf));
 }
 
-void server_packet_change_move_type_encode(struct packet *dest, struct server_packet_change_move_type *src)
+void encode_change_move_type(struct packet *dest, struct change_move_type *src)
 {
 	assert(dest);
 	assert(src);
@@ -607,7 +605,7 @@ void server_packet_change_move_type_encode(struct packet *dest, struct server_pa
 	packet_write_u32(dest, 0);
 }
 
-void server_packet_skill_list_encode(struct packet *dest, struct server_packet_skill_list *src)
+void encode_skill_list(struct packet *dest, struct skill_list *src)
 {
 	assert(dest);
 	assert(src);
@@ -620,7 +618,7 @@ void server_packet_skill_list_encode(struct packet *dest, struct server_packet_s
 	}
 }
 
-void server_packet_use_skill_encode(struct packet *dest, struct server_packet_use_skill *src)
+void encode_use_skill(struct packet *dest, struct use_skill *src)
 {
 	assert(dest);
 	assert(src);

@@ -4,33 +4,30 @@
 #include "include/types.h"
 #include "include/character.h"
 
-static float distance_between(struct character_position *a, struct character_position *b)
+static float distance_between(struct v3 a, struct v3 b)
 {
 	float dx = 0;
 	float dy = 0;
 	float dz = 0;
 
-	assert(a);
-	assert(b);
+	dx = a.x - b.x;
+	dy = a.y - b.y;
+	dz = a.z - b.z;
 
-	dx = a->x - b->x;
-	dy = a->y - b->y;
-	dz = a->z - b->z;
-	
 	return sqrtf((dx * dx) + (dy * dy) + (dz * dz));
 }
 
 static void periodic_position_update(struct character *src, seconds delta)
 {
-	struct character_position velocity = { 0 };
-	float distance = 0;
-
 	assert(src);
+
+	struct v3 velocity = {0};
+	float distance = 0;
 
 	TODO("remove hardcoded run speed.");
 	src->run_speed = 300;
 
-	distance = distance_between(&src->position, &src->moving_to);
+	distance = distance_between(src->position, src->moving_to);
 
 	// If we are close enough, finish the movement.
 	if (distance < 10) {
@@ -61,16 +58,16 @@ static void periodic_position_update(struct character *src, seconds delta)
 	printf("new  position: %d, %d, %d\n", src->position.x, src->position.y, src->position.z);
 }
 
-void character_start_movement(struct character *src, struct character_position *position)
+void character_move_towards(struct character *src, struct v3 position)
 {
 	assert(src);
-	assert(position);
 	src->state = MOVING;
-	src->moving_to = *position;
+	src->moving_to = position;
 }
 
-void character_tick(struct character *src, seconds delta)
+void update_character(struct state *state, struct character *src, seconds delta)
 {
+	assert(state);
 	assert(src);
 
 	switch (src->state) {

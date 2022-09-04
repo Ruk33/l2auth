@@ -102,7 +102,7 @@ static void close_conn(struct conn *src)
 // 	return 0;
 // }
 
-size_t db_get_account_characters(struct character *dest, struct username *username, size_t max)
+size_t get_account_characters(struct character *dest, struct username *username, size_t max)
 {
 	struct conn conn = { 0 };
 	int account_exists = 0;
@@ -115,7 +115,7 @@ size_t db_get_account_characters(struct character *dest, struct username *userna
 		return 0;
 
 	for (size_t i = 0; i < conn.db->account_count; i += 1) {
-		if (strncmp(username->buf, conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
+		if (strncmp((char *) username->buf, (char *) conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
 			continue;
 		
 		account_exists = 1;
@@ -136,7 +136,7 @@ size_t db_get_account_characters(struct character *dest, struct username *userna
 	return found;
 }
 
-void db_save_character(struct username *username, struct character *src)
+void save_character(struct username *username, struct character *src)
 {
 	struct conn conn = { 0 };
 
@@ -147,7 +147,7 @@ void db_save_character(struct username *username, struct character *src)
 		return;
 
 	for (size_t i = 0; i < conn.db->account_count; i += 1) {
-		if (strncmp(username->buf, conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
+		if (strncmp((char *) username->buf, (char *) conn.db->accounts[i].name.buf, sizeof(username->buf)) != 0)
 			continue;
 
 		conn.db->accounts[i].characters[conn.db->accounts[i].character_count] = *src;

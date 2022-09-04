@@ -5,7 +5,8 @@
 
 typedef i16 l2_string;
 
-#define L2_STRING_FROM_CHAR(dest, src) (l2_string_from_char((l2_string *)(dest), (i8 *)(src), sizeof(dest)))
+#define L2_STRING_FROM_CHAR(dest, src) \
+(l2_string_from_char((l2_string *)(dest), (i8 *)(src), sizeof(dest)))
 
 // Copy up to n bytes or null terminator from src to dest.
 void l2_string_from_char(l2_string *dest, i8 *src, size_t n);

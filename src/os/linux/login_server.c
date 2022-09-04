@@ -24,7 +24,7 @@
 #include "../../server/login/packet_encoder.c"
 #include "../../server/login/server.c"
 
-#define MAX_SOCKETS 512
+#define MAX_SOCKETS 32
 
 struct unix_socket {
 	int fd;
@@ -320,9 +320,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	while (1) {
+	while (1)
 		unix_socket_accept_and_fork(server_fd);
-	}
 
 	return 0;
 }

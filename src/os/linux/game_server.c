@@ -12,26 +12,25 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+
 #include "../../include/util.h"
 #include "../../include/packet.h"
 #include "../../server/game/include/l2_string.h"
-#include "../../server/game/include/client.h"
-#include "../../server/game/include/state.h"
+#include "../../server/game/include/session.h"
 #include "../../server/game/include/server.h"
 
 #include "../../packet.c"
 #include "../../util.c"
 #include "../../server/game/character.c"
-#include "../../server/game/client_packet.c"
-#include "../../server/game/client.c"
+#include "../../server/game/packet_decoder.c"
+#include "../../server/game/session.c"
 #include "../../server/game/db_unix.c"
-#include "../../server/game/server.c"
 #include "../../server/game/l2_string.c"
-#include "../../server/game/packet_read.c"
-#include "../../server/game/player_request.c"
+#include "../../server/game/packet_reader.c"
+#include "../../server/game/player.c"
 #include "../../server/game/random_unix.c"
-#include "../../server/game/server_packet.c"
-#include "../../server/game/state.c"
+#include "../../server/game/packet_encoder.c"
+#include "../../server/game/server.c"
 
 #ifndef MAX_SOCKETS
 #define MAX_SOCKETS 512
@@ -42,7 +41,7 @@ struct unix_socket {
 	byte buf_write[KB(4)];
 	size_t sent;
 	size_t write_size;
-	struct client *client;
+	struct session *session;
 };
 
 static void unix_socket_set_non_block(int fd)
@@ -184,8 +183,8 @@ static void on_new_connection(struct unix_socket *dest, struct state *state, int
 		return;
 	}
 
-	dest->client = server_on_new_connection(state);
-	if (!dest->client) {
+	dest->session = server_on_new_connection(state);
+	if (!dest->session) {
 		printf("client couldn't initialize. closing the connection.\n");
 		unix_socket_close(dest);
 		return;
@@ -204,38 +203,37 @@ static void on_read(struct state *state, struct unix_socket *client)
 	while (tmp != -1) {
 		tmp = recv(
 			client->fd,
-			client->client->request.buf + client->client->received,
-			sizeof(client->client->request.buf) - client->client->received,
+			client->session->request.buf + client->session->received,
+			sizeof(client->session->request.buf) - client->session->received,
 			0
 		);
-		client->client->received += tmp > 0 ? ((size_t) tmp) : 0;
+		client->session->received += tmp > 0 ? ((size_t) tmp) : 0;
 	}
 
 	// Connection is closed.
-	if (client->client->received == 0) {
+	if (client->session->received == 0) {
 		printf("closing connection as requested by client.\n");
-		server_on_disconnect(state, client->client);
+		server_on_disconnect(state, client->session);
 		unix_socket_close(client);
 		return;
 	}
 
 	if (errno != EAGAIN) {
 		printf("failed to read request, closing connection.\n");
-		server_on_disconnect(state, client->client);
+		server_on_disconnect(state, client->session);
 		unix_socket_close(client);
 		return;
 	}
 
-	server_on_request(state, client->client);
+	server_on_request(state, client->session);
 
-	if (!packet_size(&client->client->response)) {
+	if (!packet_size(&client->session->response))
 		return;
-	}
 
 	unix_socket_write(
 		client,
-		client->client->response.buf,
-		packet_size(&client->client->response)
+		client->session->response.buf,
+		packet_size(&client->session->response)
 	);
 	unix_socket_flush(client);
 }
@@ -327,15 +325,15 @@ static int unix_socket_listen(int server_fd)
 				// Handle queue responses.
 				for (size_t n = 0; n < client_count; n += 1) {
 					// Ignore clients that are not playing.
-					if (!clients[n].client->character)
+					if (!clients[n].session->character)
 						continue;
-					for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1)
-						unix_socket_write(
-							&clients[n],
-							clients[n].client->response_queue[z].buf,
-							packet_size(&clients[n].client->response_queue[z])
-						);
-					clients[n].client->response_queue_count = 0;
+					// for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1)
+					// 	unix_socket_write(
+					// 		&clients[n],
+					// 		clients[n].session->response_queue[z].buf,
+					// 		packet_size(&clients[n].session->response_queue[z])
+					// 	);
+					// clients[n].session->response_queue_count = 0;
 					unix_socket_flush(&clients[n]);
 				}
 
