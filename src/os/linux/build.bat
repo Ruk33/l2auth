@@ -1,2 +1,3 @@
 @echo off
+echo Building...
 wsl bash build.sh

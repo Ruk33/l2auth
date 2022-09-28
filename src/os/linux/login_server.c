@@ -301,18 +301,13 @@ abort:
 	exit(EXIT_FAILURE);	
 }
  
-int main(int argc, char **argv)
+int main(void)
 {
 	int server_fd = 0;
 	u16 port = 2106;
 
 	// Prevent zombie process from fork.
 	signal(SIGCHLD, SIG_IGN);
-
-	// Suppress unused warning.
-	argc = argc;
-	argv = argv;
-
 	srand(time(0));
 
 	if (!unix_socket_init(&server_fd, port, MAX_SOCKETS)) {
@@ -320,6 +315,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	printf("login server started. listening for connections.\n");
 	while (1)
 		unix_socket_accept_and_fork(server_fd);
 

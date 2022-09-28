@@ -298,7 +298,6 @@ static int unix_socket_listen(int server_fd)
 		printf("unable to add server socket to epoll. server can't start.\n");
 		return 0;
 	}
-	printf("listening for new connections.\n");
 
 	while (1) {
 		ev_count = epoll_wait(epoll_fd, events, ARR_LEN(events), -1);
@@ -327,13 +326,6 @@ static int unix_socket_listen(int server_fd)
 					// Ignore clients that are not playing.
 					if (!clients[n].session->character)
 						continue;
-					// for (size_t z = 0; z < clients[n].client->response_queue_count; z += 1)
-					// 	unix_socket_write(
-					// 		&clients[n],
-					// 		clients[n].session->response_queue[z].buf,
-					// 		packet_size(&clients[n].session->response_queue[z])
-					// 	);
-					// clients[n].session->response_queue_count = 0;
 					unix_socket_flush(&clients[n]);
 				}
 
@@ -341,7 +333,6 @@ static int unix_socket_listen(int server_fd)
 			}
 			if (can_read)
 				on_read(&state, events[i].data.ptr);
-
 			if (can_write)
 				on_write(events[i].data.ptr);
 		}
@@ -353,7 +344,7 @@ static int unix_socket_listen(int server_fd)
 	return 1;
 }
 
-int main()
+int main(void)
 {
 	int server_fd = 0;
 	u16 port = 7777;
@@ -365,6 +356,7 @@ int main()
 		return 1;
 	}
 
+	printf("game server started. listening for connections.\n");
 	if (!unix_socket_listen(server_fd)) {
 		printf("unable to listen for requests.\n");
 		return 1;

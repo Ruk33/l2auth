@@ -23,7 +23,8 @@ u8 packet_type(struct packet *src)
 	assert(src);
 	// 0 & 1 = packet size
 	// 2 = packet type
-	return src->buf[2];
+	u8 result = src->buf[2];
+	return result;
 }
 
 void packet_set_type(struct packet *dest, u8 type)
@@ -39,7 +40,8 @@ byte *packet_body(struct packet *src)
 	assert(src);
 	// 2 first bytes are packet size (u16)
 	// Body begins from byte 2
-	return src->buf + 2;
+	byte *result = src->buf + 2;
+	return result;
 }
 
 int packet_add_checksum(struct packet *src)
@@ -68,8 +70,7 @@ int packet_add_checksum(struct packet *src)
 
 	*((u16 *) src->buf) = packet_size(src) + 4;
 
-	int result = ecx == chksum;	
-	TODO("checksum was: %d", result);
+	int result = ecx == chksum;
 	return result;
 }
 
