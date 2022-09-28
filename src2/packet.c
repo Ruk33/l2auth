@@ -4,8 +4,9 @@
 static void set_packet_size(struct packet *src, u16 new_size)
 {
     assert(src);
-    src->buf[0] = (u8) (new_size & 0xff);
-    src->buf[1] = (u8) ((new_size >> 8) & 0xff);
+    // src->buf[0] = (u8) (new_size & 0xff);
+    // src->buf[1] = (u8) ((new_size >> 8) & 0xff);
+    memcpy(src->buf, &new_size, sizeof(new_size));
 }
 
 static void increase_packet_size(struct packet *src, u16 how_much)
@@ -47,10 +48,12 @@ static byte *write_cursor(struct packet *src)
 u16 packet_size(struct packet *src)
 {
     assert(src);
-    u16 result = (
-        ((src->buf[1] & 0xff) << 8) | 
-        (src->buf[0] & 0xff)
-    );
+    // u16 result = (
+    //     ((src->buf[1] & 0xff) << 8) | 
+    //     (src->buf[0] & 0xff)
+    // );
+    u16 result = 0;
+    memcpy(&result, src->buf, sizeof(result));
     return result;
 }
 
@@ -58,6 +61,7 @@ u16 packet_padded_size(struct packet *src)
 {
     assert(src);
     size_t size = (size_t) packet_size(src);
+    assert(size > 2);
     // +7 & ~7 (make the entire packet multiple of 8)
     size_t result = ((size - 2 + 7) & (~7)) + 2;
     if (sizeof(src->buf) < result) {
@@ -125,7 +129,8 @@ void packet_checksum(struct packet *src)
     }
 
     packet_write_u32(src, checksum);
-    set_packet_size(src, packet_padded_size(src));
+    u16 padded_size = packet_padded_size(src);
+    set_packet_size(src, padded_size);
 }
 
 void packet_write(struct packet *dest, void *src, size_t n)
@@ -149,8 +154,9 @@ void packet_write_u16(struct packet *dest, u16 src)
 {
     assert(dest);
     byte *cursor = write_cursor(dest);
-    *cursor++ = (u8) (src & 0xff);
-    *cursor++ = (u8) ((src >> 8) & 0xff);
+    memcpy(cursor, &src, sizeof(src));
+    // *cursor++ = (u8) (src & 0xff);
+    // *cursor++ = (u8) ((src >> 8) & 0xff);
     increase_packet_size(dest, sizeof(src));
 }
 
@@ -158,10 +164,11 @@ void packet_write_u32(struct packet *dest, u32 src)
 {
     assert(dest);
     byte *cursor = write_cursor(dest);
-    *cursor++ = (u8) (src & 0xff);
-    *cursor++ = (u8) ((src >>  8) & 0xff);
-    *cursor++ = (u8) ((src >> 16) & 0xff);
-    *cursor++ = (u8) ((src >> 24) & 0xff);
+    memcpy(cursor, &src, sizeof(src));
+    // *cursor++ = (u8) (src & 0xff);
+    // *cursor++ = (u8) ((src >>  8) & 0xff);
+    // *cursor++ = (u8) ((src >> 16) & 0xff);
+    // *cursor++ = (u8) ((src >> 24) & 0xff);
     increase_packet_size(dest, sizeof(src));
 }
 
@@ -228,9 +235,8 @@ void packet_read_u8(u8 *dest, struct packet *src)
     assert(dest);
     assert(src);
     byte *cursor = read_cursor(src);
-    u8 result = cursor[0];
-    *dest = result;
-    src->read_cursor += sizeof(dest);
+    *dest = *cursor;
+    src->read_cursor += sizeof(*dest);
 }
 
 void packet_read_u16(u16 *dest, struct packet *src)
@@ -238,9 +244,10 @@ void packet_read_u16(u16 *dest, struct packet *src)
     assert(dest);
     assert(src);
     byte *cursor = read_cursor(src);
-    u16 result = ((cursor[1] & 0xff) << 8) | (cursor[0] & 0xff);
-    *dest = result;
-    src->read_cursor += sizeof(dest);
+    // u16 result = ((cursor[1] & 0xff) << 8) | (cursor[0] & 0xff);
+    // *dest = result;
+    memcpy(dest, cursor, sizeof(*dest));
+    src->read_cursor += sizeof(*dest);
 }
 
 void packet_read_u32(u32 *dest, struct packet *src)
@@ -248,14 +255,15 @@ void packet_read_u32(u32 *dest, struct packet *src)
     assert(dest);
     assert(src);
     byte *cursor = read_cursor(src);
-    u16 result = (
-        ((cursor[3] & 0xff) << 8)  |
-        ((cursor[2] & 0xff) << 16) |
-        ((cursor[1] & 0xff) << 24) |
-        ((cursor[0] & 0xff))
-    );
-    *dest = result;
-    src->read_cursor += sizeof(dest);
+    // u16 result = (
+    //     ((cursor[3] & 0xff) << 8)  |
+    //     ((cursor[2] & 0xff) << 16) |
+    //     ((cursor[1] & 0xff) << 24) |
+    //     ((cursor[0] & 0xff))
+    // );
+    // *dest = result;
+    memcpy(dest, cursor, sizeof(*dest));
+    src->read_cursor += sizeof(*dest);
 }
 
 void packet_read_i8(i8 *dest, struct packet *src)

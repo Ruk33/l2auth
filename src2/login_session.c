@@ -15,11 +15,9 @@ static void rsa_scramble_modulo(struct rsa_modulus *dest)
 {
     assert(dest);
 
-    byte temp = 0;
-    byte *n = n = dest->buf;
-
+    byte *n = dest->buf;
     for (int i = 0; i < 4; i++) {
-        temp = n[i];
+        byte temp = n[i];
         n[i] = n[0x4d + i];
         n[0x4d + i] = temp;
     };
@@ -46,10 +44,11 @@ static int rsa_decrypt(struct login_session *session, struct packet *src)
     assert(src);
 
     int size = RSA_size(session->rsa_key);
+    byte *body_without_type = packet_body(src) + 1;
     int result = RSA_private_decrypt(
         size,
-        packet_body(src) + 1,
-        packet_body(src) + 1,
+        body_without_type,
+        body_without_type,
         session->rsa_key,
         RSA_NO_PADDING
     );
@@ -67,15 +66,20 @@ static void blowfish_encrypt(struct login_session *session, struct packet *src)
     assert(src);
 
     u32 tmp = 0;
-    for (size_t i = 0, iters = packet_size(src); i < iters; i += 8) {
-        u32 *body = (u32 *)(packet_body(src) + i);
+    for (u16 i = 0, iters = packet_size(src) / 8; i < iters; i++) {
+        u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
         // blowfish uses big endian
         *tmp = le32_to_be(*tmp);
         tmp++;
         *tmp = le32_to_be(*tmp);
 
-        BF_ecb_encrypt((byte *) body, (byte *) body, &session->blowfish_key, BF_ENCRYPT);
+        BF_ecb_encrypt(
+            (byte *) body,
+            (byte *) body,
+            &session->blowfish_key, 
+            BF_ENCRYPT
+        );
 
         tmp = body;
         // back to little endian (endianess used by lineage 2)
@@ -91,15 +95,20 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
     assert(src);
 
     u32 tmp = 0;
-    for (size_t i = 0, iters = packet_size(src); i < iters; i += 8) {
-        u32 *body = (u32 *)(packet_body(src) + i);
+    for (u16 i = 0, iters = packet_size(src) / 8; i < iters; i++) {
+        u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
         // blowfish uses big endian
         *tmp = le32_to_be(*tmp);
         tmp++;
         *tmp = le32_to_be(*tmp);
 
-        BF_ecb_encrypt((byte *) body, (byte *) body, &session->blowfish_key, BF_DECRYPT);
+        BF_ecb_encrypt(
+            (byte *) body,
+            (byte *) body,
+            &session->blowfish_key,
+            BF_DECRYPT
+        );
 
         tmp = body;
         // back to little endian (endianess used by lineage 2)
@@ -184,13 +193,15 @@ int login_session_decrypt_packet(struct login_session *session, struct packet *s
     assert(session);
     assert(src);
 
-    u16 size = packet_size(src);
+    // u16 size = packet_size(src);
     // ignore if not even the packet size header is here.
-    if (size <= 2)
-        return 0;
+    // if (size <= 2) {
+    //     log("trying to decrypt what appears to be an empty packet...");
+    //     return 0;
+    // }
     // copy decrypted packet body.
     blowfish_decrypt(session, src);
     // copy decrypted content (ignoring byte containing packet type).
-    int decrypt_result = rsa_decrypt(session, src);
-    return decrypt_result != -1;
+    int result = rsa_decrypt(session, src);
+    return result;
 }

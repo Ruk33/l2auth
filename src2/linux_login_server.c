@@ -42,7 +42,7 @@ static void socket_event_handler(int socket, enum asocket_event event, void *rea
         if (conn->session)
             return;
         log("session was not able to be created. the client will be dropped.");
-        memset(conn, 0, sizeof(*conn));
+        zero(conn);
         close(socket);
         break;
     case ASOCKET_CLOSED:
@@ -52,7 +52,7 @@ static void socket_event_handler(int socket, enum asocket_event event, void *rea
             return;
         if (conn->session)
             login_server_disconnect(&state, conn->session);
-        memset(conn, 0, sizeof(*conn));
+        zero(conn);
         break;
     case ASOCKET_READ:
         log("new chunk of request received.");
@@ -81,7 +81,7 @@ static void socket_event_handler(int socket, enum asocket_event event, void *rea
         // reset if the entire response was sent.
         if (response_size <= conn->written) {
             log("entire response sent.");
-            memset(&conn->session->response, 0, sizeof(conn->session->response));
+            zero(&conn->session->response);
             conn->written = 0;
         }
         break;

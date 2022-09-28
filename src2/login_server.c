@@ -34,7 +34,7 @@ static void on_gg_auth(struct state *state, struct login_session *session)
 
     log("handling gg auth.");
 
-    struct response_gg_auth gg_auth = { 0 };
+    struct response_gg_auth gg_auth = {0};
     gg_auth.gg_response = 0x0b; // skip.
 
     log("sending response to gg auth (skip it)");
@@ -45,6 +45,7 @@ static void on_gg_auth(struct state *state, struct login_session *session)
 struct login_session *login_server_new_conn(struct state *state)
 {
     assert(state);
+
     struct login_session *result = 0;
     for_each(struct login_session, session, state->sessions) {
         if (session->active)
@@ -65,9 +66,9 @@ struct login_session *login_server_new_conn(struct state *state)
     // todo: re-check from where does this session id comes from.
     struct session_id session_id = {{0xfd, 0x8a, 0x22, 0x00}};
     // chronicle 4 protocol only :)
-    struct protocol protocol = {{0x5a, 0x78, 0x00, 0x00}};
+    struct protocol c4_protocol = {{0x5a, 0x78, 0x00, 0x00}};
     init.session_id = session_id;
-    init.protocol = protocol;
+    init.protocol = c4_protocol;
     login_session_rsa_modulus(&init.modulus, result);
     response_init_encode(&result->response, &init);
     packet_checksum(&result->response);
@@ -116,6 +117,8 @@ void login_server_request(struct state *state, struct login_session *session, vo
         log("received unknown packet. ignoring...");
         break;
     }
+
+    zero(&session->request);
 }
 
 void login_server_disconnect(struct state *state, struct login_session *session)

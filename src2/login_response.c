@@ -1,5 +1,4 @@
 #include "include/l2auth.h"
-#include "include/login_response.h"
 
 void response_init_encode(struct packet *dest, struct response_init *src)
 {
@@ -11,9 +10,6 @@ void response_init_encode(struct packet *dest, struct response_init *src)
     packet_write_arr(dest, src->session_id.buf);
     packet_write_arr(dest, src->protocol.buf);
     packet_write_arr(dest, src->modulus.buf);
-
-    // byte pad[16] = {0};
-    // packet_write(dest, pad, sizeof(pad));
 }
 
 void response_auth_login_ok_encode(struct packet *dest, struct response_auth_login_ok *src)
