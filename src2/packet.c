@@ -107,7 +107,7 @@ void packet_checksum(struct packet *src)
         return;
 
     u16 body_size = packet_size(src);
-    if (body_size < 2) {
+    if (body_size <= 2) {
         log("possible error: trying to perform checksum on an empty packet?");
         return;
     }
@@ -124,20 +124,6 @@ void packet_checksum(struct packet *src)
         checksum ^= ecx;
     }
 
-    // u32 ecx = data[0] & 0xff;
-    // ecx |= (data[1] << 8) & 0xff00;
-    // ecx |= (data[2] << 0x10) & 0xff0000;
-    // ecx |= (data[3] << 0x18) & 0xff000000;
-
-    // *data++ = checksum & 0xff;
-    // *data++ = (checksum >> 0x08) & 0xff;
-    // *data++ = (checksum >> 0x10) & 0xff;
-    // *data++ = (checksum >> 0x18) & 0xff;
-
-    // src->checksum_done = 1;
-    // u16 checksum_size = 4;
-    // increase_packet_size(src, checksum_size);
-    
     packet_write_u32(src, checksum);
     set_packet_size(src, packet_padded_size(src));
 }

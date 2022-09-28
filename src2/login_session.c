@@ -1,5 +1,15 @@
+#include "include/endian.h"
 #include "include/l2auth.h"
 #include "include/packet.h"
+
+static void log_last_openssl_err(void)
+{
+    // must be at least 256 as stated by openssl documentation.
+    // see https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string.html
+    char err[256] = {0};
+    ERR_error_string_n(ERR_get_error(), err, sizeof(err) - 1);
+    log("openssl error: %s", err);
+}
 
 static void rsa_scramble_modulo(struct rsa_modulus *dest)
 {
@@ -44,15 +54,11 @@ static int rsa_decrypt(struct login_session *session, struct packet *src)
         RSA_NO_PADDING
     );
 
-    if (result == -1) {
-        // must be at least 256 as stated by openssl documentation.
-        // see https://www.openssl.org/docs/man1.1.1/man3/ERR_error_string.html
-        char rsa_err[256] = {0};
-        ERR_error_string_n(ERR_get_error(), rsa_err, sizeof(rsa_err));
-        log("rsa decrypt problem: %s", rsa_err);
-    }
+    if (result != -1)
+        return 1;
 
-    return result;
+    log_last_openssl_err();
+    return 0;
 }
 
 static void blowfish_encrypt(struct login_session *session, struct packet *src)
@@ -62,24 +68,20 @@ static void blowfish_encrypt(struct login_session *session, struct packet *src)
 
     u32 tmp = 0;
     for (size_t i = 0, iters = packet_size(src); i < iters; i += 8) {
+        u32 *body = (u32 *)(packet_body(src) + i);
+        u32 *tmp = body;
         // blowfish uses big endian
-        tmp = *((u32 *)(packet_body(src) + i));
-        *((u32 *)(packet_body(src) + i)) = le32_to_be(tmp);
-        tmp = *((u32 *)(packet_body(src) + i + 4));
-        *((u32 *)(packet_body(src) + i + 4)) = le32_to_be(tmp);
+        *tmp = le32_to_be(*tmp);
+        tmp++;
+        *tmp = le32_to_be(*tmp);
 
-        BF_ecb_encrypt(
-            packet_body(src) + i,
-            packet_body(src) + i,
-            &session->blowfish_key,
-            BF_ENCRYPT
-        );
+        BF_ecb_encrypt((byte *) body, (byte *) body, &session->blowfish_key, BF_ENCRYPT);
 
+        tmp = body;
         // back to little endian (endianess used by lineage 2)
-        tmp = be32_to_le(*((u32 *)(packet_body(src) + i)));
-        *((u32 *)(packet_body(src) + i)) = tmp;
-        tmp = be32_to_le(*((u32 *)(packet_body(src) + i + 4)));
-        *((u32 *)(packet_body(src) + i + 4)) = tmp;
+        *tmp = be32_to_le(*tmp);
+        tmp++;
+        *tmp = be32_to_le(*tmp);
     }
 }
 
@@ -90,28 +92,24 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
 
     u32 tmp = 0;
     for (size_t i = 0, iters = packet_size(src); i < iters; i += 8) {
+        u32 *body = (u32 *)(packet_body(src) + i);
+        u32 *tmp = body;
         // blowfish uses big endian
-        tmp = *((u32 *)(packet_body(src) + i));
-        *((u32 *)(packet_body(src) + i)) = le32_to_be(tmp);
-        tmp = *((u32 *)(packet_body(src) + i + 4));
-        *((u32 *)(packet_body(src) + i + 4)) = le32_to_be(tmp);
+        *tmp = le32_to_be(*tmp);
+        tmp++;
+        *tmp = le32_to_be(*tmp);
 
-        BF_ecb_encrypt(
-            packet_body(src) + i,
-            packet_body(src) + i,
-            &session->blowfish_key,
-            BF_DECRYPT
-        );
+        BF_ecb_encrypt((byte *) body, (byte *) body, &session->blowfish_key, BF_DECRYPT);
 
-        // Back to little endian (endianess used by Lineage 2)
-        tmp = be32_to_le(*((u32 *)(packet_body(src) + i)));
-        *((u32 *)(packet_body(src) + i)) = tmp;
-        tmp = be32_to_le(*((u32 *)(packet_body(src) + i + 4)));
-        *((u32 *)(packet_body(src) + i + 4)) = tmp;
+        tmp = body;
+        // back to little endian (endianess used by lineage 2)
+        *tmp = be32_to_le(*tmp);
+        tmp++;
+        *tmp = be32_to_le(*tmp);
     }
 }
 
-void login_session_init(struct login_session *src)
+int login_session_init(struct login_session *src)
 {
     assert(src);
 
@@ -119,18 +117,43 @@ void login_session_init(struct login_session *src)
     BF_set_key(&src->blowfish_key, (int) (sizeof(raw_key)), raw_key);
 
     src->rsa_e = BN_new();
+    if (!src->rsa_e) {
+        log("unable to allocate memory for blowfish.");
+        goto abort;
+    }
+
     src->rsa_key = RSA_new();
-    BN_dec2bn(&src->rsa_e, "65537");
-    RSA_generate_key_ex(src->rsa_key, 1024, src->rsa_e, 0);
+    if (!src->rsa_key) {
+        log("unable to allocate memory for rsa.");
+        goto abort;
+    }
+
+    if (!BN_dec2bn(&src->rsa_e, "65537")) {
+        log("unable to convert decimal to big num.");
+        goto abort;
+    }
+
+    if (!RSA_generate_key_ex(src->rsa_key, 1024, src->rsa_e, 0)) {
+        log("failed to generate rsa key.");
+        goto abort;
+    }
 
     src->active = 1;
+    return 1;
+
+abort:
+    log_last_openssl_err();
+    login_session_release(src);
+    return 0;
 }
 
 void login_session_release(struct login_session *src)
 {
     assert(src);
-    RSA_free(src->rsa_key);
-    BN_free(src->rsa_e);
+    if (src->rsa_key)
+        RSA_free(src->rsa_key);
+    if (src->rsa_e)
+        BN_free(src->rsa_e);
     memset(src, 0, sizeof(*src));
 }
 
@@ -141,7 +164,10 @@ void login_session_rsa_modulus(struct rsa_modulus *dest, struct login_session *s
 
     const BIGNUM *n = 0;
     RSA_get0_key(src->rsa_key, &n, 0, 0);
-    BN_bn2bin(n, dest->buf);
+    if (!BN_bn2bin(n, dest->buf)) {
+        log("unable to copy modulus.");
+        log_last_openssl_err();
+    }
     rsa_scramble_modulo(dest);
 }
 

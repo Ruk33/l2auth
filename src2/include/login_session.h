@@ -24,7 +24,7 @@ struct login_session {
     BF_KEY blowfish_key;
 };
 
-void login_session_init(struct login_session *src);
+int login_session_init(struct login_session *src);
 void login_session_release(struct login_session *src);
 void login_session_rsa_modulus(struct rsa_modulus *dest, struct login_session *src);
 void login_session_encrypt_packet(struct login_session *session, struct packet *src);

@@ -56,7 +56,10 @@ struct login_session *login_server_new_conn(struct state *state)
         log("no more available sessions to use.");
         return 0;
     }
-    login_session_init(result);
+    if (!login_session_init(result)) {
+        log("unable to initialize session.");
+        return 0;
+    }
 
     struct response_init init = {0};
     // todo: re-check from where does this session id comes from.
@@ -95,7 +98,7 @@ void login_server_request(struct state *state, struct login_session *session, vo
         return;
 
     login_session_decrypt_packet(session, &session->request);
-    log("new packet received: %d", packet_type(&session->request));
+    log("new packet received: 0x%x", packet_type(&session->request));
     switch (packet_type(&session->request)) {
     case 0x00: // auth login
         on_auth_login(state, session);
