@@ -57,6 +57,9 @@ typedef float seconds;
 #include "packet.h"
 #include "l2_string.h"
 #include "login_session.h"
+
+#include "login_request.h"
+#include "login_response.h"
 #include "login_server.h"
 
 #endif

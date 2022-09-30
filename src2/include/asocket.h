@@ -25,4 +25,4 @@ void asocket_listen(int server, asocket_handler *handler);
 // to keep sending past the bytes already sent.
 size_t asocket_write(int socket, void *buf, size_t n);
 
-#endif //ASOCKET_H
+#endif
