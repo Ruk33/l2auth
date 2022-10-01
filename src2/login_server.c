@@ -1,8 +1,4 @@
 #include "include/l2auth.h"
-#include "include/login_request.h"
-#include "include/login_response.h"
-#include "include/login_session.h"
-#include "include/packet.h"
 
 static void on_auth_login(struct state *state, struct login_session *session)
 {
@@ -119,6 +115,7 @@ void login_server_request(struct state *state, struct login_session *session, vo
     }
 
     zero(&session->request);
+    session->read = 0;
 }
 
 void login_server_disconnect(struct state *state, struct login_session *session)

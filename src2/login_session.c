@@ -93,7 +93,7 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
     assert(src);
 
     u32 tmp = 0;
-    for (u16 i = 0, iters = packet_size(src) / 8; i < iters; i++) {
+    for (u16 i = 0, iters = (packet_padded_size(src) / 8); i < iters; i++) {
         u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
         // blowfish uses big endian
@@ -161,7 +161,7 @@ void login_session_release(struct login_session *src)
         RSA_free(src->rsa_key);
     if (src->rsa_e)
         BN_free(src->rsa_e);
-    memset(src, 0, sizeof(*src));
+    zero(src);
 }
 
 void login_session_rsa_modulus(struct rsa_modulus *dest, struct login_session *src)

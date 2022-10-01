@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "Building..."
 gcc \
+    -O0 \
     -DMAX_CONNECTIONS=32 \
     src2/l2_string.c \
     src2/linux_endian.c \

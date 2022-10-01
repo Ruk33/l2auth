@@ -1,7 +1,6 @@
 #include <unistd.h> // close
 #include "include/l2auth.h"
 #include "include/asocket.h"
-#include "include/packet.h"
 
 struct connection {
     int socket;
