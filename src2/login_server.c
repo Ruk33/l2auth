@@ -1,4 +1,5 @@
 #include "include/l2auth.h"
+#include "include/login_session.h"
 
 static void on_auth_login(struct state *state, struct login_session *session)
 {
@@ -9,10 +10,22 @@ static void on_auth_login(struct state *state, struct login_session *session)
 
     struct request_auth_login auth_login = {0};
     request_auth_login_decode(&auth_login, &session->request);
-    log("username: '%s' password: '%s'.", auth_login.username.buf, auth_login.password.buf);
 
-    // TODO("validate username and password are corrects before granting access.");
-    // TODO("don't print username and password in console, this is just for debugging.");
+    struct account account = {0};    
+    if (storage_get_account(&account, &auth_login.username)) {
+        if (!str_matches(account.password.buf, auth_login.password.buf)) {
+            log("oh my! password incorrect.");
+            login_session_drop(session);
+            return;
+        }
+    } else {
+        // try to auto create account.
+        if (!storage_create_account(&auth_login.username, &auth_login.password)) {
+            log("unable to auto-create account. dropping the client.");
+            login_session_drop(session);
+            return;
+        }
+    }
 
     struct response_auth_login_ok ok_response = {0};
     ok_response.login_ok1 = session->play_ok1;
@@ -122,6 +135,5 @@ void login_server_disconnect(struct state *state, struct login_session *session)
 {
     assert(state);
     assert(session);
-    log("client closed the connection.");
     login_session_release(session);
 }

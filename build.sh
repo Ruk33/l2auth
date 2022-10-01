@@ -6,7 +6,9 @@ gcc \
     src2/l2_string.c \
     src2/linux_endian.c \
     src2/linux_login_server.c \
+    src2/linux_random.c \
     src2/linux_socket.c \
+    src2/linux_storage.c \
     src2/login_server.c \
     src2/login_request.c \
     src2/login_response.c \

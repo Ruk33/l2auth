@@ -58,8 +58,13 @@ static void socket_event_handler(int socket, enum asocket_event event, void *rea
         conn = get_connection_from(socket);
         if (!conn)
             return;
-        if (conn->session)
-            login_server_request(&state, conn->session, read, len);
+        if (!conn->session)
+            return;
+        login_server_request(&state, conn->session, read, len);
+        if (!conn->session->closed)
+            return;
+        zero(conn);
+        close(socket);
         break;
     case ASOCKET_CAN_WRITE:
         conn = get_connection_from(socket);
@@ -67,6 +72,11 @@ static void socket_event_handler(int socket, enum asocket_event event, void *rea
             return;
         if (!conn->session)
             return;
+        if (conn->session->closed) {
+            zero(conn);
+            close(socket);
+            return;
+        }
         // check if there is a response pending to be written.
         u16 response_size = packet_size(&conn->session->response);
         if (!response_size)

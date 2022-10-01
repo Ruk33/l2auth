@@ -3,14 +3,6 @@
 
 #include "l2auth.h"
 
-struct username {
-    char buf[32];
-};
-
-struct password {
-    char buf[32];
-};
-
 struct request_auth_login {
     struct username username;
     struct password password;

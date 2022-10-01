@@ -19,25 +19,28 @@ typedef u8 byte;
 typedef float seconds;
 
 #define arr_len(x) \
-    sizeof(x) / sizeof(*(x))
+    (sizeof(x) / sizeof(*(x)))
 
 #define for_each(type, name, arr) \
     for (type *name = arr; name < arr + arr_len(arr); name++)
 
 #define kb(x) \
-    ((size_t) ((x) * 1024))
+    ((x) * 1024)
 
 #define min(a, b) \
     ((a) < (b) ? (a) : (b))
 
 #define str_cpy(dest, src) \
-    (strncpy((char *) dest, (char *) src, sizeof(dest) - 1))
+    (strncpy((char *) (dest), (char *) (src), sizeof(dest) - 1))
+
+#define str_matches(a, b) \
+    (strncmp((char *) (a), (char *) (b), sizeof(a) - 1) == 0)
 
 #define zero(x) \
-    (memset(x, 0, sizeof(*(x))))
+    (memset((x), 0, sizeof(*(x))))
 
 #define zero_arr(x) \
-    (memset(x, 0, sizeof(x)))    
+    (memset((x), 0, sizeof(x)))
 
 #define log(...)            \
     do {                    \
@@ -45,19 +48,16 @@ typedef float seconds;
         printf("\n");       \
     } while (0)
 
-// u32 randi(u32 index)
-// {
-//     index = (index << 13) ^ index;
-//     return ((index * (index * index * 15731 + 789221) + 1376312589) & 0x7fffffff);
-// }
-
 // int ipv4_to_u32(u32 *dest, struct ipv4 *src);
 
 #include "endian.h"
 #include "packet.h"
+#include "l2_types.h"
 #include "l2_string.h"
-#include "login_session.h"
+#include "l2_random.h"
+#include "storage.h"
 
+#include "login_session.h"
 #include "login_request.h"
 #include "login_response.h"
 #include "login_server.h"

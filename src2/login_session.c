@@ -67,7 +67,7 @@ static void blowfish_encrypt(struct login_session *session, struct packet *src)
     for (u16 i = 0, iters = packet_size(src) / 8; i < iters; i++) {
         u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
-        // blowfish uses big endian
+        // blowfish uses big endian.
         *tmp = host_to_be32(*tmp);
         tmp++;
         *tmp = host_to_be32(*tmp);
@@ -81,9 +81,9 @@ static void blowfish_encrypt(struct login_session *session, struct packet *src)
 
         tmp = body;
         // back to little endian (endianess used by lineage 2)
-        *tmp = be32_to_host(*tmp);
+        *tmp = be32_to_le32(*tmp);
         tmp++;
-        *tmp = be32_to_host(*tmp);
+        *tmp = be32_to_le32(*tmp);
     }
 }
 
@@ -96,10 +96,12 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
     for (u16 i = 0, iters = (packet_padded_size(src) / 8); i < iters; i++) {
         u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
-        // blowfish uses big endian
-        *tmp = host_to_be32(*tmp);
+        // lineage 2 uses little endian and thus, we
+        // assume the packet will be in little endian.
+        // blowfish uses big endian.
+        *tmp = le32_to_be32(*tmp);
         tmp++;
-        *tmp = host_to_be32(*tmp);
+        *tmp = le32_to_be32(*tmp);
 
         BF_ecb_encrypt(
             (byte *) body,
@@ -109,7 +111,7 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
         );
 
         tmp = body;
-        // back to little endian (endianess used by lineage 2)
+        // now we can go back to host endian.
         *tmp = be32_to_host(*tmp);
         tmp++;
         *tmp = be32_to_host(*tmp);
@@ -152,6 +154,12 @@ abort:
     log_last_openssl_err();
     login_session_release(src);
     return 0;
+}
+
+void login_session_drop(struct login_session *src)
+{
+    assert(src);
+    src->closed = 1;
 }
 
 void login_session_release(struct login_session *src)
