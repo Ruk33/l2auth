@@ -4,9 +4,9 @@
 // to-be-saved struct in a file. in order to 
 // retrieve data, just read those bytes back
 // and cast it back to the struct.
-// NOTE, this particular implementation is
+// note: this particular implementation is
 // made for linux only but should be fairly easy
-// adapting it for windows (if that ever happens)
+// to adapt for windows (if that ever happens)
 
 #include <errno.h>      // errno
 #include <string.h>     // strerror, memcpy
@@ -21,6 +21,8 @@
 struct storage {
     struct account accounts[max_accounts];
     size_t accounts_count;
+    struct server servers[8];
+    size_t servers_count;
 };
 
 struct conn {
@@ -126,12 +128,59 @@ int storage_create_account(struct username *username, struct password *password)
 
     struct account new_account = {0};
     new_account.username = *username;
-    log("TODO: remember to encrypt the password!");
+    log("todo: remember to encrypt the password!");
     str_cpy(new_account.password.buf, password->buf);
 
     conn.storage->accounts[conn.storage->accounts_count] = new_account;
     conn.storage->accounts_count++;
     result = 1;
+
+close:
+    close_conn(&conn);
+    return result;
+}
+
+int storage_get_servers(struct server *dest, u8 *found, size_t max)
+{
+    assert(dest);
+    assert(found);
+    assert(max > 0);
+    assert(max <= UINT8_MAX);
+
+    struct conn conn = {0};
+    int result = open_conn(&conn);
+
+    *found = 0;
+    for_each(struct server, server, conn.storage->servers) {
+        if (!server->id)
+            break;
+        dest[*found] = *server;
+        *found = *found + 1;
+        if (max <= *found)
+            break;
+    }
+
+    close_conn(&conn);
+    return result;
+}
+
+int storage_create_server(struct server *src)
+{
+    assert(src);
+    struct conn conn = {0};
+    int result = open_conn(&conn);
+
+    // make sure we don't save the same server id twice.
+    for_each(struct server, server, conn.storage->servers) {
+        if (server->id != src->id)
+            continue;
+        log("server with id %d already exists. it will not be created again.", server->id);
+        result = 0;
+        goto close;
+    }
+
+    conn.storage->servers[conn.storage->servers_count] = *src;
+    conn.storage->servers_count++;
 
 close:
     close_conn(&conn);

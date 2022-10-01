@@ -11,7 +11,7 @@ static void on_auth_login(struct state *state, struct login_session *session)
     struct request_auth_login auth_login = {0};
     request_auth_login_decode(&auth_login, &session->request);
 
-    struct account account = {0};    
+    struct account account = {0};
     if (storage_get_account(&account, &auth_login.username)) {
         if (!str_matches(account.password.buf, auth_login.password.buf)) {
             log("oh my! password incorrect.");
@@ -44,10 +44,43 @@ static void on_gg_auth(struct state *state, struct login_session *session)
     log("handling gg auth.");
 
     struct response_gg_auth gg_auth = {0};
-    gg_auth.gg_response = 0x0b; // skip.
+    u32 skip_gg = 0x0b;
+    gg_auth.gg_response = skip_gg;
 
     log("sending response to gg auth (skip it)");
     response_gg_auth_encode(&session->response, &gg_auth);
+    login_session_encrypt_packet(session, &session->response);
+}
+
+static void on_request_server_list(struct state *state, struct login_session *session)
+{
+    assert(state);
+    assert(session);
+
+    log("handling request server list.");
+
+    struct server_list response = {0};
+    if (!storage_get_servers(response.servers, &response.count, arr_len(response.servers)))
+        log("unable to read the serves. an empty packet will be sent.");
+
+    log("sending server list.");
+    response_server_list_encode(&session->response, &response);
+    login_session_encrypt_packet(session, &session->response);
+}
+
+static void on_login_server(struct state *state, struct login_session *session)
+{
+    assert(state);
+    assert(session);
+
+    log("handling login server.");
+
+    struct response_play_ok response = {0};
+    response.play_ok1 = session->play_ok1;
+    response.play_ok2 = session->play_ok2;
+
+    log("sending play ok response.");
+    response_play_ok_encode(&session->response, &response);
     login_session_encrypt_packet(session, &session->response);
 }
 
@@ -79,6 +112,7 @@ struct login_session *login_server_new_conn(struct state *state)
     init.session_id = session_id;
     init.protocol = c4_protocol;
     login_session_rsa_modulus(&init.modulus, result);
+
     response_init_encode(&result->response, &init);
     packet_checksum(&result->response);
 
@@ -110,16 +144,20 @@ void login_server_request(struct state *state, struct login_session *session, vo
     login_session_decrypt_packet(session, &session->request);
     log("new packet received: 0x%x", packet_type(&session->request));
     switch (packet_type(&session->request)) {
-    case 0x00: // auth login
+    // auth login
+    case 0x00:
         on_auth_login(state, session);
         break;
-    case 0x02: // login server
-        // on_login_server(state, session);
+    // login server
+    case 0x02:
+        on_login_server(state, session);
         break;
-    case 0x05: // request server list
-        // on_request_server_list(state, session);
+    // request server list
+    case 0x05:
+        on_request_server_list(state, session);
         break;
-    case 0x07: // gg auth
+    // gg auth
+    case 0x07:
         on_gg_auth(state, session);
         break;
     default:

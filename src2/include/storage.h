@@ -3,11 +3,12 @@
 
 #include "l2auth.h"
 
-// 0 if not found
-// 1 if found
-// dest can be null
+// accounts
 int storage_get_account(struct account *dest, struct username *username);
-
 int storage_create_account(struct username *username, struct password *password);
+
+// servers
+int storage_get_servers(struct server *dest, u8 *found, size_t max);
+int storage_create_server(struct server *src);
 
 #endif

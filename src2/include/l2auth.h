@@ -48,8 +48,7 @@ typedef float seconds;
         printf("\n");       \
     } while (0)
 
-// int ipv4_to_u32(u32 *dest, struct ipv4 *src);
-
+#include "network.h"
 #include "endian.h"
 #include "packet.h"
 #include "l2_types.h"
