@@ -5,6 +5,7 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/blowfish.h>
+#include "coroutine.h"
 #include "l2auth.h"
 
 struct rsa_modulus {
@@ -23,6 +24,7 @@ struct login_session {
     BIGNUM *rsa_e;
     RSA *rsa_key;
     BF_KEY blowfish_key;
+    struct ctx state;
 };
 
 int login_session_init(struct login_session *src);

@@ -1,5 +1,6 @@
 #include "include/l2auth.h"
 #include "include/login_session.h"
+#include "include/packet.h"
 
 static void on_auth_login(struct state *state, struct login_session *session)
 {
@@ -84,6 +85,52 @@ static void on_login_server(struct state *state, struct login_session *session)
     login_session_encrypt_packet(session, &session->response);
 }
 
+static void on_login_server_new_request(struct state *state, struct login_session *session)
+{
+    assert(state);
+    assert(session);
+
+    u8 request_type = packet_type(&session->request);
+
+    ctx_begin(&session->state);
+
+    // gg auth
+    if (request_type != 0x07) {
+        log("received 0x%x packet but was expecting gg auth. ignoring...", request_type);
+        return;
+    }
+    on_gg_auth(state, session);
+    ctx_yield(&session->state);
+
+    // auth login
+    if (request_type != 0x00) {
+        log("received 0x%x packet but was expecting auth login. ignoring...", request_type);
+        return;
+    }
+    on_auth_login(state, session);
+    ctx_yield(&session->state);
+
+    // request server list
+    if (request_type != 0x05) {
+        log("received 0x%x packet but was expecting server list. ignoring...", request_type);
+        return;
+    }
+    on_request_server_list(state, session);
+    ctx_yield(&session->state);
+
+    // log into game server
+    if (request_type != 0x02) {
+        log("received 0x%x packet but was expecting log into game server. ignoring...", request_type);
+        return;
+    }
+    on_login_server(state, session);
+    ctx_yield(&session->state);
+
+    log("i was not expecting packets but i got 0x%x. ignoring!", request_type);
+
+    ctx_end();
+}
+
 struct login_session *login_server_new_conn(struct state *state)
 {
     assert(state);
@@ -142,28 +189,8 @@ void login_server_request(struct state *state, struct login_session *session, vo
         return;
 
     login_session_decrypt_packet(session, &session->request);
-    log("new packet received: 0x%x", packet_type(&session->request));
-    switch (packet_type(&session->request)) {
-    // auth login
-    case 0x00:
-        on_auth_login(state, session);
-        break;
-    // login server
-    case 0x02:
-        on_login_server(state, session);
-        break;
-    // request server list
-    case 0x05:
-        on_request_server_list(state, session);
-        break;
-    // gg auth
-    case 0x07:
-        on_gg_auth(state, session);
-        break;
-    default:
-        log("received unknown packet. ignoring...");
-        break;
-    }
+    log("new packet received: 0x%x !", packet_type(&session->request));
+    on_login_server_new_request(state, session);
 
     zero(&session->request);
     session->read = 0;

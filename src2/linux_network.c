@@ -187,16 +187,13 @@ size_t network_write(int socket, void *buf, size_t n)
 // franco.montenegro: should we just use the functions provided by linux?
 int network_ipv4_to_u32(u32 *dest, struct ipv4 *src)
 {
-    i8 *buf = 0;
-    u32 tmp = 0;
-
     assert(dest);
     assert(src);
 
-    buf = src->buf;
+    i8 *buf = src->buf;
 
     for (int i = 0; i < 4; i += 1) {
-        tmp = 0;
+        u32 tmp = 0;
         for (int n = 0; *buf && *buf != '.' && n < 3; n += 1) {
             // only numbers for ip.
             if (*buf >= '0' && *buf <= '9') {
