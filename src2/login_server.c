@@ -92,7 +92,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
 
     u8 request_type = packet_type(&session->request);
 
-    ctx_begin(&session->state);
+    co_begin(&session->state);
 
     // gg auth
     if (request_type != 0x07) {
@@ -100,7 +100,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_gg_auth(state, session);
-    ctx_yield(&session->state);
+    yield;
 
     // auth login
     if (request_type != 0x00) {
@@ -108,7 +108,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_auth_login(state, session);
-    ctx_yield(&session->state);
+    yield;
 
     // request server list
     if (request_type != 0x05) {
@@ -116,7 +116,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_request_server_list(state, session);
-    ctx_yield(&session->state);
+    yield;
 
     // log into game server
     if (request_type != 0x02) {
@@ -124,11 +124,11 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_login_server(state, session);
-    ctx_yield(&session->state);
+    yield;
 
     log("i was not expecting packets but i got 0x%x. ignoring!", request_type);
 
-    ctx_end();
+    co_end;
 }
 
 struct login_session *login_server_new_conn(struct state *state)
