@@ -1,5 +1,4 @@
-#include "include/l2auth.h"
-#include "include/login_request.h"
+#include "include/login_server.h"
 
 void request_auth_login_decode(struct request_auth_login *dest, struct packet *src)
 {

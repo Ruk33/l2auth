@@ -1,7 +1,7 @@
 #ifndef LOGIN_SERVER_REQUEST_H
 #define LOGIN_SERVER_REQUEST_H
 
-#include "l2auth.h"
+#include "login_server.h"
 
 struct request_auth_login {
     struct username username;

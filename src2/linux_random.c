@@ -1,4 +1,5 @@
-#include <time.h>
+#include <stdlib.h> // random
+#include <time.h>   // time
 #include "include/l2auth.h"
 
 // credits to https://www.youtube.com/watch?v=443UNeGrFoM

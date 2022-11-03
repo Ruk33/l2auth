@@ -1,5 +1,4 @@
 #include "include/l2auth.h"
-#include "include/packet.h"
 
 static void set_packet_size(struct packet *src, u16 new_size)
 {

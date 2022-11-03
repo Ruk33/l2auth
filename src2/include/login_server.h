@@ -2,6 +2,10 @@
 #define LOGIN_SERVER_H
 
 #include "l2auth.h"
+#include "login_session.h"
+#include "login_request.h"
+#include "login_response.h"
+#include "login_server.h"
 
 struct state {
     struct login_session sessions[MAX_CONNECTIONS];

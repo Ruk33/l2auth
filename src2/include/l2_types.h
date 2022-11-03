@@ -7,6 +7,10 @@ struct username {
     char buf[32];
 };
 
+struct l2_username {
+    l2_string buf[16];
+};
+
 struct password {
     char buf[32];
 };

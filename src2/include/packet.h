@@ -4,7 +4,10 @@
 #include "l2auth.h"
 
 #define packet_write_arr(dest, src) \
-    (packet_write(dest, src, sizeof(src)))
+    packet_write((dest), (src), sizeof(src))
+
+#define packet_read_arr(dest, src) \
+    packet_read((dest), (src), sizeof(dest))
 
 struct packet {
     byte buf[kb(8)];

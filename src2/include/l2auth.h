@@ -18,23 +18,29 @@ typedef int32_t i32;
 typedef u8 byte;
 typedef float seconds;
 
+#define as(type, x) \
+    ((type) (x))
+
+#define min(a, b) \
+    ((a) < (b) ? (a) : (b))
+
 #define arr_len(x) \
     (sizeof(x) / sizeof(*(x)))
 
 #define for_each(type, name, arr) \
     for (type *name = arr; name < arr + arr_len(arr); name++)
 
+#define for_each_ex(type, name, arr, limit) \
+    for (type *name = arr; name < arr + min((limit), arr_len(arr)); name++)
+
 #define kb(x) \
     ((x) * 1024)
 
-#define min(a, b) \
-    ((a) < (b) ? (a) : (b))
-
 #define str_cpy(dest, src) \
-    (strncpy((char *) (dest), (char *) (src), sizeof(dest) - 1))
+    (strncpy(as(char *, (dest)), as(char *, (src)), sizeof(dest) - 1))
 
 #define str_matches(a, b) \
-    (strncmp((char *) (a), (char *) (b), sizeof(a) - 1) == 0)
+    (strncmp(as(char *, (a)), as(char *, (b)), sizeof(a) - 1) == 0)
 
 #define zero(x) \
     (memset((x), 0, sizeof(*(x))))
@@ -48,17 +54,19 @@ typedef float seconds;
         printf("\n");       \
     } while (0)
 
+#define log_err(...)                                                    \
+    do {                                                                \
+        log("[ERROR] - - - - - - - - - - - - - - - - - - - - - - -");   \
+        log(__VA_ARGS__);                                               \
+        log("- - - - - - - - - - - - - - - - - - - - - - - - - - -");   \
+    } while(0)
+
 #include "network.h"
 #include "endian.h"
 #include "packet.h"
-#include "l2_types.h"
 #include "l2_string.h"
+#include "l2_types.h"
 #include "l2_random.h"
 #include "storage.h"
-
-#include "login_session.h"
-#include "login_request.h"
-#include "login_response.h"
-#include "login_server.h"
 
 #endif

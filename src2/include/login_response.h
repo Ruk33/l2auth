@@ -1,7 +1,7 @@
 #ifndef LOGIN_SERVER_RESPONSE_H
 #define LOGIN_SERVER_RESPONSE_H
 
-#include "l2auth.h"
+#include "login_server.h"
 
 struct session_id {
     byte buf[4];

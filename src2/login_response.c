@@ -1,4 +1,4 @@
-#include "include/l2auth.h"
+#include "include/login_server.h"
 
 void response_init_encode(struct packet *dest, struct response_init *src)
 {

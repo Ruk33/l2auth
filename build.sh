@@ -16,3 +16,17 @@ gcc \
     src2/packet.c \
     -lcrypto \
     -o login_server
+gcc \
+    -O0 \
+    -DMAX_CONNECTIONS=32 \
+    src2/l2_string.c \
+    src2/linux_endian.c \
+    src2/linux_network.c \
+    src2/linux_random.c \
+    src2/packet.c \
+    src2/linux_game_server.c \
+    src2/game_server.c \
+    src2/game_session.c \
+    src2/game_request.c \
+    src2/game_response.c \
+    -o game_server

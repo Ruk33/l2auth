@@ -1,13 +1,13 @@
 #include <unistd.h> // close
-#include "include/login_server.h"
+#include "include/game_server.h"
 
 struct connection {
     int socket;
-    struct login_session *session;
+    struct game_session *session;
     size_t written;
 };
 
-static struct state state = {0};
+static struct game_state state = {0};
 static struct connection connections[MAX_CONNECTIONS] = {0};
 
 struct connection *get_connection_from(int socket)
@@ -36,7 +36,7 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             return;
         }
         conn->socket = socket;
-        conn->session = login_server_new_conn(&state);
+        conn->session = game_server_new_conn(&state);
         if (conn->session)
             return;
         log("session was not able to be created. the client will be dropped.");
@@ -49,7 +49,7 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
         if (!conn)
             return;
         if (conn->session)
-            login_server_disconnect(&state, conn->session);
+            game_server_disconnect(&state, conn->session);
         zero(conn);
         break;
     case NETWORK_READ:
@@ -59,7 +59,7 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             return;
         if (!conn->session)
             return;
-        login_server_request(&state, conn->session, read, len);
+        game_server_request(&state, conn->session, read, len);
         if (!conn->session->closed)
             return;
         zero(conn);
@@ -98,60 +98,16 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
     }
 }
 
-static void create_initial_game_servers(void)
-{
-    // create localhost server.
-    struct ipv4 ip_localhost = {{"127.0.0.1"}};
-    struct server localhost = {0};
-
-    if (!network_ipv4_to_u32(&localhost.ip, &ip_localhost)) {
-        log("unable to parse localhost ip.");
-        return;
-    }
-
-    localhost.id = 1;
-    localhost.age_limit = 18;
-    localhost.brackets = 0;
-    localhost.extra = 0;
-    localhost.port = 7777;
-    localhost.pvp = 1;
-    localhost.status = 1;
-
-    if (storage_create_server(&localhost))
-        log("initial localhost server was successfully created.");
-
-    // create test server.
-    struct ipv4 ip_zero = {{"0.0.0.0"}};
-    struct server test = {0};
-
-    if (!network_ipv4_to_u32(&test.ip, &ip_zero)) {
-        log("unable to parse 0.0.0.0 ip.");
-        return;
-    }
-
-    test.id = 2;
-    test.age_limit = 18;
-    test.brackets = 1;
-    test.extra = 0;
-    test.port = 7778;
-    test.pvp = 1;
-    test.status = 1;
-
-    if (storage_create_server(&test))
-        log("initial test server was successfully created.");
-}
-
 int main(void)
 {
-    u16 port = 2106;
+    u16 port = 7777;
     int server_fd = network_port(port);
     if (server_fd == -1) {
-        log("unable to create login server socket.");
+        log("unable to create game server socket.");
         return -1;
     }
 
-    log("login server started. listening for connections.");
-    create_initial_game_servers();
+    log("game server started. listening for connections.");
     network_listen(server_fd, socket_event_handler);
 
     return 0;

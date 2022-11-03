@@ -1,6 +1,4 @@
-#include "include/l2auth.h"
-#include "include/login_session.h"
-#include "include/packet.h"
+#include "include/login_server.h"
 
 static void on_auth_login(struct state *state, struct login_session *session)
 {
@@ -92,7 +90,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
 
     u8 request_type = packet_type(&session->request);
 
-    co_begin(&session->state);
+    coroutine_begin(&session->state);
 
     // gg auth
     if (request_type != 0x07) {
@@ -128,7 +126,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
 
     log("i was not expecting packets but i got 0x%x. ignoring!", request_type);
 
-    co_end;
+    coroutine_end;
 }
 
 struct login_session *login_server_new_conn(struct state *state)

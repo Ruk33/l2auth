@@ -1,4 +1,4 @@
-#include "include/l2auth.h"
+#include "include/login_server.h"
 
 static void log_last_openssl_err(void)
 {
