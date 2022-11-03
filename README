@@ -5,7 +5,9 @@ L2 AUTH
     just a fun experiment to see and explore what can be made with it.
 
 COMMUNITY
-    - Join our Discord at https://discord.gg/A62eUFfDp6
+    - Help support the project https://ko-fi.com/francomontenegro
+        - Get access to early videos
+        - Get access to our members-only Discord channel
     - Watch the development of the project in:
         - Youtube: https://www.youtube.com/channel/UCmbdpFvxXfxk4KbmUgTAomw
         - Twitch: https://www.twitch.tv/franco_montenegro
@@ -29,8 +31,7 @@ CONTRIBUTE
         - Platform specific code (win32, linux, etc. layers)
     - All variables must be initialized
     - No NULL, use 0 (shorter to write)
-    - OS related code must be inside of the os folder (ie, src/linux)
-    - Storage related code, must be inside of storage/name.c (ie, storage/sqlite.c)
+    - OS related code must be prefixed with the OS's name (ie, linux_game_server.c)
     - Only 1 thread is used to handle requests
     - The code should be robust enough to handle bad and good requests without crashing
     - Have fun
@@ -67,15 +68,6 @@ DEPENDENCIES
 
 COMPILE IN LINUX
     - Run: bash build.sh
-    - Run migrations and seeds (see below for these two steps)
-
-COMPILE IN WINDOWS
-    Windows builds are not being updated for the moment since I don't have
-    access to a Windows PC. If you would like to contribute on this end, 
-    you are welcome to do so. Thanks!
-
-    - Open a CMD terminal
-    - Run: build.bat
     - Run migrations and seeds (see below for these two steps)
 
 RUN MIGRATIONS
