@@ -9,6 +9,9 @@
 #define packet_read_arr(dest, src) \
     packet_read((dest), (src), sizeof(dest))
 
+#define packet_read_l2_str_arr(dest, src) \
+    packet_read_l2_str((dest), (src), sizeof(dest))
+
 struct packet {
     byte buf[kb(8)];
     byte *read_cursor;
@@ -33,6 +36,7 @@ void packet_write_float(struct packet *dest, float src);
 void packet_write_double(struct packet *dest, double src);
 
 void packet_read(void *dest, struct packet *src, size_t n);
+void packet_read_l2_str(l2_string *dest, struct packet *src, size_t n);
 void packet_read_u8(u8 *dest, struct packet *src);
 void packet_read_u16(u16 *dest, struct packet *src);
 void packet_read_u32(u32 *dest, struct packet *src);

@@ -3,11 +3,18 @@
 
 #include "l2auth.h"
 
+typedef u16 l2_string;
+
 struct username {
     char buf[32];
 };
 
 struct l2_username {
+    l2_string buf[16];
+};
+
+struct l2_character_name {
+    // check if this limit is ok.
     l2_string buf[16];
 };
 

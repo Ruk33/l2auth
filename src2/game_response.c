@@ -17,3 +17,11 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
     packet_write_u32(dest, src->count);
     // todo: send the rest of the packet, which means, character list!
 }
+
+void response_show_creation_screen_encode(struct packet *dest, struct response_show_creation_screen *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x17);
+    packet_write_u32(dest, src->count);
+}

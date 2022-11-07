@@ -48,10 +48,10 @@ typedef float seconds;
 #define zero_arr(x) \
     (memset((x), 0, sizeof(x)))
 
-#define log(...)            \
-    do {                    \
-        printf(__VA_ARGS__);\
-        printf("\n");       \
+#define log(...)                \
+    do {                        \
+        printf(__VA_ARGS__);    \
+        printf("\n");           \
     } while (0)
 
 #define log_err(...)                                                    \
@@ -63,9 +63,9 @@ typedef float seconds;
 
 #include "network.h"
 #include "endian.h"
-#include "packet.h"
-#include "l2_string.h"
 #include "l2_types.h"
+#include "l2_string.h"
+#include "packet.h"
 #include "l2_random.h"
 #include "storage.h"
 

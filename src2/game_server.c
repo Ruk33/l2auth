@@ -32,7 +32,7 @@ static void on_auth_request(struct game_state *state, struct game_session *sessi
     struct request_auth request = {0};
     struct response_auth_login response = {0};
     
-    printf("handling auth request.\n");
+    log("handling auth request.");
     request_auth_decode(&request, &session->request);
     l2_string_to_char_arr(session->username.buf, request.username.buf);
 
@@ -44,6 +44,93 @@ static void on_auth_request(struct game_state *state, struct game_session *sessi
 
     response_auth_login_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
+}
+
+static void on_show_creation_screen(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+
+    struct response_show_creation_screen response = {0};
+    log("handling show character creation screen.");
+
+    // in this packet/response, we should include the character
+    // templates but, it seems like it works without it so we
+    // are not sending it. it really doesn't make sense to send
+    // those templates since it's a place where the player could
+    // potentially cheat (by setting the attributes to whatever)
+    response_show_creation_screen_encode(&session->response, &response);
+    game_session_encrypt_packet(session, &session->response);
+}
+
+static void on_create_character(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+    
+    struct request_create_character request = {0};
+    // struct server_packet_create_character response = { 0 };
+    // struct auth_login response = {0};
+    // struct character character = {0};
+    // struct character_template *template = 0;
+    
+    request_create_character_decode(&request, &session->request);
+
+    char name[32] = {0};
+    l2_string_to_char(name, request.name.buf, sizeof(name));
+
+    log(
+        "create new character with name %s, "
+        "race: %d, "
+        "sex: %d, "
+        "class: %d, "
+        "hair style: %d, "
+        "hair color: %d, "
+        "face: %d\n",
+        name,
+        request.race_id,
+        request.sex,
+        request.class_id,
+        request.hair_style_id,
+        request.hair_color_id,
+        request.face_id
+    );
+    
+    // template = get_character_template_by_class(request.class_id);
+    
+    // if (template) {
+    //     printf("template found.\n");
+    //     character.name = request.name;
+    //     character.race_id = request.race_id;
+    //     character.sex = request.sex;
+    //     character.class_id = request.class_id;
+    //     character.hair_style_id = request.hair_style_id;
+    //     character.hair_color_id = request.hair_color_id;
+    //     character.face_id = request.face_id;
+    //     character.attrs = template->attrs;
+    //     character.hp = 40;
+    //     character.mp = 40;
+    //     character.max_hp = 40;
+    //     character.max_mp = 40;
+    //     character.level = 1;
+    //     // Talking island.
+    //     character.position.x = -83968;
+    //     character.position.y = 244634;
+    //     character.position.z = -3730;
+
+    //     save_character(&session->username, &character);
+    //     printf("character created and saved.\n");
+    // }
+    
+    // response.count = (u32) get_account_characters(
+    //     response.characters,
+    //     &session->username,
+    //     ARR_LEN(response.characters)
+    // );
+    // printf("%d characters found from account %s.\n", response.count, (char *) session->username.buf);
+    
+    // encode_auth_login(&session->response, &response);
+    // encrypt_packet(session, &session->response);
 }
 
 static void on_game_server_new_request(struct game_state *state, struct game_session *session)
@@ -77,6 +164,72 @@ static void on_game_server_new_request(struct game_state *state, struct game_ses
         return;
     }
     on_auth_request(state, session);
+
+    // in character selection screen.
+    // in the character selection, the player can click on
+    // the create new character or he/she can enter into
+    // the world. both actions are valid and must be handled.
+in_character_selection:
+    yield;
+    switch (request_type) {
+    // show character creation screen.
+    case 0x0e:
+        on_show_creation_screen(state, session);
+        goto in_character_creation;
+    // enter world.
+    case 0x03:
+        // handle request.
+        goto in_world;
+    case 0x9:
+        log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
+        return;
+    default:
+        log(
+            "in character selection, the player sent an incorrect packet. "
+            "we were expecting show character creation screen or, enter world, "
+            "or 0x9 but we got 0x%x. just to be safe, we will drop the player.",
+            request_type
+        );
+        session->closed = 1;
+        return;
+    }
+
+// if the player is in the character creation screen and clicks cancel,
+// (or go back to the character selection screen) we don't get a new packet
+// that's why we have to accept or handle all the same packets we handle
+// in the character selection screen. we could make use of gotos in here as 
+// well, but duplicating the code seemed better, and easier to follow.
+in_character_creation:
+    yield;
+    switch (request_type) {
+    // show character creation screen.
+    case 0x0e:
+        on_show_creation_screen(state, session);
+        return;
+    // create new character.
+    case 0x0b:
+        on_create_character(state, session);
+        goto in_character_selection;
+    case 0x9:
+        log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
+        return;
+    // enter world.
+    case 0x03:
+        // handle request.
+        goto in_world;
+    default:
+        log(
+            "in character creation, the player sent an incorrect packet. "
+            "we were expecting show character creation screen or, enter world, "
+            "or create the character, or 0x9 but we got 0x%x. just to be safe, "
+            "we will drop the player.",
+            request_type
+        );
+        session->closed = 1;
+        return;
+    }
+
+in_world:
     yield;
 
     coroutine_end;

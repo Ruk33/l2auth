@@ -1,3 +1,4 @@
+#include "include/l2_string.h"
 #include "include/l2auth.h"
 
 static void set_packet_size(struct packet *src, u16 new_size)
@@ -227,6 +228,15 @@ void packet_read(void *dest, struct packet *src, size_t n)
     byte *cursor = read_cursor(src);
     memcpy(dest, cursor, n);
     src->read_cursor += n;
+}
+
+void packet_read_l2_str(l2_string *dest, struct packet *src, size_t n)
+{
+    assert(dest);
+    assert(src);
+    assert(n > 0);
+    size_t str_size = l2_string_size(as(l2_string *, read_cursor(src)), n);
+    packet_read(dest, src, min(n, str_size));
 }
 
 void packet_read_u8(u8 *dest, struct packet *src)
