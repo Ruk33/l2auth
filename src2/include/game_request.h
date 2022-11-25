@@ -21,7 +21,12 @@ struct request_create_character {
     u32 face_id;
 };
 
+struct request_selected_character {
+    u32 index;
+};
+
 void request_auth_decode(struct request_auth *dest, struct packet *src);
 void request_create_character_decode(struct request_create_character *dest, struct packet *src);
+void request_selected_character_decode(struct request_selected_character *dest, struct packet *src);
 
 #endif

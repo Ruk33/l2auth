@@ -25,6 +25,7 @@ struct game_session {
     // size_t response_queue_count;
     int conn_encrypted;
     struct coroutine state;
+    struct l2_character *character;
 };
 
 void game_session_decrypt_packet(struct game_session *session, struct packet *packet);

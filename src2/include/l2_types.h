@@ -34,6 +34,7 @@ struct attributes {
 
 struct l2_character {
     u32 id;
+    u32 game_time;
     // enum character_state state;
     // struct v3 position;
     i32 x;
@@ -140,13 +141,13 @@ struct server {
     u8 brackets;
 };
 
-// struct character {
-// };
-
 struct account {
     struct username username;
     struct encrypted_password password;
-    // struct character characters[7];
+    // todo: confirm how many characters we can have in the lobby or
+    // per account.
+    struct l2_character characters[7];
+    int characters_count;
 };
 
 #endif

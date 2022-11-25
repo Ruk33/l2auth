@@ -23,6 +23,7 @@ gcc \
     src2/linux_endian.c \
     src2/linux_network.c \
     src2/linux_random.c \
+    src2/linux_storage.c \
     src2/packet.c \
     src2/linux_game_server.c \
     src2/game_server.c \

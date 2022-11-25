@@ -1,3 +1,4 @@
+#include "include/game_request.h"
 #include "include/game_server.h"
 
 void request_auth_decode(struct request_auth *dest, struct packet *src)
@@ -34,4 +35,11 @@ void request_create_character_decode(struct request_create_character *dest, stru
     packet_read_u32(&dest->hair_style_id, src);
     packet_read_u32(&dest->hair_color_id, src);
     packet_read_u32(&dest->face_id, src);
+}
+
+void request_selected_character_decode(struct request_selected_character *dest, struct packet *src)
+{
+    assert(dest);
+    assert(src);
+    packet_read_u32(&dest->index, src);
 }

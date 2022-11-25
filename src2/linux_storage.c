@@ -186,3 +186,68 @@ close:
     close_conn(&conn);
     return result;
 }
+
+int storage_create_character(struct username *username, struct l2_character *src)
+{
+    assert(username);
+    assert(src);
+    struct conn conn = {0};
+    int result = open_conn(&conn);
+
+    for_each(struct account, account, conn.storage->accounts) {
+        if (!str_matches(account->username.buf, username->buf))
+            continue;
+        // the account should always exists, so there is no need to 
+        // perform extra checks.
+        account->characters[account->characters_count] = *src;
+        account->characters_count++;
+        break;
+    }
+
+    close_conn(&conn);
+    return result;
+}
+
+int storage_get_characters(struct l2_character *dest, struct username *username, int max, int *found)
+{
+    assert(dest);
+    assert(username);
+    assert(found);
+    struct conn conn = {0};
+    int result = open_conn(&conn);
+
+    *found = 0;
+    for_each(struct account, account, conn.storage->accounts) {
+        if (!str_matches(account->username.buf, username->buf))
+            continue;
+        // don't copy more than what's required.
+        max = min(max, account->characters_count);
+        for (int i = 0; i < max; i++) {
+            dest[*found] = account->characters[i];
+            *found = *found + 1;
+        }
+        break;
+    }
+
+    close_conn(&conn);
+    return result;
+}
+
+int storage_get_character(struct l2_character *dest, struct username *username, int index)
+{
+    assert(dest);
+    assert(username);
+    struct conn conn = {0};
+    int result = open_conn(&conn);
+
+    for_each(struct account, account, conn.storage->accounts) {
+        if (!str_matches(account->username.buf, username->buf))
+            continue;
+        if (index >= 0 && index < account->characters_count)
+            *dest = account->characters[index];
+        break;
+    }
+
+    close_conn(&conn);
+    return result;
+}

@@ -9,6 +9,8 @@
 
 struct game_state {
     struct game_session sessions[MAX_CONNECTIONS];
+    struct l2_character characters[MAX_CONNECTIONS];
+    int characters_count;
 };
 
 struct game_session *game_server_new_conn(struct game_state *state);

@@ -1,6 +1,8 @@
 #include "include/game_server.h"
+#include "include/game_request.h"
 #include "include/game_response.h"
 #include "include/l2_string.h"
+#include "include/storage.h"
 
 static void on_protocol_version(struct game_state *state, struct game_session *session)
 {
@@ -37,39 +39,14 @@ static void on_auth_request(struct game_state *state, struct game_session *sessi
     log("handling auth request.");
     request_auth_decode(&request, &session->request);
     l2_string_to_char_arr(session->username.buf, request.username.buf);
-
-    // response.count = (u32) get_account_characters(
-    //     response.characters,
-    //     &session->username,
-    //     ARR_LEN(response.characters)
-    // );
-    response.count = 1;
-    l2_string_from_char_arr(response.characters[0].name.buf, "ruke");
-    response.characters[0].active = 1;
-    response.characters[0].accuracy = 10;
-    response.characters[0].attack_speed_multiplier = 1;
-    response.characters[0].m_attack = 1;
-    response.characters[0].p_attack = 1;
-    response.characters[0].p_attack_speed = 1;
-    response.characters[0].m_attack_speed = 1;
-    response.characters[0].id = 1;
-    response.characters[0].x = 1;
-    response.characters[0].y = 1;
-    response.characters[0].z = 1;
-    response.characters[0].race_id = 1;
-    response.characters[0].class_id = 1;
-    response.characters[0].sex = 1;
-    response.characters[0].hp = 10;
-    response.characters[0].mp = 10;
-    response.characters[0].cp = 10;
-    response.characters[0].max_hp = 10;
-    response.characters[0].max_mp = 10;
-    response.characters[0].max_cp = 10;
-    response.characters[0].face_id = 1;
-    response.characters[0].hair_color_id = 1;
-    response.characters[0].name_color = 0xFFFFFF;
-    response.characters[0].level = 1;
-
+    log("%s user has access the game lobby.", session->username.buf);
+    storage_get_characters(
+        response.characters,
+        &session->username,
+        arr_len(response.characters),
+        (int *) &response.count
+    );
+    log("sending %d characters found.", response.count);
     response_auth_login_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
 }
@@ -97,18 +74,17 @@ static void on_create_character(struct game_state *state, struct game_session *s
     assert(session);
     
     struct request_create_character request = {0};
-    // struct server_packet_create_character response = { 0 };
-    // struct auth_login response = {0};
-    // struct character character = {0};
-    // struct character_template *template = 0;
-    
+    // todo: if i'm not mistaken, there is a create character response
+    // packet, in which, we can tell if something went wrong (for instance,
+    // the character's name is already being used)
+    struct response_auth_login response = { 0 };
     request_create_character_decode(&request, &session->request);
 
     char name[32] = {0};
     l2_string_to_char(name, request.name.buf, sizeof(name));
 
     log(
-        "create new character with name %s, "
+        "player trying to create new character with name %s, "
         "race: %d, "
         "sex: %d, "
         "class: %d, "
@@ -123,75 +99,118 @@ static void on_create_character(struct game_state *state, struct game_session *s
         request.hair_color_id,
         request.face_id
     );
-    
-    // template = get_character_template_by_class(request.class_id);
-    
-    // if (template) {
-    //     printf("template found.\n");
-    //     character.name = request.name;
-    //     character.race_id = request.race_id;
-    //     character.sex = request.sex;
-    //     character.class_id = request.class_id;
-    //     character.hair_style_id = request.hair_style_id;
-    //     character.hair_color_id = request.hair_color_id;
-    //     character.face_id = request.face_id;
-    //     character.attrs = template->attrs;
-    //     character.hp = 40;
-    //     character.mp = 40;
-    //     character.max_hp = 40;
-    //     character.max_mp = 40;
-    //     character.level = 1;
-    //     // Talking island.
-    //     character.position.x = -83968;
-    //     character.position.y = 244634;
-    //     character.position.z = -3730;
 
-    //     save_character(&session->username, &character);
-    //     printf("character created and saved.\n");
-    // }
+    // 1 - make sure the user can keep on creating character.
+    // 2 - make sure the name is available.
+
+    struct l2_character character = {0};
+    character.game_time = 10;
+    // talking island.
+    character.x = -83968;
+    character.y = 244634;
+    character.z = -3730;
+    character.name = request.name;
+    character.play_ok1 = 1994;
+    character.sex = request.sex;
+    character.race_id = request.race_id;
+    character.class_id = request.class_id;
+    // todo: confirm what the active property does.
+    character.active = 1;
+    character.hp = 100;
+    character.mp = 100;
+    character.max_hp = character.hp;
+    character.max_mp = character.mp;
+    character.cp = 100;
+    character.max_cp = character.cp;
+    character.attrs._int = 10;
+    character.attrs.con = 10;
+    character.attrs.dex = 10;
+    character.attrs.men = 10;
+    character.attrs.str = 10;
+    character.attrs.wit = 10;
+    character.sp = 10;
+    character.exp = 10;
+    character.level = 1;
+    character.hair_style_id = request.hair_style_id;
+    character.hair_color_id = request.hair_color_id;
+    character.face_id = request.face_id;
+    character.p_attack = 10;
+    character.m_attack = 10;
+    character.p_def = 10;
+    character.m_def = 10;
+    character.evasion = 10;
+    character.accuracy = 10;
+    character.critical_hit = 10;
+    character.inventory_limit = 10;
+    character.run_speed = 200;
+    character.walk_speed = 100;
+    character.p_attack_speed = 10;
+    character.m_attack_speed = 10;
+    character.movement_speed_multiplier = 1;
+    character.attack_speed_multiplier = 1;
+    // todo: take a look at the real values from l2j.
+    character.collision_radius = 20;
+    character.collision_height = 20;
+    character.name_color = 0xFFFFFF;
+    character.current_load = 1;
+    character.max_load = 10;
+
+    storage_create_character(&session->username, &character);
+    storage_get_characters(
+        response.characters,
+        &session->username,
+        arr_len(response.characters),
+        (int *) &response.count
+    );
     
-    // response.count = (u32) get_account_characters(
-    //     response.characters,
-    //     &session->username,
-    //     ARR_LEN(response.characters)
-    // );
-    // printf("%d characters found from account %s.\n", response.count, (char *) session->username.buf);
-    
-    // encode_auth_login(&session->response, &response);
-    // encrypt_packet(session, &session->response);
+    log("sending %d characters found.", response.count);
+    response_auth_login_encode(&session->response, &response);
+    game_session_encrypt_packet(session, &session->response);
 }
 
 static void on_select_character(struct game_state *state, struct game_session *session)
 {
     assert(state);
     assert(session);
+    struct request_selected_character request = {0};
     log("TODO: don't hardcode the values sent by the on select character function.");
     struct response_selected_character response = {0};
 
-    l2_string_from_char_arr(response.name.buf, "ruke");
+    request_selected_character_decode(&request, &session->request);
+    log("the user is trying to access with the character at the index %d", request.index);
+
+    // add the character to the character's pool.
+    // first increase, and then use. this is because we can't use
+    // id 0.
+    state->characters_count++;
+    session->character = state->characters + state->characters_count;
+    session->character->id = state->characters_count;
+    storage_get_character(session->character, &session->username, request.index);
+
+    char name[32] = {0};
+    l2_string_to_char_arr(name, &session->character->name);
+    log("the user is trying to access with the character %s", name);
+
+    // todo: make sure we found the character!
+    response.id = session->character->id;
     response.play_ok1 = 1994;
-    response.id = 1;
-    response.active = 1;
-    response.race_id = 1;
-    response.class_id = 1;
-    response.exp = 1;
-    response.sp = 1;
-    response.level = 1;
-    response.hp = 10;
-    response.mp = 10;
-    response.attrs._int = 10;
-    response.attrs.con = 10;
-    response.attrs.dex = 10;
-    response.attrs.men = 10;
-    response.attrs.str = 10;
-    response.attrs.wit = 10;
-    // talking island!
-    // -83968;
-    // 244634;
-    // -3730;
-    response.x = -83968;
-    response.y = 244634;
-    response.z = -3730;
+    response.race_id = session->character->race_id;
+    response.class_id = session->character->class_id;
+    response.clan_id = session->character->clan_id;
+    response.name = session->character->name;
+    response.title = session->character->title;
+    response.sex = session->character->sex;
+    response.active = session->character->active;
+    response.x = session->character->x;
+    response.y = session->character->y;
+    response.z = session->character->z;
+    response.hp = session->character->hp;
+    response.mp = session->character->mp;
+    response.sp = session->character->sp;
+    response.exp = session->character->exp;
+    response.level = session->character->level;
+    response.attrs = session->character->attrs;
+    response.game_time = 10; // session->character->game_time;
 
     response_selected_character_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
@@ -220,54 +239,63 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
     assert(state);
     assert(session);
     struct response_enter_world response = {0};
-    l2_string_from_char_arr(response.name.buf, "ruke");
-    response.id = 1;
-    response.race_id = 1;
-    response.class_id = 1;
-    response.exp = 1;
-    response.sp = 1;
-    response.level = 1;
-    response.hp = 10;
-    response.mp = 10;
-    response.cp = 10;
-    response.max_hp = 10;
-    response.max_mp = 10;
-    response.max_cp = 10;
-    response.attrs._int = 10;
-    response.attrs.con = 10;
-    response.attrs.dex = 10;
-    response.attrs.men = 10;
-    response.attrs.str = 10;
-    response.attrs.wit = 10;
-    // talking island!
-    // -83968;
-    // 244634;
-    // -3730;
-    response.x = -83968;
-    response.y = 244634;
-    response.z = -3730;
-    response.p_attack = 10;
-    response.p_def = 10;
-    response.m_attack = 10;
-    response.m_def = 10;
-    response.evasion_rate = 10;
-    response.accuracy = 10;
-    response.critical_hit = 10;
-    response.hair_color_id = 1;
-    response.hair_style_id = 1;
-    response.face_id = 1;
-    response.inventory_limit = 10;
-    response.run_speed = 200;
-    response.walk_speed = 100;
-    response.p_attack_speed = 10;
-    response.m_attack_speed = 10;
-    response.movement_speed_multiplier = 1;
-    response.attack_speed_multiplier = 1;
-    response.collision_radius = 200;
-    response.collision_height = 200;
-    response.name_color = 0xffffff;
-    response.current_load = 1;
-    response.max_load = 1;
+    
+    // todo: not sure if we need to check if the user already has a character
+    // assigned (since it should) but, something to keep in mind.
+    assert(session->character);
+
+    response.id = session->character->id;
+    response.x = session->character->x;
+    response.y = session->character->y;
+    response.z = session->character->z;
+    response.heading = 1; // ?
+    response.name = session->character->name;
+    response.race_id = session->character->race_id;
+    response.sex = session->character->sex;
+    response.class_id = session->character->class_id;
+    response.level = session->character->level;
+    response.exp = session->character->exp;
+    response.attrs = session->character->attrs;
+    response.max_hp = session->character->max_hp;
+    response.hp = session->character->hp;
+    response.max_mp = session->character->max_mp;
+    response.mp = session->character->mp;
+    response.sp = session->character->sp;
+    response.current_load = session->character->current_load;
+    response.max_load = session->character->max_load;
+    response.p_attack = session->character->p_attack;
+    response.p_attack_speed = session->character->p_attack_speed;
+    response.p_def = session->character->p_def;
+    response.evasion_rate = session->character->evasion;
+    response.accuracy = session->character->accuracy;
+    response.critical_hit = session->character->critical_hit;
+    response.m_attack = session->character->m_attack;
+    response.m_attack_speed = session->character->m_attack_speed;
+    response.m_def = session->character->m_def;
+    response.karma = session->character->karma;
+    response.run_speed = session->character->run_speed;
+    response.walk_speed = session->character->walk_speed;
+    response.swim_run_speed = session->character->run_speed;
+    response.swim_walk_speed = session->character->walk_speed;
+    response.fly_run_speed = session->character->run_speed;
+    response.fly_walk_speed = session->character->walk_speed;
+    response.movement_speed_multiplier = session->character->movement_speed_multiplier;
+    response.attack_speed_multiplier = session->character->attack_speed_multiplier;
+    response.collision_radius = session->character->collision_radius;
+    response.collision_height = session->character->collision_height;
+    response.hair_style_id = session->character->hair_style_id;
+    response.hair_color_id = session->character->hair_color_id;
+    response.face_id = session->character->face_id;
+    response.access_level = 1;
+    response.title = session->character->title;
+    response.clan_id = session->character->clan_id;
+    // response.ally_id = session->character->ally_id;
+    // response.dwarven_craft = session->character->
+    // response.pk_kills = session->character->pk
+    response.inventory_limit = session->character->inventory_limit;
+    response.max_cp = session->character->max_cp;
+    response.cp = session->character->cp;
+    response.name_color = session->character->name_color;
 
     response_enter_world_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
