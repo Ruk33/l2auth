@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Building..."
-gcc \
+tcc \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src2/l2_string.c \
@@ -16,7 +16,7 @@ gcc \
     src2/packet.c \
     -lcrypto \
     -o login_server
-gcc \
+tcc \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src2/l2_string.c \

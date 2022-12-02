@@ -43,3 +43,25 @@ void request_selected_character_decode(struct request_selected_character *dest, 
     assert(src);
     packet_read_u32(&dest->index, src);
 }
+
+void request_move_decode(struct request_move *dest, struct packet *src)
+{
+    assert(dest);
+    assert(src);
+    packet_read_i32(&dest->destination_x, src);
+    packet_read_i32(&dest->destination_y, src);
+    packet_read_i32(&dest->destination_z, src);
+    packet_read_i32(&dest->origin_x, src);
+    packet_read_i32(&dest->origin_y, src);
+    packet_read_i32(&dest->origin_z, src);
+}
+
+void request_validate_position_decode(struct request_validate_position *dest, struct packet *src)
+{
+    assert(dest);
+    assert(src);
+    packet_read_i32(&dest->x, src);
+    packet_read_i32(&dest->y, src);
+    packet_read_i32(&dest->z, src);
+    packet_read_i32(&dest->heading, src);
+}

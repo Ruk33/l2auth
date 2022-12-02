@@ -149,6 +149,28 @@ struct response_enter_world {
     u32 name_color;
 };
 
+struct response_restart {
+    u32 code;
+};
+
+struct response_move {
+    u32 id;
+    i32 destination_x;
+    i32 destination_y;
+    i32 destination_z;
+    i32 origin_x;
+    i32 origin_y;
+    i32 origin_z;
+};
+
+struct response_validate_position {
+    u32 id;
+    i32 x;
+    i32 y;
+    i32 z;
+    i32 heading;
+};
+
 void response_protocol_encode(struct packet *dest, struct response_protocol *src);
 void response_auth_login_encode(struct packet *dest, struct response_auth_login *src);
 void response_show_creation_screen_encode(struct packet *dest, struct response_show_creation_screen *src);
@@ -156,5 +178,8 @@ void response_selected_character_encode(struct packet *dest, struct response_sel
 void response_d0_encode(struct packet *dest, struct response_d0 *src);
 void response_quest_list_encode(struct packet *dest, struct response_quest_list *src);
 void response_enter_world_encode(struct packet *dest, struct response_enter_world *src);
+void response_restart_encode(struct packet *dest, struct response_restart *src);
+void response_move_encode(struct packet *dest, struct response_move *src);
+void response_validate_position_encode(struct packet *dest, struct response_validate_position *src);
 
 #endif

@@ -25,8 +25,26 @@ struct request_selected_character {
     u32 index;
 };
 
+struct request_move {
+    i32 destination_x;
+    i32 destination_y;
+    i32 destination_z;
+    i32 origin_x;
+    i32 origin_y;
+    i32 origin_z;
+};
+
+struct request_validate_position {
+    i32 x;
+    i32 y;
+    i32 z;
+    i32 heading;
+};
+
 void request_auth_decode(struct request_auth *dest, struct packet *src);
 void request_create_character_decode(struct request_create_character *dest, struct packet *src);
 void request_selected_character_decode(struct request_selected_character *dest, struct packet *src);
+void request_move_decode(struct request_move *dest, struct packet *src);
+void request_validate_position_decode(struct request_validate_position *dest, struct packet *src);
 
 #endif

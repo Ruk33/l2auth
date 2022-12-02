@@ -1,3 +1,4 @@
+#include "include/game_response.h"
 #include "include/game_server.h"
 #include "include/packet.h"
 
@@ -284,4 +285,41 @@ void response_enter_world_encode(struct packet *dest, struct response_enter_worl
     packet_write_i32(dest, src->fish_y);
     packet_write_i32(dest, src->fish_z);
     packet_write_u32(dest, src->name_color);
+}
+
+void response_restart_encode(struct packet *dest, struct response_restart *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x5f);
+    packet_write_u32(dest, src->code);
+    // todo: l2j sends a string for some reason, we may wanna
+    // check what's that all about? (since it seems a random
+    // value)
+}
+
+void response_move_encode(struct packet *dest, struct response_move *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x01);
+    packet_write_u32(dest, src->id);
+    packet_write_i32(dest, src->destination_x);
+    packet_write_i32(dest, src->destination_y);
+    packet_write_i32(dest, src->destination_z);
+    packet_write_i32(dest, src->origin_x);
+    packet_write_i32(dest, src->origin_y);
+    packet_write_i32(dest, src->origin_z);
+}
+
+void response_validate_position_encode(struct packet *dest, struct response_validate_position *src)
+{
+    assert(dest);
+    assert(src);
+    packet_set_type(dest, 0x61);
+    packet_write_u32(dest, src->id);
+    packet_write_i32(dest, src->x);
+    packet_write_i32(dest, src->y);
+    packet_write_i32(dest, src->z);
+    packet_write_i32(dest, src->heading);
 }

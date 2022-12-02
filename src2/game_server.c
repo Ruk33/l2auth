@@ -1,6 +1,7 @@
 #include "include/game_server.h"
 #include "include/game_request.h"
 #include "include/game_response.h"
+#include "include/game_session.h"
 #include "include/l2_string.h"
 #include "include/storage.h"
 
@@ -184,8 +185,8 @@ static void on_select_character(struct game_state *state, struct game_session *s
     // id 0.
     state->characters_count++;
     session->character = state->characters + state->characters_count;
-    session->character->id = state->characters_count;
     storage_get_character(session->character, &session->username, request.index);
+    session->character->id = state->characters_count;
 
     char name[32] = {0};
     l2_string_to_char_arr(name, &session->character->name);
@@ -243,7 +244,6 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
     // todo: not sure if we need to check if the user already has a character
     // assigned (since it should) but, something to keep in mind.
     assert(session->character);
-
     response.id = session->character->id;
     response.x = session->character->x;
     response.y = session->character->y;
@@ -298,6 +298,69 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
     response.name_color = session->character->name_color;
 
     response_enter_world_encode(&session->response, &response);
+    game_session_encrypt_packet(session, &session->response);
+}
+
+static void on_restart(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+
+    // todo: make sure the character can restart
+    // (ie, it's not in aggro mode)
+
+    struct response_restart response = {0};
+    response.code = 1;
+    response_restart_encode(&session->response, &response);
+    game_session_encrypt_packet(session, &session->response);
+}
+
+static void on_move(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+
+    // todo: make sure the character can actually move
+    // (ie, it's not rooted or stunt) and make sure
+    // the destination makes sense. this is, the 
+    // player, shouldn't be able to select a destination
+    // too far away.
+
+    struct request_move request = {0};
+    request_move_decode(&request, &session->request);
+
+    struct response_move response = {0};
+    response.id = session->character->id;
+    response.destination_x = request.destination_x;
+    response.destination_y = request.destination_y;
+    response.destination_z = request.destination_z;
+    response.origin_x = request.origin_x;
+    response.origin_y = request.origin_y;
+    response.origin_z = request.origin_z;
+
+    response_move_encode(&session->response, &response);
+    game_session_encrypt_packet(session, &session->response);
+}
+
+static void on_validate_position(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+
+    // todo: make sure the character's position is properly
+    // validated to avoid cheaters.
+
+    struct request_validate_position request = {0};
+    request_validate_position_decode(&request, &session->request);
+
+    struct response_validate_position response = {0};
+    response.id = session->character->id;
+    response.x = request.x;
+    response.y = request.y;
+    response.z = request.z;
+    response.heading = request.heading;
+
+    response_validate_position_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
 }
 
@@ -439,7 +502,27 @@ in_world:
     on_enter_world(state, session);
     yield;
 
+    // todo: we may wanna move this to a new function
+    // where it can have it's own coroutine state.
+
+    switch (request_type) {
+    case 0x01: // move
+        on_move(state, session);
+        break;
+    case 0x46: // restart
+        on_restart(state, session);
+        goto in_character_selection;
+        break;
+    case 0x48: // validate the position
+        on_validate_position(state, session);
+        break;
+    default:
+        break;
+    }
+
     log("oh no! we ran out of implementation code.");
+    log("go back to the switch case.");
+    return;
 
     coroutine_end;
 }
