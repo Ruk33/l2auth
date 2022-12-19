@@ -1,0 +1,4 @@
+KNOWN ISSUES
+
+    - Fix the restart flow. When the user restarts, no characters are being
+    shown and this is because we are not sending the character list packet.

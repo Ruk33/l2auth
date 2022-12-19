@@ -40,6 +40,7 @@ struct l2_character {
     i32 x;
     i32 y;
     i32 z;
+    i32 heading;
     // struct v3 velocity;
     // struct v3 moving_to;
     struct l2_character_name name;

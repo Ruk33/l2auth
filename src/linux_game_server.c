@@ -5,6 +5,7 @@ struct connection {
     int socket;
     struct game_session *session;
     size_t written;
+    size_t written2;
 };
 
 static struct game_state state = {0};
@@ -78,19 +79,36 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
         }
         // check if there is a response pending to be written.
         u16 response_size = packet_size(&conn->session->response);
-        if (!response_size)
-            return;
-        log("writing chunk of response.");
-        conn->written += network_write(
-            socket,
-            conn->session->response.buf + conn->written,
-            response_size - conn->written
-        );
-        // reset if the entire response was sent.
-        if (response_size <= conn->written) {
-            log("entire response sent.");
-            zero(&conn->session->response);
-            conn->written = 0;
+        if (response_size > 0) {
+            log("writing chunk of response.");
+            conn->written += network_write(
+                socket,
+                conn->session->response.buf + conn->written,
+                response_size - conn->written
+            );
+            // reset if the entire response was sent.
+            if (response_size <= conn->written) {
+                log("entire response sent.");
+                zero(&conn->session->response);
+                conn->written = 0;
+            }
+        }
+        // ---
+        // check if there is a response2 pending to be written.
+        u16 response2_size = packet_size(&conn->session->response2);
+        if (response2_size > 0) {
+            log("writing chunk of response2.");
+            conn->written2 += network_write(
+                socket,
+                conn->session->response2.buf + conn->written2,
+                response2_size - conn->written2
+            );
+            // reset if the entire response2 was sent.
+            if (response2_size <= conn->written2) {
+                log("entire response2 sent.");
+                zero(&conn->session->response2);
+                conn->written2 = 0;
+            }
         }
         break;
     default:

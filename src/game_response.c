@@ -323,3 +323,116 @@ void response_validate_position_encode(struct packet *dest, struct response_vali
     packet_write_i32(dest, src->z);
     packet_write_i32(dest, src->heading);
 }
+
+void response_char_info_encode(struct packet *dest, struct l2_character *character)
+{
+    assert(dest);
+    assert(character);
+    // todo: if the character is morphed, we have to send just
+    // a few properties, not the entire thing.
+    // we are assuming the character is not morphed.
+    // WHEN MORPHED, the id of the packet is 0x16.
+    packet_set_type(dest, 0x03);
+    packet_write_i32(dest, character->x);
+    packet_write_i32(dest, character->y);
+    packet_write_i32(dest, character->z);
+    packet_write_i32(dest, character->heading);
+    packet_write_u32(dest, character->id);
+    packet_write(dest, character->name.buf, l2_string_size(character->name.buf, sizeof(character->name.buf)));
+    packet_write_u32(dest, character->race_id);
+    packet_write_u32(dest, character->sex);
+    packet_write_u32(dest, character->class_id);
+    // unknown.
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, character->head_id);
+    packet_write_u32(dest, character->r_hand_id);
+    packet_write_u32(dest, character->l_hand_id);
+    packet_write_u32(dest, character->gloves_id);
+    packet_write_u32(dest, character->chest_id);
+    packet_write_u32(dest, character->legs_id);
+    packet_write_u32(dest, character->feet_id);
+    packet_write_u32(dest, character->back_id);
+    packet_write_u32(dest, character->lr_hand_id);
+    packet_write_u32(dest, character->hair_id);
+    // todo: pvp flag.
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, character->karma);
+    packet_write_u32(dest, character->m_attack_speed);
+    packet_write_u32(dest, character->p_attack_speed);
+    // todo: pvp flag.
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, character->karma);
+
+    packet_write_i32(dest, character->run_speed);
+    packet_write_i32(dest, character->walk_speed);
+    // swim
+    packet_write_i32(dest, character->run_speed/2);
+    packet_write_i32(dest, character->walk_speed/2);
+    // fly
+    packet_write_i32(dest, character->run_speed*2);
+    packet_write_i32(dest, character->walk_speed*2);
+    packet_write_i32(dest, character->run_speed*2);
+    packet_write_i32(dest, character->walk_speed*2);
+    packet_write_double(dest, character->movement_speed_multiplier);
+    packet_write_double(dest, character->attack_speed_multiplier);
+    packet_write_double(dest, character->collision_radius);
+    packet_write_double(dest, character->collision_height);
+    packet_write_u32(dest, character->hair_style_id);
+    packet_write_u32(dest, character->hair_color_id);
+    packet_write_u32(dest, character->face_id);
+    packet_write(dest, character->title.buf, l2_string_size(character->title.buf, sizeof(character->title.buf)));
+    packet_write_u32(dest, character->clan_id);
+    // todo: clan crest id.
+    packet_write_u32(dest, 0);
+    // todo: ally id.
+    packet_write_u32(dest, 0);
+    // todo: ally crest id.
+    packet_write_u32(dest, 0);
+    // siege flags?
+    packet_write_u32(dest, 0);
+    // sitting
+    packet_write_u8(dest, 0);
+    // running
+    packet_write_u8(dest, 1);
+    // in combat
+    packet_write_u8(dest, 0);
+    // alike dead
+    packet_write_u8(dest, 0);
+    // invisible
+    packet_write_u8(dest, 0);
+    // mount type
+    packet_write_u8(dest, 0);
+    // private store type
+    packet_write_u8(dest, 0);
+    // todo: cubics
+    packet_write_u16(dest, 0);
+    // find party members
+    packet_write_u8(dest, 0);
+    // abnormal
+    packet_write_u32(dest, 0);
+
+    packet_write_u8(dest, 0);
+    // recommendations have
+    packet_write_u16(dest, 0);
+    packet_write_u32(dest, 0);
+    // unknown
+    packet_write_u32(dest, 0);
+    packet_write_u32(dest, 0);
+    // is mounted
+    packet_write_u8(dest, 0);
+    // unknown
+    packet_write_u8(dest, 0);
+    // clan crest large id
+    packet_write_u32(dest, 0);
+    // hero symbol
+    packet_write_u8(dest, 0);
+    // hero aura
+    packet_write_u8(dest, 0);
+    // fishing?
+    packet_write_u8(dest, 0);
+    // fishing position
+    packet_write_i32(dest, character->x);
+    packet_write_i32(dest, character->y);
+    packet_write_i32(dest, character->z);
+    packet_write_u32(dest, character->name_color);
+}

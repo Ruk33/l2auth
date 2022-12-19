@@ -2,6 +2,7 @@
 #define GAME_RESPONSE_H
 
 #include "game_server.h"
+#include "l2auth.h"
 
 struct protocol {
     byte buf[9];
@@ -171,6 +172,74 @@ struct response_validate_position {
     i32 heading;
 };
 
+struct response_char_info {
+    u32 id;
+    u32 poly_id;
+    u32 race_id;
+    u32 sex;
+    u32 class_id;
+    u32 helmet_id;
+    u32 r_hand_weapon_id;
+    u32 l_hand_weapon_id;
+    u32 lr_hand_weapon_id;
+    u32 gloves_id;
+    u32 chest_id;
+    u32 legs_id;
+    u32 boots_id;
+    u32 back_id;
+    u32 hair_id;
+    // not sure if karma can be negative, so for
+    // now use signed.
+    i32 karma;
+    i32 x;
+    i32 y;
+    i32 z;
+    i32 heading;
+    // again, not sure if these can be negatives.
+    i32 m_attack_speed;
+    i32 p_attack_speed;
+    i32 run_speed;
+    i32 walk_speed;
+    i32 swim_run_speed;
+    i32 swim_walk_speed;
+    i32 fly_walk_speed;
+    i32 fly_run_speed;
+    double movement_speed_multiplier;
+    double attack_speed_multiplier;
+    double collision_radius;
+    double collision_height;
+    u8 is_running;
+    u8 is_in_combat;
+    u8 is_alike_dead;
+    u8 is_invisible;
+    u8 is_sitting;
+    u8 mount_type;
+    u8 private_store_type;
+    u8 hero_symbol;
+    u8 hero_aura;
+    u8 is_fishing;
+    struct l2_character_name name;
+    struct l2_character_title title;
+    u16 abnormal_effect;
+    u32 pvp_flag;
+    u32 hair_style_id;
+    u32 hair_color_id;
+    u32 face_id;
+    u32 clan_id;
+    u32 clan_crest_id;
+    u32 ally_id;
+    u32 ally_crest_id;
+    u16 cubics_count;
+    // confirm the maximum amount of cubics.
+    u16 cubic_ids[3];
+    u16 recommendation_left;
+    u32 clan_crest_large_id;
+    i32 fish_x;
+    i32 fish_y;
+    i32 fish_z;
+    u32 name_color;
+};
+
 void response_protocol_encode(struct packet *dest, struct response_protocol *src);
 void response_auth_login_encode(struct packet *dest, struct response_auth_login *src);
 void response_show_creation_screen_encode(struct packet *dest, struct response_show_creation_screen *src);
@@ -181,5 +250,6 @@ void response_enter_world_encode(struct packet *dest, struct response_enter_worl
 void response_restart_encode(struct packet *dest, struct response_restart *src);
 void response_move_encode(struct packet *dest, struct response_move *src);
 void response_validate_position_encode(struct packet *dest, struct response_validate_position *src);
+void response_char_info_encode(struct packet *dest, struct l2_character *character);
 
 #endif

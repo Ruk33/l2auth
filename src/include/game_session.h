@@ -14,6 +14,7 @@ struct game_session {
     int closed;
     size_t read;
     struct packet response;
+    struct packet response2;
     struct packet request;
     struct username username;
     // struct character *character;

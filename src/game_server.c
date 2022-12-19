@@ -3,6 +3,7 @@
 #include "include/game_response.h"
 #include "include/game_session.h"
 #include "include/l2_string.h"
+#include "include/l2auth.h"
 #include "include/storage.h"
 
 static void on_protocol_version(struct game_state *state, struct game_session *session)
@@ -299,6 +300,18 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
 
     response_enter_world_encode(&session->response, &response);
     game_session_encrypt_packet(session, &session->response);
+
+    // broadcast char info to the rest of the player.s
+    for_each(struct game_session, s, state->sessions) {
+        if (!s->active)
+            continue;
+        if (!s->character)
+            continue;
+        if (s == session)
+            continue;
+        response_char_info_encode(&s->response2, session->character);
+        game_session_encrypt_packet(s, &s->response2);
+    }
 }
 
 static void on_restart(struct game_state *state, struct game_session *session)
