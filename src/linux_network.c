@@ -8,9 +8,12 @@
 #include <sys/epoll.h>  // epoll_create1, epoll_wait, epoll_event, ...
 #include <sys/socket.h> // socket, bind, listen
 #include <sys/un.h>     // sockaddr_un
+#include <sys/timeb.h>  // ftime
 #include <netinet/in.h> // sockaddr_in, INADDR_ANY, htons
 #include <unistd.h>     // unlink, close
 #include "include/l2auth.h"
+
+#define _abs(x) ((x) < 0 ? (-(x)) : (x))
 
 static void print_err(const char *context)
 {
@@ -85,7 +88,6 @@ void network_listen(int server, network_handler *handler)
 {
     static struct epoll_event events[128] = {0};
     static unsigned char read_buf[8192] = {0};
-    
     if (!handler) {
         printf("error: no socket request handler provided.\n");
         return;
@@ -104,10 +106,22 @@ void network_listen(int server, network_handler *handler)
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server, &event) == -1)
         goto abort;
     
+    struct timeb last_tick = {0};
     while (1) {
-        ev_count = epoll_wait(epoll_fd, events, arr_len(events), -1);
+        ev_count = epoll_wait(epoll_fd, events, arr_len(events), 30);
         if (ev_count == -1)
             goto abort;
+
+        // tick
+        struct timeb now = {0};
+        ftime(&now);
+        float d = _abs(now.millitm - last_tick.millitm);
+        if (d >= 30) {
+            last_tick = now;
+            d = d > 30 ? 30 : d;
+            d /= 1000;
+            handler(server, NETWORK_TICK, &d, sizeof(d));
+        }
 
         for (int i = 0; i < ev_count; i += 1) {
             // only read and write, ignore the rest.

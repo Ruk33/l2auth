@@ -5,7 +5,7 @@ struct connection {
     int socket;
     struct game_session *session;
     size_t written;
-    size_t written2;
+    size_t responses_served;
 };
 
 static struct game_state state = {0};
@@ -77,39 +77,29 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             close(socket);
             return;
         }
-        // check if there is a response pending to be written.
-        u16 response_size = packet_size(&conn->session->response);
-        if (response_size > 0) {
-            log("writing chunk of response.");
+        // todo: make sure we can re-use responses that we
+        // have already sent. now, that's not the case, the entire
+        // queue has to be flushed in order to reuse buckets.
+        for (
+            size_t i = conn->responses_served;
+            i < conn->session->response_queue_count;
+            i++
+        ) {
+            u16 response_size = packet_size(&conn->session->response_queue[i]);
+            printf("response size: %d\n", response_size);
             conn->written += network_write(
                 socket,
-                conn->session->response.buf + conn->written,
+                conn->session->response_queue[i].buf + conn->written,
                 response_size - conn->written
             );
-            // reset if the entire response was sent.
-            if (response_size <= conn->written) {
-                log("entire response sent.");
-                zero(&conn->session->response);
-                conn->written = 0;
-            }
+            if (response_size > conn->written)
+                return;
+            zero(&conn->session->response_queue[i]);
+            conn->written = 0;
+            conn->responses_served++;
         }
-        // ---
-        // check if there is a response2 pending to be written.
-        u16 response2_size = packet_size(&conn->session->response2);
-        if (response2_size > 0) {
-            log("writing chunk of response2.");
-            conn->written2 += network_write(
-                socket,
-                conn->session->response2.buf + conn->written2,
-                response2_size - conn->written2
-            );
-            // reset if the entire response2 was sent.
-            if (response2_size <= conn->written2) {
-                log("entire response2 sent.");
-                zero(&conn->session->response2);
-                conn->written2 = 0;
-            }
-        }
+        conn->responses_served = 0;
+        conn->session->response_queue_count = 0;
         break;
     default:
         break;

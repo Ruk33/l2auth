@@ -337,6 +337,7 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     packet_write_i32(dest, character->y);
     packet_write_i32(dest, character->z);
     packet_write_i32(dest, character->heading);
+    assert(character->id);
     packet_write_u32(dest, character->id);
     packet_write(dest, character->name.buf, l2_string_size(character->name.buf, sizeof(character->name.buf)));
     packet_write_u32(dest, character->race_id);
@@ -391,9 +392,9 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     // siege flags?
     packet_write_u32(dest, 0);
     // sitting
-    packet_write_u8(dest, 0);
+    packet_write_u8(dest, 1); // standing = 1  sitting = 0
     // running
-    packet_write_u8(dest, 1);
+    packet_write_u8(dest, 1); // running = 1   walking = 0
     // in combat
     packet_write_u8(dest, 0);
     // alike dead

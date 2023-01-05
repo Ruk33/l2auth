@@ -27,7 +27,10 @@ static void on_protocol_version(struct game_state *state, struct game_session *s
     response_protocol.protocol = protocol;
 
     log("handling protocol version.");
-    response_protocol_encode(&session->response, &response_protocol);
+    response_protocol_encode(
+        game_session_get_free_response(session),
+        &response_protocol
+    );
 }
 
 static void on_auth_request(struct game_state *state, struct game_session *session)
@@ -37,7 +40,7 @@ static void on_auth_request(struct game_state *state, struct game_session *sessi
 
     struct request_auth request = {0};
     struct response_auth_login response = {0};
-    
+
     log("handling auth request.");
     request_auth_decode(&request, &session->request);
     l2_string_to_char_arr(session->username.buf, request.username.buf);
@@ -49,8 +52,9 @@ static void on_auth_request(struct game_state *state, struct game_session *sessi
         (int *) &response.count
     );
     log("sending %d characters found.", response.count);
-    response_auth_login_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_auth_login_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_show_creation_screen(struct game_state *state, struct game_session *session)
@@ -66,8 +70,9 @@ static void on_show_creation_screen(struct game_state *state, struct game_sessio
     // are not sending it. it really doesn't make sense to send
     // those templates since it's a place where the player could
     // potentially cheat (by setting the attributes to whatever)
-    response_show_creation_screen_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_show_creation_screen_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_create_character(struct game_state *state, struct game_session *session)
@@ -166,8 +171,9 @@ static void on_create_character(struct game_state *state, struct game_session *s
     );
     
     log("sending %d characters found.", response.count);
-    response_auth_login_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_auth_login_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_select_character(struct game_state *state, struct game_session *session)
@@ -214,8 +220,9 @@ static void on_select_character(struct game_state *state, struct game_session *s
     response.attrs = session->character->attrs;
     response.game_time = 10; // session->character->game_time;
 
-    response_selected_character_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_selected_character_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_auto_ss_bsps(struct game_state *state, struct game_session *session)
@@ -223,8 +230,9 @@ static void on_auto_ss_bsps(struct game_state *state, struct game_session *sessi
     assert(state);
     assert(session);
     struct response_d0 response = {0};
-    response_d0_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_d0_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_quest_list(struct game_state *state, struct game_session *session)
@@ -232,8 +240,9 @@ static void on_quest_list(struct game_state *state, struct game_session *session
     assert(state);
     assert(session);
     struct response_quest_list response = {0};
-    response_quest_list_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_quest_list_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_enter_world(struct game_state *state, struct game_session *session)
@@ -298,19 +307,28 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
     response.cp = session->character->cp;
     response.name_color = session->character->name_color;
 
-    response_enter_world_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_enter_world_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 
-    // broadcast char info to the rest of the player.s
+    // broadcast char info to the rest of the players
     for_each(struct game_session, s, state->sessions) {
         if (!s->active)
             continue;
         if (!s->character)
             continue;
-        if (s == session)
+        if (s->character == session->character)
             continue;
-        response_char_info_encode(&s->response2, session->character);
-        game_session_encrypt_packet(s, &s->response2);
+        log("sending char info to %s", s->username.buf);
+        // notifiy other players.
+        struct packet *queue_response = game_session_get_free_response(s);
+        response_char_info_encode(queue_response, session->character);
+        game_session_encrypt_packet(s, queue_response);
+        // notify ourselves
+        // todo: what happens if there are more players than the queue size?
+        queue_response = game_session_get_free_response(session);
+        response_char_info_encode(queue_response, s->character);
+        game_session_encrypt_packet(session, queue_response);
     }
 }
 
@@ -321,11 +339,25 @@ static void on_restart(struct game_state *state, struct game_session *session)
 
     // todo: make sure the character can restart
     // (ie, it's not in aggro mode)
-
     struct response_restart response = {0};
     response.code = 1;
-    response_restart_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_restart_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
+
+    // send the character list.
+    struct response_auth_login char_list_response = {0};
+    log("sending character list after restarting.");
+    storage_get_characters(
+        char_list_response.characters,
+        &session->username,
+        arr_len(char_list_response.characters),
+        (int *) &char_list_response.count
+    );
+    log("sending %d characters found.", char_list_response.count);
+    queue_response = game_session_get_free_response(session);
+    response_auth_login_encode(queue_response, &char_list_response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_move(struct game_state *state, struct game_session *session)
@@ -351,8 +383,9 @@ static void on_move(struct game_state *state, struct game_session *session)
     response.origin_y = request.origin_y;
     response.origin_z = request.origin_z;
 
-    response_move_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_move_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_validate_position(struct game_state *state, struct game_session *session)
@@ -373,8 +406,9 @@ static void on_validate_position(struct game_state *state, struct game_session *
     response.z = request.z;
     response.heading = request.heading;
 
-    response_validate_position_encode(&session->response, &response);
-    game_session_encrypt_packet(session, &session->response);
+    struct packet *queue_response = game_session_get_free_response(session);
+    response_validate_position_encode(queue_response, &response);
+    game_session_encrypt_packet(session, queue_response);
 }
 
 static void on_game_server_new_request(struct game_state *state, struct game_session *session)
@@ -569,6 +603,7 @@ struct game_session *game_server_new_conn(struct game_state *state)
     struct crypt_key key = {{0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87}};
     new_session->active = 1;
     new_session->id = l2_random();
+    log("new session with id %d is being created", new_session->id);
     new_session->encrypt_key = key;
     new_session->decrypt_key = key;
 

@@ -12,6 +12,7 @@ enum network_event {
     NETWORK_CLOSED,
     NETWORK_READ,
     NETWORK_CAN_WRITE,
+    NETWORK_TICK,
 };
 
 typedef void (network_handler)
