@@ -1,5 +1,6 @@
 #!/bin/bash
-echo "Building..."
+echo building...
+echo building login server executable
 tcc \
     -O0 \
     -DMAX_CONNECTIONS=32 \
@@ -16,6 +17,8 @@ tcc \
     src/packet.c \
     -lcrypto \
     -o login_server
+
+echo building game server library.
 tcc \
     -O0 \
     -DMAX_CONNECTIONS=32 \
@@ -25,9 +28,25 @@ tcc \
     src/linux_random.c \
     src/linux_storage.c \
     src/packet.c \
-    src/linux_game_server.c \
     src/game_server.c \
     src/game_session.c \
     src/game_request.c \
     src/game_response.c \
-    -o game_server
+    -o game_server_lib \
+    -shared \
+    -rdynamic
+
+echo building game server executable.
+tcc \
+    -O0 \
+    -DMAX_CONNECTIONS=32 \
+    src/l2_string.c \
+    src/packet.c \
+    src/linux_endian.c \
+    src/linux_network.c \
+    src/linux_random.c \
+    src/linux_storage.c \
+    src/linux_game_server.c \
+    -o game_server \
+    -ldl
+
