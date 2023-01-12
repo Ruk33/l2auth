@@ -1,4 +1,6 @@
 #include <unistd.h> // close
+#include <string.h> // memset, strncmp
+#include <stdio.h>  // printf
 #include "include/login_server.h"
 
 struct connection {

@@ -430,7 +430,7 @@ static void on_game_server_new_request(struct game_state *state, struct game_ses
         return;
     }
     on_protocol_version(state, session);
-    yield;
+    yield1;
 
     // auth request
     if (request_type != 0x08) {
@@ -448,7 +448,7 @@ static void on_game_server_new_request(struct game_state *state, struct game_ses
     // the create new character or he/she can enter into
     // the world. both actions are valid and must be handled.
 in_character_selection:
-    yield;
+    yield2;
     switch (request_type) {
     // show character creation screen.
     case 0x0e:
@@ -482,7 +482,7 @@ in_character_selection:
 // in the character selection screen. we could make use of gotos in here as 
 // well, but duplicating the code seemed better, and easier to follow.
 in_character_creation:
-    yield;
+    yield3;
     switch (request_type) {
     // show character creation screen.
     case 0x0e:
@@ -523,7 +523,7 @@ in_world:
         return;
     }
     on_select_character(state, session);
-    yield;
+    yield4;
 
     // auto ss bsps.
     if (request_type != 0xd0) {
@@ -531,7 +531,7 @@ in_world:
         return;
     }
     on_auto_ss_bsps(state, session);
-    yield;
+    yield5;
 
     // quest list.
     if (request_type != 0x63) {
@@ -539,7 +539,7 @@ in_world:
         return;
     }
     on_quest_list(state, session);
-    yield;
+    yield6;
 
     // enter world.
     if (request_type != 0x03) {
@@ -547,7 +547,7 @@ in_world:
         return;
     }
     on_enter_world(state, session);
-    yield;
+    yield7;
 
     // todo: we may wanna move this to a new function
     // where it can have it's own coroutine state.

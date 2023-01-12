@@ -98,7 +98,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_gg_auth(state, session);
-    yield;
+    yield1;
 
     // auth login
     if (request_type != 0x00) {
@@ -106,7 +106,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_auth_login(state, session);
-    yield;
+    yield2;
 
     // request server list
     if (request_type != 0x05) {
@@ -114,7 +114,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_request_server_list(state, session);
-    yield;
+    yield3;
 
     // log into game server
     if (request_type != 0x02) {
@@ -122,7 +122,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
         return;
     }
     on_login_server(state, session);
-    yield;
+    yield4;
 
     log("i was not expecting packets but i got 0x%x. ignoring!", request_type);
 
