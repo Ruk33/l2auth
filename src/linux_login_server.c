@@ -12,6 +12,12 @@ struct connection {
 static struct state state = {0};
 static struct connection connections[MAX_CONNECTIONS] = {0};
 
+// todo: not sure if this is correct. we may want to clean this up later.
+void _putchar(char character)
+{
+    putchar(character);
+}
+
 struct connection *get_connection_from(int socket)
 {
     struct connection *result = 0;

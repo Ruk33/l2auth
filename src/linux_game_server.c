@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "include/game_server.h"
 
 struct connection {
@@ -24,6 +25,12 @@ struct game_server_lib {
 static struct game_state state = {0};
 static struct connection connections[MAX_CONNECTIONS] = {0};
 static struct game_server_lib lib = {0};
+
+// todo: not sure if this is correct. we may want to clean this up later.
+void _putchar(char character)
+{
+    putchar(character);
+}
 
 static struct game_session *empty_game_server_new_conn(struct game_state *state)
 {

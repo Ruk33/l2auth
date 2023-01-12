@@ -620,7 +620,7 @@ void game_server_request(struct game_state *state, struct game_session *session,
         log_err("request too big to be handled.");                                                                                     
         return;
     }
-    memcpy(session->request.buf + session->read, buf, n);
+    str_memcpy(session->request.buf + session->read, buf, n);
     session->read += n;
 
     // ignore if we haven't even read the packet size.

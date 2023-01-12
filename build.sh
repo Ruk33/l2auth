@@ -15,6 +15,8 @@ tcc \
     src/login_response.c \
     src/login_session.c \
     src/packet.c \
+    src/printf.c \
+    src/str.c \
     -lcrypto \
     -o login_server
 
@@ -32,6 +34,8 @@ tcc \
     src/game_session.c \
     src/game_request.c \
     src/game_response.c \
+    src/printf.c \
+    src/str.c \
     -o game_server_lib \
     -shared \
     -rdynamic
@@ -47,6 +51,8 @@ tcc \
     src/linux_random.c \
     src/linux_storage.c \
     src/linux_game_server.c \
+    src/printf.c \
+    src/str.c \
     -o game_server \
     -ldl
 
