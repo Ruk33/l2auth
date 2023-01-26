@@ -1,3 +1,6 @@
 KNOWN ISSUES / NOTES / TODO
 
+    - Action failed? (may help with responsiveness of the game)
     - See other players moving.
+    - Select target
+    - Attack

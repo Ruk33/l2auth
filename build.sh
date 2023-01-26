@@ -18,7 +18,7 @@ tcc \
     src/printf.c \
     src/str.c \
     -lcrypto \
-    -o login_server
+    -o build/login_server
 
 echo building game server library.
 tcc \
@@ -36,7 +36,7 @@ tcc \
     src/game_response.c \
     src/printf.c \
     src/str.c \
-    -o game_server_lib \
+    -o build/game_server_lib \
     -shared \
     -rdynamic
 
@@ -53,6 +53,6 @@ tcc \
     src/linux_game_server.c \
     src/printf.c \
     src/str.c \
-    -o game_server \
+    -o build/game_server \
     -ldl
 

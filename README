@@ -4,6 +4,27 @@ L2 AUTH
     is not to be a 1:1 implementation with the official servers but rather, 
     just a fun experiment to see and explore what can be made with it.
 
+HOW TO USE (WINDOWS)
+    - Install https://learn.microsoft.com/en-us/windows/wsl/install
+      You can use the Windows App Store to make the installation easier. Just
+      search for WSL, click install and that's it.
+    - Download or clone the project.
+    - Run build/login_server.bat to start the login server.
+    - Run build/game_server.bat to start the game server.
+    - Run the game (make sure your system or /etc/host file is set for localhost)
+
+HOW TO USE (LINUX)
+    - Download or clone the project.
+    - Run build/login_server to start the login server.
+    - Run build/game_server to start the game server.
+    - Run the game (make sure your system or /etc/host file is set for localhost)
+
+HOW TO USE (NOTES)
+    The login server will listen for connections to localhost using port 2106.
+    The game server will listen for connections to localhost using port 7777.
+    The accounts will be automatically created.
+    The server should work out of the box. No additional steps are required.
+
 COMMUNITY
     - Help support the project https://ko-fi.com/francomontenegro
         - Get access to early videos
@@ -11,14 +32,6 @@ COMMUNITY
     - Watch the development of the project in:
         - Youtube: https://www.youtube.com/channel/UCmbdpFvxXfxk4KbmUgTAomw
         - Twitch: https://www.twitch.tv/franco_montenegro
-
-QUICK START
-    - Download a release from: https://github.com/Ruk33/l2auth/releases
-    - Start the login server from a terminal with: bash ./loginserver
-    - Start the game server from a terminal with: bash ./gameserver
-    - Run the game (make sure your system or /etc/host file is set for localhost)
-    The login server will listen for connections to localhost using port 2106.
-    The game server will listen for connections to localhost using port 7777.
 
 CONTRIBUTE
     Just open up an issue detailing what you will be working on, this way
@@ -62,27 +75,14 @@ PROJECT DOCUMENTATION
     gs_lib.c and ls_lib.c to include your implementation instead of sqlite.c.
 
 DEPENDENCIES
+    - tcc (tiny c compiler): https://bellard.org/tcc/
     - openssl: https://www.openssl.org
-    - sqlite3: https://www.sqlite.org
-    - cglm: https://github.com/recp/cglm
+
+COMPILE IN WINDOWS
+    - Run: build.bat (requires WSL)
 
 COMPILE IN LINUX
     - Run: bash build.sh
-    - Run migrations and seeds (see below for these two steps)
-
-RUN MIGRATIONS
-    Migrations contain all the schemes for the database (meaning, how should 
-    the information be stored in the database)
-
-    - Run: bash migrations/sqlite/run.sh build/db
-    This will create a database in build/db (if required) and run the migration.
-
-RUN SEEDS
-    Seeds contain some initial data to upload into the database, such as,
-    server information (ie, Bartz)
-
-    - Run: bash seeds/sqlite/run.sh build/db
-    This will create some initial entries in the database build/db.
 
 START LOGIN SERVER
     - Run: build/login_server
