@@ -65,3 +65,14 @@ void request_validate_position_decode(struct request_validate_position *dest, st
     packet_read_i32(&dest->z, src);
     packet_read_i32(&dest->heading, src);
 }
+
+void request_action_decode(struct request_action *dest, struct packet *src)
+{
+    assert(dest);
+    assert(src);
+    packet_read_u32(&dest->obj_id, src);
+    packet_read_i32(&dest->origin_x, src);
+    packet_read_i32(&dest->origin_y, src);
+    packet_read_i32(&dest->origin_z, src);
+    packet_read_u8(&dest->action_id, src);
+}

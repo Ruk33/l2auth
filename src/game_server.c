@@ -383,8 +383,50 @@ static void on_move(struct game_state *state, struct game_session *session)
     response.origin_y = request.origin_y;
     response.origin_z = request.origin_z;
 
+    // Broadcast moving packet.
+    for_each(struct game_session, session, state->sessions) {
+        if (!session->active)
+            continue;
+        if (!session->character)
+            continue;
+        struct packet *queue_response = game_session_get_free_response(session);
+        response_move_encode(queue_response, &response);
+        game_session_encrypt_packet(session, queue_response);
+    }
+}
+
+static void on_action(struct game_state *state, struct game_session *session)
+{
+    assert(state);
+    assert(session);
+    // todo:
+    // check for player distance
+    // check if the player can really see the target
+    struct request_action request = {0};
+    request_action_decode(&request, &session->request);
+    log("username %s is selecting %d", session->username.buf, request.obj_id);
+
+    struct l2_character *target = 0;
+    // Find target by id.
+    for_each(struct game_session, session, state->sessions) {
+        if (!session->character)
+            continue;
+        if (session->character->id != request.obj_id)
+            continue;
+        target = session->character;
+        break;
+    }
+    // No target found, send action failed.
+    if (!target) {
+        struct packet *action_failed = game_session_get_free_response(session);
+        assert(action_failed);
+        response_action_failed_encode(action_failed);
+        game_session_encrypt_packet(session, action_failed);
+        return;
+    }
+    // Send my target response.
     struct packet *queue_response = game_session_get_free_response(session);
-    response_move_encode(queue_response, &response);
+    response_action_select_target_encode(queue_response, target);
     game_session_encrypt_packet(session, queue_response);
 }
 
@@ -454,10 +496,6 @@ in_character_selection:
     case 0x0e:
         on_show_creation_screen(state, session);
         goto in_character_creation;
-    // enter world.
-    // case 0x03:
-    //     // handle request.
-    //     goto in_world;
     // selected character.
     case 0x0d:
         goto in_world;
@@ -496,10 +534,6 @@ in_character_creation:
     case 0x9:
         log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
         return;
-    // enter world.
-    // case 0x03:
-    //     // handle request.
-    //     goto in_world;
     // select character.
     case 0x0d:
         goto in_world;
@@ -555,20 +589,37 @@ in_world:
     switch (request_type) {
     case 0x01: // move
         on_move(state, session);
-        break;
+        return;
+    case 0x4: // select action (select target, etc.)
+        on_action(state, session);
+        return;
     case 0x46: // restart
         on_restart(state, session);
         goto in_character_selection;
-        break;
+        return;
     case 0x48: // validate the position
         on_validate_position(state, session);
-        break;
+        return;
     default:
         break;
     }
 
     log("oh no! we ran out of implementation code.");
     log("go back to the switch case.");
+    log("sending action failed just in case.");
+
+    // Send action failed response since this prevents
+    // the game from hanging from unhandled responses.
+    // For example, if we make an action (from the game)
+    // that we don't handle yet, if we don't send anything
+    // back, the client keep on waiting for a response and
+    // thus, it may hang for certain actions (such as 
+    // moving the character)
+    struct packet *action_failed = game_session_get_free_response(session);
+    assert(action_failed);
+    response_action_failed_encode(action_failed);
+    game_session_encrypt_packet(session, action_failed);
+
     return;
 
     coroutine_end;

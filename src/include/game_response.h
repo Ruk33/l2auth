@@ -251,5 +251,7 @@ void response_restart_encode(struct packet *dest, struct response_restart *src);
 void response_move_encode(struct packet *dest, struct response_move *src);
 void response_validate_position_encode(struct packet *dest, struct response_validate_position *src);
 void response_char_info_encode(struct packet *dest, struct l2_character *character);
+void response_action_failed_encode(struct packet *dest);
+void response_action_select_target_encode(struct packet *dest, struct l2_character *target);
 
 #endif

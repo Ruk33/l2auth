@@ -2,6 +2,9 @@
 echo building...
 echo building login server executable
 tcc \
+    -Wall \
+    -Wextra \
+    -Werror \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src/l2_string.c \
@@ -22,6 +25,9 @@ tcc \
 
 echo building game server library.
 tcc \
+    -Wall \
+    -Wextra \
+    -Werror \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src/l2_string.c \

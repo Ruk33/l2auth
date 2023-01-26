@@ -1,6 +1,11 @@
 KNOWN ISSUES / NOTES / TODO
 
-    - Action failed? (may help with responsiveness of the game)
-    - See other players moving.
-    - Select target
+    - We may have to switch compilers, for some reason TCC isn't
+      checking basic things like sending the correct parameter to 
+      functions...
     - Attack
+    - Fetching the user's characters isn't working properly
+      Any user can see any characters.
+    - Redirect the output from stdout to a file, so we can see
+      what went wrong if the server crashes (or for some reason,
+      the terminal gets closed)

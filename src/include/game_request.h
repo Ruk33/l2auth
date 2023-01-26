@@ -41,10 +41,19 @@ struct request_validate_position {
     i32 heading;
 };
 
+struct request_action {
+    u32 obj_id;
+    i32 origin_x;
+    i32 origin_y;
+    i32 origin_z;
+    u8 action_id; // 0 simple click, 1 shift click.
+};
+
 void request_auth_decode(struct request_auth *dest, struct packet *src);
 void request_create_character_decode(struct request_create_character *dest, struct packet *src);
 void request_selected_character_decode(struct request_selected_character *dest, struct packet *src);
 void request_move_decode(struct request_move *dest, struct packet *src);
 void request_validate_position_decode(struct request_validate_position *dest, struct packet *src);
+void request_action_decode(struct request_action *dest, struct packet *src);
 
 #endif

@@ -437,3 +437,22 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     packet_write_i32(dest, character->z);
     packet_write_u32(dest, character->name_color);
 }
+
+void response_action_failed_encode(struct packet *dest)
+{
+    assert(dest);
+    packet_set_type(dest, 0x25);
+    // We don't fully support packets with empty bodies so
+    // we have to make some room.
+    packet_write_u32(dest, 0);
+}
+
+void response_action_select_target_encode(struct packet *dest, struct l2_character *target)
+{
+    assert(dest);
+    assert(target);
+    packet_set_type(dest, 0xa6);
+    packet_write_u32(dest, target->id);
+    u16 color = 2; // white;
+    packet_write_u16(dest, color);
+}
