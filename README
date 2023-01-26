@@ -103,3 +103,24 @@ LINEAGE 2 PROTOCOL
 
     Other than the first packet, all the login server packets are encrypted with 
     Blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000
+
+F.A.Q.
+    Why the build folder isn't ignored?
+    Simplifies the whole process for testing/playing with the server. Not all
+    users want or can compile the project from the source code, so there is no
+    harm in actually providing the executables ready to be used.
+
+    What O.S. are supported?
+    For the moment, only Linux (specifically Ubuntu) is supported. Windows can
+    also be used using WSL, although I haven't entirely discarded the idea
+    of providing native support.
+
+    Can this be used in a real server? is production ready?
+    No. The server still lacks a lot of features and it haven't been tested
+    thoroughly.
+
+    Will/Does it support Geo-Data?
+    At the moment, since I'm the only developer I have decided to not add 
+    support for Geo-Data. In order to prevent harming the game play, I will
+    also not implement any kind of range attacks so missing the Geo-Data 
+    shouldn't be a big thing.
