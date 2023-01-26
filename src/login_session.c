@@ -63,7 +63,6 @@ static void blowfish_encrypt(struct login_session *session, struct packet *src)
     assert(session);
     assert(src);
 
-    u32 tmp = 0;
     for (u16 i = 0, iters = packet_size(src) / 8; i < iters; i++) {
         u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;
@@ -92,7 +91,6 @@ static void blowfish_decrypt(struct login_session *session, struct packet *src)
     assert(session);
     assert(src);
 
-    u32 tmp = 0;
     for (u16 i = 0, iters = (packet_padded_size(src) / 8); i < iters; i++) {
         u32 *body = (u32 *)(packet_body(src) + i * 8);
         u32 *tmp = body;

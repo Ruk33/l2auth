@@ -1,10 +1,11 @@
 #!/bin/bash
 echo building...
 echo building login server executable
-tcc \
+gcc \
     -Wall \
     -Wextra \
     -Werror \
+    -Wno-deprecated-declarations \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src/l2_string.c \
@@ -24,10 +25,11 @@ tcc \
     -o build/login_server
 
 echo building game server library.
-tcc \
+gcc \
     -Wall \
     -Wextra \
     -Werror \
+    -Wno-deprecated-declarations \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src/l2_string.c \
@@ -47,7 +49,11 @@ tcc \
     -rdynamic
 
 echo building game server executable.
-tcc \
+gcc \
+    -Wall \
+    -Wextra \
+    -Werror \
+    -Wno-deprecated-declarations \
     -O0 \
     -DMAX_CONNECTIONS=32 \
     src/l2_string.c \

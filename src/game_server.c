@@ -694,6 +694,8 @@ void game_server_request(struct game_state *state, struct game_session *session,
 
 void game_server_disconnect(struct game_state *state, struct game_session *session)
 {
+    assert(state);
+    assert(session);
     log("client got disconnected!");
 }
 

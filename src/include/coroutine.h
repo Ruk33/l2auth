@@ -1,9 +1,6 @@
 #ifndef COROUTINE_H
 #define COROUTINE_H
 
-// #define nothing \
-//     ((void) 0)
-
 // all credit goes to https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html
 #define coroutine_begin(ctx)                \
     {                                       \
@@ -63,25 +60,6 @@
 #define coroutine_end   \
         }               \
     }
-
-// #define yield_sleep(_timeout, dt, x)     \
-//     do {                                    \
-//         (tmp_ctx)->timeout = (_timeout);    \
-//         yield_ex(x);                        \
-//         (tmp_ctx)->timeout -= (dt);         \
-//         if ((tmp_ctx)->timeout > 0)         \
-//             return(x);                      \
-//     } while(0)
-
-// this is error prone.
-// let review it later in the future.
-// #define yield_while(condition)  \
-//     do {                        \
-//         if ((condition))        \
-//             yield;              \
-//         if ((condition))        \
-//             return;             \
-//     } while(0)
 
 struct coroutine {
     float timeout;

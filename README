@@ -75,7 +75,6 @@ PROJECT DOCUMENTATION
     gs_lib.c and ls_lib.c to include your implementation instead of sqlite.c.
 
 DEPENDENCIES
-    - tcc (tiny c compiler): https://bellard.org/tcc/
     - openssl: https://www.openssl.org
 
 COMPILE IN WINDOWS
