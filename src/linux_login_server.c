@@ -15,7 +15,7 @@ static struct connection connections[MAX_CONNECTIONS] = {0};
 // todo: not sure if this is correct. we may want to clean this up later.
 void _putchar(char character)
 {
-    putchar(character);
+    putc(character, stderr);
 }
 
 struct connection *get_connection_from(int socket)

@@ -8,6 +8,8 @@
 #include "game_response.h"
 
 struct game_state {
+    char output[65536];
+    unsigned int output_size;
     struct game_session sessions[MAX_CONNECTIONS];
     struct l2_character characters[MAX_CONNECTIONS];
     int characters_count;

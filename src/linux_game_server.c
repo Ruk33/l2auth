@@ -29,7 +29,7 @@ static struct game_server_lib lib = {0};
 // todo: not sure if this is correct. we may want to clean this up later.
 void _putchar(char character)
 {
-    putchar(character);
+    putc(character, stderr);
 }
 
 static struct game_session *empty_game_server_new_conn(struct game_state *state)
@@ -58,7 +58,7 @@ time_t game_server_lib_change_time(void)
     struct stat file_stat = {0};
     int err = stat("./game_server_lib", &file_stat);
     if (err != 0) {
-        printf("unable to check if the game server library changed.\n");
+        log("unable to check if the game server library changed.");
         return 0;
     }
     return file_stat.st_mtime;
@@ -78,25 +78,25 @@ static void load_game_server_lib(void)
     lib.game_server_disconnect = empty_game_server_disconnect;
     lib.game_server_request = emtpy_game_server_request;
     if (!lib.handle) {
-        printf("unable to load game server library: %s.\n", dlerror());
+        log("unable to load game server library: %s.", dlerror());
         return;
     }
     lib.game_server_new_conn = dlsym(lib.handle, "game_server_new_conn");
     if (!lib.game_server_new_conn) {
-        printf("unable to load game server new connection function: %s.\n", dlerror());
+        log("unable to load game server new connection function: %s.", dlerror());
         lib.game_server_new_conn = empty_game_server_new_conn;
     }
     lib.game_server_request = dlsym(lib.handle, "game_server_request");
     if (!lib.game_server_request) {
-        printf("unable to load game server request function: %s.\n", dlerror());
+        log("unable to load game server request function: %s.", dlerror());
         lib.game_server_request = emtpy_game_server_request;
     }
     lib.game_server_disconnect = dlsym(lib.handle, "game_server_disconnect");
     if (!lib.game_server_disconnect) {
-        printf("unable to load game server disconnect function: %s.\n", dlerror());
+        log("unable to load game server disconnect function: %s.", dlerror());
         lib.game_server_disconnect = empty_game_server_disconnect;
     }
-    printf("game server library loaded.\n");
+    log("game server library loaded.");
     lib.last_time_loaded = library_change_time;
 }
 
@@ -117,6 +117,11 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
     struct connection *conn = 0;
 
     load_game_server_lib();
+
+    if (state.output_size) {
+        fprintf(stderr, "%.*s", state.output_size, state.output);
+        state.output_size = 0;
+    }
 
     switch (event) {
     case NETWORK_NEW_CONN:
@@ -177,7 +182,7 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             i++
         ) {
             u16 response_size = packet_size(&conn->session->response_queue[i]);
-            printf("response size: %d\n", response_size);
+            log("response size: %d", response_size);
             conn->written += network_write(
                 socket,
                 conn->session->response_queue[i].buf + conn->written,

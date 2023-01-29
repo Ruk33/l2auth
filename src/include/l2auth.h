@@ -18,10 +18,12 @@ typedef u8 byte;
 typedef float seconds;
 
 #ifndef assert
-#define assert(expr)                    \
-    do {                                \
-        if (!(expr))                    \
-            (*(volatile int *) 0) = 0;  \
+#define assert(expr)                                                        \
+    do {                                                                    \
+        if ((expr))                                                         \
+            break;                                                          \
+        log("assertion (" #expr ") failed on %d:%s", __LINE__, __FILE__);   \
+        (*(volatile int *) 0) = 0;                                          \
     } while (0);
 #endif
 
@@ -55,10 +57,11 @@ typedef float seconds;
 #define zero_arr(x) \
     (str_memset((x), 0, sizeof(x)))
 
-#define log(...)                \
-    do {                        \
-        printf(__VA_ARGS__);    \
-        printf("\n");           \
+#define log(...)                                \
+    do {                                        \
+        printf("%s %s - ", __DATE__, __TIME__); \
+        printf(__VA_ARGS__);                    \
+        printf("\n");                           \
     } while (0)
 
 #define log_err(...)                                                    \

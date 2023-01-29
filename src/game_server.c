@@ -6,6 +6,18 @@
 #include "include/l2auth.h"
 #include "include/storage.h"
 
+// Only used and required by _putchar.
+// DO NOT use it for other stuff.
+static struct game_state *g_state = 0;
+
+void _putchar(char character)
+{
+    if (!g_state)
+        return;
+    g_state->output[g_state->output_size] = character;
+    g_state->output_size++;
+}
+
 static void on_protocol_version(struct game_state *state, struct game_session *session)
 {
     assert(state);
@@ -628,6 +640,7 @@ in_world:
 struct game_session *game_server_new_conn(struct game_state *state)
 {
     assert(state);
+    g_state = state;
     log("got new connection, but will drop it!");
 
     struct game_session *new_session = 0;
@@ -666,6 +679,8 @@ void game_server_request(struct game_state *state, struct game_session *session,
     assert(state);
     assert(session);
 
+    g_state = state;
+
     // check for requests bigger than buffer.
     if (session->read + n > sizeof(session->request.buf)) {
         log_err("request too big to be handled.");                                                                                     
@@ -696,6 +711,7 @@ void game_server_disconnect(struct game_state *state, struct game_session *sessi
 {
     assert(state);
     assert(session);
+    g_state = state;
     log("client got disconnected!");
 }
 
