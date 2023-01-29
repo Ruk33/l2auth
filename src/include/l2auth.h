@@ -49,7 +49,7 @@ typedef float seconds;
     (str_ncpy(as(char *, (dest)), as(char *, (src)), sizeof(dest) - 1))
 
 #define str_matches(a, b) \
-    (str_ncmp(as(char *, (a)), as(char *, (b)), sizeof(a) - 1) == 0)
+    (str_ncmp(as(char *, (a)), as(char *, (b)), sizeof(a) - 1))
 
 #define zero(x) \
     (str_memset((x), 0, sizeof(*(x))))

@@ -12,7 +12,9 @@ static void on_auth_login(struct state *state, struct login_session *session)
 
     struct account account = {0};
     if (storage_get_account(&account, &auth_login.username)) {
-        if (!str_matches(account.password.buf, auth_login.password.buf)) {
+        // todo: encrypt the given password and compare against encrypted
+        // saved password.
+        if (!str_matches(auth_login.password.buf, account.password.buf)) {
             log("oh my! password incorrect.");
             login_session_drop(session);
             return;

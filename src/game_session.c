@@ -33,7 +33,7 @@ void game_session_encrypt_packet(struct game_session *session, struct packet *sr
     session->encrypt_key.buf[2] = (byte) (old >> 0x10 & 0xff);
     session->encrypt_key.buf[3] = (byte) (old >> 0x18 & 0xff);
 
-    // Update packet size.
+    // update packet size.
     *((u16 *) src) = src_size;
 }
 

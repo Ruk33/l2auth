@@ -15,11 +15,8 @@ struct game_session {
     size_t read;
     struct packet request;
     struct username username;
-    // struct character *character;
     struct crypt_key encrypt_key;
     struct crypt_key decrypt_key;
-    // size_t received;
-    // int partial;
     // what happens if we need to send more than 8 packets?
     // you simply increase the amount of available responses :)
     struct packet response_queue[8];
@@ -30,9 +27,7 @@ struct game_session {
 };
 
 void game_session_decrypt_packet(struct game_session *session, struct packet *packet);
-
 void game_session_encrypt_packet(struct game_session *session, struct packet *src);
-
 struct packet *game_session_get_free_response(struct game_session *session);
 
 #endif

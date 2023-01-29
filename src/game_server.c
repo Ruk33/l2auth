@@ -212,6 +212,8 @@ static void on_select_character(struct game_state *state, struct game_session *s
     log("the user is trying to access with the character %s", name);
 
     // todo: make sure we found the character!
+    // todo: not sure if we really need this response struct since we 
+    // can get all this data from the character itself...
     response.id = session->character->id;
     response.play_ok1 = 1994;
     response.race_id = session->character->race_id;
@@ -261,11 +263,9 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
 {
     assert(state);
     assert(session);
-    struct response_enter_world response = {0};
-    
-    // todo: not sure if we need to check if the user already has a character
-    // assigned (since it should) but, something to keep in mind.
     assert(session->character);
+
+    struct response_enter_world response = {0};
     response.id = session->character->id;
     response.x = session->character->x;
     response.y = session->character->y;
@@ -395,7 +395,7 @@ static void on_move(struct game_state *state, struct game_session *session)
     response.origin_y = request.origin_y;
     response.origin_z = request.origin_z;
 
-    // Broadcast moving packet.
+    // broadcast moving packet.
     for_each(struct game_session, session, state->sessions) {
         if (!session->active)
             continue;
@@ -419,7 +419,7 @@ static void on_action(struct game_state *state, struct game_session *session)
     log("username %s is selecting %d", session->username.buf, request.obj_id);
 
     struct l2_character *target = 0;
-    // Find target by id.
+    // find target by id.
     for_each(struct game_session, session, state->sessions) {
         if (!session->character)
             continue;
@@ -428,7 +428,7 @@ static void on_action(struct game_state *state, struct game_session *session)
         target = session->character;
         break;
     }
-    // No target found, send action failed.
+    // no target found, send action failed.
     if (!target) {
         struct packet *action_failed = game_session_get_free_response(session);
         assert(action_failed);
@@ -436,7 +436,7 @@ static void on_action(struct game_state *state, struct game_session *session)
         game_session_encrypt_packet(session, action_failed);
         return;
     }
-    // Send my target response.
+    // send my target response.
     struct packet *queue_response = game_session_get_free_response(session);
     response_action_select_target_encode(queue_response, target);
     game_session_encrypt_packet(session, queue_response);
@@ -641,10 +641,9 @@ struct game_session *game_server_new_conn(struct game_state *state)
 {
     assert(state);
     g_state = state;
-    log("got new connection, but will drop it!");
 
     struct game_session *new_session = 0;
-
+    // find free session.
     for_each(struct game_session, session, state->sessions) {
         if (session->active)
             continue;

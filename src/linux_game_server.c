@@ -26,7 +26,6 @@ static struct game_state state = {0};
 static struct connection connections[MAX_CONNECTIONS] = {0};
 static struct game_server_lib lib = {0};
 
-// todo: not sure if this is correct. we may want to clean this up later.
 void _putchar(char character)
 {
     putc(character, stderr);

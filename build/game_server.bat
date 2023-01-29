@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 rem the server uses stderr to log messages instead of stdout. the reason
 rem for this is that stderr doesn't require to be flushed and thus,
 rem messages are always recorded (even if the program crashes)

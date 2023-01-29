@@ -14,12 +14,12 @@ struct l2_username {
 };
 
 struct l2_character_name {
-    // check if this limit is ok.
+    // todo: check if this limit is ok.
     l2_string buf[16];
 };
 
 struct l2_character_title {
-    // check if this limit is ok.
+    // todo: check if this limit is ok.
     l2_string buf[16];
 };
 
