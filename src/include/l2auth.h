@@ -59,7 +59,6 @@ typedef float seconds;
 
 #define log(...)                                \
     do {                                        \
-        printf("%s %s - ", __DATE__, __TIME__); \
         printf(__VA_ARGS__);                    \
         printf("\n");                           \
     } while (0)

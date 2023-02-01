@@ -1,10 +1,12 @@
+#include <stdlib.h>     // exit
 #include <unistd.h>     // close
 #include <dlfcn.h>      // dlopen, dlclose, dlerror, dlsym
 #include <time.h>       // time_t
+#include <signal.h>     // signal
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <stdio.h>
+#include <stdio.h>      // fprintf, stderr, 
 #include "include/game_server.h"
 
 struct connection {
@@ -28,7 +30,8 @@ static struct game_server_lib lib = {0};
 
 void _putchar(char character)
 {
-    putc(character, stderr);
+    state.output[state.output_size] = character;
+    state.output_size++;
 }
 
 static struct game_session *empty_game_server_new_conn(struct game_state *state)
@@ -111,16 +114,38 @@ struct connection *get_connection_from(int socket)
     return result;
 }
 
+static void flush_logs(void)
+{
+    // ignore if there is nothing to print.
+    if (!state.output_size)
+        return;
+    time_t t = time(0);
+    struct tm *tm = localtime(&t);
+    // example, Wed Feb  1 12:56:03 2023
+    char date_time[64] = {0};
+    strftime(date_time, sizeof(date_time), "%c", tm);
+    char *line = state.output;
+    for (char *c = state.output; c < state.output + state.output_size; c++) {
+        switch (*c) {
+        case '\n':
+            // +1, print new line.
+            fprintf(stderr, "%s - %.*s", date_time, (uint)(c - line + 1), line);
+            // +1, skip new line.
+            line = c + 1;
+        break;
+        default:
+            break;
+        }
+    }
+    state.output_size = 0;
+}
+
 static void socket_event_handler(int socket, enum network_event event, void *read, size_t len)
 {
     struct connection *conn = 0;
 
     load_game_server_lib();
-
-    if (state.output_size) {
-        fprintf(stderr, "%.*s", state.output_size, state.output);
-        state.output_size = 0;
-    }
+    flush_logs();
 
     switch (event) {
     case NETWORK_NEW_CONN:
@@ -201,8 +226,17 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
     }
 }
 
+static void segfault_handler(int sig_num)
+{
+    flush_logs();
+    exit(sig_num);
+}
+
 int main(void)
 {
+    // catch segfault.
+    signal(SIGSEGV, segfault_handler);
+
     u16 port = 7777;
     int server_fd = network_port(port);
     if (server_fd == -1) {

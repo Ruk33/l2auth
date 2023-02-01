@@ -6,7 +6,7 @@
 #include "include/l2auth.h"
 #include "include/storage.h"
 
-// Only used and required by _putchar.
+// only used and required by _putchar.
 // DO NOT use it for other stuff.
 static struct game_state *g_state = 0;
 
