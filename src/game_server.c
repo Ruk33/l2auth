@@ -437,9 +437,15 @@ static void on_action(struct game_state *state, struct game_session *session)
         return;
     }
     // send my target response.
-    struct packet *queue_response = game_session_get_free_response(session);
-    response_action_select_target_encode(queue_response, target);
-    game_session_encrypt_packet(session, queue_response);
+    // response_action_select_target_encode(queue_response, target);
+    // 
+    // todo: just a test, broadcast and test attack packet.
+    for_each(struct game_session, s, state->sessions) {
+        struct packet *queue_response = game_session_get_free_response(s);
+        assert(queue_response);
+        response_attack_target(queue_response, session->character, target);
+        game_session_encrypt_packet(s, queue_response);
+    }
 }
 
 static void on_validate_position(struct game_state *state, struct game_session *session)

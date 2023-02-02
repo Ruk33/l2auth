@@ -488,3 +488,31 @@ void response_action_select_target_encode(struct packet *dest, struct l2_charact
     u16 color = 2; // white;
     packet_write_u16(dest, color);
 }
+
+void response_attack_target(struct packet *dest, struct l2_character *attacker, struct l2_character *target)
+{
+    assert(dest);
+    assert(attacker);
+    assert(target);
+    packet_set_type(dest, 0x05);
+    packet_write_u32(dest, attacker->id);
+    packet_write_u32(dest, target->id);
+    // TODO: calculate damage.
+    u32 damage = 10;
+    packet_write_u32(dest, damage);
+    // 
+    // from l2j:
+    // if (_soulshot) _flags |= 0x10 | _grade;
+    // if (crit)      _flags |= 0x20;
+    // if (shld)      _flags |= 0x40;
+    // if (miss)      _flags |= 0x80;
+    // 
+    u8 flags = 0;
+    packet_write_u8(dest, flags);
+    packet_write_i32(dest, attacker->x);
+    packet_write_i32(dest, attacker->y);
+    packet_write_i32(dest, attacker->z);
+    // todo: properly handle this.
+    u16 hits_count = 0;
+    packet_write_u16(dest, hits_count);
+}

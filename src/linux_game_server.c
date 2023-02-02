@@ -13,7 +13,7 @@ struct connection {
     int socket;
     struct game_session *session;
     size_t written;
-    size_t responses_served;
+    size_t sending_index;
 };
 
 struct game_server_lib {
@@ -197,14 +197,41 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             close(socket);
             return;
         }
-        // todo: make sure we can re-use responses that we
-        // have already sent. now, that's not the case, the entire
-        // queue has to be flushed in order to reuse buckets.
-        for (
-            size_t i = conn->responses_served;
-            i < conn->session->response_queue_count;
-            i++
-        ) {
+        // this is how the queue works so far.
+        // x = packet ready to be sent.
+        // 
+        // [x][x][][]
+        // count = 2
+        // head = 2
+        // sending index = 0
+        // 
+        // after packet gets send:
+        // 
+        // [][x][][]
+        // count = 1
+        // head = 2
+        // sending index = 1
+        // 
+        // new packet gets pushed in the queue:
+        // 
+        // [][x][x][]
+        // count = 2
+        // head = 3
+        // sending index = 1
+        // 
+        // so on and so on:
+        // 
+        // [][x][x][x]
+        // count = 3
+        // head = 0
+        // sending index = 1
+        // 
+        // [x][x][x][x]
+        // count = 4
+        // head = 1
+        // sending index = 1
+        while (conn->session->response_queue_count > 0) {
+            size_t i = conn->sending_index;
             u16 response_size = packet_size(&conn->session->response_queue[i]);
             log("response size: %d", response_size);
             conn->written += network_write(
@@ -216,10 +243,11 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
                 return;
             zero(&conn->session->response_queue[i]);
             conn->written = 0;
-            conn->responses_served++;
+            conn->sending_index++;
+            if (conn->sending_index == arr_len(conn->session->response_queue))
+                conn->sending_index = 0;
+            conn->session->response_queue_count--;
         }
-        conn->responses_served = 0;
-        conn->session->response_queue_count = 0;
         break;
     default:
         break;

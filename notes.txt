@@ -1,11 +1,5 @@
 KNOWN ISSUES / NOTES / TODO
 
-    - We may have to switch compilers, for some reason TCC isn't
-      checking basic things like sending the correct parameter to 
-      functions...
-    - Attack
-    - Fetching the user's characters isn't working properly
-      Any user can see any characters.
-    - Redirect the output from stdout to a file, so we can see
-      what went wrong if the server crashes (or for some reason,
-      the terminal gets closed)
+    - Find a better way of handling queues of packets, since the current one
+      isn't reliable.
+    - After attacking, do damage.

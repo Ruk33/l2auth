@@ -20,6 +20,7 @@ struct game_session {
     // what happens if we need to send more than 8 packets?
     // you simply increase the amount of available responses :)
     struct packet response_queue[8];
+    size_t response_queue_head;
     size_t response_queue_count;
     int conn_encrypted;
     struct coroutine state;

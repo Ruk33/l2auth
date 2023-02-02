@@ -253,5 +253,6 @@ void response_validate_position_encode(struct packet *dest, struct response_vali
 void response_char_info_encode(struct packet *dest, struct l2_character *character);
 void response_action_failed_encode(struct packet *dest);
 void response_action_select_target_encode(struct packet *dest, struct l2_character *target);
+void response_attack_target(struct packet *dest, struct l2_character *attacker, struct l2_character *target);
 
 #endif
