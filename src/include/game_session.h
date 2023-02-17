@@ -17,8 +17,18 @@ struct game_session {
     struct username username;
     struct crypt_key encrypt_key;
     struct crypt_key decrypt_key;
-    // what happens if we need to send more than 8 packets?
-    // you simply increase the amount of available responses :)
+    struct session_nearby {
+        struct game_session *session;
+        int just_entered_world;
+        int just_moved;
+        int destination_x;
+        int destination_y;
+        int destination_z;
+        int origin_x;
+        int origin_y;
+        int origin_z;
+        int stats_updated;
+    } sessions_nearby[32];
     struct packet response_queue[8];
     size_t response_queue_head;
     size_t response_queue_count;

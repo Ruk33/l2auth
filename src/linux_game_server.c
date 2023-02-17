@@ -43,8 +43,8 @@ static struct game_session *empty_game_server_new_conn(struct game_state *state)
 static void emtpy_game_server_request(struct game_state *state, struct game_session *session, void *buf, size_t n)
 {
     assert(state);
-    assert(session);
     // avoid getting unused warnings.
+    session = session;
     buf = buf;
     n = n;
 }
@@ -138,6 +138,71 @@ static void flush_logs(void)
         }
     }
     state.output_size = 0;
+}
+
+static void flush_connections(void)
+{
+    for_each(struct connection, conn, connections) {
+        int socket = conn->socket;
+        if (!conn->session)
+            continue;
+        if (conn->session->closed) {
+            zero(conn);
+            close(socket);
+            continue;
+        }
+        // this is how the queue works so far.
+        // x = packet ready to be sent.
+        // 
+        // [x][x][][]
+        // count = 2
+        // head = 2
+        // sending index = 0
+        // 
+        // after packet gets send:
+        // 
+        // [][x][][]
+        // count = 1
+        // head = 2
+        // sending index = 1
+        // 
+        // new packet gets pushed in the queue:
+        // 
+        // [][x][x][]
+        // count = 2
+        // head = 3
+        // sending index = 1
+        // 
+        // so on and so on:
+        // 
+        // [][x][x][x]
+        // count = 3
+        // head = 0
+        // sending index = 1
+        // 
+        // [x][x][x][x]
+        // count = 4
+        // head = 1
+        // sending index = 1
+        while (conn->session->response_queue_count > 0) {
+            size_t i = conn->sending_index;
+            u16 response_size = packet_size(&conn->session->response_queue[i]);
+            log("response size: %d", response_size);
+            conn->written += network_write(
+                socket,
+                conn->session->response_queue[i].buf + conn->written,
+                response_size - conn->written
+            );
+            if (response_size > conn->written)
+                return;
+            zero(&conn->session->response_queue[i]);
+            conn->written = 0;
+            conn->sending_index++;
+            if (conn->sending_index == arr_len(conn->session->response_queue))
+                conn->sending_index = 0;
+            conn->session->response_queue_count--;
+        }
+    }
 }
 
 static void socket_event_handler(int socket, enum network_event event, void *read, size_t len)
@@ -248,6 +313,10 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
                 conn->sending_index = 0;
             conn->session->response_queue_count--;
         }
+        break;
+    case NETWORK_TICK:
+        lib.game_server_request(&state, 0, 0, 0);
+        flush_connections();
         break;
     default:
         break;
