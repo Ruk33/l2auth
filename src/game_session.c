@@ -75,11 +75,10 @@ void game_session_decrypt_packet(struct game_session *session, struct packet *sr
 struct packet *game_session_get_free_response(struct game_session *session)
 {
     assert(session);
-    // assert(session->response_queue_count+1 < arr_len(session->response_queue));
-    struct packet *response = session->response_queue+session->response_queue_head;
-    session->response_queue_head++;
-    if (session->response_queue_head == arr_len(session->response_queue))
-        session->response_queue_head = 0;
-    session->response_queue_count++;
+    struct packet *response = session->responses + session->responses_head;
+    session->responses_head++;
+    session->responses_count++;
+    if (session->responses_head == arr_len(session->responses))
+        session->responses_head = 0;
     return response;
 }

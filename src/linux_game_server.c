@@ -151,56 +151,23 @@ static void flush_connections(void)
             close(socket);
             continue;
         }
-        // this is how the queue works so far.
-        // x = packet ready to be sent.
-        // 
-        // [x][x][][]
-        // count = 2
-        // head = 2
-        // sending index = 0
-        // 
-        // after packet gets send:
-        // 
-        // [][x][][]
-        // count = 1
-        // head = 2
-        // sending index = 1
-        // 
-        // new packet gets pushed in the queue:
-        // 
-        // [][x][x][]
-        // count = 2
-        // head = 3
-        // sending index = 1
-        // 
-        // so on and so on:
-        // 
-        // [][x][x][x]
-        // count = 3
-        // head = 0
-        // sending index = 1
-        // 
-        // [x][x][x][x]
-        // count = 4
-        // head = 1
-        // sending index = 1
-        while (conn->session->response_queue_count > 0) {
+        while (conn->session->responses_count > 0) {
             size_t i = conn->sending_index;
-            u16 response_size = packet_size(&conn->session->response_queue[i]);
+            u16 response_size = packet_size(&conn->session->responses[i]);
             log("response size: %d", response_size);
             conn->written += network_write(
                 socket,
-                conn->session->response_queue[i].buf + conn->written,
+                conn->session->responses[i].buf + conn->written,
                 response_size - conn->written
             );
             if (response_size > conn->written)
                 return;
-            zero(&conn->session->response_queue[i]);
+            zero(&conn->session->responses[i]);
             conn->written = 0;
             conn->sending_index++;
-            if (conn->sending_index == arr_len(conn->session->response_queue))
+            conn->session->responses_count--;
+            if (conn->sending_index == arr_len(conn->session->responses))
                 conn->sending_index = 0;
-            conn->session->response_queue_count--;
         }
     }
 }
@@ -262,57 +229,7 @@ static void socket_event_handler(int socket, enum network_event event, void *rea
             close(socket);
             return;
         }
-        // this is how the queue works so far.
-        // x = packet ready to be sent.
-        // 
-        // [x][x][][]
-        // count = 2
-        // head = 2
-        // sending index = 0
-        // 
-        // after packet gets send:
-        // 
-        // [][x][][]
-        // count = 1
-        // head = 2
-        // sending index = 1
-        // 
-        // new packet gets pushed in the queue:
-        // 
-        // [][x][x][]
-        // count = 2
-        // head = 3
-        // sending index = 1
-        // 
-        // so on and so on:
-        // 
-        // [][x][x][x]
-        // count = 3
-        // head = 0
-        // sending index = 1
-        // 
-        // [x][x][x][x]
-        // count = 4
-        // head = 1
-        // sending index = 1
-        while (conn->session->response_queue_count > 0) {
-            size_t i = conn->sending_index;
-            u16 response_size = packet_size(&conn->session->response_queue[i]);
-            log("response size: %d", response_size);
-            conn->written += network_write(
-                socket,
-                conn->session->response_queue[i].buf + conn->written,
-                response_size - conn->written
-            );
-            if (response_size > conn->written)
-                return;
-            zero(&conn->session->response_queue[i]);
-            conn->written = 0;
-            conn->sending_index++;
-            if (conn->sending_index == arr_len(conn->session->response_queue))
-                conn->sending_index = 0;
-            conn->session->response_queue_count--;
-        }
+        flush_connections();
         break;
     case NETWORK_TICK:
         lib.game_server_request(&state, 0, 0, 0);

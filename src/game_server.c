@@ -323,45 +323,20 @@ static void on_enter_world(struct game_state *state, struct game_session *sessio
     response_enter_world_encode(queue_response, &response);
     game_session_encrypt_packet(session, queue_response);
 
-    // 1 - check for closer characters to our character.
-    // 2 - add those characters to our characters_nearby list.
-    for_each(struct game_session, s, state->sessions) {
-        if (!s->active || !s->character || s->character == session->character)
+    for_each(struct game_session, nearby_session, state->sessions) {
+        if (!nearby_session->character)
             continue;
-        // find free space.
-        struct session_nearby *free_space = 0;
-        for_each(struct session_nearby, nearby, s->sessions_nearby) {
-            if (nearby->session)
-                continue;
-            free_space = nearby;
-            break;
-        }
-        if (!free_space) {
-            log("no more free space to store nearby sessions for %s", s->username);
-            break;
-        }
-        free_space->session = session;
-        free_space->just_entered_world = 1;
-    }
-    // 3 - do the same for the characters, but only including the new character
-    //     that just enter the world.
-    for_each(struct game_session, s, state->sessions) {
-        if (!s->active || !s->character || s->character == session->character)
+        if (nearby_session == session)
             continue;
-        // find free space.
-        struct session_nearby *free_space = 0;
-        for_each(struct session_nearby, nearby, session->sessions_nearby) {
-            if (nearby->session)
-                continue;
-            free_space = nearby;
-            break;
-        }
-        if (!free_space) {
-            log("no more free space to store nearby sessions for %s", session->username);
-            break;
-        }
-        free_space->session = s;
-        free_space->just_entered_world = 1;
+        struct packet *response = 0;
+
+        response = game_session_get_free_response(nearby_session);
+        response_char_info_encode(response, session->character);
+        game_session_encrypt_packet(nearby_session, response);
+
+        response = game_session_get_free_response(session);
+        response_char_info_encode(response, nearby_session->character);
+        game_session_encrypt_packet(session, response);
     }
 }
 
@@ -369,19 +344,6 @@ static void nearby_enter_world(struct game_state *state, struct game_session *se
 {
     assert(state);
     assert(session);
-    for_each(struct session_nearby, nearby, session->sessions_nearby) {
-        if (!nearby->session)
-            continue;
-        // todo: make sure the character is still in the game!
-        if (nearby->just_entered_world) {
-            struct packet *response = game_session_get_free_response(session);
-            if (!response)
-                continue;
-            response_char_info_encode(response, nearby->session->character);
-            game_session_encrypt_packet(session, response);
-            nearby->just_entered_world = 0;
-        }
-    }
 }
 
 static void on_restart(struct game_state *state, struct game_session *session)
@@ -434,28 +396,15 @@ static void on_move(struct game_state *state, struct game_session *session)
     response.origin_x = request.origin_x;
     response.origin_y = request.origin_y;
     response.origin_z = request.origin_z;
-    struct packet *queue_response = game_session_get_free_response(session);
-    assert(queue_response);
-    response_move_encode(queue_response, &response);
-    game_session_encrypt_packet(session, queue_response);
 
-    for_each(struct game_session, s, state->sessions) {
-        // if (s == session)
-        //     continue;
-        for_each(struct session_nearby, nearby, s->sessions_nearby) {
-            if (!nearby->session)
-                continue;
-            if (nearby->session->character != session->character)
-                continue;
-            log("nearby set as just moved.");
-            nearby->just_moved = 1;
-            nearby->destination_x = request.destination_x;
-            nearby->destination_y = request.destination_y;
-            nearby->destination_z = request.destination_z;
-            nearby->origin_x = request.origin_x;
-            nearby->origin_y = request.origin_y;
-            nearby->origin_z = request.origin_z;
-        }
+    for_each(struct game_session, session, state->sessions) {
+        if (!session->character)
+            continue;
+        log("nearby set as just moved.");
+        struct packet *queue_response = game_session_get_free_response(session);
+        assert(queue_response);
+        response_move_encode(queue_response, &response);
+        game_session_encrypt_packet(session, queue_response);
     }
 }
 
@@ -463,30 +412,6 @@ static void nearby_move(struct game_state *state, struct game_session *session)
 {
     assert(state);
     assert(session);
-    for_each(struct session_nearby, nearby, session->sessions_nearby) {
-        if (!nearby->session)
-            continue;
-        if (!nearby->session->character)
-            continue;
-        // todo: make sure the character is still in the game!
-        if (nearby->just_moved) {
-            struct packet *q_response = game_session_get_free_response(session);
-            if (!q_response)
-                continue;
-            log("updating nearby position!");
-            struct response_move response = {0};
-            response.id = nearby->session->character->id;
-            response.destination_x = nearby->destination_x;
-            response.destination_y = nearby->destination_y;
-            response.destination_z = nearby->destination_z;
-            response.origin_x = nearby->origin_x;
-            response.origin_y = nearby->origin_y;
-            response.origin_z = nearby->origin_z;
-            response_move_encode(q_response, &response);
-            game_session_encrypt_packet(session, q_response);
-            nearby->just_moved = 0;
-        }
-    }
 }
 
 static void on_action(struct game_state *state, struct game_session *session)

@@ -14,24 +14,12 @@ struct game_session {
     int closed;
     size_t read;
     struct packet request;
+    struct packet responses[128];
+    size_t responses_head;
+    size_t responses_count;
     struct username username;
     struct crypt_key encrypt_key;
     struct crypt_key decrypt_key;
-    struct session_nearby {
-        struct game_session *session;
-        int just_entered_world;
-        int just_moved;
-        int destination_x;
-        int destination_y;
-        int destination_z;
-        int origin_x;
-        int origin_y;
-        int origin_z;
-        int stats_updated;
-    } sessions_nearby[32];
-    struct packet response_queue[8];
-    size_t response_queue_head;
-    size_t response_queue_count;
     int conn_encrypted;
     struct coroutine state;
     struct l2_character *character;
