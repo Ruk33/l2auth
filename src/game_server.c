@@ -397,15 +397,10 @@ static void on_move(struct game_state *state, struct game_session *session)
     response.origin_y = request.origin_y;
     response.origin_z = request.origin_z;
 
-    for_each(struct game_session, session, state->sessions) {
-        if (!session->character)
-            continue;
-        log("nearby set as just moved.");
-        struct packet *queue_response = game_session_get_free_response(session);
-        assert(queue_response);
-        response_move_encode(queue_response, &response);
-        game_session_encrypt_packet(session, queue_response);
-    }
+    struct packet *packet = game_session_get_free_response(session);
+    response_move_encode(packet, &response);
+    game_session_broadcast_packet(state, session, packet);
+    game_session_encrypt_packet(session, packet);
 }
 
 static void nearby_move(struct game_state *state, struct game_session *session)
@@ -485,59 +480,58 @@ static void on_game_server_new_request(struct game_state *state, struct game_ses
 
     u8 request_type = packet_type(&session->request);
 
-    coroutine_begin(&session->state);
+    coroutine(&session->state) {
+        // protocol
+        if (request_type != 0x00) {
+            log(
+                "new player sent an incorrect packet. we were expecting the protocol "
+                "packet first. to be safe, we will drop the player."
+            );
+            session->closed = 1;
+            return;
+        }
+        on_protocol_version(state, session);
+        yield1;
 
-    // protocol
-    if (request_type != 0x00) {
-        log(
-            "new player sent an incorrect packet. we were expecting the protocol "
-            "packet first. to be safe, we will drop the player."
-        );
-        session->closed = 1;
-        return;
-    }
-    on_protocol_version(state, session);
-    yield1;
+        // auth request
+        if (request_type != 0x08) {
+            log(
+                "new player sent an incorrect packet. we were expecting the auth request "
+                "packet first. to be safe, we will drop the player."
+            );
+            session->closed = 1;
+            return;
+        }
+        on_auth_request(state, session);
 
-    // auth request
-    if (request_type != 0x08) {
-        log(
-            "new player sent an incorrect packet. we were expecting the auth request "
-            "packet first. to be safe, we will drop the player."
-        );
-        session->closed = 1;
-        return;
-    }
-    on_auth_request(state, session);
-
-    // in character selection screen.
-    // in the character selection, the player can click on
-    // the create new character or he/she can enter into
-    // the world. both actions are valid and must be handled.
+// in character selection screen.
+// in the character selection, the player can click on
+// the create new character or he/she can enter into
+// the world. both actions are valid and must be handled.
 in_character_selection:
-    yield2;
-    switch (request_type) {
-    // show character creation screen.
-    case 0x0e:
-        on_show_creation_screen(state, session);
-        goto in_character_creation;
-    // selected character.
-    case 0x0d:
-        goto in_world;
-    // ???
-    case 0x9:
-        log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
-        return;
-    default:
-        log(
-            "in character selection, the player sent an incorrect packet. "
-            "we were expecting show character creation screen or, enter world, "
-            "or 0x9 but we got 0x%x. just to be safe, we will drop the player.",
-            request_type
-        );
-        session->closed = 1;
-        return;
-    }
+        yield2;
+        switch (request_type) {
+        // show character creation screen.
+        case 0x0e:
+            on_show_creation_screen(state, session);
+            goto in_character_creation;
+        // selected character.
+        case 0x0d:
+            goto in_world;
+        // ???
+        case 0x9:
+            log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
+            return;
+        default:
+            log(
+                "in character selection, the player sent an incorrect packet. "
+                "we were expecting show character creation screen or, enter world, "
+                "or 0x9 but we got 0x%x. just to be safe, we will drop the player.",
+                request_type
+            );
+            session->closed = 1;
+            return;
+        }
 
 // if the player is in the character creation screen and clicks cancel,
 // (or go back to the character selection screen) we don't get a new packet
@@ -545,109 +539,106 @@ in_character_selection:
 // in the character selection screen. we could make use of gotos in here as 
 // well, but duplicating the code seemed better, and easier to follow.
 in_character_creation:
-    yield3;
-    switch (request_type) {
-    // show character creation screen.
-    case 0x0e:
-        on_show_creation_screen(state, session);
-        return;
-    // create new character.
-    case 0x0b:
-        on_create_character(state, session);
-        goto in_character_selection;
-    // ???
-    case 0x9:
-        log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
-        return;
-    // select character.
-    case 0x0d:
-        goto in_world;
-    default:
-        log(
-            "in character creation, the player sent an incorrect packet. "
-            "we were expecting show character creation screen or, enter world, "
-            "or create the character, or 0x9 but we got 0x%x. just to be safe, "
-            "we will drop the player.",
-            request_type
-        );
-        session->closed = 1;
-        return;
-    }
+        yield3;
+        switch (request_type) {
+        // show character creation screen.
+        case 0x0e:
+            on_show_creation_screen(state, session);
+            return;
+        // create new character.
+        case 0x0b:
+            on_create_character(state, session);
+            goto in_character_selection;
+        // ???
+        case 0x9:
+            log("todo: handle 0x9 packet. even tho the players gets disconnected after this.");
+            return;
+        // select character.
+        case 0x0d:
+            goto in_world;
+        default:
+            log(
+                "in character creation, the player sent an incorrect packet. "
+                "we were expecting show character creation screen or, enter world, "
+                "or create the character, or 0x9 but we got 0x%x. just to be safe, "
+                "we will drop the player.",
+                request_type
+            );
+            session->closed = 1;
+            return;
+        }
 
 in_world:
-    // yield;
-    // selected character.
-    if (request_type != 0x0d) {
-        log("todo: we got unexpected packet, we were expecting 0x0d.");
-        return;
+        // yield;
+        // selected character.
+        if (request_type != 0x0d) {
+            log("todo: we got unexpected packet, we were expecting 0x0d.");
+            return;
+        }
+        on_select_character(state, session);
+        yield4;
+
+        // auto ss bsps.
+        if (request_type != 0xd0) {
+            log("todo: we got unexpected packet, we were expecting 0xd0.");
+            return;
+        }
+        on_auto_ss_bsps(state, session);
+        yield5;
+
+        // quest list.
+        if (request_type != 0x63) {
+            log("todo: we got unexpected packet, we were expecting 0x63.");
+            return;
+        }
+        on_quest_list(state, session);
+        yield6;
+
+        // enter world.
+        if (request_type != 0x03) {
+            log("todo: we got unexpected packet, we were expecting 0x03.");
+            return;
+        }
+        on_enter_world(state, session);
+        yield7;
+
+        // todo: we may wanna move this to a new function
+        // where it can have it's own coroutine state.
+
+        switch (request_type) {
+        case 0x01: // move
+            on_move(state, session);
+            return;
+        case 0x4: // select action (select target, etc.)
+            on_action(state, session);
+            return;
+        case 0x46: // restart
+            on_restart(state, session);
+            goto in_character_selection;
+            return;
+        case 0x48: // validate the position
+            on_validate_position(state, session);
+            return;
+        default:
+            break;
+        }
+
+        log("oh no! we ran out of implementation code.");
+        log("go back to the switch case.");
+        log("sending action failed just in case.");
+
+        // Send action failed response since this prevents
+        // the game from hanging from unhandled responses.
+        // For example, if we make an action (from the game)
+        // that we don't handle yet, if we don't send anything
+        // back, the client keep on waiting for a response and
+        // thus, it may hang for certain actions (such as 
+        // moving the character)
+        struct packet *action_failed = game_session_get_free_response(session);
+        assert(action_failed);
+        response_action_failed_encode(action_failed);
+        game_session_encrypt_packet(session, action_failed);
     }
-    on_select_character(state, session);
-    yield4;
-
-    // auto ss bsps.
-    if (request_type != 0xd0) {
-        log("todo: we got unexpected packet, we were expecting 0xd0.");
-        return;
-    }
-    on_auto_ss_bsps(state, session);
-    yield5;
-
-    // quest list.
-    if (request_type != 0x63) {
-        log("todo: we got unexpected packet, we were expecting 0x63.");
-        return;
-    }
-    on_quest_list(state, session);
-    yield6;
-
-    // enter world.
-    if (request_type != 0x03) {
-        log("todo: we got unexpected packet, we were expecting 0x03.");
-        return;
-    }
-    on_enter_world(state, session);
-    yield7;
-
-    // todo: we may wanna move this to a new function
-    // where it can have it's own coroutine state.
-
-    switch (request_type) {
-    case 0x01: // move
-        on_move(state, session);
-        return;
-    case 0x4: // select action (select target, etc.)
-        on_action(state, session);
-        return;
-    case 0x46: // restart
-        on_restart(state, session);
-        goto in_character_selection;
-        return;
-    case 0x48: // validate the position
-        on_validate_position(state, session);
-        return;
-    default:
-        break;
-    }
-
-    log("oh no! we ran out of implementation code.");
-    log("go back to the switch case.");
-    log("sending action failed just in case.");
-
-    // Send action failed response since this prevents
-    // the game from hanging from unhandled responses.
-    // For example, if we make an action (from the game)
-    // that we don't handle yet, if we don't send anything
-    // back, the client keep on waiting for a response and
-    // thus, it may hang for certain actions (such as 
-    // moving the character)
-    struct packet *action_failed = game_session_get_free_response(session);
-    assert(action_failed);
-    response_action_failed_encode(action_failed);
-    game_session_encrypt_packet(session, action_failed);
-
-    return;
-
-    coroutine_end;
 }
 
 struct game_session *game_server_new_conn(struct game_state *state)

@@ -82,3 +82,19 @@ struct packet *game_session_get_free_response(struct game_session *session)
         session->responses_head = 0;
     return response;
 }
+
+void game_session_broadcast_packet(struct game_state *state, struct game_session *from, struct packet *src)
+{
+    assert(state);
+    assert(from);
+    assert(src);
+    for_each(struct game_session, nearby_session, state->sessions) {
+        if (nearby_session == from)
+            continue;
+        if (!nearby_session->character)
+            continue;
+        struct packet *response = game_session_get_free_response(nearby_session);
+        *response = *src;
+        game_session_encrypt_packet(nearby_session, response);
+    }
+}

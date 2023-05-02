@@ -92,7 +92,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
 
     u8 request_type = packet_type(&session->request);
 
-    coroutine_begin(&session->state);
+    coroutine(&session->state) {
 
     // gg auth
     if (request_type != 0x07) {
@@ -128,7 +128,7 @@ static void on_login_server_new_request(struct state *state, struct login_sessio
 
     log("i was not expecting packets but i got 0x%x. ignoring!", request_type);
 
-    coroutine_end;
+    }
 }
 
 struct login_session *login_server_new_conn(struct state *state)
