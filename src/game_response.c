@@ -1,4 +1,5 @@
 #include "include/game_response.h"
+#include "include/game_request.h"
 #include "include/game_server.h"
 #include "include/packet.h"
 
@@ -19,18 +20,10 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
     packet_write_u32(dest, src->count);
     for (u32 i = 0; i < src->count; i += 1) {
         struct l2_character *character = &src->characters[i];
-
-        packet_write(
-            dest,
-            character->name.buf,
-            l2_string_size(character->name.buf, sizeof(character->name))
-        );
+        
+        packet_write(dest, character->name.buf, l2_string_size(character->name.buf, sizeof(character->name)));
         packet_write_u32(dest, character->id);
-        packet_write(
-            dest,
-            character->name.buf,
-            l2_string_size(character->name.buf, sizeof(character->name))
-        );
+        packet_write(dest, character->name.buf, l2_string_size(character->name.buf, sizeof(character->name)));
         packet_write_u32(dest, character->play_ok1);
         packet_write_u32(dest, character->clan_id);
         packet_write_u32(dest, 0);
@@ -47,7 +40,7 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
         packet_write_u32(dest, character->exp);
         packet_write_u32(dest, character->level);
         packet_write_u32(dest, character->karma);
-
+        
         packet_write_u32(dest, 0);
         packet_write_u32(dest, 0);
         packet_write_u32(dest, 0);
@@ -57,7 +50,7 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
         packet_write_u32(dest, 0);
         packet_write_u32(dest, 0);
         packet_write_u32(dest, 0);
-
+        
         packet_write_u32(dest, character->under_obj_id);
         packet_write_u32(dest, character->r_ear_obj_id);
         packet_write_u32(dest, character->l_ear_obj_id);
@@ -74,7 +67,7 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
         packet_write_u32(dest, character->back_obj_id);
         packet_write_u32(dest, character->lr_hand_obj_id);
         packet_write_u32(dest, character->hair_obj_id);
-
+        
         packet_write_u32(dest, character->under_id);
         packet_write_u32(dest, character->r_ear_id);
         packet_write_u32(dest, character->l_ear_id);
@@ -91,7 +84,7 @@ void response_auth_login_encode(struct packet *dest, struct response_auth_login 
         packet_write_u32(dest, character->back_id);
         packet_write_u32(dest, character->lr_hand_id);
         packet_write_u32(dest, character->hair_id);
-
+        
         packet_write_u32(dest, character->hair_style_id);
         packet_write_u32(dest, character->hair_color_id);
         packet_write_u32(dest, character->face_id);
@@ -117,17 +110,9 @@ void response_selected_character_encode(struct packet *dest, struct response_sel
     assert(dest);
     assert(src);
     packet_set_type(dest, 0x15);
-    packet_write(
-        dest,
-        src->name.buf,
-        l2_string_size(src->name.buf, sizeof(src->name))
-    );
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf, sizeof(src->name)));
     packet_write_u32(dest, src->id);
-    packet_write(
-        dest,
-        src->title.buf,
-        l2_string_size(src->title.buf, sizeof(src->title))
-    );
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf, sizeof(src->title)));
     packet_write_u32(dest, src->play_ok1);
     packet_write_u32(dest, src->clan_id);
     packet_write_u32(dest, 0);
@@ -185,11 +170,7 @@ void response_enter_world_encode(struct packet *dest, struct response_enter_worl
     packet_write_i32(dest, src->z);
     packet_write_i32(dest, src->heading);
     packet_write_u32(dest, src->id);
-    packet_write(
-        dest,
-        src->name.buf,
-        l2_string_size(src->name.buf, sizeof(src->name.buf))
-    );
+    packet_write(dest, src->name.buf, l2_string_size(src->name.buf, sizeof(src->name.buf)));
     packet_write_u32(dest, src->race_id);
     packet_write_u32(dest, src->sex);
     packet_write_u32(dest, src->class_id);
@@ -269,11 +250,7 @@ void response_enter_world_encode(struct packet *dest, struct response_enter_worl
     packet_write_u32(dest, src->hair_color_id);
     packet_write_u32(dest, src->face_id);
     packet_write_i32(dest, src->access_level);
-    packet_write(
-        dest,
-        src->title.buf,
-        l2_string_size(src->title.buf, sizeof(src->title.buf))
-    );
+    packet_write(dest, src->title.buf, l2_string_size(src->title.buf, sizeof(src->title.buf)));
     packet_write_u32(dest, src->clan_id);
     packet_write_u32(dest, src->clan_crest_id);
     packet_write_u32(dest, src->ally_id);
@@ -363,11 +340,7 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     packet_write_i32(dest, character->heading);
     assert(character->id);
     packet_write_u32(dest, character->id);
-    packet_write(
-        dest,
-        character->name.buf,
-        l2_string_size(character->name.buf, sizeof(character->name.buf))
-    );
+    packet_write(dest, character->name.buf, l2_string_size(character->name.buf, sizeof(character->name.buf)));
     packet_write_u32(dest, character->race_id);
     packet_write_u32(dest, character->sex);
     packet_write_u32(dest, character->class_id);
@@ -391,7 +364,7 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     // todo: pvp flag.
     packet_write_u32(dest, 0);
     packet_write_u32(dest, character->karma);
-
+    
     packet_write_i32(dest, character->run_speed);
     packet_write_i32(dest, character->walk_speed);
     // swim
@@ -409,11 +382,7 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     packet_write_u32(dest, character->hair_style_id);
     packet_write_u32(dest, character->hair_color_id);
     packet_write_u32(dest, character->face_id);
-    packet_write(
-        dest,
-        character->title.buf,
-        l2_string_size(character->title.buf, sizeof(character->title.buf))
-    );
+    packet_write(dest, character->title.buf, l2_string_size(character->title.buf, sizeof(character->title.buf)));
     packet_write_u32(dest, character->clan_id);
     // todo: clan crest id.
     packet_write_u32(dest, 0);
@@ -443,7 +412,7 @@ void response_char_info_encode(struct packet *dest, struct l2_character *charact
     packet_write_u8(dest, 0);
     // abnormal
     packet_write_u32(dest, 0);
-
+    
     packet_write_u8(dest, 0);
     // recommendations have
     packet_write_u16(dest, 0);
@@ -489,7 +458,7 @@ void response_action_select_target_encode(struct packet *dest, struct l2_charact
     packet_write_u16(dest, color);
 }
 
-void response_attack_target(struct packet *dest, struct l2_character *attacker, struct l2_character *target)
+void response_attack_target_encode(struct packet *dest, struct l2_character *attacker, struct l2_character *target)
 {
     assert(dest);
     assert(attacker);
@@ -515,4 +484,21 @@ void response_attack_target(struct packet *dest, struct l2_character *attacker, 
     // todo: properly handle this.
     u16 hits_count = 0;
     packet_write_u16(dest, hits_count);
+}
+
+void response_say_encode(struct packet *dest, struct l2_character *from, l2_string *message, size_t n)
+{
+    assert(dest);
+    assert(from);
+    assert(message);
+    packet_set_type(dest, 0x4a);
+    
+    packet_write_u32(dest, from->id);
+    
+    u32 message_type = 0;
+    packet_write_u32(dest, message_type);
+    
+    packet_write(dest, from->name.buf, l2_string_size(from->name.buf, sizeof(from->name.buf)));
+    
+    packet_write(dest, message, l2_string_size(message, n));
 }

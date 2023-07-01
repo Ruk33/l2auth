@@ -49,11 +49,17 @@ struct request_action {
     u8 action_id; // 0 simple click, 1 shift click.
 };
 
+struct request_say {
+    l2_string message[256]; // todo: check correct limit.
+};
+
 void request_auth_decode(struct request_auth *dest, struct packet *src);
 void request_create_character_decode(struct request_create_character *dest, struct packet *src);
 void request_selected_character_decode(struct request_selected_character *dest, struct packet *src);
 void request_move_decode(struct request_move *dest, struct packet *src);
 void request_validate_position_decode(struct request_validate_position *dest, struct packet *src);
 void request_action_decode(struct request_action *dest, struct packet *src);
+
+void request_say_decode(struct request_say *dest, struct packet *src);
 
 #endif

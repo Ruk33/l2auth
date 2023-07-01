@@ -76,3 +76,10 @@ void request_action_decode(struct request_action *dest, struct packet *src)
     packet_read_i32(&dest->origin_z, src);
     packet_read_u8(&dest->action_id, src);
 }
+
+void request_say_decode(struct request_say *dest, struct packet *src)
+{
+    assert(dest);
+    assert(src);
+    packet_read_l2_str_arr(dest->message, src);
+}
