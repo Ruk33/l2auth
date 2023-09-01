@@ -5,19 +5,21 @@ L2 AUTH
     just a fun experiment to see and explore what can be made with it.
 
 HOW TO USE (WINDOWS)
+    - Update your C:/Windows/System32/Drivers/etc/hosts file to include: 127.0.0.1 l2authd.lineage2.com
     - Install https://learn.microsoft.com/en-us/windows/wsl/install
       You can use the Windows App Store to make the installation easier. Just
       search for WSL, click install and that's it.
     - Download or clone the project.
     - Run build/login_server.bat to start the login server.
     - Run build/game_server.bat to start the game server.
-    - Run the game (make sure your system or /etc/host file is set for localhost)
+    - Run the game
 
 HOW TO USE (LINUX)
+    - Update your /etc/host file to include: 127.0.0.1 l2authd.lineage2.com
     - Download or clone the project.
     - Run build/login_server to start the login server.
     - Run build/game_server to start the game server.
-    - Run the game (make sure your system or /etc/host file is set for localhost)
+    - Run the game
 
 HOW TO USE (NOTES)
     The login server will listen for connections to localhost using port 2106.
