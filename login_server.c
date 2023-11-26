@@ -2,43 +2,42 @@
 #include <stddef.h> // size_t
 #include <stdio.h>  // fprintf
 #include <string.h> // memcpy, memset
-
-// #define LTM_DESC
-// #include <tomcrypt.h>
-// #include <tommath.h>
+#include <stdint.h> // fixed int types
 
 #include <openssl/err.h>
-#include <openssl/bn.h>
 #include <openssl/rsa.h>
 
 #include "asocket.h"
 #include "blowfish.h"
-// #include "rsa.h"
 
-typedef unsigned char uchar;
-typedef unsigned char byte;
-typedef unsigned short ushort;
-typedef unsigned int uint;
+typedef uint8_t byte;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef int64_t s64;
 
 #define nl "\n"
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 #define trace(...) fprintf(stderr, __VA_ARGS__)
-#define append(dest, src) (memcpy(dest, &(src), sizeof(src)), dest + sizeof(src))
+#define append(dest, src) (memcpy((dest), &(src), sizeof(src)), (dest) + sizeof(src))
 
 struct connection {
     int socket;
     
     byte to_send[1024];
-    uint to_send_count;
-    uint sent;
+    size_t to_send_count;
+    size_t sent;
     
     byte request[1024];
-    uint request_head;
-    uint request_count;
+    size_t request_head;
+    size_t request_count;
     
     BLOWFISH_CTX blowfish;
-    
-    // rsa_key rsa;
     BIGNUM *rsa_e;
     RSA *rsa_key;
 };
@@ -55,7 +54,6 @@ static struct connection *find_connection(int socket)
     // or try to give a new usable connection.
     for (size_t i = 0; i < countof(connections); i++) {
         if (!connections[i].socket) {
-            // memset(connections + i, 0, sizeof(struct connection));
             connections[i].to_send_count = 0;
             connections[i].sent = 0;
             connections[i].request_head = 0;
@@ -66,7 +64,7 @@ static struct connection *find_connection(int socket)
     return 0;
 }
 
-static ushort checksum(byte *dest, byte *start, byte *end)
+static u16 checksum(byte *dest, byte *start, byte *end)
 {
     assert(dest);
     assert(start);
@@ -74,10 +72,10 @@ static ushort checksum(byte *dest, byte *start, byte *end)
     assert(start < end);
     assert(end - start < 65535);
     
-    ushort size = (ushort) (end - start);
-    uint result = 0;
-    for (ushort i = 0; i < size; i += 4) {
-        uint ecx = *start++ & 0xff;
+    u16 size = (u16) (end - start);
+    u32 result = 0;
+    for (u16 i = 0; i < size; i += 4) {
+        u32 ecx = *start++ & 0xff;
         ecx |= (*start++ << 8) & 0xff00;
         ecx |= (*start++ << 0x10) & 0xff0000;
         ecx |= (*start++ << 0x18) & 0xff000000;
@@ -85,12 +83,12 @@ static ushort checksum(byte *dest, byte *start, byte *end)
     }
     
     append(end, result);
-    size += (ushort) sizeof(result);
+    size += (u16) sizeof(result);
     
-    ushort final_size = ((size + 7) & (~7)) + 2;
+    u16 final_size = ((size + 7) & (~7)) + 2;
     memcpy(dest, &final_size, sizeof(final_size));
     
-    trace("packet checksum, final size is %d" nl, (int) final_size);
+    trace("packet checksum, final size is %d" nl, (s32) final_size);
     
     return final_size;
 }
@@ -102,11 +100,11 @@ static void encrypt_packet(struct connection *conn, byte *start, byte *end)
     assert(end);
     assert(start < end);
     assert(end - start < 65535);
-    ushort size = end - start;
-    for (ushort i = 0; i < size; i += 8) {
-        Blowfish_Encrypt(&conn->blowfish,
-                         (uint32_t *) (start + i),
-                         (uint32_t *) (start + i + 4));
+    u16 size = end - start;
+    for (u16 i = 0; i < size; i += 8) {
+        Blowfish_Encrypt(&conn->blowfish, 
+                         (u32 *) (start + i),
+                         (u32 *) (start + i + 4));
     }
 }
 
@@ -148,7 +146,7 @@ static void send_init_packet(struct connection *conn)
             n[0x40 + i] = (byte) (n[0x40 + i] ^ n[i]);
     }
     
-    byte *start = conn->to_send + sizeof(ushort);
+    byte *start = conn->to_send + sizeof(u16);
     byte *end = start;
     
     byte type = 0x00;
@@ -164,16 +162,16 @@ static void send_ignore_gg_packet(struct connection *conn)
 {
     assert(conn);
     
-    byte *start = conn->to_send + sizeof(ushort);
+    byte *start = conn->to_send + sizeof(u16);
     byte *end = start;
     
     byte type = 0x0b;
     end = append(end, type);
     
-    uint ignore_gg = 0x0b;
+    u32 ignore_gg = 0x0b;
     end = append(end, ignore_gg);
     
-    ushort size = checksum(conn->to_send, start, end);
+    u16 size = checksum(conn->to_send, start, end);
     encrypt_packet(conn, start, start + size - 2);
     
     conn->to_send_count += size;
@@ -197,7 +195,7 @@ static void on_request(struct connection *conn)
     
     byte *request = conn->request + conn->request_head;
     
-    ushort size = 0;
+    u16 size = 0;
     memcpy(&size, request, sizeof(size));
     
     // check for incomplete packet.
@@ -206,16 +204,16 @@ static void on_request(struct connection *conn)
     
     trace("new packet of size %d (mod 8 = %d)" nl, (int) size, size % 8);
     
-    ushort body_size = size - (ushort) sizeof(size);
+    u16 body_size = size - (u16) sizeof(size);
     request += sizeof(size);
     trace("packet body size %d (mod 8 = %d)" nl, (int) body_size, body_size % 8);
     
     // blowfish decrypt
     {
-        for (ushort i = 0; i < body_size; i += 8) {
+        for (u16 i = 0; i < body_size; i += 8) {
             Blowfish_Decrypt(&conn->blowfish, 
-                             (uint32_t *) (request + i), 
-                             (uint32_t *) (request + i + 4));
+                             (u32 *) (request + i), 
+                             (u32 *) (request + i + 4));
         }
     }
     
@@ -264,7 +262,7 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
             char key[] = "_;5.]94-31==-%xT!^[$";
             Blowfish_Init(&conn->blowfish, key, sizeof(key));
             
-            // rsa key.
+            // generate a new rsa key if required.
             if (!conn->rsa_key) {
                 conn->rsa_key = RSA_new();
                 BN_dec2bn(&conn->rsa_e, "65537");
@@ -285,7 +283,7 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
             if (conn->request_head + len > countof(conn->request))
                 conn->request_head = 0;
             memcpy(conn->request + conn->request_head, read, len);
-            conn->request_count += (uint) len;
+            conn->request_count += len;
             on_request(conn);
         } break;
         
