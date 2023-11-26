@@ -1,0 +1,14 @@
+username=ruke
+login_ok1=3645617669
+login_ok2=483148204
+created_at=1701039893
+valid_until=1701039953
+created_at(yyyy-mm-dd hh:mm:ss utc)=2023-11-26 23:04:53
+valid_until(yyyy-mm-dd hh:mm:ss utc)=2023-11-26 23:05:53
+username=ruke
+login_ok1=4093841658
+login_ok2=2885283459
+created_at=1701040314
+valid_until=1701040374
+created_at(yyyy-mm-dd hh:mm:ss utc)=2023-11-26 23:11:54
+valid_until(yyyy-mm-dd hh:mm:ss utc)=2023-11-26 23:12:54

@@ -39,11 +39,12 @@ int asocket_port(unsigned short port)
         return 0;
     }
     
-    return server;
+    return (int) server;
 }
 
 int asocket_sock(char *path)
 {
+    path = path;
     printf("to implement :)\n");
     return 0;
 }
@@ -107,7 +108,7 @@ void asocket_listen(int server, asocket_handler *handler)
                         }
                         
                         clients[i] = new_client;
-                        handler(new_client, ASOCKET_NEW_CONN, 0, 0);
+                        handler((int) new_client, ASOCKET_NEW_CONN, 0, 0);
                         accepted = 1;
                         break;
                     }
@@ -135,18 +136,18 @@ void asocket_listen(int server, asocket_handler *handler)
                         // connection closed by client.
                         closesocket(clients[i]);
                         clients[i] = INVALID_SOCKET;
-                        handler(clients[i], ASOCKET_CLOSED, 0, 0);
+                        handler((int) clients[i], ASOCKET_CLOSED, 0, 0);
                         break;
                     } else {
                         // read.
-                        handler(clients[i], ASOCKET_READ, buffer, bytes_read);
+                        handler((int) clients[i], ASOCKET_READ, buffer, bytes_read);
                     }
                 }
             }
             
             // write.
             if (FD_ISSET(clients[i], &writefds))
-                handler(clients[i], ASOCKET_CAN_WRITE, 0, 0);
+                handler((int) clients[i], ASOCKET_CAN_WRITE, 0, 0);
         }
     }
 }
@@ -157,7 +158,7 @@ unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
     if (!buf)
         return 0;
     while (sent < n) {
-        int tmp = send(socket, (char *) buf + sent, n - sent, 0);
+        int tmp = send((SOCKET) socket, (char *) buf + sent, (int) (n - sent), 0);
         if (tmp == SOCKET_ERROR) {
             if (WSAGetLastError() != WSAEWOULDBLOCK)
                 printf("asocket_write error\n");
