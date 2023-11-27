@@ -1,2 +1,21 @@
+in windows, build
+- download visual studio
+- in a terminal with cl (vcvarsall.bat), run build.bat
+
+in linux, build
+- install openssl lib
+- run build.sh
+
+how to use?
+- update your host file to include 127.0.0.1 l2authd.lineage2.com
+- run login_server
+- that's it, open your lineage 2 client and enjoy. accounts are created automatically
+
+notes
+- the login server uses the port 2106
+- the game server will automatically use the port 7777 
+
 credits
+- l2j: https://www.l2jserver.com
+- openssl: https://www.openssl.org
 - blowfish: https://github.com/Rupan/blowfish/tree/master
