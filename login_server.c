@@ -9,6 +9,7 @@
 #include <openssl/rand.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
+#include <openssl/evp.h>
 
 #include "asocket.h"
 #include "blowfish.h"
@@ -67,7 +68,7 @@ struct connection {
     RSA *rsa_key;
 };
 
-static struct connection connections[32];
+static struct connection connections[32] = {0};
 
 static u32 ip_to_u32(char *ip)
 {
@@ -229,11 +230,100 @@ static void handle_auth_request(struct connection *conn, byte *request)
     
     byte *content = request + 1;
     char *username = (char *) content + 0x62;
-    // char *password = (char *) content + 0x70;
+    char *password = (char *) content + 0x70;
     
-    trace("user %s is trying to authenticate" nl, username);
-    // trace("password is %s" nl, password);
+    int account_exists = 0;
+    int authenticated = 0;
+    
     strncpy(conn->username, username, sizeof(conn->username) - 1);
+    trace("user %s is trying to authenticate" nl, conn->username);
+    
+    // the format of the users.txt file will be
+    // name of the user
+    // new line
+    // salt (16 bytes)
+    // hashed password (32 bytes)
+    // rest of the fields as readable text
+    FILE *existing_users = fopen("users.txt", "r");
+    if (existing_users) {
+        size_t username_len = strlen(conn->username);
+        int c = 0;
+        while ((c = fgetc(existing_users)) != EOF) {
+            size_t i = 0;
+            while (c == (int) conn->username[i] &&
+                   i <= username_len) {
+                c = fgetc(existing_users);
+                i++;
+            }
+            if (i == username_len && c == '\n') {
+                account_exists = 1;
+                break;
+            }
+        }
+        if (account_exists) {
+            unsigned char stored_salt[16] = {0};
+            unsigned char stored_hash[32] = {0};
+            fread(stored_salt, 1, sizeof(stored_salt), existing_users);
+            fread(stored_hash, 1, sizeof(stored_hash), existing_users);
+            
+            unsigned char hash_from_request[32] = {0};
+            PKCS5_PBKDF2_HMAC(password, 
+                              (int) strnlen(password, 32), 
+                              stored_salt, 
+                              sizeof(stored_salt), 
+                              1000, 
+                              EVP_sha256(), 
+                              sizeof(hash_from_request), 
+                              hash_from_request);
+            // check if passwords match.
+            if (memcmp(stored_hash, hash_from_request, sizeof(stored_hash)) == 0)
+                authenticated = 1;
+        }
+        fclose(existing_users);
+    }
+    
+    if (!account_exists) {
+        trace("the user %s doesn't exist. trying to create the account" nl, 
+              conn->username);
+        FILE *users = fopen("users.txt", "a");
+        if (users) {
+            unsigned char salt[16] = {0};
+            RAND_bytes(salt, sizeof(salt));
+            
+            unsigned char hash[32] = {0};
+            PKCS5_PBKDF2_HMAC(password, 
+                              (int) strnlen(password, 32), 
+                              salt, 
+                              sizeof(salt), 
+                              1000, 
+                              EVP_sha256(), 
+                              sizeof(hash), 
+                              hash);
+            
+            fprintf(users, "%s" nl, conn->username);
+            fwrite(salt, 1, sizeof(salt), users);
+            fwrite(hash, 1, sizeof(hash), users);
+            fwrite(nl, 1, 1, users);
+            fclose(users);
+            
+            trace("account %s created sucessfully" nl, 
+                  conn->username);
+            authenticated = 1;
+        } else {
+            trace("ERROR: unable to create or write to file users.txt." nl
+                  "check your permissions. the connection will be dropped." nl);
+        }
+    }
+    
+    // TODO(fmontenegro): don't drop it, there is a correct packet
+    // to send before dropping the connection (invalid password)
+    if (!authenticated) {
+        trace("unable to authenticate %s, dropping connection" nl, conn->username);
+        asocket_close(conn->socket);
+        conn->socket = 0;
+        conn->username[0] = 0;
+        return;
+    }
     
     byte *start = conn->to_send + sizeof(u16);
     byte *end = start;
