@@ -98,6 +98,9 @@ static struct connection *find_connection(int socket)
     // or try to give a new usable connection.
     for (size_t i = 0; i < countof(connections); i++) {
         if (!connections[i].socket) {
+            connections[i].username[0] = 0;
+            connections[i].login_ok1 = 0;
+            connections[i].login_ok2 = 0;
             connections[i].to_send_count = 0;
             connections[i].sent = 0;
             connections[i].request_head = 0;
@@ -333,7 +336,6 @@ static void handle_auth_request(struct connection *conn, byte *request)
         trace("unable to authenticate %s, dropping connection" nl, conn->username);
         asocket_close(conn->socket);
         conn->socket = 0;
-        conn->username[0] = 0;
         return;
     }
     
@@ -526,7 +528,6 @@ static void handle_enter_game_server(struct connection *conn)
               conn->username);
         asocket_close(conn->socket);
         conn->socket = 0;
-        conn->username[0] = 0;
         return;
     }
     time_t now = time(0);
@@ -682,7 +683,6 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
         
         case ASOCKET_CLOSED: {
             conn->socket = 0;
-            conn->username[0] = 0;
             trace("client closed the connection" nl);
         } break;
         
