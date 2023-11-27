@@ -1,13 +1,9 @@
 #include <assert.h> // assert
 #include <stddef.h> // size_t
-#include <stdio.h>  // fprintf, fscanf, fopen, fclose, sscanf
-#include <string.h> // memcpy
+#include <stdio.h>  // fprintf, fscanf, fopen, fclose, fread, fwrite, fgetc, sscanf
+#include <string.h> // memcpy, memcmp, strlen, strncpy
 #include <stdint.h> // fixed int types
 #include <time.h>   // time_t, time
-
-#if _WIN32
-#include <winsock2.h> // htonl, ntohl
-#endif
 
 #include <openssl/err.h>
 #include <openssl/rand.h>
@@ -29,6 +25,9 @@ typedef int8_t s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
+
+u32 htonl(u32 x);
+u32 ntohl(u32 x);
 
 #define nl "\n"
 
