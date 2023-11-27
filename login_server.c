@@ -5,14 +5,18 @@
 #include <stdint.h> // fixed int types
 #include <time.h>   // time_t, time
 
+#if _WIN32
+#include <winsock2.h> // htonl, ntohl
+#endif
+
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
+#include <openssl/blowfish.h>
 #include <openssl/evp.h>
 
 #include "asocket.h"
-#include "blowfish.h"
 
 typedef uint8_t byte;
 
@@ -63,7 +67,7 @@ struct connection {
     size_t request_head;
     size_t request_count;
     
-    BLOWFISH_CTX blowfish;
+    BF_KEY blowfish;
     BIGNUM *rsa_e;
     RSA *rsa_key;
 };
@@ -146,10 +150,19 @@ static void encrypt_packet(struct connection *conn, byte *start, byte *end)
     assert(start < end);
     assert(end - start < 65535);
     u16 size = (u16) (end - start);
-    for (u16 i = 0; i < size; i += 8)
-        Blowfish_Encrypt(&conn->blowfish, 
-                         (u32 *) (start + i),
-                         (u32 *) (start + i + 4));
+    for (u16 i = 0; i < size; i += 8) {
+        union {
+            u32 ints[2];
+            byte raw[8];
+        } chunk = {0};
+        chunk.ints[0] = htonl(*(u32 *) (start + i));
+        chunk.ints[1] = htonl(*(u32 *) (start + i + 4));
+        BF_ecb_encrypt(chunk.raw, chunk.raw, &conn->blowfish, BF_ENCRYPT);
+        chunk.ints[0] = ntohl(chunk.ints[0]);
+        chunk.ints[1] = ntohl(chunk.ints[1]);
+        *(u32 *) (start + i) = chunk.ints[0];
+        *(u32 *) (start + i + 4) = chunk.ints[1];
+    }
 }
 
 static void send_init_packet(struct connection *conn)
@@ -591,10 +604,19 @@ static void on_request(struct connection *conn)
     trace("packet body size %d (mod 8 = %d)" nl, (int) body_size, body_size % 8);
     
     // blowfish decrypt
-    for (u16 i = 0; i < body_size; i += 8)
-        Blowfish_Decrypt(&conn->blowfish, 
-                         (u32 *) (request + i), 
-                         (u32 *) (request + i + 4));
+    for (u16 i = 0; i < body_size; i += 8) {
+        union {
+            u32 ints[2];
+            byte raw[8];
+        } chunk = {0};
+        chunk.ints[0] = htonl(*(u32 *) (request + i));
+        chunk.ints[1] = htonl(*(u32 *) (request + i + 4));
+        BF_ecb_encrypt(chunk.raw, chunk.raw, &conn->blowfish, BF_DECRYPT);
+        chunk.ints[0] = ntohl(chunk.ints[0]);
+        chunk.ints[1] = ntohl(chunk.ints[1]);
+        *(u32 *) (request + i) = chunk.ints[0];
+        *(u32 *) (request + i + 4) = chunk.ints[1];
+    }
     
     // rsa decrypt
     // +1 don't include the packet type, just the body of the packet
@@ -646,8 +668,8 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
             conn->socket = socket;
             
             // blowfish key.
-            char key[] = "_;5.]94-31==-%xT!^[$";
-            Blowfish_Init(&conn->blowfish, (unsigned char *) key, sizeof(key));
+            unsigned char key[] = "_;5.]94-31==-%xT!^[$";
+            BF_set_key(&conn->blowfish, (int) (sizeof(key)), key);
             
             // generate a new rsa key if required.
             if (!conn->rsa_key) {

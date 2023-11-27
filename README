@@ -11,12 +11,12 @@ in windows, how to build?
 - update your environment path to include the folder containing the file vcvarsall.bat
 - run build.bat
 
-in linux, how to use?
+TODO: in linux, how to use?
 - update /etc/hosts to include: 127.0.0.1 l2authd.lineage2.com
 - in linux, run bin/linux_server
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
-in linux, how to build?
+TODO: in linux, how to build?
 - install openssl lib
 - run build.sh
 
@@ -27,4 +27,3 @@ notes
 credits
 - l2j: https://www.l2jserver.com
 - openssl: https://www.openssl.org
-- blowfish: https://github.com/Rupan/blowfish/tree/master
