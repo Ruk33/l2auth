@@ -1,5 +1,0 @@
-id=1
-ip=0.0.0.0
-port=7777
-max_players=1000
-status=1
