@@ -158,8 +158,7 @@ void on_response(void **buf, int socket)
         return;
     }
     if (conn->sent < conn->to_send_count) {
-        trace("sending %d bytes of data" nl, 
-              (s32) (conn->to_send_count - conn->sent));
+        trace("sending %lu bytes of data" nl, conn->to_send_count - conn->sent);
         conn->sent += asocket_write(conn->socket,
                                     conn->to_send + conn->sent,
                                     conn->to_send_count - conn->sent);
@@ -217,6 +216,9 @@ static void handle_request(struct state *state, struct connection *conn)
     
     if (size > conn->request_count - conn->request_head)
         return;
+    
+    conn->request_head += size;
+    
     if (conn->encrypted)
         decrypt(conn, request);
     request += sizeof(size);
@@ -252,13 +254,14 @@ static void handle_request(struct state *state, struct connection *conn)
 
 static u16 checksum(byte *dest, byte *start, byte *end)
 {
+#if 0
     assert(dest);
     assert(start);
     assert(end);
     assert(start < end);
     assert(end - start < 65535);
     
-    u16 size = (u16) (end - start);
+    u16 size = (u16) (end - start) + 4;
     u32 result = 0;
     for (u16 i = 0; i < size; i += 4) {
         u32 ecx = *start++ & 0xff;
@@ -268,11 +271,13 @@ static u16 checksum(byte *dest, byte *start, byte *end)
         result ^= ecx;
     }
     
-    append(end, result);
-    size += (u16) sizeof(result);
+    end = append(end, result);
+    size = (u16) (end - start);
     
     // the packet must be multiple of 8
     u16 body_padded_size = ((size + 7) & (~7));
+    memset(end, 0, body_padded_size - size);
+    
     u16 size_header = 2;
     // the final size of the packet consists of 
     // the padded size plus 2 bytes used to store how
@@ -281,6 +286,25 @@ static u16 checksum(byte *dest, byte *start, byte *end)
     memcpy(dest, &final_size, sizeof(final_size));
     
     return final_size;
+#endif
+    
+#if 0
+    u32 empty_checksum = 0;
+    end = append(end, empty_checksum);
+    
+    u16 size = (u16) (end - start);
+    int padding = size % 8;
+    if (padding != 0) {
+        for (int i = padding; i < 8; i++) {
+            byte empty_byte = 0;
+            end = append(end, empty_byte);
+        }
+    }
+#endif
+    
+    u16 size = (u16) (end - start) + 2;
+    memcpy(dest, &size, sizeof(size));
+    return size;
 }
 
 static void encrypt(struct connection *conn, byte *packet)
@@ -353,7 +377,7 @@ static void send_protocol(struct state *state, struct connection *conn)
     assert(state);
     assert(conn);
     
-    byte *start = conn->to_send + sizeof(u16);
+    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
     byte *end = start;
     
     byte type = 0x00;
@@ -373,7 +397,7 @@ static void send_protocol(struct state *state, struct connection *conn)
     };
     end = append(end, protocol);
     
-    u16 size = checksum(conn->to_send, start, end);
+    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
     conn->to_send_count += size;
 }
 
@@ -383,6 +407,7 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     assert(conn);
     assert(req);
     
+#if 0
     // skip packet type.
     req++;
     
@@ -397,4 +422,18 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     trace("play ok 2 is '%u'" nl, conn->play_ok2);
     trace("login ok 1 is '%u'" nl, conn->login_ok1);
     trace("login ok 2 is '%u'" nl, conn->login_ok2);
+#endif
+    
+    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
+    byte *end = start;
+    
+    byte type = 0x13;
+    end = append(end, type);
+    
+    u32 count = 0;
+    end = append(end, count);
+    
+    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
+    encrypt(conn, conn->to_send + conn->to_send_count);
+    conn->to_send_count += size;
 }
