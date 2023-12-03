@@ -6,6 +6,12 @@
 #include <locale.h>
 #include <wchar.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+#include "directory.h"
 #include "asocket.h"
 
 typedef uint8_t byte;
@@ -46,10 +52,10 @@ typedef float seconds;
 // block to build and queue a response. at the end, the packet size
 // is calculated and encrypted if required.
 #define queue_response(conn, encrypt, buf) \
-for (byte *buf = conn->to_send + conn->to_send_count + 2, __run = 1; \
-__run; \
-(conn->to_send_count += close_packet(conn, conn->to_send + conn->to_send_count, buf, encrypt), \
-__run = 0))
+for (byte *buf = conn->to_send + conn->to_send_count + 2; \
+buf; \
+conn->to_send_count += close_packet(conn, conn->to_send + conn->to_send_count, buf, encrypt), \
+buf = 0)
 
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
@@ -127,6 +133,7 @@ int on_init(void **buf)
 void on_connection(void **buf, int socket)
 {
     assert(buf);
+    
     struct state *state = *(struct state **) buf;
     assert(state);
     trace("new connection to game server!" nl);
