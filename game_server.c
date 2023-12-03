@@ -32,9 +32,9 @@ typedef float seconds;
 #define scan(dest, src) \
 (memcpy(&(dest), (src), sizeof(dest)), (src) += sizeof(dest))
 #define sscan(dest, src) \
-(strncpy((dest), (const char *) (src), sizeof(dest) - 1), (src) += strnlen((dest), sizeof(dest)))
+(strncpy((dest), (const char *) (src), sizeof(dest) - 1), (src) += strnlen((dest), sizeof(dest)) + 1)
 #define wsscan(dest, src) \
-(wcsncpy((dest), (const wchar_t *) (src), sizeof(dest) - 1), (src) += wcsnlen((dest), sizeof(dest)))
+(wcsncpy((dest), (const wchar_t *) (src), sizeof(dest) - 1), (src) += (wcsnlen((dest), sizeof(dest)) + 1) * 2)
 
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
@@ -383,11 +383,18 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     assert(conn);
     assert(req);
     
+    // skip packet type.
     req++;
+    
     wsscan(conn->username, req);
-    trace("name is '%ls'" nl, conn->username);
     scan(conn->play_ok2, req);
     scan(conn->play_ok1, req);
     scan(conn->login_ok1, req);
     scan(conn->login_ok2, req);
+    
+    trace("name is '%ls'" nl, conn->username);
+    trace("play ok 1 is '%u'" nl, conn->play_ok1);
+    trace("play ok 2 is '%u'" nl, conn->play_ok2);
+    trace("login ok 1 is '%u'" nl, conn->login_ok1);
+    trace("login ok 2 is '%u'" nl, conn->login_ok2);
 }
