@@ -25,16 +25,31 @@ typedef float seconds;
 #define nl "\n"
 #define mb *1024*1024
 #define trace(...) fprintf(stderr, __VA_ARGS__)
+#define warn(...) trace("warning / " __VA_ARGS__)
+#define error(...) trace("error / " __VA_ARGS__)
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 
-#define append(dest, src) \
-(memcpy((dest), &(src), sizeof(src)), (dest) + sizeof(src))
-#define scan(dest, src) \
+// write bytes from src into dest and advance src past bytes written.
+#define bwrite(dest, src) \
+(memcpy((dest), &(src), sizeof(src)), (dest) += sizeof(src))
+// read bytes from src to dest and advance src past bytes read.
+#define bread(dest, src) \
 (memcpy(&(dest), (src), sizeof(dest)), (src) += sizeof(dest))
-#define sscan(dest, src) \
+// read string from src to dest and advance src past string length + null terminator.
+// dest will be null terminated.
+#define breads(dest, src) \
 (strncpy((dest), (const char *) (src), sizeof(dest) - 1), (src) += strnlen((dest), sizeof(dest)) + 1)
-#define wsscan(dest, src) \
-(wcsncpy((dest), (const wchar_t *) (src), sizeof(dest) - 1), (src) += (wcsnlen((dest), sizeof(dest)) + 1) * 2)
+// read wide string from src to dest and advance src past string length + null terminator.
+// dest will be null terminated.
+#define breadws(dest, src) \
+(wcsncpy((dest), (const wchar_t *) (src), countof(dest) - 1), (src) += (wcsnlen((dest), countof(dest)) + 1) * 2)
+// block to build and queue a response. at the end, the packet size
+// is calculated and encrypted if required.
+#define queue_response(conn, encrypt, buf) \
+for (byte *buf = conn->to_send + conn->to_send_count + 2, __run = 1; \
+__run; \
+(conn->to_send_count += close_packet(conn, conn->to_send + conn->to_send_count, buf, encrypt), \
+__run = 0))
 
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
@@ -84,12 +99,12 @@ struct connection {
 };
 
 struct state {
-    struct connection connections[32];
+    struct connection connections[1024];
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
 static void handle_request(struct state *state, struct connection *conn);
-static u16 checksum(byte *dest, byte *start, byte *end);
+static u16 close_packet(struct connection *conn, byte *dest, byte *end, int encrypt);
 static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
 static void send_protocol(struct state *state, struct connection *conn);
@@ -222,36 +237,45 @@ static void handle_request(struct state *state, struct connection *conn)
     memcpy(&type, body, sizeof(type));
     trace("received packet is of type %d" nl, (int) type);
     
+    // check if the received packet matches the expected packet.
+    // if it doesn't, drop/close the connection.
+#define expected_or_close(expected) \
+if (type != (expected)) { \
+error("expecting packet %d but got %d. the connection will be dropped." nl, \
+(expected), \
+type); \
+asocket_close(conn->socket); \
+conn->socket = 0; \
+return; \
+}
+    
     coroutine(conn->state) {
-        if (type != 0x00) {
-            trace("expecting 0x00 but got %d. the connection will be dropped." nl, (int) type);
-            asocket_close(conn->socket);
-            conn->socket = 0;
-            return;
-        }
-        
+        // expect protocol request.
+        expected_or_close(0x00);
         send_protocol(state, conn);
         conn->encrypted = 1;
         
         yield;
-        if (type != 0x08) {
-            trace("expecting 0x08 but got %d. the connection will be dropped." nl, (int) type);
-            asocket_close(conn->socket);
-            conn->socket = 0;
-            return;
-        }
-        
+        // expect auth request.
+        expected_or_close(0x08);
         handle_auth(state, conn, body);
         
         yield;
+        
     }
     
     memmove(conn->request, conn->request + size, conn->request_count - size);
     conn->request_count -= size;
 }
 
-static u16 checksum(byte *dest, byte *start, byte *end)
+static u16 close_packet(struct connection *conn, byte *start, byte *end, int _encrypt)
 {
+    assert(conn);
+    assert(start);
+    assert(end);
+    assert(end > start);
+    assert(end - start < 65535);
+    
 #if 0
     assert(dest);
     assert(start);
@@ -286,22 +310,12 @@ static u16 checksum(byte *dest, byte *start, byte *end)
     return final_size;
 #endif
     
-#if 0
-    u32 empty_checksum = 0;
-    end = append(end, empty_checksum);
-    
     u16 size = (u16) (end - start);
-    int padding = size % 8;
-    if (padding != 0) {
-        for (int i = padding; i < 8; i++) {
-            byte empty_byte = 0;
-            end = append(end, empty_byte);
-        }
-    }
-#endif
+    memcpy(start, &size, sizeof(size));
     
-    u16 size = (u16) (end - start) + 2;
-    memcpy(dest, &size, sizeof(size));
+    if (_encrypt)
+        encrypt(conn, start);
+    
     return size;
 }
 
@@ -375,28 +389,24 @@ static void send_protocol(struct state *state, struct connection *conn)
     assert(state);
     assert(conn);
     
-    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
-    byte *end = start;
-    
-    byte type = 0x00;
-    end = append(end, type);
-    
-    byte protocol[] = {
-        0x01,
-        // crypt key
-        0x94,
-        0x35,
-        0x00,
-        0x00,
-        0xa1,
-        0x6c,
-        0x54,
-        0x87,
-    };
-    end = append(end, protocol);
-    
-    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
-    conn->to_send_count += size;
+    queue_response(conn, 0, buf) {
+        byte type = 0x00;
+        bwrite(buf, type);
+        
+        byte protocol[] = {
+            0x01,
+            // crypt key
+            0x94,
+            0x35,
+            0x00,
+            0x00,
+            0xa1,
+            0x6c,
+            0x54,
+            0x87,
+        };
+        bwrite(buf, protocol);
+    }
 }
 
 static void handle_auth(struct state *state, struct connection *conn, byte *req)
@@ -405,35 +415,26 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     assert(conn);
     assert(req);
     
-    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
-    byte *end = start;
-    
-    byte type = 0x13;
-    end = append(end, type);
-    
-    u32 count = 0;
-    end = append(end, count);
-    
-    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
-    encrypt(conn, conn->to_send + conn->to_send_count);
-    conn->to_send_count += size;
-    
-#if 0
     // skip packet type.
     req++;
     
-    wsscan(conn->username, req);
-    scan(conn->play_ok2, req);
-    scan(conn->play_ok1, req);
-    scan(conn->login_ok1, req);
-    scan(conn->login_ok2, req);
+    breadws(conn->username, req);
+    bread(conn->play_ok2, req);
+    bread(conn->play_ok1, req);
+    bread(conn->login_ok1, req);
+    bread(conn->login_ok2, req);
     
     trace("name is '%ls'" nl, conn->username);
     trace("play ok 1 is '%u'" nl, conn->play_ok1);
     trace("play ok 2 is '%u'" nl, conn->play_ok2);
     trace("login ok 1 is '%u'" nl, conn->login_ok1);
     trace("login ok 2 is '%u'" nl, conn->login_ok2);
-#endif
     
-    
+    queue_response(conn, 1, buf) {
+        byte type = 0x13;
+        bwrite(buf, type);
+        
+        u32 count = 0;
+        bwrite(buf, count);
+    }
 }
