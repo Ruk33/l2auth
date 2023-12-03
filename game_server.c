@@ -43,7 +43,7 @@ case 0:
 
 #define yield \
 __coro->line = __COUNTER__ + 1; \
-return; \
+break; \
 case __COUNTER__:
 
 #define syield(sleep, delta) \
@@ -51,7 +51,7 @@ __coro->sleep_for = (sleep); \
 yield; \
 __coro->sleep_for -= (delta); \
 if (coro->sleep_for > 0) \
-return;
+break;
 
 struct coroutine {
     int line;
@@ -80,7 +80,6 @@ struct connection {
     size_t sent;
     
     byte request[1024];
-    size_t request_head;
     size_t request_count;
 };
 
@@ -140,9 +139,7 @@ void on_request(void **buf, int socket, void *request, size_t len)
         trace("request for a non connected client?" nl);
         return;
     }
-    if (conn->request_head + len > countof(conn->request))
-        conn->request_head = 0;
-    memcpy(conn->request + conn->request_head, request, len);
+    memcpy(conn->request + conn->request_count, request, len);
     conn->request_count += len;
     handle_request(state, conn);
 }
@@ -209,22 +206,20 @@ static void handle_request(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
-    byte *request = conn->request + conn->request_head;
+    byte *request = conn->request;
     
     u16 size = 0;
     memcpy(&size, request, sizeof(size));
-    
-    if (size > conn->request_count - conn->request_head)
+    if (size > conn->request_count)
         return;
-    
-    conn->request_head += size;
     
     if (conn->encrypted)
         decrypt(conn, request);
-    request += sizeof(size);
+    
+    byte *body = request + sizeof(size);
     
     byte type = 0;
-    memcpy(&type, request, sizeof(type));
+    memcpy(&type, body, sizeof(type));
     trace("received packet is of type %d" nl, (int) type);
     
     coroutine(conn->state) {
@@ -246,10 +241,13 @@ static void handle_request(struct state *state, struct connection *conn)
             return;
         }
         
-        handle_auth(state, conn, request);
+        handle_auth(state, conn, body);
         
         yield;
     }
+    
+    memmove(conn->request, conn->request + size, conn->request_count - size);
+    conn->request_count -= size;
 }
 
 static u16 checksum(byte *dest, byte *start, byte *end)
@@ -407,6 +405,19 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     assert(conn);
     assert(req);
     
+    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
+    byte *end = start;
+    
+    byte type = 0x13;
+    end = append(end, type);
+    
+    u32 count = 0;
+    end = append(end, count);
+    
+    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
+    encrypt(conn, conn->to_send + conn->to_send_count);
+    conn->to_send_count += size;
+    
 #if 0
     // skip packet type.
     req++;
@@ -424,16 +435,5 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     trace("login ok 2 is '%u'" nl, conn->login_ok2);
 #endif
     
-    byte *start = conn->to_send + conn->to_send_count + sizeof(u16);
-    byte *end = start;
     
-    byte type = 0x13;
-    end = append(end, type);
-    
-    u32 count = 0;
-    end = append(end, count);
-    
-    u16 size = checksum(conn->to_send + conn->to_send_count, start, end);
-    encrypt(conn, conn->to_send + conn->to_send_count);
-    conn->to_send_count += size;
 }
