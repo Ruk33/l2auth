@@ -1,7 +1,9 @@
+#define WIN32_LEAN_AND_MEAN
+
 #include <assert.h> // assert
 #include <stddef.h> // size_t
 #include <stdio.h>  // fprintf, fscanf, fopen, fclose, fread, fwrite, fgetc, sscanf
-#include <string.h> // memcpy, memcmp, strlen, strncpy
+#include <string.h> // memcpy, memcmp, strlen, strncpy, strcmp
 #include <stdint.h> // fixed int types
 #include <time.h>   // time_t, time
 
@@ -12,6 +14,7 @@
 #include <openssl/blowfish.h>
 #include <openssl/evp.h>
 
+#include "directory.h"
 #include "asocket.h"
 
 typedef uint8_t byte;
@@ -55,15 +58,8 @@ struct connection {
     byte to_send[1024];
     size_t to_send_count;
     size_t sent;
-    // buffer reserved for the request of client. this is intended
-    // to be a circular buffer, meaning, when it's full, the beginning
-    // of the buffer will be written again. "request_head" is
-    // the start of the request being handled. keep in mind, the client
-    // can send multiple requests in one big chunk. when the request
-    // is handled, request_head will be updated to be
-    // request_head + the size of the request we just handled.
+    // buffer reserved for the request of client.
     byte request[1024];
-    size_t request_head;
     size_t request_count;
     
     BF_KEY blowfish;
@@ -103,7 +99,6 @@ static struct connection *find_connection(int socket)
             connections[i].login_ok2 = 0;
             connections[i].to_send_count = 0;
             connections[i].sent = 0;
-            connections[i].request_head = 0;
             connections[i].request_count = 0;
             return connections + i;
         }
@@ -253,35 +248,22 @@ static void handle_auth_request(struct connection *conn, byte *request)
     strncpy(conn->username, username, sizeof(conn->username) - 1);
     trace("user %s is trying to authenticate" nl, conn->username);
     
-    // the format of the users.txt file will be
-    // name of the user
-    // new line
-    // salt (16 bytes)
-    // hashed password (32 bytes)
-    // rest of the fields as readable text
-    FILE *existing_users = fopen("users.txt", "r");
-    if (existing_users) {
-        size_t username_len = strlen(conn->username);
-        int c = 0;
-        while ((c = fgetc(existing_users)) != EOF) {
-            size_t i = 0;
-            while (c == (int) conn->username[i] &&
-                   i <= username_len) {
-                c = fgetc(existing_users);
-                i++;
-            }
-            if (i == username_len && c == '\n') {
-                account_exists = 1;
-                break;
-            }
-        }
-        if (account_exists) {
-            unsigned char stored_salt[16] = {0};
-            unsigned char stored_hash[32] = {0};
-            fread(stored_salt, 1, sizeof(stored_salt), existing_users);
-            fread(stored_hash, 1, sizeof(stored_hash), existing_users);
+    in_directory("data/accounts") {
+        if (strcmp(directory.name, conn->username) != 0)
+            continue;
+        
+        account_exists = 1;
+        char hash_password_path[256] = {0};
+        snprintf(hash_password_path, sizeof(hash_password_path) - 1, "%s/hash_password.txt", directory.full_path);
+        FILE *hash_password = fopen(hash_password_path, "r");
+        if (hash_password) {
+            byte stored_salt[16] = {0};
+            byte stored_hash[32] = {0};
             
-            unsigned char hash_from_request[32] = {0};
+            fread(stored_salt, 1, sizeof(stored_salt), hash_password);
+            fread(stored_hash, 1, sizeof(stored_hash), hash_password);
+            
+            byte hash_from_request[32] = {0};
             PKCS5_PBKDF2_HMAC(password, 
                               (int) strnlen(password, 32), 
                               stored_salt, 
@@ -291,17 +273,35 @@ static void handle_auth_request(struct connection *conn, byte *request)
                               sizeof(hash_from_request), 
                               hash_from_request);
             // check if passwords match.
-            if (memcmp(stored_hash, hash_from_request, sizeof(stored_hash)) == 0)
-                authenticated = 1;
+            authenticated = memcmp(stored_hash, hash_from_request, sizeof(stored_hash)) == 0;
+            fclose(hash_password);
+        } else {
+            trace("ERROR: unable to read %s to check user's password" nl,
+                  hash_password_path);
         }
-        fclose(existing_users);
+        
+        break;
     }
     
     if (!account_exists) {
         trace("the user %s doesn't exist. trying to create the account" nl, 
               conn->username);
-        FILE *users = fopen("users.txt", "a");
-        if (users) {
+        
+        char account_folder[256] = {0};
+        snprintf(account_folder, 
+                 sizeof(account_folder) - 1, 
+                 "data/accounts/%s", 
+                 conn->username);
+        directory_create(account_folder);
+        
+        char hash_password_path[256] = {0};
+        snprintf(hash_password_path, 
+                 sizeof(hash_password_path) - 1, 
+                 "data/accounts/%s/hash_password.txt", 
+                 conn->username);
+        
+        FILE *hash_password = fopen(hash_password_path, "w");
+        if (hash_password) {
             unsigned char salt[16] = {0};
             RAND_bytes(salt, sizeof(salt));
             
@@ -315,18 +315,18 @@ static void handle_auth_request(struct connection *conn, byte *request)
                               sizeof(hash), 
                               hash);
             
-            fprintf(users, "%s" nl, conn->username);
-            fwrite(salt, 1, sizeof(salt), users);
-            fwrite(hash, 1, sizeof(hash), users);
-            fwrite(nl, 1, 1, users);
-            fclose(users);
+            fwrite(salt, 1, sizeof(salt), hash_password);
+            fwrite(hash, 1, sizeof(hash), hash_password);
+            fclose(hash_password);
             
             trace("account %s created sucessfully" nl, 
                   conn->username);
+            
             authenticated = 1;
         } else {
-            trace("ERROR: unable to create or write to file users.txt." nl
-                  "check your permissions. the connection will be dropped." nl);
+            trace("ERROR: unable to create or write to file %s." nl
+                  "check your permissions. the connection will be dropped." nl,
+                  hash_password_path);
         }
     }
     
@@ -397,7 +397,7 @@ static void handle_server_list_request(struct connection *conn)
     
     trace("%s requested the servers list" nl, conn->username);
     
-    FILE *servers_file = fopen("servers.txt", "r");
+    FILE *servers_file = fopen("data/servers.txt", "r");
     if (servers_file) {
         while (server_count < (u8) countof(servers)) {
             int matched = fscanf(servers_file, 
@@ -433,7 +433,7 @@ static void handle_server_list_request(struct connection *conn)
         fclose(servers_file);
         
         if (!server_count)
-            trace("WARNING: i couldn't find any server in servers.txt." nl
+            trace("WARNING: i couldn't find any server in data/servers.txt." nl
                   "just in case, this is the format i'm expecting:" nl
                   nl
                   "id=1" nl
@@ -449,9 +449,9 @@ static void handle_server_list_request(struct connection *conn)
         servers[0].max_players = 1000;
         servers[0].status = 1;
         
-        trace("WARNING! no servers.txt file found, i will try to create a default one" nl);
+        trace("WARNING! no data/servers.txt file found, i will try to create a default one" nl);
         
-        FILE *default_servers_file = fopen("servers.txt", "w+");
+        FILE *default_servers_file = fopen("data/servers.txt", "w+");
         if (default_servers_file) {
             fprintf(default_servers_file, 
                     "id=%d" nl
@@ -467,7 +467,7 @@ static void handle_server_list_request(struct connection *conn)
         } else {
             trace("i was unable to create the default file." nl
                   "please check the folder's permission or, " nl
-                  "create a servers.txt file manually with:" nl
+                  "create a data/servers.txt file manually with:" nl
                   nl
                   "id=%d" nl
                   "ip=0.0.0.0" nl
@@ -476,7 +476,7 @@ static void handle_server_list_request(struct connection *conn)
                   "status=%d" nl
                   nl
                   "in the meantime, i'll send the player the default server" nl
-                  "i would if you had the default servers.txt file i just" nl
+                  "i would if you had the default data/servers.txt file i just" nl
                   "showed you" nl,
                   servers[0].id,
                   servers[0].port,
@@ -519,12 +519,19 @@ static void handle_enter_game_server(struct connection *conn)
 {
     assert(conn);
     
-    FILE *access_file = fopen("login_access.txt", "a");
+    char access_path[256] = {0};
+    snprintf(access_path, 
+             sizeof(access_path) - 1, 
+             "data/accounts/%s/access.txt", 
+             conn->username);
+    
+    FILE *access_file = fopen(access_path, "w");
     if (!access_file) {
-        trace("unable to open/create login_access.txt file." nl
+        trace("unable to create the file %s." nl
               "this file is used to check if a connection to a game server" nl
               "actually went through the login server successfully." nl
               "the connection with %s will be dropped" nl,
+              access_path,
               conn->username);
         asocket_close(conn->socket);
         conn->socket = 0;
@@ -551,14 +558,12 @@ static void handle_enter_game_server(struct connection *conn)
     // save dates in utc format, in number (easier to check) and 
     // formatted, easier to read & debug :)
     fprintf(access_file, 
-            "username=%s" nl
             "login_ok1=%u" nl
             "login_ok2=%u" nl
             "created_at=%u" nl
             "valid_until=%u" nl
             "created_at(yyyy-mm-dd hh:mm:ss utc)=%s" nl
             "valid_until(yyyy-mm-dd hh:mm:ss utc)=%s" nl,
-            conn->username,
             conn->login_ok1,
             conn->login_ok2,
             created_at,
@@ -588,13 +593,13 @@ static void on_request(struct connection *conn)
 {
     assert(conn);
     
-    byte *request = conn->request + conn->request_head;
+    byte *request = conn->request;
     
     u16 size = 0;
     memcpy(&size, request, sizeof(size));
     
     // check for incomplete packet.
-    if (size > conn->request_count - conn->request_head)
+    if (size > conn->request_count)
         return;
     
     trace("new packet of size %d (mod 8 = %d)" nl, (int) size, size % 8);
@@ -652,7 +657,8 @@ static void on_request(struct connection *conn)
         break;
     }
     
-    conn->request_head += size;
+    memmove(conn->request, conn->request + size, conn->request_count - size);
+    conn->request_count -= size;
 }
 
 static void handle_event(int socket, enum asocket_event event, void *read, size_t len)
@@ -688,12 +694,7 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
         
         case ASOCKET_READ: {
             trace("bytes %d received from client" nl, (s32) len);
-            // circular buffer. 
-            // start from the beginning of the buffer is there is no
-            // more room to store the request.
-            if (conn->request_head + len > countof(conn->request))
-                conn->request_head = 0;
-            memcpy(conn->request + conn->request_head, read, len);
+            memcpy(conn->request + conn->request_count, read, len);
             conn->request_count += len;
             on_request(conn);
         } break;

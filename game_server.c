@@ -1,3 +1,5 @@
+#define WIN32_LEAN_AND_MEAN
+
 #include <assert.h> // assert
 #include <stdlib.h> // calloc, size_t
 #include <stdio.h>  // fprintf
@@ -5,11 +7,6 @@
 #include <stdint.h> // fixed int types
 #include <locale.h>
 #include <wchar.h>
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
 
 #include "directory.h"
 #include "asocket.h"
