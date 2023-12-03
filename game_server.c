@@ -5,8 +5,9 @@
 #include <stdio.h>  // fprintf
 #include <string.h> // memset, memcpy, strncpy, strnlen
 #include <stdint.h> // fixed int types
-#include <locale.h>
-#include <wchar.h>
+#include <locale.h> // setlocale
+#include <wchar.h>  // wchar_t
+#include <time.h>   // time_t, now
 
 #include "directory.h"
 #include "asocket.h"
@@ -421,18 +422,56 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     
     // skip packet type.
     req++;
-    
     breadws(conn->username, req);
     bread(conn->play_ok2, req);
     bread(conn->play_ok1, req);
     bread(conn->login_ok1, req);
     bread(conn->login_ok2, req);
     
-    trace("name is '%ls'" nl, conn->username);
-    trace("play ok 1 is '%u'" nl, conn->play_ok1);
-    trace("play ok 2 is '%u'" nl, conn->play_ok2);
-    trace("login ok 1 is '%u'" nl, conn->login_ok1);
-    trace("login ok 2 is '%u'" nl, conn->login_ok2);
+    char access_path[256] = {0};
+    snprintf(access_path, 
+             sizeof(access_path) - 1, 
+             "data/accounts/%ls/access.txt",
+             conn->username);
+    FILE *access_file = fopen(access_path, "r");
+    if (!access_file) {
+        error("unable to read %s. can't check if this is a valid auth."
+              "the user will be dropped." nl, 
+              access_path);
+        asocket_close(conn->socket);
+        conn->socket = 0;
+        return;
+    }
+    
+    u32 stored_login_ok1 = 0;
+    u32 stored_login_ok2 = 0;
+    u32 stored_created_at = 0;
+    u32 stored_valid_until = 0;
+    fscanf(access_file, 
+           "login_ok1=%u" nl
+           "login_ok2=%u" nl
+           "created_at=%u" nl
+           "valid_until=%u" nl,
+           &stored_login_ok1,
+           &stored_login_ok2,
+           &stored_created_at,
+           &stored_valid_until);
+    
+    if (stored_login_ok1 != conn->login_ok1 || stored_login_ok2 != conn->login_ok2) {
+        warn("invalid loginok1 or loginok2 from %ls. the connection will be dropped." nl, 
+             conn->username);
+        asocket_close(conn->socket);
+        conn->socket = 0;
+        return;
+    }
+    
+    if (stored_valid_until < time(0)) {
+        trace("keys expired for %ls. the connection will be dropped." nl,
+              conn->username);
+        asocket_close(conn->socket);
+        conn->socket = 0;
+        return;
+    }
     
     queue_response(conn, 1, buf) {
         byte type = 0x13;
