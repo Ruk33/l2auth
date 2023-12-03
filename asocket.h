@@ -3,6 +3,7 @@ enum asocket_event {
     ASOCKET_CLOSED,
     ASOCKET_READ,
     ASOCKET_CAN_WRITE,
+    ASOCKET_TIMEOUT,
 };
 
 typedef void (asocket_handler)

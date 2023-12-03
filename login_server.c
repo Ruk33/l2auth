@@ -80,10 +80,10 @@ static u32 ip_to_u32(char *ip)
     u8 ip_bytes[4] = {0};
     sscanf(ip, 
            "%u.%u.%u.%u", 
-           &ip_bytes[3], 
-           &ip_bytes[2], 
+           &ip_bytes[0], 
            &ip_bytes[1], 
-           &ip_bytes[0]);
+           &ip_bytes[2], 
+           &ip_bytes[3]);
     u32 result = ip_bytes[0] | ip_bytes[1] << 8 | ip_bytes[2] << 16 | ip_bytes[3] << 24;
     return result;
 }
