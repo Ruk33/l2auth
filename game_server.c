@@ -8,6 +8,7 @@
 #include <locale.h> // setlocale
 #include <wchar.h>  // wchar_t
 #include <time.h>   // time_t, now
+#include <stdarg.h>
 
 #include "directory.h"
 #include "asocket.h"
@@ -33,9 +34,12 @@ typedef float seconds;
 #define error(...) trace("error / " __VA_ARGS__)
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 
-// write bytes from src into dest and advance src past bytes written.
+// write bytes from src into dest and advance dest past bytes written.
 #define bwrite(dest, src) \
 (memcpy((dest), &(src), sizeof(src)), (dest) += sizeof(src))
+// write wide string from src to dest and advance dest past bytes written.
+#define bwritews(dest, src) \
+(wcsncpy((wchar_t *) (dest), (const wchar_t *) (src), countof(src) - 1), (dest) += (wcsnlen((src), countof(src)) + 1) * 2)
 // read bytes from src to dest and advance src past bytes read.
 #define bread(dest, src) \
 (memcpy(&(dest), (src), sizeof(dest)), (src) += sizeof(dest))
@@ -47,6 +51,8 @@ typedef float seconds;
 // dest will be null terminated.
 #define breadws(dest, src) \
 (wcsncpy((dest), (const wchar_t *) (src), countof(dest) - 1), (src) += (wcsnlen((dest), countof(dest)) + 1) * 2)
+#define breadwsn(dest, src, n) \
+(wcsncpy((dest), (const wchar_t *) (src), n - 1), (src) += (wcsnlen((dest), n) + 1) * 2)
 // block to build and queue a response. at the end, the packet size
 // is calculated and encrypted if required.
 #define queue_response(conn, encrypt, buf) \
@@ -102,8 +108,14 @@ struct connection {
     size_t request_count;
 };
 
+struct character {
+    wchar_t name[32];
+    
+};
+
 struct state {
     struct connection connections[1024];
+    struct character characters[1024];
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
@@ -113,6 +125,9 @@ static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
 static void send_protocol(struct state *state, struct connection *conn);
 static void handle_auth(struct state *state, struct connection *conn, byte *req);
+static void handle_show_create_character_screen(struct state *state, struct connection *conn);
+static void handle_character_creation(struct state *state, struct connection *conn, byte *req);
+static void send_character_list(struct state *state, struct connection *conn);
 
 int on_init(void **buf)
 {
@@ -240,7 +255,7 @@ static void handle_request(struct state *state, struct connection *conn)
     
     byte type = 0;
     memcpy(&type, body, sizeof(type));
-    trace("received packet is of type %d" nl, (int) type);
+    trace("received packet is of type %#04x" nl, (int) type);
     
     // check if the received packet matches the expected packet.
     // if it doesn't, drop/close the connection.
@@ -266,7 +281,16 @@ return; \
         handle_auth(state, conn, body);
         
         yield;
-        
+        switch (type) {
+            // show create character screen.
+            case 0x0e:
+            handle_show_create_character_screen(state, conn);
+            break;
+            // create character.
+            case 0x0b:
+            handle_character_creation(state, conn, body);
+            break;
+        }
     }
     
     memmove(conn->request, conn->request + size, conn->request_count - size);
@@ -473,11 +497,256 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
         return;
     }
     
+    send_character_list(state, conn);
+}
+
+static void handle_show_create_character_screen(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    
     queue_response(conn, 1, buf) {
-        byte type = 0x13;
+        byte type = 0x17;
         bwrite(buf, type);
         
         u32 count = 0;
         bwrite(buf, count);
+    }
+}
+
+static byte *bscanf_va(byte *src, va_list va)
+{
+    while (1) {
+        char *fmt = va_arg(va, char *);
+        if (fmt == 0)
+            break;
+        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
+            size_t max_chars = va_arg(va, size_t);
+            wchar_t *dest = va_arg(va, wchar_t *);
+            breadwsn(dest, src, max_chars);
+        }
+        if (fmt[0] == '%' && fmt[1] == 'u') {
+            u32 tmp = 0;
+            bread(tmp, src);
+            u32 *dest = va_arg(va, u32 *);
+            *dest = tmp;
+        }
+        // ...
+    }
+    return src;
+}
+
+static byte *bscanf_(byte *src, ...)
+{
+    va_list va;
+	va_start(va, src);
+	byte *result = bscanf_va(src, va);
+	va_end(va);
+    return result;
+}
+
+#define bscanf(src, ...) \
+bscanf_(src, __VA_ARGS__, 0)
+
+static void handle_character_creation(struct state *state, struct connection *conn, byte *req)
+{
+    assert(state);
+    assert(conn);
+    
+    // skip request type.
+    req++;
+    
+    wchar_t name[32] = {0};
+    u32 race_id = 0;
+    u32 sex = 0;
+    u32 class_id = 0;
+    u32 ignore = 0;
+    u32 hair_style_id = 0;
+    u32 hair_color_id = 0;
+    u32 face_id = 0;
+    
+    bscanf(req, 
+           "%ls", countof(name), name,
+           "%u", &race_id,
+           "%u", &sex,
+           "%u", &class_id,
+           "%u", &ignore,
+           "%u", &ignore,
+           "%u", &ignore,
+           "%u", &ignore,
+           "%u", &ignore,
+           "%u", &ignore,
+           "%u", &hair_style_id,
+           "%u", &hair_color_id,
+           "%u", &face_id);
+    
+    // TODO(fmontenegro): check if name exists
+    
+    char characters_path[256] = {0};
+    snprintf(characters_path, 
+             sizeof(characters_path) - 1, 
+             "data/accounts/%ls/characters",
+             conn->username);
+    directory_create(characters_path);
+    
+    char info_path[256] = {0};
+    snprintf(info_path, 
+             sizeof(info_path) - 1, 
+             "data/accounts/%ls/characters/%ls.txt",
+             conn->username,
+             name);
+    
+    FILE *info_file = fopen(info_path, "w");
+    if (!info_file) {
+        error("failed to store data for new characters in %s" nl,
+              info_path);
+        return;
+    }
+    
+    fprintf(info_file,
+            "name=%ls" nl
+            "race_id=%u" nl
+            "sex=%u" nl
+            "class_id=%u" nl
+            "hair_style_id=%u" nl
+            "hair_color_id=%u" nl
+            "face_id=%u" nl,
+            name,
+            race_id,
+            sex,
+            class_id,
+            hair_style_id,
+            hair_color_id,
+            face_id);
+    fclose(info_file);
+    
+    queue_response(conn, 1, buf) {
+        byte type = 0x19;
+        bwrite(buf, type);
+        u32 success = 1;
+        bwrite(buf, success);
+    }
+    send_character_list(state, conn);
+}
+
+static void send_character_list(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    
+    queue_response(conn, 1, buf) {
+        byte type = 0x13;
+        bwrite(buf, type);
+        
+        char characters_path[256] = {0};
+        snprintf(characters_path, 
+                 sizeof(characters_path) - 1, 
+                 "data/accounts/%ls/characters",
+                 conn->username);
+        
+        u32 count = 0;
+        in_directory(characters_path)
+            count++;
+        bwrite(buf, count);
+        
+        in_directory(characters_path) {
+            wchar_t name[32] = {0};
+            u32 id = 1;
+            u32 clan_id = 0;
+            u32 sex = 0;
+            u32 race_id = 0;
+            // u32 base_race_id = 0;
+            u32 active = 1;
+            double current_hp = 500;
+            double current_mp = 500;
+            u32 sp = 0;
+            u32 xp = 0;
+            u32 level = 1;
+            u32 karma = 0;
+            u32 hair_style_id = 0;
+            u32 hair_color_id = 0;
+            u32 face_id = 0;
+            double max_hp = 1000;
+            double max_mp = 1000;
+            u32 delete_time = 0;
+            u32 class_id = 0;
+            u32 auto_select = 0;
+            u8 enchant_effect = 0;
+            
+            FILE *character_file = fopen(directory.full_path, "r");
+            if (character_file) {
+                fscanf(character_file, 
+                       "name=%ls" nl
+                       "race_id=%u" nl
+                       "sex=%u" nl
+                       "class_id=%u" nl
+                       "hair_style_id=%u" nl
+                       "hair_color_id=%u" nl
+                       "face_id=%u" nl,
+                       name,
+                       &race_id,
+                       &sex,
+                       &class_id,
+                       &hair_style_id,
+                       &hair_color_id,
+                       &face_id);
+                fclose(character_file);
+            }
+            
+            bwritews(buf, name);
+            bwrite(buf, id);
+            bwritews(buf, conn->username);
+            bwrite(buf, conn->play_ok1);
+            bwrite(buf, clan_id);
+            
+            {
+                u32 empty = 0;
+                bwrite(buf, empty);
+            }
+            
+            bwrite(buf, sex);
+            bwrite(buf, race_id);
+            // bwrite(buf, base_race_id);
+            bwrite(buf, class_id);
+            bwrite(buf, active);
+            
+            s32 x, y, z = 0;
+            bwrite(buf, x);
+            bwrite(buf, y);
+            bwrite(buf, z);
+            
+            bwrite(buf, current_hp);
+            bwrite(buf, current_mp);
+            
+            bwrite(buf, sp);
+            bwrite(buf, xp);
+            bwrite(buf, level);
+            bwrite(buf, karma);
+            
+            {
+                u32 empty[9] = {0};
+                bwrite(buf, empty);
+            }
+            
+            {
+                u32 paper_obj_id_empty[16] = {0};
+                bwrite(buf, paper_obj_id_empty);
+            }
+            
+            {
+                u32 paper_item_id_empty[16] = {0};
+                bwrite(buf, paper_item_id_empty);
+            }
+            
+            bwrite(buf, hair_style_id);
+            bwrite(buf, hair_color_id);
+            bwrite(buf, face_id);
+            bwrite(buf, max_hp);
+            bwrite(buf, max_mp);
+            bwrite(buf, delete_time);
+            bwrite(buf, class_id);
+            bwrite(buf, auto_select);
+            bwrite(buf, enchant_effect);
+        }
     }
 }
