@@ -34,30 +34,6 @@ typedef float seconds;
 #define error(...) trace("error / " __VA_ARGS__)
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 
-// write bytes from src into dest and advance dest past bytes written.
-#define bwrite(dest, src) \
-(memcpy((dest), &(src), sizeof(src)), \
-(dest) += sizeof(src))
-// write wide string from src to dest and advance dest past bytes written.
-#define bwritews(dest, src) \
-(wcsncpy((wchar_t *) (dest), (const wchar_t *) (src), countof(src) - 1), \
-(dest) += (wcsnlen((src), countof(src)) + 1) * 2)
-// write n letters from src to dest and advance dest past bytes written.
-#define bwritewsn(dest, src, n) \
-(wcsncpy((wchar_t *) (dest), (const wchar_t *) (src), (n) - 1), \
-(dest) += (wcsnlen((src), (n)) + 1) * 2)
-// read bytes from src to dest and advance src past bytes read.
-#define bread(dest, src) \
-(memcpy(&(dest), (src), sizeof(dest)), \
-(src) += sizeof(dest))
-// read wide string from src to dest and advance src past string length + null terminator.
-// dest will be null terminated.
-#define breadws(dest, src) \
-(wcsncpy((dest), (const wchar_t *) (src), countof(dest) - 1), \
-(src) += (wcsnlen((dest), countof(dest)) + 1) * 2)
-#define breadwsn(dest, src, n) \
-(wcsncpy((dest), (const wchar_t *) (src), (n) - 1), \
-(src) += (wcsnlen((dest), (n)) + 1) * 2)
 // block to build and queue a response. at the end, the packet size
 // is calculated and encrypted if required.
 #define queue_response(conn, encrypt, buf) \
@@ -65,6 +41,15 @@ for (byte *buf = conn->to_send + conn->to_send_count + 2; \
 buf; \
 conn->to_send_count += close_packet(conn, conn->to_send + conn->to_send_count, buf, encrypt), \
 buf = 0)
+
+#define bprintf(dest, n, ...) \
+bprintf_((dest), (n), __VA_ARGS__, 0)
+
+#define bscanf(src, n, ...) \
+bscanf_((src), (n), __VA_ARGS__, 0)
+
+#define pscanf(src, ...) \
+bscanf_((src) + 3, packet_size(src) - 3, __VA_ARGS__, 0)
 
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
@@ -204,19 +189,158 @@ struct state {
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
-static void handle_request(struct state *state, struct connection *conn);
 static u16 close_packet(struct connection *conn, byte *dest, byte *end, int encrypt);
 static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
-static void send_protocol(struct state *state, struct connection *conn);
+static void handle_request(struct state *state, struct connection *conn);
+static void handle_send_protocol(struct state *state, struct connection *conn);
 static void handle_auth(struct state *state, struct connection *conn, byte *req);
 static void handle_show_create_character_screen(struct state *state, struct connection *conn);
 static void handle_character_creation(struct state *state, struct connection *conn, byte *req);
-static void send_character_list(struct state *state, struct connection *conn);
+static void handle_send_character_list(struct state *state, struct connection *conn);
 static void handle_select_character(struct state *state, struct connection *conn, byte *req);
 static void handle_auto_ss_bsps(struct state *state, struct connection *conn);
 static void handle_send_quest_list(struct state *state, struct connection *conn);
 static void handle_enter_world(struct state *state, struct connection *conn);
+
+static u16 packet_size(byte *src)
+{
+    u16 size = *(u16 *) src;
+    return size;
+}
+
+static size_t response_space_left(struct connection *conn, byte *src)
+{
+    assert(conn);
+    assert(src);
+    return sizeof(conn->to_send) - (size_t) (src - conn->to_send);
+}
+
+static byte *bscanf_va(byte *src, size_t n, va_list va)
+{
+    byte *tail = src;
+    while ((size_t) (tail - src) < n) {
+        char *fmt = va_arg(va, char *);
+        if (fmt == 0)
+            break;
+        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
+            size_t max_letters = va_arg(va, size_t);
+            wchar_t *dest = va_arg(va, wchar_t *);
+            wcsncpy(dest, (const wchar_t *) tail, max_letters - 1);
+            tail += (wcsnlen(dest, max_letters) + 1) * 2;
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'f') {
+            double *dest = va_arg(va, double *);
+            *dest = *(double *) tail;
+            tail += sizeof(*dest);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'u') {
+            u32 *dest = va_arg(va, u32 *);
+            *dest = *(u32 *) tail;
+            tail += sizeof(*dest);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'h') {
+            u16 *dest = va_arg(va, u16 *);
+            *dest = *(u16 *) tail;
+            tail += sizeof(*dest);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'c') {
+            u8 *dest = va_arg(va, u8 *);
+            *dest = *tail;
+            tail += sizeof(*dest);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'x') {
+            size_t bytes_to_skip = va_arg(va, size_t);
+            tail += bytes_to_skip;
+            continue;
+        }
+        
+        error("unexpected format '%s' in bscanf." nl, fmt);
+        assert(0);
+    }
+    return tail;
+}
+
+static byte *bscanf_(byte *src, size_t n, ...)
+{
+    va_list va;
+	va_start(va, n);
+	byte *result = bscanf_va(src, n, va);
+	va_end(va);
+    return result;
+}
+
+static byte *bprintf_va(byte *dest, size_t n, va_list va)
+{
+    byte *tail = dest;
+    while ((size_t) (tail - dest) < n) {
+        char *fmt = va_arg(va, char *);
+        if (fmt == 0)
+            break;
+        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
+            size_t max_letters = va_arg(va, size_t);
+            wchar_t *src = va_arg(va, wchar_t *);
+            wcsncpy((wchar_t *) tail, src, max_letters - 1);
+            tail += (wcsnlen(src, max_letters) + 1) * 2;
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'u') {
+            u32 src = va_arg(va, u32);
+            *(u32 *) tail = src;
+            tail += sizeof(src);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'h') {
+            u16 src = va_arg(va, u16);
+            *(u16 *) tail = src;
+            tail += sizeof(src);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'c') {
+            u8 src = va_arg(va, u8);
+            *tail = src;
+            tail += sizeof(src);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'f') {
+            double src = va_arg(va, double);
+            *(double *) tail = src;
+            tail += sizeof(src);
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'x') {
+            size_t bytes_to_skip = va_arg(va, size_t);
+            memset(tail, 0, bytes_to_skip);
+            tail += bytes_to_skip;
+            continue;
+        }
+        if (fmt[0] == '%' && fmt[1] == 'b') {
+            size_t bytes_to_write = va_arg(va, size_t);
+            byte *src = va_arg(va, byte *);
+            memcpy(tail, src, bytes_to_write);
+            tail += bytes_to_write;
+            continue;
+        }
+        
+        error("unexpected format '%s' in bprintf." nl, fmt);
+        assert(0);
+    }
+    return tail;
+}
+
+static byte *bprintf_(byte *dest, size_t n, ...)
+{
+    va_list va;
+	va_start(va, n);
+	byte *result = bprintf_va(dest, n, va);
+	va_end(va);
+    return result;
+}
 
 int on_init(void **buf)
 {
@@ -332,18 +456,14 @@ static void handle_request(struct state *state, struct connection *conn)
     assert(conn);
     byte *request = conn->request;
     
-    u16 size = 0;
-    memcpy(&size, request, sizeof(size));
+    u16 size = *(u16 *) request;
     if (size > conn->request_count)
         return;
     
     if (conn->encrypted)
         decrypt(conn, request);
     
-    byte *body = request + sizeof(size);
-    
-    byte type = 0;
-    memcpy(&type, body, sizeof(type));
+    byte type = *(request + 2);
     trace("received packet is of type %#04x" nl, (int) type);
     
     // check if the received packet matches the expected packet.
@@ -361,13 +481,13 @@ return; \
     coroutine(conn->state) {
         // expect protocol request.
         expected_or_close(0x00);
-        send_protocol(state, conn);
+        handle_send_protocol(state, conn);
         conn->encrypted = 1;
         
         yield;
         // expect auth request.
         expected_or_close(0x08);
-        handle_auth(state, conn, body);
+        handle_auth(state, conn, request);
         
         yield;
         switch (type) {
@@ -377,11 +497,11 @@ return; \
             break;
             // create character.
             case 0x0b:
-            handle_character_creation(state, conn, body);
+            handle_character_creation(state, conn, request);
             break;
             // select character
             case 0x0d:
-            handle_select_character(state, conn, body);
+            handle_select_character(state, conn, request);
             break;
             // bsps
             case 0xd0:
@@ -411,7 +531,7 @@ static u16 close_packet(struct connection *conn, byte *start, byte *end, int _en
     assert(end - start < 65535);
     
     u16 size = (u16) (end - start);
-    memcpy(start, &size, sizeof(size));
+    *(u16 *) start = size;
     
     if (_encrypt)
         encrypt(conn, start);
@@ -424,8 +544,7 @@ static void encrypt(struct connection *conn, byte *packet)
     assert(conn);
     assert(packet);
     
-    u16 size = 0;
-    memcpy(&size, packet, sizeof(size));
+    u16 size = *(u16 *) packet;
     if (size > 1)
         size -= 2;
     
@@ -457,8 +576,7 @@ static void decrypt(struct connection *conn, byte *request)
     assert(conn);
     assert(request);
     
-    u16 size = 0;
-    memcpy(&size, request, sizeof(size));
+    u16 size = *(u16 *) request;
     if (size > 1)
         size -= 2;
     
@@ -484,15 +602,13 @@ static void decrypt(struct connection *conn, byte *request)
     conn->decrypt_key[3] = (byte) (old >> 0x18 & 0xff);
 }
 
-static void send_protocol(struct state *state, struct connection *conn)
+static void handle_send_protocol(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
     
     queue_response(conn, 0, buf) {
         byte type = 0x00;
-        bwrite(buf, type);
-        
         byte protocol[] = {
             0x01,
             // crypt key
@@ -505,7 +621,10 @@ static void send_protocol(struct state *state, struct connection *conn)
             0x54,
             0x87,
         };
-        bwrite(buf, protocol);
+        
+        buf = bprintf(buf, response_space_left(conn, buf),
+                      "%c", type,
+                      "%b", sizeof(protocol), protocol);
     }
 }
 
@@ -515,13 +634,12 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     assert(conn);
     assert(req);
     
-    // skip packet type.
-    req++;
-    breadws(conn->username, req);
-    bread(conn->play_ok2, req);
-    bread(conn->play_ok1, req);
-    bread(conn->login_ok1, req);
-    bread(conn->login_ok2, req);
+    pscanf(req,
+           "%ls", countof(conn->username), conn->username,
+           "%u", &conn->play_ok2,
+           "%u", &conn->play_ok1,
+           "%u", &conn->login_ok1,
+           "%u", &conn->login_ok2);
     
     char access_path[256] = {0};
     snprintf(access_path, 
@@ -568,7 +686,7 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
         return;
     }
     
-    send_character_list(state, conn);
+    handle_send_character_list(state, conn);
 }
 
 static void handle_show_create_character_screen(struct state *state, struct connection *conn)
@@ -578,99 +696,17 @@ static void handle_show_create_character_screen(struct state *state, struct conn
     
     queue_response(conn, 1, buf) {
         byte type = 0x17;
-        bwrite(buf, type);
-        
         u32 count = 0;
-        bwrite(buf, count);
+        buf = bprintf(buf, response_space_left(conn, buf),
+                      "%c", type,
+                      "%u", count);
     }
-}
-
-static byte *bscanf_va(byte *src, va_list va)
-{
-    while (1) {
-        char *fmt = va_arg(va, char *);
-        if (fmt == 0)
-            break;
-        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
-            size_t max_chars = va_arg(va, size_t);
-            wchar_t *dest = va_arg(va, wchar_t *);
-            breadwsn(dest, src, max_chars);
-        }
-        if (fmt[0] == '%' && fmt[1] == 'u') {
-            u32 tmp = 0;
-            bread(tmp, src);
-            u32 *dest = va_arg(va, u32 *);
-            *dest = tmp;
-        }
-        // ...
-    }
-    return src;
-}
-
-static byte *bscanf_(byte *src, ...)
-{
-    va_list va;
-	va_start(va, src);
-	byte *result = bscanf_va(src, va);
-	va_end(va);
-    return result;
-}
-
-#define bscanf(src, ...) \
-bscanf_(src, __VA_ARGS__, 0)
-
-#define bprintf(dest, n, ...) \
-bprintf_(dest, n, __VA_ARGS__, 0)
-
-static byte *bprintf_va(byte *dest, size_t n, va_list va)
-{
-    byte *tail = dest;
-    while ((size_t)(tail - dest) < n) {
-        char *fmt = va_arg(va, char *);
-        if (fmt == 0)
-            break;
-        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
-            size_t src_size = va_arg(va, size_t);
-            wchar_t *src = va_arg(va, wchar_t *);
-            bwritewsn(tail, src, src_size);
-        }
-        if (fmt[0] == '%' && fmt[1] == 'u') {
-            u32 src = va_arg(va, u32);
-            bwrite(tail, src);
-        }
-        if (fmt[0] == '%' && fmt[1] == 'h') {
-            u16 src = va_arg(va, u16);
-            bwrite(tail, src);
-        }
-        if (fmt[0] == '%' && fmt[1] == 'c') {
-            u8 src = va_arg(va, u8);
-            bwrite(tail, src);
-        }
-        if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'f') {
-            double src = va_arg(va, double);
-            bwrite(tail, src);
-        }
-        // ...
-    }
-    return tail;
-}
-
-static byte *bprintf_(byte *dest, size_t n, ...)
-{
-    va_list va;
-	va_start(va, n);
-	byte *result = bprintf_va(dest, n, va);
-	va_end(va);
-    return result;
 }
 
 static void handle_character_creation(struct state *state, struct connection *conn, byte *req)
 {
     assert(state);
     assert(conn);
-    
-    // skip request type.
-    req++;
     
     wchar_t name[32] = {0};
     u32 race_id = 0;
@@ -681,7 +717,7 @@ static void handle_character_creation(struct state *state, struct connection *co
     u32 hair_color_id = 0;
     u32 face_id = 0;
     
-    bscanf(req, 
+    pscanf(req, 
            "%ls", countof(name), name,
            "%u", &race_id,
            "%u", &sex,
@@ -738,21 +774,21 @@ static void handle_character_creation(struct state *state, struct connection *co
     
     queue_response(conn, 1, buf) {
         byte type = 0x19;
-        bwrite(buf, type);
         u32 success = 1;
-        bwrite(buf, success);
+        buf = bprintf(buf, response_space_left(conn, buf),
+                      "%c", type,
+                      "%u", success);
     }
-    send_character_list(state, conn);
+    handle_send_character_list(state, conn);
 }
 
-static void send_character_list(struct state *state, struct connection *conn)
+static void handle_send_character_list(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
     
     queue_response(conn, 1, buf) {
         byte type = 0x13;
-        bwrite(buf, type);
         
         char characters_path[256] = {0};
         snprintf(characters_path, 
@@ -763,7 +799,6 @@ static void send_character_list(struct state *state, struct connection *conn)
         u32 count = 0;
         in_directory(characters_path)
             count++;
-        bwrite(buf, count);
         
         in_directory(characters_path) {
             wchar_t name[32] = {0};
@@ -809,7 +844,9 @@ static void send_character_list(struct state *state, struct connection *conn)
                 fclose(character_file);
             }
             
-            buf = bprintf(buf, 2048,
+            buf = bprintf(buf, response_space_left(conn, buf),
+                          "%c", type,
+                          "%u", count,
                           "%ls", countof(name), name,
                           "%u", id,
                           "%ls", countof(conn->username), conn->username,
@@ -892,11 +929,8 @@ static void handle_select_character(struct state *state, struct connection *conn
     assert(conn);
     assert(req);
     
-    // skip packet type.
-    req++;
-    
     u32 index = 0;
-    bread(index, req);
+    pscanf(req, "%u", &index);
     
     char characters_path[256] = {0};
     snprintf(characters_path, 
@@ -991,7 +1025,7 @@ static void handle_select_character(struct state *state, struct connection *conn
     
     queue_response(conn, 1, buf) {
         byte type = 0x15;
-        buf = bprintf(buf, 2048,
+        buf = bprintf(buf, response_space_left(conn, buf),
                       "%c", type,
                       "%ls", countof(conn->character->name), conn->character->name,
                       "%u", in_world_id,
@@ -1083,13 +1117,12 @@ static void handle_auto_ss_bsps(struct state *state, struct connection *conn)
     assert(conn);
     queue_response(conn, 1, buf) {
         byte type = 0x1b;
-        bwrite(buf, type);
-        
         u16 empty = 0;
-        bwrite(buf, empty);
-        
         u32 manor_size = 0;
-        bwrite(buf, manor_size);
+        buf = bprintf(buf, response_space_left(conn, buf),
+                      "%c", type,
+                      "%h", empty,
+                      "%u", manor_size);
     }
 }
 
@@ -1099,10 +1132,10 @@ static void handle_send_quest_list(struct state *state, struct connection *conn)
     assert(conn);
     queue_response(conn, 1, buf) {
         byte type = 0x80;
-        bwrite(buf, type);
-        
         u8 empty[7] = {0};
-        bwrite(buf, empty);
+        buf = bprintf(buf, response_space_left(conn, buf),
+                      "%c", type,
+                      "%b", sizeof(empty), empty);
     }
 }
 
@@ -1117,7 +1150,7 @@ static void handle_enter_world(struct state *state, struct connection *conn)
         u32 in_world_id = 1;
         u32 clan_leader = 0;
         
-        buf = bprintf(buf, 2048,
+        buf = bprintf(buf, response_space_left(conn, buf),
                       "%c", type,
                       "%u", conn->character->x,
                       "%u", conn->character->y,
