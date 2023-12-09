@@ -34,14 +34,6 @@ typedef float seconds;
 #define error(...) trace("error / " __VA_ARGS__)
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 
-// block to build and queue a response. at the end, the packet size
-// is calculated and encrypted if required.
-#define queue_response(conn, encrypt, buf) \
-for (byte *buf = conn->to_send + conn->to_send_count + 2; \
-buf; \
-conn->to_send_count += close_packet(conn, conn->to_send + conn->to_send_count, buf, encrypt), \
-buf = 0)
-
 #define bprintf(dest, n, ...) \
 bprintf_((dest), (n), __VA_ARGS__, 0)
 
@@ -50,6 +42,9 @@ bscanf_((src), (n), __VA_ARGS__, 0)
 
 #define pscanf(src, ...) \
 bscanf_((src) + 3, packet_size(src) - 3, __VA_ARGS__, 0)
+
+#define push_response(conn, _encrypt, ...) \
+push_response_((conn), (_encrypt), __VA_ARGS__, 0)
 
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
@@ -69,7 +64,7 @@ if (coro->sleep_for > 0) \
 break;
 
 struct coroutine {
-    int line;
+    u32 line;
     seconds sleep_for;
 };
 
@@ -189,7 +184,6 @@ struct state {
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
-static u16 close_packet(struct connection *conn, byte *dest, byte *end, int encrypt);
 static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
 static void handle_request(struct state *state, struct connection *conn);
@@ -202,19 +196,7 @@ static void handle_select_character(struct state *state, struct connection *conn
 static void handle_auto_ss_bsps(struct state *state, struct connection *conn);
 static void handle_send_quest_list(struct state *state, struct connection *conn);
 static void handle_enter_world(struct state *state, struct connection *conn);
-
-static u16 packet_size(byte *src)
-{
-    u16 size = *(u16 *) src;
-    return size;
-}
-
-static size_t response_space_left(struct connection *conn, byte *src)
-{
-    assert(conn);
-    assert(src);
-    return sizeof(conn->to_send) - (size_t) (src - conn->to_send);
-}
+static void handle_leave_world(struct state *state, struct connection *conn);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -340,6 +322,97 @@ static byte *bprintf_(byte *dest, size_t n, ...)
 	byte *result = bprintf_va(dest, n, va);
 	va_end(va);
     return result;
+}
+
+static u16 packet_size(byte *src)
+{
+    u16 size = *(u16 *) src;
+    return size;
+}
+
+static void push_response_(struct connection *conn, int _encrypt, ...)
+{
+    assert(conn);
+    
+    byte *start = conn->to_send + conn->to_send_count;
+    size_t max = sizeof(conn->to_send) - (size_t) (start - conn->to_send);
+    
+    va_list va;
+    va_start(va, _encrypt);
+    byte *end = bprintf_va(start, max, va);
+    va_end(va);
+    
+    assert((end - start) < 65535);
+    u16 size = (u16) (end - start);
+    *(u16 *) start = size;
+    
+    if (_encrypt)
+        encrypt(conn, start);
+    
+    conn->to_send_count += size;
+}
+
+static void encrypt(struct connection *conn, byte *packet)
+{
+    assert(conn);
+    assert(packet);
+    
+    u16 size = *(u16 *) packet;
+    if (size > 1)
+        size -= 2;
+    
+    byte *body = packet + 2;
+    
+    u32 temp = 0;
+    u32 temp2 = 0;
+    for (u16 i = 0; i < size; i++) {
+        temp2 = body[i] & 0xff;
+        body[i] = (byte) (temp2 ^ conn->encrypt_key[i & 7] ^ temp);
+        temp = body[i];
+    }
+    
+    u32 old = ((u32) conn->encrypt_key[0] & 0xff);
+    old |= ((u32) conn->encrypt_key[1] << 8 & 0xff00);
+    old |= ((u32) conn->encrypt_key[2] << 0x10 & 0xff0000);
+    old |= ((u32) conn->encrypt_key[3] << 0x18 & 0xff000000);
+    
+    old += size;
+    
+    conn->encrypt_key[0] = (byte) (old & 0xff);
+    conn->encrypt_key[1] = (byte) (old >> 0x08 & 0xff);
+    conn->encrypt_key[2] = (byte) (old >> 0x10 & 0xff);
+    conn->encrypt_key[3] = (byte) (old >> 0x18 & 0xff);
+}
+
+static void decrypt(struct connection *conn, byte *request)
+{
+    assert(conn);
+    assert(request);
+    
+    u16 size = *(u16 *) request;
+    if (size > 1)
+        size -= 2;
+    
+    byte *body = request + 2;
+    u32 temp = 0;
+    u32 temp2 = 0;
+    for (u16 i = 0; i < size; i++) {
+        temp2 = body[i];
+        body[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
+        temp = temp2;
+    }
+    
+    u32 old = conn->decrypt_key[0] & 0xff;
+    old |= conn->decrypt_key[1] << 8 & 0xff00;
+    old |= conn->decrypt_key[2] << 0x10 & 0xff0000;
+    old |= conn->decrypt_key[3] << 0x18 & 0xff000000;
+    
+    old += size;
+    
+    conn->decrypt_key[0] = (byte) (old & 0xff);
+    conn->decrypt_key[1] = (byte) (old >> 0x08 & 0xff);
+    conn->decrypt_key[2] = (byte) (old >> 0x10 & 0xff);
+    conn->decrypt_key[3] = (byte) (old >> 0x18 & 0xff);
 }
 
 int on_init(void **buf)
@@ -515,6 +588,10 @@ return; \
             case 0x03:
             handle_enter_world(state, conn);
             break;
+            // quit
+            case 0x09:
+            handle_leave_world(state, conn);
+            break;
         }
     }
     
@@ -522,110 +599,29 @@ return; \
     conn->request_count -= size;
 }
 
-static u16 close_packet(struct connection *conn, byte *start, byte *end, int _encrypt)
-{
-    assert(conn);
-    assert(start);
-    assert(end);
-    assert(end > start);
-    assert(end - start < 65535);
-    
-    u16 size = (u16) (end - start);
-    *(u16 *) start = size;
-    
-    if (_encrypt)
-        encrypt(conn, start);
-    
-    return size;
-}
-
-static void encrypt(struct connection *conn, byte *packet)
-{
-    assert(conn);
-    assert(packet);
-    
-    u16 size = *(u16 *) packet;
-    if (size > 1)
-        size -= 2;
-    
-    byte *body = packet + 2;
-    
-    u32 temp = 0;
-    u32 temp2 = 0;
-    for (u16 i = 0; i < size; i++) {
-        temp2 = body[i] & 0xff;
-        body[i] = (byte) (temp2 ^ conn->encrypt_key[i & 7] ^ temp);
-        temp = body[i];
-    }
-    
-    u32 old = ((u32) conn->encrypt_key[0] & 0xff);
-    old |= ((u32) conn->encrypt_key[1] << 8 & 0xff00);
-    old |= ((u32) conn->encrypt_key[2] << 0x10 & 0xff0000);
-    old |= ((u32) conn->encrypt_key[3] << 0x18 & 0xff000000);
-    
-    old += size;
-    
-    conn->encrypt_key[0] = (byte) (old & 0xff);
-    conn->encrypt_key[1] = (byte) (old >> 0x08 & 0xff);
-    conn->encrypt_key[2] = (byte) (old >> 0x10 & 0xff);
-    conn->encrypt_key[3] = (byte) (old >> 0x18 & 0xff);
-}
-
-static void decrypt(struct connection *conn, byte *request)
-{
-    assert(conn);
-    assert(request);
-    
-    u16 size = *(u16 *) request;
-    if (size > 1)
-        size -= 2;
-    
-    byte *body = request + 2;
-    u32 temp = 0;
-    u32 temp2 = 0;
-    for (u16 i = 0; i < size; i++) {
-        temp2 = body[i];
-        body[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
-        temp = temp2;
-    }
-    
-    u32 old = conn->decrypt_key[0] & 0xff;
-    old |= conn->decrypt_key[1] << 8 & 0xff00;
-    old |= conn->decrypt_key[2] << 0x10 & 0xff0000;
-    old |= conn->decrypt_key[3] << 0x18 & 0xff000000;
-    
-    old += size;
-    
-    conn->decrypt_key[0] = (byte) (old & 0xff);
-    conn->decrypt_key[1] = (byte) (old >> 0x08 & 0xff);
-    conn->decrypt_key[2] = (byte) (old >> 0x10 & 0xff);
-    conn->decrypt_key[3] = (byte) (old >> 0x18 & 0xff);
-}
-
 static void handle_send_protocol(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
     
-    queue_response(conn, 0, buf) {
-        byte type = 0x00;
-        byte protocol[] = {
-            0x01,
-            // crypt key
-            0x94,
-            0x35,
-            0x00,
-            0x00,
-            0xa1,
-            0x6c,
-            0x54,
-            0x87,
-        };
-        
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%b", sizeof(protocol), protocol);
-    }
+    byte type = 0x00;
+    byte protocol[] = {
+        0x01,
+        // crypt key
+        0x94,
+        0x35,
+        0x00,
+        0x00,
+        0xa1,
+        0x6c,
+        0x54,
+        0x87,
+    };
+    
+    push_response(conn, 0,
+                  "%h", 0,
+                  "%c", type,
+                  "%b", sizeof(protocol), protocol);
 }
 
 static void handle_auth(struct state *state, struct connection *conn, byte *req)
@@ -694,13 +690,13 @@ static void handle_show_create_character_screen(struct state *state, struct conn
     assert(state);
     assert(conn);
     
-    queue_response(conn, 1, buf) {
-        byte type = 0x17;
-        u32 count = 0;
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%u", count);
-    }
+    byte type = 0x17;
+    u32 count = 0;
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%u", count);
 }
 
 static void handle_character_creation(struct state *state, struct connection *conn, byte *req)
@@ -772,13 +768,13 @@ static void handle_character_creation(struct state *state, struct connection *co
             face_id);
     fclose(info_file);
     
-    queue_response(conn, 1, buf) {
-        byte type = 0x19;
-        u32 success = 1;
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%u", success);
-    }
+    byte type = 0x19;
+    u32 success = 1;
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%u", success);
+    
     handle_send_character_list(state, conn);
 }
 
@@ -787,140 +783,147 @@ static void handle_send_character_list(struct state *state, struct connection *c
     assert(state);
     assert(conn);
     
-    queue_response(conn, 1, buf) {
-        byte type = 0x13;
+    byte type = 0x13;
+    u32 count = 0;
+    
+    char characters_path[256] = {0};
+    snprintf(characters_path, 
+             sizeof(characters_path) - 1, 
+             "data/accounts/%ls/characters",
+             conn->username);
+    
+    in_directory(characters_path)
+        count++;
+    
+    byte list[1024] = {0};
+    byte *end = list;
+    
+    in_directory(characters_path) {
+        FILE *character_file = fopen(directory.full_path, "r");
+        if (!character_file)
+            continue;
         
-        char characters_path[256] = {0};
-        snprintf(characters_path, 
-                 sizeof(characters_path) - 1, 
-                 "data/accounts/%ls/characters",
-                 conn->username);
+        u32 id = 0;
+        wchar_t name[32];
+        u32 clan_id = 0;
+        u32 sex = 0;
+        u32 race_id = 0;
+        // u32 base_race_id = 0;
+        u32 active = 1;
+        double current_hp = 500;
+        double current_mp = 500;
+        u32 sp = 0;
+        u32 xp = 0;
+        u32 level = 1;
+        u32 karma = 0;
+        u32 hair_style_id = 0;
+        u32 hair_color_id = 0;
+        u32 face_id = 0;
+        double max_hp = 500;
+        double max_mp = 500;
+        u32 delete_time = 0;
+        u32 class_id = 0;
+        u32 auto_select = 0;
+        u8 enchant_effect = 0;
         
-        u32 count = 0;
-        in_directory(characters_path)
-            count++;
+        fscanf(character_file, 
+               "name=%ls" nl
+               "race_id=%u" nl
+               "sex=%u" nl
+               "class_id=%u" nl
+               "hair_style_id=%u" nl
+               "hair_color_id=%u" nl
+               "face_id=%u" nl,
+               name,
+               &race_id,
+               &sex,
+               &class_id,
+               &hair_style_id,
+               &hair_color_id,
+               &face_id);
         
-        in_directory(characters_path) {
-            wchar_t name[32] = {0};
-            u32 id = 1;
-            u32 clan_id = 0;
-            u32 sex = 0;
-            u32 race_id = 0;
-            // u32 base_race_id = 0;
-            u32 active = 1;
-            double current_hp = 500;
-            double current_mp = 500;
-            u32 sp = 0;
-            u32 xp = 0;
-            u32 level = 1;
-            u32 karma = 0;
-            u32 hair_style_id = 0;
-            u32 hair_color_id = 0;
-            u32 face_id = 0;
-            double max_hp = 1000;
-            double max_mp = 1000;
-            u32 delete_time = 0;
-            u32 class_id = 0;
-            u32 auto_select = 0;
-            u8 enchant_effect = 0;
-            
-            FILE *character_file = fopen(directory.full_path, "r");
-            if (character_file) {
-                fscanf(character_file, 
-                       "name=%ls" nl
-                       "race_id=%u" nl
-                       "sex=%u" nl
-                       "class_id=%u" nl
-                       "hair_style_id=%u" nl
-                       "hair_color_id=%u" nl
-                       "face_id=%u" nl,
-                       name,
-                       &race_id,
-                       &sex,
-                       &class_id,
-                       &hair_style_id,
-                       &hair_color_id,
-                       &face_id);
-                fclose(character_file);
-            }
-            
-            buf = bprintf(buf, response_space_left(conn, buf),
-                          "%c", type,
-                          "%u", count,
-                          "%ls", countof(name), name,
-                          "%u", id,
-                          "%ls", countof(conn->username), conn->username,
-                          "%u", conn->play_ok1,
-                          "%u", clan_id,
-                          "%u", 0,
-                          "%u", sex,
-                          "%u", race_id,
-                          "%u", class_id,
-                          "%u", active,
-                          "%u", 0, // x
-                          "%u", 0, // y
-                          "%u", 0, // z
-                          "%lf", current_hp,
-                          "%lf", current_mp,
-                          "%u", sp,
-                          "%u", xp,
-                          "%u", level,
-                          "%u", karma,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          "%u", 0,
-                          
-                          "%u", hair_style_id,
-                          "%u", hair_color_id,
-                          "%u", face_id,
-                          "%lf", max_hp,
-                          "%lf", max_mp,
-                          "%u", delete_time,
-                          "%u", class_id,
-                          "%u", auto_select,
-                          "%c", enchant_effect);
-        }
+        end = bprintf(end, sizeof(list) - (size_t) (end - list),
+                      "%ls", countof(name), name,
+                      "%u", id,
+                      "%ls", countof(conn->username), conn->username,
+                      "%u", conn->play_ok1,
+                      "%u", clan_id,
+                      "%u", 0,
+                      "%u", sex,
+                      "%u", race_id,
+                      "%u", class_id,
+                      "%u", active,
+                      "%u", 0, // x
+                      "%u", 0, // y
+                      "%u", 0, // z
+                      "%lf", current_hp,
+                      "%lf", current_mp,
+                      "%u", sp,
+                      "%u", xp,
+                      "%u", level,
+                      "%u", karma,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      
+                      "%u", hair_style_id,
+                      "%u", hair_color_id,
+                      "%u", face_id,
+                      "%lf", max_hp,
+                      "%lf", max_mp,
+                      "%u", delete_time,
+                      "%u", class_id,
+                      "%u", auto_select,
+                      "%c", enchant_effect);
+        
+        fclose(character_file);
     }
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%u", count,
+                  "%b", (size_t) (end - list), list);
 }
 
 static void handle_select_character(struct state *state, struct connection *conn, byte *req)
@@ -1023,120 +1026,121 @@ static void handle_select_character(struct state *state, struct connection *conn
     conn->character->y = 244634;
     conn->character->z = -3730;
     
-    queue_response(conn, 1, buf) {
-        byte type = 0x15;
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%ls", countof(conn->character->name), conn->character->name,
-                      "%u", in_world_id,
-                      "%ls", countof(conn->character->title), conn->character->title,
-                      "%u", conn->play_ok1,
-                      "%u", conn->character->clan_id,
-                      "%u", 0,
-                      "%u", conn->character->sex,
-                      "%u", conn->character->race_id,
-                      "%u", conn->character->class_id,
-                      "%u", conn->character->active,
-                      "%u", conn->character->x,
-                      "%u", conn->character->y,
-                      "%u", conn->character->z,
-                      "%lf", conn->character->current_hp,
-                      "%lf", conn->character->current_mp,
-                      "%u", conn->character->sp,
-                      "%u", conn->character->xp,
-                      "%u", conn->character->level,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", conn->character->attributes._int,
-                      "%u", conn->character->attributes.str,
-                      "%u", conn->character->attributes.con,
-                      "%u", conn->character->attributes.men,
-                      "%u", conn->character->attributes.dex,
-                      "%u", conn->character->attributes.wit,
-                      
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0);
-    }
+    byte type = 0x15;
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%ls", countof(conn->character->name), conn->character->name,
+                  "%u", in_world_id,
+                  "%ls", countof(conn->character->title), conn->character->title,
+                  "%u", conn->play_ok1,
+                  "%u", conn->character->clan_id,
+                  "%u", 0,
+                  "%u", conn->character->sex,
+                  "%u", conn->character->race_id,
+                  "%u", conn->character->class_id,
+                  "%u", conn->character->active,
+                  "%u", conn->character->x,
+                  "%u", conn->character->y,
+                  "%u", conn->character->z,
+                  "%lf", conn->character->current_hp,
+                  "%lf", conn->character->current_mp,
+                  "%u", conn->character->sp,
+                  "%u", conn->character->xp,
+                  "%u", conn->character->level,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", conn->character->attributes._int,
+                  "%u", conn->character->attributes.str,
+                  "%u", conn->character->attributes.con,
+                  "%u", conn->character->attributes.men,
+                  "%u", conn->character->attributes.dex,
+                  "%u", conn->character->attributes.wit,
+                  
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0);
 }
 
 static void handle_auto_ss_bsps(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
-    queue_response(conn, 1, buf) {
-        byte type = 0x1b;
-        u16 empty = 0;
-        u32 manor_size = 0;
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%h", empty,
-                      "%u", manor_size);
-    }
+    
+    byte type = 0x1b;
+    u16 empty = 0;
+    u32 manor_size = 0;
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%h", empty,
+                  "%u", manor_size);
 }
 
 static void handle_send_quest_list(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
-    queue_response(conn, 1, buf) {
-        byte type = 0x80;
-        u8 empty[7] = {0};
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%b", sizeof(empty), empty);
-    }
+    
+    byte type = 0x80;
+    u8 empty[7] = {0};
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%b", sizeof(empty), empty);
 }
 
 // NOTE(fmontenegro): this is userinfo packet.
@@ -1144,143 +1148,151 @@ static void handle_enter_world(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
-    queue_response(conn, 1, buf) {
-        byte type = 0x04;
-        
-        u32 in_world_id = 1;
-        u32 clan_leader = 0;
-        
-        buf = bprintf(buf, response_space_left(conn, buf),
-                      "%c", type,
-                      "%u", conn->character->x,
-                      "%u", conn->character->y,
-                      "%u", conn->character->z,
-                      "%u", conn->character->heading,
-                      "%u", in_world_id,
-                      "%ls", countof(conn->character->name), conn->character->name,
-                      "%u", conn->character->race_id,
-                      "%u", conn->character->sex,
-                      "%u", conn->character->class_id,
-                      "%u", conn->character->level,
-                      "%u", conn->character->xp,
-                      "%u", conn->character->attributes.str,
-                      "%u", conn->character->attributes.dex,
-                      "%u", conn->character->attributes.con,
-                      "%u", conn->character->attributes._int,
-                      "%u", conn->character->attributes.wit,
-                      "%u", conn->character->attributes.men,
-                      "%u", (u32) conn->character->max_hp,
-                      "%u", (u32)conn->character->current_hp,
-                      "%u", (u32)conn->character->max_mp,
-                      "%u", (u32)conn->character->current_mp,
-                      "%u", conn->character->sp,
-                      "%u", conn->character->current_load,
-                      "%u", conn->character->max_load,
-                      "%u", 0x28,
-                      
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      
-                      "%u", conn->character->p_atk,
-                      "%u", conn->character->p_atk_speed,
-                      "%u", conn->character->p_def,
-                      "%u", conn->character->evasion_rate,
-                      "%u", conn->character->accuracy,
-                      "%u", conn->character->critical_hit,
-                      "%u", conn->character->m_atk,
-                      "%u", conn->character->m_atk_speed,
-                      "%u", conn->character->p_atk_speed,
-                      "%u", conn->character->m_def,
-                      "%u", conn->character->pvp_flag,
-                      "%u", conn->character->karma,
-                      "%u", conn->character->run_speed,
-                      "%u", conn->character->walk_speed,
-                      "%u", conn->character->swim_run_speed,
-                      "%u", conn->character->swim_walk_speed,
-                      "%u", conn->character->fly_run_speed,
-                      "%u", conn->character->fly_walk_speed,
-                      "%u", conn->character->fly_run_speed,
-                      "%u", conn->character->fly_walk_speed,
-                      "%lf", conn->character->movement_speed_multiplier,
-                      "%lf", conn->character->atk_speed_multiplier,
-                      "%lf", conn->character->collision_radius,
-                      "%lf", conn->character->collision_height,
-                      "%u", conn->character->hair_style_id,
-                      "%u", conn->character->hair_color_id,
-                      "%u", conn->character->face_id,
-                      "%u", conn->character->access_level,
-                      "%ls", countof(conn->character->title), conn->character->title,
-                      "%u", conn->character->clan_id,
-                      "%u", conn->character->crest_id,
-                      "%u", conn->character->ally_id,
-                      "%u", conn->character->ally_crest_id,
-                      "%u", clan_leader,
-                      "%c", conn->character->mount_type,
-                      "%c", conn->character->private_store_type,
-                      "%c", conn->character->dwarven_craft,
-                      "%u", conn->character->pk_kills,
-                      "%u", conn->character->pvp_kills,
-                      "%h", conn->character->cubics,
-                      "%c", conn->character->party_members,
-                      "%u", conn->character->abnormal_effect,
-                      "%c", 0,
-                      "%u", conn->character->clan_privileges,
-                      
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      "%u", 0,
-                      
-                      "%h", conn->character->recommendations_left,
-                      "%h", conn->character->recommendations_have,
-                      "%u", 0,
-                      "%h", conn->character->inventory_limit,
-                      "%u", conn->character->class_id,
-                      "%u", 0,
-                      "%u", (u32) conn->character->max_cp,
-                      "%u", (u32) conn->character->current_cp,
-                      "%c", conn->character->mounted,
-                      "%c", 0, // 1 = blue, 2 = red
-                      "%u", conn->character->clan_crest_large_id,
-                      "%c", conn->character->hero_symbol,
-                      "%c", conn->character->hero,
-                      "%c", 0,
-                      "%u", conn->character->fish_x,
-                      "%u", conn->character->fish_y,
-                      "%u", conn->character->fish_z,
-                      "%u", conn->character->name_color);
-    }
+    
+    byte type = 0x04;
+    u32 in_world_id = 1;
+    u32 clan_leader = 0;
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", type,
+                  "%u", conn->character->x,
+                  "%u", conn->character->y,
+                  "%u", conn->character->z,
+                  "%u", conn->character->heading,
+                  "%u", in_world_id,
+                  "%ls", countof(conn->character->name), conn->character->name,
+                  "%u", conn->character->race_id,
+                  "%u", conn->character->sex,
+                  "%u", conn->character->class_id,
+                  "%u", conn->character->level,
+                  "%u", conn->character->xp,
+                  "%u", conn->character->attributes.str,
+                  "%u", conn->character->attributes.dex,
+                  "%u", conn->character->attributes.con,
+                  "%u", conn->character->attributes._int,
+                  "%u", conn->character->attributes.wit,
+                  "%u", conn->character->attributes.men,
+                  "%u", (u32) conn->character->max_hp,
+                  "%u", (u32)conn->character->current_hp,
+                  "%u", (u32)conn->character->max_mp,
+                  "%u", (u32)conn->character->current_mp,
+                  "%u", conn->character->sp,
+                  "%u", conn->character->current_load,
+                  "%u", conn->character->max_load,
+                  "%u", 0x28,
+                  
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  
+                  "%u", conn->character->p_atk,
+                  "%u", conn->character->p_atk_speed,
+                  "%u", conn->character->p_def,
+                  "%u", conn->character->evasion_rate,
+                  "%u", conn->character->accuracy,
+                  "%u", conn->character->critical_hit,
+                  "%u", conn->character->m_atk,
+                  "%u", conn->character->m_atk_speed,
+                  "%u", conn->character->p_atk_speed,
+                  "%u", conn->character->m_def,
+                  "%u", conn->character->pvp_flag,
+                  "%u", conn->character->karma,
+                  "%u", conn->character->run_speed,
+                  "%u", conn->character->walk_speed,
+                  "%u", conn->character->swim_run_speed,
+                  "%u", conn->character->swim_walk_speed,
+                  "%u", conn->character->fly_run_speed,
+                  "%u", conn->character->fly_walk_speed,
+                  "%u", conn->character->fly_run_speed,
+                  "%u", conn->character->fly_walk_speed,
+                  "%lf", conn->character->movement_speed_multiplier,
+                  "%lf", conn->character->atk_speed_multiplier,
+                  "%lf", conn->character->collision_radius,
+                  "%lf", conn->character->collision_height,
+                  "%u", conn->character->hair_style_id,
+                  "%u", conn->character->hair_color_id,
+                  "%u", conn->character->face_id,
+                  "%u", conn->character->access_level,
+                  "%ls", countof(conn->character->title), conn->character->title,
+                  "%u", conn->character->clan_id,
+                  "%u", conn->character->crest_id,
+                  "%u", conn->character->ally_id,
+                  "%u", conn->character->ally_crest_id,
+                  "%u", clan_leader,
+                  "%c", conn->character->mount_type,
+                  "%c", conn->character->private_store_type,
+                  "%c", conn->character->dwarven_craft,
+                  "%u", conn->character->pk_kills,
+                  "%u", conn->character->pvp_kills,
+                  "%h", conn->character->cubics,
+                  "%c", conn->character->party_members,
+                  "%u", conn->character->abnormal_effect,
+                  "%c", 0,
+                  "%u", conn->character->clan_privileges,
+                  
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  
+                  "%h", conn->character->recommendations_left,
+                  "%h", conn->character->recommendations_have,
+                  "%u", 0,
+                  "%h", conn->character->inventory_limit,
+                  "%u", conn->character->class_id,
+                  "%u", 0,
+                  "%u", (u32) conn->character->max_cp,
+                  "%u", (u32) conn->character->current_cp,
+                  "%c", conn->character->mounted,
+                  "%c", 0, // 1 = blue, 2 = red
+                  "%u", conn->character->clan_crest_large_id,
+                  "%c", conn->character->hero_symbol,
+                  "%c", conn->character->hero,
+                  "%c", 0,
+                  "%u", conn->character->fish_x,
+                  "%u", conn->character->fish_y,
+                  "%u", conn->character->fish_z,
+                  "%u", conn->character->name_color);
+}
+
+static void handle_leave_world(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x7e);
 }
