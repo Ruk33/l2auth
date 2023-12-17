@@ -95,18 +95,10 @@ struct connection {
     struct character *character;
 };
 
-struct attributes {
-    u32 str;
-    u32 dex;
-    u32 con;
-    u32 _int;
-    u32 wit;
-    u32 men;
-};
-
 struct character {
     int active;
     wchar_t name[32];
+    u32 template_id;
     s32 x;
     s32 y;
     s32 z;
@@ -116,7 +108,14 @@ struct character {
     u32 class_id;
     u32 level;
     u32 xp;
-    struct attributes attributes;
+    struct attributes {
+        u32 str;
+        u32 dex;
+        u32 con;
+        u32 _int;
+        u32 wit;
+        u32 men;
+    } attributes;
     double max_hp;
     double current_hp;
     double max_mp;
@@ -176,16 +175,34 @@ struct character {
     s32 fish_y;
     s32 fish_z;
     u32 name_color;
+    
+    enum action_type {
+        idle,
+        moving,
+        attacking,
+    } action_type;
+    
+    union action_payload {
+        struct {
+            s32 target_x;
+            s32 target_y;
+            s32 target_z;
+        } moving;
+        
+    } action_payload;
 };
 
 struct state {
+    float d;
     struct connection connections[1024];
     struct character characters[1024];
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
+
 static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
+
 static void handle_request(struct state *state, struct connection *conn);
 static void handle_send_protocol(struct state *state, struct connection *conn);
 static void handle_auth(struct state *state, struct connection *conn, byte *req);
@@ -197,6 +214,14 @@ static void handle_auto_ss_bsps(struct state *state, struct connection *conn);
 static void handle_send_quest_list(struct state *state, struct connection *conn);
 static void handle_enter_world(struct state *state, struct connection *conn);
 static void handle_leave_world(struct state *state, struct connection *conn);
+static void handle_restart(struct state *state, struct connection *conn);
+static void handle_movement(struct state *state, struct connection *conn, byte *req);
+static void handle_validate_position(struct state *state, struct connection *conn, byte *req);
+static void handle_show_map(struct state *state, struct connection *conn);
+
+static void move_to(struct state *state, struct connection *conn, s32 x, s32 y, s32 z);
+
+static void moving_update(struct state *state, struct character *character);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -500,10 +525,38 @@ void on_disconnect(void **buf, int socket)
     conn->socket = 0;
 }
 
+// int64_t millis()
+// {
+// struct timespec now;
+// timespec_get(&now, TIME_UTC);
+// return (((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000) / 100000000000;
+// }
+
 int on_tick(void **buf)
 {
     assert(buf);
-    buf = buf;
+    struct state *state = *buf;
+    
+    state->d = 0.17f;
+    // returns 17
+    // trace("clock %d" nl, millis());
+    
+    for (int i = 0; i < countof(state->characters); i++) {
+        struct character *character = state->characters + i;
+        if (!character->active)
+            continue;
+        switch (character->action_type) {
+            case idle:
+            break;
+            case moving:
+            moving_update(state, character);
+            break;
+            case attacking:
+            break;
+            default:
+            break;
+        }
+    }
     
     return 1;
 }
@@ -591,6 +644,24 @@ return; \
             // quit
             case 0x09:
             handle_leave_world(state, conn);
+            break;
+            // restart
+            case 0x46:
+            handle_restart(state, conn);
+            break;
+            // move
+            case 0x01:
+            handle_movement(state, conn, request);
+            break;
+            // validate position
+            case 0x48:
+            handle_validate_position(state, conn, request);
+            break;
+            // show map
+            case 0xcd:
+            handle_show_map(state, conn);
+            break;
+            default:
             break;
         }
     }
@@ -751,6 +822,59 @@ static void handle_character_creation(struct state *state, struct connection *co
         return;
     }
     
+    s32 x = -83968;
+    s32 y = 244634;
+    s32 z = -3730;
+    u32 level = 1;
+    u32 xp = 1;
+    u32 str = 10;
+    u32 dex = 10;
+    u32 con = 10;
+    u32 _int = 10;
+    u32 wit = 10;
+    u32 men = 10;
+    double max_hp = 500.0;
+    double current_hp = 500.0;
+    double max_mp = 500.0;
+    double current_mp = 500.0;
+    double max_cp = 500.0;
+    double current_cp = 500.0;
+    u32 sp = 1;
+    u32 current_load = 0;
+    u32 max_load = 100;
+    u32 p_atk = 10;
+    u32 p_atk_speed = 10;
+    u32 p_def = 10;
+    u32 evasion_rate = 10;
+    u32 accuracy = 10;
+    u32 critical_hit = 10;
+    u32 m_atk = 10;
+    u32 m_atk_speed = 10;
+    u32 m_def = 10;
+    u32 karma = 10;
+    u32 run_speed = 20;
+    u32 walk_speed = 10;
+    double collision_radius = 20.0;
+    double collision_height = 20.0;
+    u32 access_level = 1;
+    wchar_t title[32] = L"l2auth";
+    u32 clan_id = 0;
+    u32 crest_id = 0;
+    u32 ally_id = 0;
+    u32 ally_crest_id = 0;
+    u32 pk_kills = 0;
+    u32 pvp_kills = 0;
+    u16 recommendations_left = 0;
+    u16 recommendations_have = 32;
+    u32 inventory_limit = 10;
+    u32 clan_crest_large_id = 0;
+    u8 hero_symbol = 0;
+    u8 hero = 0;
+    s32 fish_x = 0;
+    s32 fish_y = 0;
+    s32 fish_z = 0;
+    u32 name_color = 0xffffff;
+    
     fprintf(info_file,
             "name=%ls" nl
             "race_id=%u" nl
@@ -758,14 +882,118 @@ static void handle_character_creation(struct state *state, struct connection *co
             "class_id=%u" nl
             "hair_style_id=%u" nl
             "hair_color_id=%u" nl
-            "face_id=%u" nl,
+            "face_id=%u" nl
+            "x=%d" nl
+            "y=%d" nl
+            "z=%d" nl
+            "level=%u" nl
+            "xp=%u" nl
+            "str=%u" nl
+            "dex=%u" nl
+            "con=%u" nl
+            "int=%u" nl
+            "wit=%u" nl
+            "men=%u" nl
+            "max_hp=%lf" nl
+            "current_hp=%lf" nl
+            "max_mp=%lf" nl
+            "current_mp=%lf" nl
+            "max_cp=%lf" nl
+            "current_cp=%lf" nl
+            "sp=%u" nl
+            "current_load=%u" nl
+            "max_load=%u" nl
+            "p_atk=%u" nl
+            "p_atk_speed=%u" nl
+            "p_def=%u" nl
+            "evasion_rate=%u" nl
+            "accuracy=%u" nl
+            "critical_hit=%u" nl
+            "m_atk=%u" nl
+            "m_atk_speed=%u" nl
+            "m_def=%u" nl
+            "karma=%u" nl
+            "run_speed=%u" nl
+            "walk_speed=%u" nl
+            "collision_radius=%lf" nl
+            "collision_height=%lf" nl
+            "access_level=%u" nl
+            "title=%ls" nl
+            "clan_id=%u" nl
+            "crest_id=%u" nl
+            "ally_id=%u" nl
+            "ally_crest_id=%u" nl
+            "pk_kills=%u" nl
+            "pvp_kills=%u" nl
+            "recommendations_left=%u" nl
+            "recommendations_have=%u" nl
+            "inventory_limit=%u" nl
+            "clan_crest_large_id=%u" nl
+            "hero_symbol=%u" nl
+            "hero=%u" nl
+            "fish_x=%d" nl
+            "fish_y=%d" nl
+            "fish_z=%d" nl
+            "name_color=%u" nl,
             name,
             race_id,
             sex,
             class_id,
             hair_style_id,
             hair_color_id,
-            face_id);
+            face_id,
+            x,
+            y,
+            z,
+            level,
+            xp,
+            str,
+            dex,
+            con,
+            _int,
+            wit,
+            men,
+            max_hp,
+            current_hp,
+            max_mp,
+            current_mp,
+            max_cp,
+            current_cp,
+            sp,
+            current_load,
+            max_load,
+            p_atk,
+            p_atk_speed,
+            p_def,
+            evasion_rate,
+            accuracy,
+            critical_hit,
+            m_atk,
+            m_atk_speed,
+            m_def,
+            karma,
+            run_speed,
+            walk_speed,
+            collision_radius,
+            collision_height,
+            access_level,
+            title,
+            clan_id,
+            crest_id,
+            ally_id,
+            ally_crest_id,
+            pk_kills,
+            pvp_kills,
+            recommendations_left,
+            recommendations_have,
+            inventory_limit,
+            clan_crest_large_id,
+            hero_symbol,
+            hero,
+            fish_x,
+            fish_y,
+            fish_z,
+            name_color);
     fclose(info_file);
     
     byte type = 0x19;
@@ -970,6 +1198,126 @@ static void handle_select_character(struct state *state, struct connection *conn
         FILE *character_file = fopen(directory.full_path, "r");
         if (character_file) {
             found = 1;
+            fscanf(character_file,
+                   "name=%ls" nl
+                   "race_id=%u" nl
+                   "sex=%u" nl
+                   "class_id=%u" nl
+                   "hair_style_id=%u" nl
+                   "hair_color_id=%u" nl
+                   "face_id=%u" nl
+                   "x=%d" nl
+                   "y=%d" nl
+                   "z=%d" nl
+                   "level=%u" nl
+                   "xp=%u" nl
+                   "str=%u" nl
+                   "dex=%u" nl
+                   "con=%u" nl
+                   "int=%u" nl
+                   "wit=%u" nl
+                   "men=%u" nl
+                   "max_hp=%lf" nl
+                   "current_hp=%lf" nl
+                   "max_mp=%lf" nl
+                   "current_mp=%lf" nl
+                   "max_cp=%lf" nl
+                   "current_cp=%lf" nl
+                   "sp=%u" nl
+                   "current_load=%u" nl
+                   "max_load=%u" nl
+                   "p_atk=%u" nl
+                   "p_atk_speed=%u" nl
+                   "p_def=%u" nl
+                   "evasion_rate=%u" nl
+                   "accuracy=%u" nl
+                   "critical_hit=%u" nl
+                   "m_atk=%u" nl
+                   "m_atk_speed=%u" nl
+                   "m_def=%u" nl
+                   "karma=%u" nl
+                   "run_speed=%u" nl
+                   "walk_speed=%u" nl
+                   "collision_radius=%lf" nl
+                   "collision_height=%lf" nl
+                   "access_level=%u" nl
+                   "title=%ls" nl
+                   "clan_id=%u" nl
+                   "crest_id=%u" nl
+                   "ally_id=%u" nl
+                   "ally_crest_id=%u" nl
+                   "pk_kills=%u" nl
+                   "pvp_kills=%u" nl
+                   "recommendations_left=%u" nl
+                   "recommendations_have=%u" nl
+                   "inventory_limit=%u" nl
+                   "clan_crest_large_id=%u" nl
+                   "hero_symbol=%u" nl
+                   "hero=%u" nl
+                   "fish_x=%d" nl
+                   "fish_y=%d" nl
+                   "fish_z=%d" nl
+                   "name_color=%u" nl,
+                   conn->character->name,
+                   &conn->character->race_id,
+                   &conn->character->sex,
+                   &conn->character->class_id,
+                   &conn->character->hair_style_id,
+                   &conn->character->hair_color_id,
+                   &conn->character->face_id,
+                   &conn->character->x,
+                   &conn->character->y,
+                   &conn->character->z,
+                   &conn->character->level,
+                   &conn->character->xp,
+                   &conn->character->attributes.str,
+                   &conn->character->attributes.dex,
+                   &conn->character->attributes.con,
+                   &conn->character->attributes._int,
+                   &conn->character->attributes.wit,
+                   &conn->character->attributes.men,
+                   &conn->character->max_hp,
+                   &conn->character->current_hp,
+                   &conn->character->max_mp,
+                   &conn->character->current_mp,
+                   &conn->character->max_cp,
+                   &conn->character->current_cp,
+                   &conn->character->sp,
+                   &conn->character->current_load,
+                   &conn->character->max_load,
+                   &conn->character->p_atk,
+                   &conn->character->p_atk_speed,
+                   &conn->character->p_def,
+                   &conn->character->evasion_rate,
+                   &conn->character->accuracy,
+                   &conn->character->critical_hit,
+                   &conn->character->m_atk,
+                   &conn->character->m_atk_speed,
+                   &conn->character->m_def,
+                   &conn->character->karma,
+                   &conn->character->run_speed,
+                   &conn->character->walk_speed,
+                   &conn->character->collision_radius,
+                   &conn->character->collision_height,
+                   &conn->character->access_level,
+                   &conn->character->title,
+                   &conn->character->clan_id,
+                   &conn->character->crest_id,
+                   &conn->character->ally_id,
+                   &conn->character->ally_crest_id,
+                   &conn->character->pk_kills,
+                   &conn->character->pvp_kills,
+                   &conn->character->recommendations_left,
+                   &conn->character->recommendations_have,
+                   &conn->character->inventory_limit,
+                   &conn->character->clan_crest_large_id,
+                   &conn->character->hero_symbol,
+                   &conn->character->hero,
+                   &conn->character->fish_x,
+                   &conn->character->fish_y,
+                   &conn->character->fish_z,
+                   &conn->character->name_color);
+#if 0
             fscanf(character_file, 
                    "name=%ls" nl
                    "race_id=%u" nl
@@ -984,7 +1332,9 @@ static void handle_select_character(struct state *state, struct connection *conn
                    &conn->character->class_id,
                    &conn->character->hair_style_id,
                    &conn->character->hair_color_id,
-                   &conn->character->face_id);
+                   &conn->character->face_id
+                   );
+#endif
             fclose(character_file);
         }
         break;
@@ -1001,30 +1351,8 @@ static void handle_select_character(struct state *state, struct connection *conn
     }
     
     u32 in_world_id = 1;
-    conn->character->access_level = 1;
-    conn->character->xp = 10;
-    conn->character->sp = 10;
-    conn->character->level = 1;
-    conn->character->max_hp = 500;
-    conn->character->current_hp = 500;
-    conn->character->max_mp = 500;
-    conn->character->current_mp = 500;
-    conn->character->max_cp = 500;
-    conn->character->current_cp = 500;
-    conn->character->attributes.str = 10;
-    conn->character->attributes.dex = 10;
-    conn->character->attributes.con = 10;
-    conn->character->attributes._int = 10;
-    conn->character->attributes.wit = 10;
-    conn->character->attributes.men = 10;
-    conn->character->collision_radius = 20;
-    conn->character->collision_height = 20;
     conn->character->movement_speed_multiplier = 1;
     conn->character->atk_speed_multiplier = 1;
-    conn->character->name_color = 0xFFFFFF;
-    conn->character->x = -83968;
-    conn->character->y = 244634;
-    conn->character->z = -3730;
     
     byte type = 0x15;
     push_response(conn, 1,
@@ -1174,9 +1502,9 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                   "%u", conn->character->attributes.wit,
                   "%u", conn->character->attributes.men,
                   "%u", (u32) conn->character->max_hp,
-                  "%u", (u32)conn->character->current_hp,
-                  "%u", (u32)conn->character->max_mp,
-                  "%u", (u32)conn->character->current_mp,
+                  "%u", (u32) conn->character->current_hp,
+                  "%u", (u32) conn->character->max_mp,
+                  "%u", (u32) conn->character->current_mp,
                   "%u", conn->character->sp,
                   "%u", conn->character->current_load,
                   "%u", conn->character->max_load,
@@ -1296,3 +1624,219 @@ static void handle_leave_world(struct state *state, struct connection *conn)
                   "%h", 0,
                   "%c", 0x7e);
 }
+
+static void handle_restart(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x5f,
+                  "%u", 1);
+    handle_send_character_list(state, conn);
+}
+
+static void handle_movement(struct state *state, struct connection *conn, byte *req)
+{
+    assert(state);
+    assert(conn);
+    assert(req);
+    
+    s32 target_x = 0;
+    s32 target_y = 0;
+    s32 target_z = 0;
+    s32 origin_x = 0;
+    s32 origin_y = 0;
+    s32 origin_z = 0;
+    s32 movement = 0;
+    
+    pscanf(req,
+           "%u", &target_x,
+           "%u", &target_y,
+           "%u", &target_z,
+           "%u", &origin_x,
+           "%u", &origin_y,
+           "%u", &origin_z,
+           "%u", &movement);
+    
+    conn->character->x = origin_x;
+    conn->character->y = origin_y;
+    conn->character->z = origin_z;
+    move_to(state, conn, target_x, target_y, target_z);
+}
+
+static void handle_validate_position(struct state *state, struct connection *conn, byte *req)
+{
+    assert(state);
+    assert(conn);
+    assert(req);
+    
+    s32 x = 0;
+    s32 y = 0;
+    s32 z = 0;
+    s32 heading = 0;
+    
+    pscanf(req,
+           "%u", &x,
+           "%u", &y,
+           "%u", &z,
+           "%u", &heading);
+    
+    conn->character->x = x;
+    conn->character->y = y;
+    conn->character->z = z;
+    conn->character->heading = heading;
+    
+    // TODO(fmontenegro): only if the diff is too large.
+#if 0
+    u32 in_world_id = 1;
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x61,
+                  "%u", in_world_id,
+                  "%u", x,
+                  "%u", y,
+                  "%u", z,
+                  "%u", heading);
+#endif
+}
+
+static void handle_show_map(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    
+    trace("spawning orc!" nl);
+    
+    // TODO(fmontenegro): show map.
+    
+    struct character orc = {0};
+    
+    swprintf(orc.name, sizeof(orc.name) - 1, L"%ls", L"Orc");
+    swprintf(orc.title, sizeof(orc.title) - 1, L"%ls", L"Orc");
+    
+    orc.template_id = 7082 + 1000000;
+    orc.x = conn->character->x;
+    orc.y = conn->character->y;
+    orc.z = conn->character->z;
+    orc.collision_radius = 8;
+    orc.collision_height = 25;
+    orc.level = 10;
+    orc.sex = 0;
+    orc.current_hp = 197;
+    orc.max_hp = 197;
+    orc.current_mp = 102;
+    orc.max_mp = 102;
+    orc.attributes.str = 40;
+    orc.attributes.con = 43;
+    orc.attributes.dex = 30;
+    orc.attributes._int = 21;
+    orc.attributes.wit = 20;
+    orc.attributes.men = 10;
+    orc.p_atk = 41;
+    orc.p_def = 55;
+    orc.m_atk = 6;
+    orc.m_def = 45;
+    orc.p_atk_speed = 249;
+    orc.m_atk_speed = 227;
+    orc.walk_speed = 45;
+    orc.run_speed = 110;
+    
+    u32 id = 3;
+    u32 attackable = 1;
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x16,
+                  "%u", id,
+                  "%u", orc.template_id,
+                  "%u", attackable,
+                  "%u", orc.x,
+                  "%u", orc.y,
+                  "%u", orc.z,
+                  "%u", orc.heading,
+                  "%u", 0,
+                  "%u", orc.m_atk_speed,
+                  "%u", orc.p_atk_speed,
+                  "%u", orc.run_speed,
+                  "%u", orc.walk_speed,
+                  // swim speed
+                  "%u", orc.run_speed,
+                  "%u", orc.walk_speed,
+                  // fly speed
+                  "%u", orc.run_speed,
+                  "%u", orc.walk_speed,
+                  "%u", orc.run_speed,
+                  "%u", orc.walk_speed,
+                  "%lf", 1.1,
+                  "%lf", (double) orc.p_atk_speed / 277.478340719,
+                  "%lf", orc.collision_radius,
+                  "%lf", orc.collision_height,
+                  // right hand weapon
+                  "%u", 0,
+                  "%u", 0,
+                  // left hand weapon
+                  "%u", 0,
+                  "%c", 1,
+                  // running?
+                  "%c", 0,
+                  // combat?
+                  "%c", 0,
+                  // alike dead?
+                  "%c", 0,
+                  // summoned?
+                  "%c", 0,
+                  "%ls", countof(orc.name), orc.name,
+                  "%ls", countof(orc.title), orc.title,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  // abnormal effect
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%c", 0,
+                  "%c", 0,
+                  "%lf", 0.0,
+                  "%lf", 0.0,
+                  "%u", 0);
+}
+
+static void move_to(struct state *state, struct connection *conn, s32 x, s32 y, s32 z)
+{
+    assert(state);
+    assert(conn);
+    
+    conn->character->action_type = moving;
+    conn->character->action_payload.moving.target_x = x;
+    conn->character->action_payload.moving.target_y = y;
+    conn->character->action_payload.moving.target_z = z;
+    
+    u32 in_world_id = 1;
+    
+    push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x01,
+                  "%u", in_world_id,
+                  "%u", x,
+                  "%u", y,
+                  "%u", z,
+                  "%u", conn->character->x,
+                  "%u", conn->character->y,
+                  "%u", conn->character->z);
+}
+
+static void moving_update(struct state *state, struct character *character)
+{
+    assert(state);
+    assert(character);
+    
+    // s32 dx = character->action_payload.moving.target_x - character->x;
+    // s32 dy = character->action_payload.moving.target_y - character->y;
+    // s32 dz = character->action_payload.moving.target_x - character->z;
+    
+    
+}
+
