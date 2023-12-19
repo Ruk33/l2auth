@@ -97,6 +97,7 @@ struct connection {
 
 struct character {
     int active;
+    struct connection *conn;
     wchar_t name[32];
     u32 template_id;
     s32 x;
@@ -180,6 +181,7 @@ struct character {
         idle,
         moving,
         attacking,
+        targeting,
     } action_type;
     
     union action_payload {
@@ -189,6 +191,9 @@ struct character {
             s32 target_z;
         } moving;
         
+        struct {
+            u32 obj_id;
+        } targeting;
     } action_payload;
 };
 
@@ -218,10 +223,25 @@ static void handle_restart(struct state *state, struct connection *conn);
 static void handle_movement(struct state *state, struct connection *conn, byte *req);
 static void handle_validate_position(struct state *state, struct connection *conn, byte *req);
 static void handle_show_map(struct state *state, struct connection *conn);
+static void handle_action(struct state *state, struct connection *conn, byte *req);
+static void handle_deselect_target(struct state *state, struct connection *conn);
 
-static void move_to(struct state *state, struct connection *conn, s32 x, s32 y, s32 z);
+// order character to walk to a point.
+static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z);
+// make character select a target. this is the first step
+// in order to interact with the target character.
+static void select_target(struct state *state, struct character *src, u32 target_id);
+// make character interact with a target.
+// - if target is attackable, then an attack order will take place.
+// - if target isn't attackable, then a dialog will show up.
+static void interact_with(struct state *state, struct character *src, u32 target_id);
 
+// get character by id. if none is found, null will be returned.
+static struct character *get_character_by_id(struct state *state, u32 id);
+
+// static void idle_update(struct state *state, struct character *character);
 static void moving_update(struct state *state, struct character *character);
+// static void attacking_update(struct state *state, struct character *character);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -547,11 +567,13 @@ int on_tick(void **buf)
             continue;
         switch (character->action_type) {
             case idle:
+            // idle_update(state, character);
             break;
             case moving:
             moving_update(state, character);
             break;
             case attacking:
+            // attacking_update(state, character);
             break;
             default:
             break;
@@ -660,6 +682,14 @@ return; \
             // show map
             case 0xcd:
             handle_show_map(state, conn);
+            break;
+            // action
+            case 0x04:
+            handle_action(state, conn, request);
+            break;
+            // deselect target
+            case 0x37:
+            handle_deselect_target(state, conn);
             break;
             default:
             break;
@@ -1170,12 +1200,13 @@ static void handle_select_character(struct state *state, struct connection *conn
              conn->username);
     
     conn->character = 0;
-    for (int i = 0; i < countof(state->characters); i++) {
+    for (int i = 1; i < countof(state->characters); i++) {
         if (state->characters[i].active)
             continue;
         memset(state->characters + i, 0, sizeof(struct character));
         conn->character = state->characters + i;
         conn->character->active = 1;
+        conn->character->conn = conn;
         break;
     }
     if (!conn->character) {
@@ -1350,7 +1381,7 @@ static void handle_select_character(struct state *state, struct connection *conn
         return;
     }
     
-    u32 in_world_id = 1;
+    u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
     conn->character->movement_speed_multiplier = 1;
     conn->character->atk_speed_multiplier = 1;
     
@@ -1478,7 +1509,7 @@ static void handle_enter_world(struct state *state, struct connection *conn)
     assert(conn);
     
     byte type = 0x04;
-    u32 in_world_id = 1;
+    u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
     u32 clan_leader = 0;
     
     push_response(conn, 1,
@@ -1620,6 +1651,8 @@ static void handle_leave_world(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
+    conn->character->active = 0;
+    conn->character = 0;
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x7e);
@@ -1629,6 +1662,8 @@ static void handle_restart(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
+    conn->character->active = 0;
+    conn->character = 0;
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x5f,
@@ -1662,7 +1697,7 @@ static void handle_movement(struct state *state, struct connection *conn, byte *
     conn->character->x = origin_x;
     conn->character->y = origin_y;
     conn->character->z = origin_z;
-    move_to(state, conn, target_x, target_y, target_z);
+    move_to(state, conn->character, target_x, target_y, target_z);
 }
 
 static void handle_validate_position(struct state *state, struct connection *conn, byte *req)
@@ -1689,7 +1724,7 @@ static void handle_validate_position(struct state *state, struct connection *con
     
     // TODO(fmontenegro): only if the diff is too large.
 #if 0
-    u32 in_world_id = 1;
+    u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x61,
@@ -1710,68 +1745,77 @@ static void handle_show_map(struct state *state, struct connection *conn)
     
     // TODO(fmontenegro): show map.
     
-    struct character orc = {0};
+    // struct character orc = {0};
+    struct character *orc = 0;
+    u32 id = 1;
+    for (; id < countof(state->characters); id++) {
+        if (state->characters[id].active)
+            continue;
+        orc = state->characters + id;
+        break;
+    }
+    orc->active = 1;
     
-    swprintf(orc.name, sizeof(orc.name) - 1, L"%ls", L"Orc");
-    swprintf(orc.title, sizeof(orc.title) - 1, L"%ls", L"Orc");
+    swprintf(orc->name, sizeof(orc->name) - 1, L"%ls", L"Orc");
+    swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Payoneer?");
     
-    orc.template_id = 7082 + 1000000;
-    orc.x = conn->character->x;
-    orc.y = conn->character->y;
-    orc.z = conn->character->z;
-    orc.collision_radius = 8;
-    orc.collision_height = 25;
-    orc.level = 10;
-    orc.sex = 0;
-    orc.current_hp = 197;
-    orc.max_hp = 197;
-    orc.current_mp = 102;
-    orc.max_mp = 102;
-    orc.attributes.str = 40;
-    orc.attributes.con = 43;
-    orc.attributes.dex = 30;
-    orc.attributes._int = 21;
-    orc.attributes.wit = 20;
-    orc.attributes.men = 10;
-    orc.p_atk = 41;
-    orc.p_def = 55;
-    orc.m_atk = 6;
-    orc.m_def = 45;
-    orc.p_atk_speed = 249;
-    orc.m_atk_speed = 227;
-    orc.walk_speed = 45;
-    orc.run_speed = 110;
+    // orc.template_id = 7082 + 1000000;
+    orc->template_id = 500 + 1000000;
+    orc->x = conn->character->x;
+    orc->y = conn->character->y;
+    orc->z = conn->character->z;
+    orc->collision_radius = 8;
+    orc->collision_height = 25;
+    orc->level = 10;
+    orc->sex = 0;
+    orc->current_hp = 197;
+    orc->max_hp = 197;
+    orc->current_mp = 102;
+    orc->max_mp = 102;
+    orc->attributes.str = 40;
+    orc->attributes.con = 43;
+    orc->attributes.dex = 30;
+    orc->attributes._int = 21;
+    orc->attributes.wit = 20;
+    orc->attributes.men = 10;
+    orc->p_atk = 41;
+    orc->p_def = 55;
+    orc->m_atk = 6;
+    orc->m_def = 45;
+    orc->p_atk_speed = 249;
+    orc->m_atk_speed = 227;
+    orc->walk_speed = 45;
+    orc->run_speed = 110;
     
-    u32 id = 3;
     u32 attackable = 1;
     
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x16,
                   "%u", id,
-                  "%u", orc.template_id,
+                  "%u", orc->template_id,
                   "%u", attackable,
-                  "%u", orc.x,
-                  "%u", orc.y,
-                  "%u", orc.z,
-                  "%u", orc.heading,
+                  "%u", orc->x,
+                  "%u", orc->y,
+                  "%u", orc->z,
+                  "%u", orc->heading,
                   "%u", 0,
-                  "%u", orc.m_atk_speed,
-                  "%u", orc.p_atk_speed,
-                  "%u", orc.run_speed,
-                  "%u", orc.walk_speed,
+                  "%u", orc->m_atk_speed,
+                  "%u", orc->p_atk_speed,
+                  "%u", orc->run_speed,
+                  "%u", orc->walk_speed,
                   // swim speed
-                  "%u", orc.run_speed,
-                  "%u", orc.walk_speed,
+                  "%u", orc->run_speed,
+                  "%u", orc->walk_speed,
                   // fly speed
-                  "%u", orc.run_speed,
-                  "%u", orc.walk_speed,
-                  "%u", orc.run_speed,
-                  "%u", orc.walk_speed,
+                  "%u", orc->run_speed,
+                  "%u", orc->walk_speed,
+                  "%u", orc->run_speed,
+                  "%u", orc->walk_speed,
                   "%lf", 1.1,
-                  "%lf", (double) orc.p_atk_speed / 277.478340719,
-                  "%lf", orc.collision_radius,
-                  "%lf", orc.collision_height,
+                  "%lf", (double) orc->p_atk_speed / 277.478340719,
+                  "%lf", orc->collision_radius,
+                  "%lf", orc->collision_height,
                   // right hand weapon
                   "%u", 0,
                   "%u", 0,
@@ -1786,8 +1830,8 @@ static void handle_show_map(struct state *state, struct connection *conn)
                   "%c", 0,
                   // summoned?
                   "%c", 0,
-                  "%ls", countof(orc.name), orc.name,
-                  "%ls", countof(orc.title), orc.title,
+                  "%ls", countof(orc->name), orc->name,
+                  "%ls", countof(orc->title), orc->title,
                   "%u", 0,
                   "%u", 0,
                   "%u", 0,
@@ -1804,28 +1848,141 @@ static void handle_show_map(struct state *state, struct connection *conn)
                   "%u", 0);
 }
 
-static void move_to(struct state *state, struct connection *conn, s32 x, s32 y, s32 z)
+static void handle_action(struct state *state, struct connection *conn, byte *req)
+{
+    assert(state);
+    assert(conn);
+    assert(req);
+    
+    u32 target_id = 0;
+    s32 origin_x = 0;
+    s32 origin_y = 0;
+    s32 origin_z = 0;
+    u8 action_id = 0;
+    
+    pscanf(req,
+           "%u", &target_id,
+           "%u", &origin_x,
+           "%u", &origin_y,
+           "%u", &origin_z,
+           // 0 -> simple click, 1 -> shift
+           "%c", &action_id);
+    
+    if (conn->character->action_type == targeting) {
+        interact_with(state, conn->character, target_id);
+        return;
+    }
+    
+    select_target(state, conn->character, target_id);
+}
+
+static void handle_deselect_target(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
     
-    conn->character->action_type = moving;
-    conn->character->action_payload.moving.target_x = x;
-    conn->character->action_payload.moving.target_y = y;
-    conn->character->action_payload.moving.target_z = z;
+    if (conn->character->action_type != targeting)
+        return;
     
-    u32 in_world_id = 1;
+    u32 target_id = conn->character->action_payload.targeting.obj_id;
+    struct character *target = get_character_by_id(state, target_id);
+    if (!target)
+        return;
+    
+    conn->character->action_type = idle;
+    
+    s32 target_x = target->x;
+    s32 target_y = target->y;
+    s32 target_z = target->z;
     
     push_response(conn, 1,
+                  "%h", 0,
+                  "%c", 0x2a,
+                  "%u", target_id,
+                  "%u", target_x,
+                  "%u", target_y,
+                  "%u", target_z);
+}
+
+static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z)
+{
+    assert(state);
+    assert(character);
+    
+    // character->action_type = moving;
+    character->action_payload.moving.target_x = x;
+    character->action_payload.moving.target_y = y;
+    character->action_payload.moving.target_z = z;
+    
+    u32 in_world_id = (u32) (size_t) (character - state->characters);
+    
+    push_response(character->conn, 1,
                   "%h", 0,
                   "%c", 0x01,
                   "%u", in_world_id,
                   "%u", x,
                   "%u", y,
                   "%u", z,
-                  "%u", conn->character->x,
-                  "%u", conn->character->y,
-                  "%u", conn->character->z);
+                  "%u", character->x,
+                  "%u", character->y,
+                  "%u", character->z);
+}
+
+static void select_target(struct state *state, struct character *src, u32 target_id)
+{
+    assert(state);
+    assert(src);
+    
+    src->action_type = targeting;
+    src->action_payload.targeting.obj_id = target_id;
+    
+    push_response(src->conn, 1,
+                  "%h", 0,
+                  "%c", 0xa6,
+                  "%u", target_id,
+                  "%h", 0);
+}
+
+static void interact_with(struct state *state, struct character *src, u32 target_id)
+{
+    assert(state);
+    assert(src);
+    
+    u32 attacker_id = (u32) ((size_t) (src - state->characters));
+    if (attacker_id == target_id)
+        return;
+    
+    push_response(src->conn, 1,
+                  "%h", 0,
+                  "%c", 0x2b,
+                  "%u", target_id);
+    
+#if 1
+    u32 damage = 2;
+    
+    // just attack for now.
+    
+    push_response(src->conn, 1,
+                  "%h", 0,
+                  "%c", 0x05,
+                  "%u", attacker_id,
+                  "%u", target_id,
+                  "%u", damage,
+                  // flags
+                  "%c", 0,
+                  "%u", src->x,
+                  "%u", src->y,
+                  "%u", src->z,
+                  "%h", 1);
+#endif
+}
+
+static struct character *get_character_by_id(struct state *state, u32 id)
+{
+    assert(state);
+    if (id >= countof(state->characters))
+        return 0;
+    return state->characters + id;
 }
 
 static void moving_update(struct state *state, struct character *character)
@@ -1836,7 +1993,4 @@ static void moving_update(struct state *state, struct character *character)
     // s32 dx = character->action_payload.moving.target_x - character->x;
     // s32 dy = character->action_payload.moving.target_y - character->y;
     // s32 dz = character->action_payload.moving.target_x - character->z;
-    
-    
 }
-
