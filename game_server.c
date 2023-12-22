@@ -1,3 +1,10 @@
+// TODO(fmontenegro):
+// - use threads, 1 to read and write requests/responses
+//   and 1 for game ticks.
+// - remove timeout from asocket
+// - fix movement
+// - don't use return in coroutine, break should be fine.
+
 #define WIN32_LEAN_AND_MEAN
 
 #include <assert.h> // assert
@@ -9,6 +16,7 @@
 #include <wchar.h>  // wchar_t
 #include <time.h>   // time_t, now
 #include <stdarg.h> // va_arg, va_list
+#include <math.h>   // sqrtf
 
 #include "directory.h"
 #include "asocket.h"
@@ -29,6 +37,7 @@ typedef float seconds;
 
 #define nl "\n"
 #define mb *1024*1024
+#define sqr(x) ((x)*(x))
 #define trace(...) fprintf(stderr, __VA_ARGS__)
 #define warn(...) trace("warning / " __VA_ARGS__)
 #define error(...) trace("error / " __VA_ARGS__)
@@ -46,6 +55,9 @@ bscanf_((src) + 3, packet_size(src) - 3, __VA_ARGS__, 0)
 #define push_response(conn, _encrypt, ...) \
 push_response_((conn), (_encrypt), __VA_ARGS__, 0)
 
+#define broadcast(state, character, _encrypt, ...) \
+broadcast_((state), (character), (_encrypt), __VA_ARGS__, 0)
+
 #define coroutine(x) \
 struct coroutine *__coro = &(x); \
 switch (__coro->line) \
@@ -53,15 +65,17 @@ case 0:
 
 #define yield \
 __coro->line = __COUNTER__ + 1; \
-break; \
+return; \
 case __COUNTER__:
 
 #define syield(sleep, delta) \
 __coro->sleep_for = (sleep); \
 yield; \
 __coro->sleep_for -= (delta); \
-if (coro->sleep_for > 0) \
-break;
+if (__coro->sleep_for > 0) \
+return;
+
+#define reset *__coro = (struct coroutine) {0}
 
 struct coroutine {
     u32 line;
@@ -182,10 +196,21 @@ struct character {
         moving,
         attacking,
         targeting,
-    } action_type;
+    } action_type, prev_action_type;
     
     union action_payload {
         struct {
+            u64 ticks_to_move;
+            u64 move_start_time;
+            u64 move_timestamp;
+            
+            float x_speed_ticks;
+            float y_speed_ticks;
+            
+            s32 src_x;
+            s32 src_y;
+            s32 src_z;
+            
             s32 target_x;
             s32 target_y;
             s32 target_z;
@@ -194,11 +219,18 @@ struct character {
         struct {
             u32 obj_id;
         } targeting;
-    } action_payload;
+        
+        struct {
+            u32 obj_id;
+            struct coroutine state;
+        } attacking;
+    } action_payload, prev_action_payload;
 };
 
 struct state {
     float d;
+    double run_time;
+    u64 ticks;
     struct connection connections[1024];
     struct character characters[1024];
 };
@@ -227,21 +259,22 @@ static void handle_action(struct state *state, struct connection *conn, byte *re
 static void handle_deselect_target(struct state *state, struct connection *conn);
 
 // order character to walk to a point.
-static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z);
+static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z, int queue_action);
 // make character select a target. this is the first step
 // in order to interact with the target character.
 static void select_target(struct state *state, struct character *src, u32 target_id);
 // make character interact with a target.
 // - if target is attackable, then an attack order will take place.
 // - if target isn't attackable, then a dialog will show up.
-static void interact_with(struct state *state, struct character *src, u32 target_id);
+static void start_interaction(struct state *state, struct character *src);
 
 // get character by id. if none is found, null will be returned.
 static struct character *get_character_by_id(struct state *state, u32 id);
+static u32 get_character_id(struct state *state, struct character *src);
 
 // static void idle_update(struct state *state, struct character *character);
 static void moving_update(struct state *state, struct character *character);
-// static void attacking_update(struct state *state, struct character *character);
+static void attacking_update(struct state *state, struct character *character);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -375,17 +408,13 @@ static u16 packet_size(byte *src)
     return size;
 }
 
-static void push_response_(struct connection *conn, int _encrypt, ...)
+static void push_response_va(struct connection *conn, int _encrypt, va_list va)
 {
     assert(conn);
     
     byte *start = conn->to_send + conn->to_send_count;
     size_t max = sizeof(conn->to_send) - (size_t) (start - conn->to_send);
-    
-    va_list va;
-    va_start(va, _encrypt);
     byte *end = bprintf_va(start, max, va);
-    va_end(va);
     
     assert((end - start) < 65535);
     u16 size = (u16) (end - start);
@@ -395,6 +424,33 @@ static void push_response_(struct connection *conn, int _encrypt, ...)
         encrypt(conn, start);
     
     conn->to_send_count += size;
+}
+
+static void push_response_(struct connection *conn, int _encrypt, ...)
+{
+    assert(conn);
+    
+    va_list va;
+    va_start(va, _encrypt);
+    push_response_va(conn, _encrypt, va);
+    va_end(va);
+}
+
+static void broadcast_(struct state *state, struct character *character, int _encrypt, ...)
+{
+    assert(state);
+    assert(character);
+    for (size_t i = 0; i < countof(state->characters); i++) {
+        if (!state->characters[i].active)
+            continue;
+        struct connection *conn = state->characters[i].conn;
+        if (!conn)
+            continue;
+        va_list va;
+        va_start(va, _encrypt);
+        push_response_va(conn, _encrypt, va);
+        va_end(va);
+    }
 }
 
 static void encrypt(struct connection *conn, byte *packet)
@@ -557,9 +613,20 @@ int on_tick(void **buf)
     assert(buf);
     struct state *state = *buf;
     
-    state->d = 0.17f;
+    u64 old_ticks = state->ticks;
+    
+    state->d = 1.0f;
+    state->run_time += (double) state->d;
+    // state->ticks++;
+    // 1000/10 = 100
+    state->ticks = (u64) (state->run_time / 3000.0);
+    
+    if (state->ticks == old_ticks)
+        return 1;
+    
     // returns 17
     // trace("clock %d" nl, millis());
+    // trace("tick" nl);
     
     for (int i = 0; i < countof(state->characters); i++) {
         struct character *character = state->characters + i;
@@ -573,7 +640,7 @@ int on_tick(void **buf)
             moving_update(state, character);
             break;
             case attacking:
-            // attacking_update(state, character);
+            attacking_update(state, character);
             break;
             default:
             break;
@@ -598,18 +665,9 @@ static struct connection *get_connection_from_socket(struct state *state, int so
     return 0;
 }
 
-static void handle_request(struct state *state, struct connection *conn)
+static void handle_request_by_type(struct state *state, struct connection *conn)
 {
-    assert(state);
-    assert(conn);
     byte *request = conn->request;
-    
-    u16 size = *(u16 *) request;
-    if (size > conn->request_count)
-        return;
-    
-    if (conn->encrypted)
-        decrypt(conn, request);
     
     byte type = *(request + 2);
     trace("received packet is of type %#04x" nl, (int) type);
@@ -695,6 +753,22 @@ return; \
             break;
         }
     }
+}
+
+static void handle_request(struct state *state, struct connection *conn)
+{
+    assert(state);
+    assert(conn);
+    byte *request = conn->request;
+    
+    u16 size = *(u16 *) request;
+    if (size > conn->request_count)
+        return;
+    
+    if (conn->encrypted)
+        decrypt(conn, request);
+    
+    handle_request_by_type(state, conn);
     
     memmove(conn->request, conn->request + size, conn->request_count - size);
     conn->request_count -= size;
@@ -1348,24 +1422,6 @@ static void handle_select_character(struct state *state, struct connection *conn
                    &conn->character->fish_y,
                    &conn->character->fish_z,
                    &conn->character->name_color);
-#if 0
-            fscanf(character_file, 
-                   "name=%ls" nl
-                   "race_id=%u" nl
-                   "sex=%u" nl
-                   "class_id=%u" nl
-                   "hair_style_id=%u" nl
-                   "hair_color_id=%u" nl
-                   "face_id=%u" nl,
-                   conn->character->name,
-                   &conn->character->race_id,
-                   &conn->character->sex,
-                   &conn->character->class_id,
-                   &conn->character->hair_style_id,
-                   &conn->character->hair_color_id,
-                   &conn->character->face_id
-                   );
-#endif
             fclose(character_file);
         }
         break;
@@ -1652,7 +1708,6 @@ static void handle_leave_world(struct state *state, struct connection *conn)
     assert(state);
     assert(conn);
     conn->character->active = 0;
-    conn->character = 0;
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x7e);
@@ -1663,7 +1718,6 @@ static void handle_restart(struct state *state, struct connection *conn)
     assert(state);
     assert(conn);
     conn->character->active = 0;
-    conn->character = 0;
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x5f,
@@ -1697,7 +1751,7 @@ static void handle_movement(struct state *state, struct connection *conn, byte *
     conn->character->x = origin_x;
     conn->character->y = origin_y;
     conn->character->z = origin_z;
-    move_to(state, conn->character, target_x, target_y, target_z);
+    move_to(state, conn->character, target_x, target_y, target_z, 0);
 }
 
 static void handle_validate_position(struct state *state, struct connection *conn, byte *req)
@@ -1706,6 +1760,7 @@ static void handle_validate_position(struct state *state, struct connection *con
     assert(conn);
     assert(req);
     
+#if 0
     s32 x = 0;
     s32 y = 0;
     s32 z = 0;
@@ -1721,6 +1776,7 @@ static void handle_validate_position(struct state *state, struct connection *con
     conn->character->y = y;
     conn->character->z = z;
     conn->character->heading = heading;
+#endif
     
     // TODO(fmontenegro): only if the diff is too large.
 #if 0
@@ -1868,8 +1924,9 @@ static void handle_action(struct state *state, struct connection *conn, byte *re
            // 0 -> simple click, 1 -> shift
            "%c", &action_id);
     
-    if (conn->character->action_type == targeting) {
-        interact_with(state, conn->character, target_id);
+    if (conn->character->action_type == targeting &&
+        conn->character->action_payload.targeting.obj_id == target_id) {
+        start_interaction(state, conn->character);
         return;
     }
     
@@ -1904,28 +1961,59 @@ static void handle_deselect_target(struct state *state, struct connection *conn)
                   "%u", target_z);
 }
 
-static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z)
+static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z, int queue_action)
 {
     assert(state);
     assert(character);
     
-    // character->action_type = moving;
+    if (queue_action) {
+        character->prev_action_type = character->action_type;
+        character->prev_action_payload = character->action_payload;
+    } else {
+        character->prev_action_type = idle;
+        character->prev_action_payload = (union action_payload) {0};
+    }
+    
+    character->action_type = moving;
+    character->action_payload = (union action_payload) {0};
+    
+    character->action_payload.moving.src_x = character->x;
+    character->action_payload.moving.src_y = character->y;
+    character->action_payload.moving.src_z = character->z;
+    
     character->action_payload.moving.target_x = x;
     character->action_payload.moving.target_y = y;
     character->action_payload.moving.target_z = z;
     
+    s32 dx = x - character->x;
+    s32 dy = y - character->y;
+    s32 dz = z - character->z;
+    float d = sqrtf(sqr((float) dx) + sqr((float) dy) + sqr((float) dz));
+    float speed = (float) character->run_speed;
+    
+    float ticks_per_second = 10.0f;
+    
+    character->action_payload.moving.move_start_time = state->ticks;
+    character->action_payload.moving.ticks_to_move = (u64) (ticks_per_second * d / speed);
+    
+    float sin = (float) dy / d;
+    float cos = (float) dx / d;
+    character->action_payload.moving.x_speed_ticks = cos * speed / ticks_per_second;
+    character->action_payload.moving.y_speed_ticks = sin * speed / ticks_per_second;
+    
     u32 in_world_id = (u32) (size_t) (character - state->characters);
     
-    push_response(character->conn, 1,
-                  "%h", 0,
-                  "%c", 0x01,
-                  "%u", in_world_id,
-                  "%u", x,
-                  "%u", y,
-                  "%u", z,
-                  "%u", character->x,
-                  "%u", character->y,
-                  "%u", character->z);
+    broadcast(state,
+              character, 1,
+              "%h", 0,
+              "%c", 0x01,
+              "%u", in_world_id,
+              "%u", x,
+              "%u", y,
+              "%u", z,
+              "%u", character->x,
+              "%u", character->y,
+              "%u", character->z);
 }
 
 static void select_target(struct state *state, struct character *src, u32 target_id)
@@ -1943,30 +2031,46 @@ static void select_target(struct state *state, struct character *src, u32 target
                   "%h", 0);
 }
 
-static void interact_with(struct state *state, struct character *src, u32 target_id)
+static void start_interaction(struct state *state, struct character *src)
 {
     assert(state);
     assert(src);
     
-    u32 attacker_id = (u32) ((size_t) (src - state->characters));
+    // an interaction can begin only when the player has selected a target.
+    if (src->action_type != targeting)
+        return;
+    
+    u32 attacker_id = get_character_id(state, src);
+    u32 target_id = src->action_payload.targeting.obj_id;
     if (attacker_id == target_id)
         return;
     
+    // start agro state.
     push_response(src->conn, 1,
                   "%h", 0,
                   "%c", 0x2b,
                   "%u", target_id);
     
+    src->action_type = attacking;
+    src->action_payload = (union action_payload) {0};
+    src->action_payload.attacking.obj_id = target_id;
+    
+    // dont agro the target yet.
 #if 1
-    u32 damage = 2;
+    struct character *target = get_character_by_id(state, target_id);
+    target->action_type = attacking;
+    target->action_payload = (union action_payload) {0};
+    target->action_payload.attacking.obj_id = attacker_id;
+#endif
     
-    // just attack for now.
-    
+#if 0
+    // launch attack from attacked unit.
+    // u32 damage = 2;
     push_response(src->conn, 1,
                   "%h", 0,
                   "%c", 0x05,
-                  "%u", attacker_id,
                   "%u", target_id,
+                  "%u", attacker_id,
                   "%u", damage,
                   // flags
                   "%c", 0,
@@ -1985,12 +2089,116 @@ static struct character *get_character_by_id(struct state *state, u32 id)
     return state->characters + id;
 }
 
+static u32 get_character_id(struct state *state, struct character *src)
+{
+    assert(state);
+    assert(src);
+    return (u32) ((size_t) (src - state->characters));
+}
+
 static void moving_update(struct state *state, struct character *character)
 {
     assert(state);
     assert(character);
     
-    // s32 dx = character->action_payload.moving.target_x - character->x;
-    // s32 dy = character->action_payload.moving.target_y - character->y;
-    // s32 dz = character->action_payload.moving.target_x - character->z;
+    // trace("moving update!" nl);
+    
+    if (character->action_payload.moving.move_timestamp == state->ticks)
+        return;
+    
+    u64 elapsed = (state->ticks - character->action_payload.moving.move_start_time);
+    trace("elapsed %u / ticks to move %u" nl, elapsed, character->action_payload.moving.ticks_to_move);
+    
+    if (elapsed >= character->action_payload.moving.ticks_to_move)
+        goto reached;
+    
+    s32 src_x = character->action_payload.moving.src_x;
+    float x_speed_ticks = character->action_payload.moving.x_speed_ticks;
+    character->x = src_x + (s32) (elapsed * x_speed_ticks);
+    
+    s32 src_y = character->action_payload.moving.src_y;
+    float y_speed_ticks = character->action_payload.moving.y_speed_ticks;
+    character->y = src_y + (s32) (elapsed * y_speed_ticks);
+    
+    character->z = character->action_payload.moving.target_z;
+    
+    character->action_payload.moving.move_timestamp = state->ticks;
+    return;
+    
+    reached:
+    trace("reached!" nl);
+    
+    character->x = character->action_payload.moving.target_x;
+    character->y = character->action_payload.moving.target_y;
+    character->z = character->action_payload.moving.target_z;
+    
+    character->action_type = character->prev_action_type;
+    character->action_payload = character->prev_action_payload;
+    
+    character->prev_action_type = idle;
+    character->prev_action_payload = (union action_payload) {0};
+    
+    
+#if 0
+    s32 dx = character->action_payload.moving.target_x - character->x;
+    s32 dy = character->action_payload.moving.target_y - character->y;
+    s32 dz = character->action_payload.moving.target_z - character->z;
+    s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+    
+    if (d2 < sqr(100)) {
+        trace("reached!" nl);
+        
+        character->action_type = character->prev_action_type;
+        character->action_payload = character->prev_action_payload;
+        
+        character->prev_action_type = idle;
+        character->prev_action_payload = (union action_payload) {0};
+    }
+#endif
+}
+
+static void attacking_update(struct state *state, struct character *attacker)
+{
+    coroutine(attacker->action_payload.attacking.state) {
+        trace("attacking update!" nl);
+        
+        u32 attacker_id = get_character_id(state, attacker);
+        u32 target_id = attacker->action_payload.attacking.obj_id;
+        
+        struct character *target = get_character_by_id(state, target_id);
+        
+        s32 dx = target->x - attacker->x;
+        s32 dy = target->y - attacker->y;
+        s32 dz = target->z - attacker->z;
+        s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+        s32 atk_range = 10;
+        
+        // check if we are in attack range.
+        // if not in range, walk closer to the
+        // target.
+        if (d2 > sqr(atk_range)) {
+            move_to(state, attacker, target->x, target->y, target->z, 1);
+            return;
+        }
+        
+        u32 damage = 2;
+        broadcast(state,
+                  attacker, 1,
+                  "%h", 0,
+                  "%c", 0x05,
+                  "%u", attacker_id,
+                  "%u", target_id,
+                  "%u", damage,
+                  // flags
+                  "%c", 0,
+                  "%u", attacker->x,
+                  "%u", attacker->y,
+                  "%u", attacker->z,
+                  // TODO(not-set): i think this should be 0
+                  "%h", 1);
+        trace("launch first attack." nl);
+        syield(2000.0f, state->d);
+        trace("wait completed, reset!" nl);
+        reset;
+    }
 }
