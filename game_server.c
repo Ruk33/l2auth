@@ -191,11 +191,12 @@ struct character {
     s32 fish_z;
     u32 name_color;
     
+    u32 target_id;
+    
     enum action_type {
         idle,
         moving,
         attacking,
-        targeting,
     } action_type, prev_action_type;
     
     union action_payload {
@@ -215,10 +216,6 @@ struct character {
             s32 target_y;
             s32 target_z;
         } moving;
-        
-        struct {
-            u32 obj_id;
-        } targeting;
         
         struct {
             u32 obj_id;
@@ -1926,10 +1923,20 @@ static void handle_action(struct state *state, struct connection *conn, byte *re
            // 0 -> simple click, 1 -> shift
            "%c", &action_id);
     
-    if (conn->character->action_type == targeting &&
-        conn->character->action_payload.targeting.obj_id == target_id) {
-        start_interaction(state, conn->character);
-        return;
+    switch (conn->character->action_type) {
+        case idle:
+        case moving:
+        if (conn->character->target_id == target_id) {
+            start_interaction(state, conn->character);
+            return;
+        }
+        break;
+        case attacking:
+        if (conn->character->target_id == target_id)
+            return;
+        break;
+        default:
+        break;
     }
     
     select_target(state, conn->character, target_id);
@@ -1940,10 +1947,9 @@ static void handle_deselect_target(struct state *state, struct connection *conn)
     assert(state);
     assert(conn);
     
-    if (conn->character->action_type != targeting)
-        return;
+    u32 target_id = conn->character->target_id;
+    conn->character->target_id = 0;
     
-    u32 target_id = conn->character->action_payload.targeting.obj_id;
     struct character *target = get_character_by_id(state, target_id);
     if (!target)
         return;
@@ -2023,8 +2029,7 @@ static void select_target(struct state *state, struct character *src, u32 target
     assert(state);
     assert(src);
     
-    src->action_type = targeting;
-    src->action_payload.targeting.obj_id = target_id;
+    src->target_id = target_id;
     
     push_response(src->conn, 1,
                   "%h", 0,
@@ -2039,11 +2044,11 @@ static void start_interaction(struct state *state, struct character *src)
     assert(src);
     
     // an interaction can begin only when the player has selected a target.
-    if (src->action_type != targeting)
+    if (!src->target_id)
         return;
     
     u32 attacker_id = get_character_id(state, src);
-    u32 target_id = src->action_payload.targeting.obj_id;
+    u32 target_id = src->target_id;
     if (attacker_id == target_id)
         return;
     
@@ -2108,24 +2113,6 @@ static void moving_update(struct state *state, struct character *character)
     
     character->prev_action_type = idle;
     character->prev_action_payload = (union action_payload) {0};
-    
-    
-#if 0
-    s32 dx = character->action_payload.moving.target_x - character->x;
-    s32 dy = character->action_payload.moving.target_y - character->y;
-    s32 dz = character->action_payload.moving.target_z - character->z;
-    s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-    
-    if (d2 < sqr(100)) {
-        trace("reached!" nl);
-        
-        character->action_type = character->prev_action_type;
-        character->action_payload = character->prev_action_payload;
-        
-        character->prev_action_type = idle;
-        character->prev_action_payload = (union action_payload) {0};
-    }
-#endif
 }
 
 static void attacking_update(struct state *state, struct character *attacker)
@@ -2147,7 +2134,7 @@ static void attacking_update(struct state *state, struct character *attacker)
         s32 dy = target->y - attacker->y;
         s32 dz = target->z - attacker->z;
         s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-        s32 atk_range = 50;
+        s32 atk_range = 100;
         
         // check if we are in attack range.
         // if not in range, walk closer to the
@@ -2181,6 +2168,16 @@ static void attacking_update(struct state *state, struct character *attacker)
                   "%u", attacker->z,
                   // TODO(not-set): i think this should be 0
                   "%h", 1);
+        
+#if 1
+        int is_target_npc = !target->conn;
+        if (is_target_npc && target->action_type != attacking) {
+            target->action_type = attacking;
+            target->action_payload = (union action_payload) {0};
+            target->action_payload.attacking.obj_id = attacker_id;
+        }
+#endif
+        
         trace("launch first attack." nl);
         syield(2000.0f, state->d);
         trace("wait completed, reset!" nl);
