@@ -85,21 +85,22 @@ void asocket_listen(int server, asocket_handler *handler)
             }
         }
         
-        struct timeval timeout = {0};
+        // struct timeval timeout = {0};
         // 30 ms
         // timeout.tv_usec = 30000;
         // 1 second.
         // timeout.tv_sec = 1;
-        timeout.tv_usec = 1000000;
-        int activity = select(0, &readfds, &writefds, 0, &timeout);
+        // timeout.tv_usec = 1000000;
+        // int activity = select(0, &readfds, &writefds, 0, &timeout);
+        int activity = select(0, &readfds, &writefds, 0, 0);
         if (activity == SOCKET_ERROR) {
             printf("select error %d\n", WSAGetLastError());
             break;
         }
-        if (activity == 0) {
-            handler(0, ASOCKET_TIMEOUT, 0, 0);
-            continue;
-        }
+        // if (activity == 0) {
+        // handler(0, ASOCKET_TIMEOUT, 0, 0);
+        // continue;
+        // }
         
         // accept new connections.
         if (FD_ISSET(server, &readfds)) {

@@ -615,11 +615,13 @@ int on_tick(void **buf)
     
     u64 old_ticks = state->ticks;
     
-    state->d = 1.0f;
+    state->d = 1000.0f;
     state->run_time += (double) state->d;
     // state->ticks++;
     // 1000/10 = 100
-    state->ticks = (u64) (state->run_time / 3000.0);
+    state->ticks = (u64) (state->run_time / 100.0);
+    
+    // trace("ticks %u" nl, state->ticks);
     
     if (state->ticks == old_ticks)
         return 1;
@@ -2045,40 +2047,9 @@ static void start_interaction(struct state *state, struct character *src)
     if (attacker_id == target_id)
         return;
     
-    // start agro state.
-    push_response(src->conn, 1,
-                  "%h", 0,
-                  "%c", 0x2b,
-                  "%u", target_id);
-    
     src->action_type = attacking;
     src->action_payload = (union action_payload) {0};
     src->action_payload.attacking.obj_id = target_id;
-    
-    // dont agro the target yet.
-#if 1
-    struct character *target = get_character_by_id(state, target_id);
-    target->action_type = attacking;
-    target->action_payload = (union action_payload) {0};
-    target->action_payload.attacking.obj_id = attacker_id;
-#endif
-    
-#if 0
-    // launch attack from attacked unit.
-    // u32 damage = 2;
-    push_response(src->conn, 1,
-                  "%h", 0,
-                  "%c", 0x05,
-                  "%u", target_id,
-                  "%u", attacker_id,
-                  "%u", damage,
-                  // flags
-                  "%c", 0,
-                  "%u", src->x,
-                  "%u", src->y,
-                  "%u", src->z,
-                  "%h", 1);
-#endif
 }
 
 static struct character *get_character_by_id(struct state *state, u32 id)
@@ -2167,11 +2138,16 @@ static void attacking_update(struct state *state, struct character *attacker)
         
         struct character *target = get_character_by_id(state, target_id);
         
+        if (!target || !target->active) {
+            attacker->action_type = idle;
+            return;
+        }
+        
         s32 dx = target->x - attacker->x;
         s32 dy = target->y - attacker->y;
         s32 dz = target->z - attacker->z;
         s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-        s32 atk_range = 10;
+        s32 atk_range = 50;
         
         // check if we are in attack range.
         // if not in range, walk closer to the
@@ -2182,6 +2158,15 @@ static void attacking_update(struct state *state, struct character *attacker)
         }
         
         u32 damage = 2;
+        
+        // start agro state.
+        broadcast(state,
+                  attacker, 1,
+                  "%h", 0,
+                  "%c", 0x2b,
+                  "%u", target_id);
+        
+        // launch attack.
         broadcast(state,
                   attacker, 1,
                   "%h", 0,

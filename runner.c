@@ -73,7 +73,7 @@ static int lib_has_new_version(void)
 }
 #endif
 
-void handle_event(int socket, enum asocket_event event, void *read, size_t len)
+static void load_lib_if_required(void)
 {
 #ifdef _WIN32
     if (lib_has_new_version()) {
@@ -90,6 +90,11 @@ void handle_event(int socket, enum asocket_event event, void *read, size_t len)
             ExitProcess(0);
     }
 #endif
+}
+
+void handle_event(int socket, enum asocket_event event, void *read, size_t len)
+{
+    load_lib_if_required();
     
     switch (event) {
         case ASOCKET_NEW_CONN:
@@ -108,13 +113,24 @@ void handle_event(int socket, enum asocket_event event, void *read, size_t len)
         state.on_response(&state.buf, socket);
         break;
         
-        case ASOCKET_TIMEOUT:
-        state.on_tick(&state.buf);
-        break;
+        // case ASOCKET_TIMEOUT:
+        // state.on_tick(&state.buf);
+        // break;
         
         default:
         break;
     }
+}
+
+DWORD timer_thread(LPVOID param)
+{
+    param = param;
+    while (1) {
+        Sleep(1000);
+        load_lib_if_required();
+        state.on_tick(&state.buf);
+    }
+    return 0;
 }
 
 int main()
@@ -124,6 +140,8 @@ int main()
     
     if (!state.on_init(&state.buf))
         return 0;
+    
+    CreateThread(0, 0, timer_thread, 0, 0, 0);
     
     int socket = asocket_port(7777);
     asocket_listen(socket, handle_event);

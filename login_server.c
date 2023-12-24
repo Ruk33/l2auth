@@ -248,6 +248,9 @@ static void handle_auth_request(struct connection *conn, byte *request)
     strncpy(conn->username, username, sizeof(conn->username) - 1);
     trace("user %s is trying to authenticate" nl, conn->username);
     
+    directory_create("data");
+    directory_create("data/accounts");
+    
     in_directory("data/accounts") {
         if (strcmp(directory.name, conn->username) != 0)
             continue;
@@ -397,6 +400,8 @@ static void handle_server_list_request(struct connection *conn)
     
     trace("%s requested the servers list" nl, conn->username);
     
+    directory_create("data");
+    
     FILE *servers_file = fopen("data/servers.txt", "r");
     if (servers_file) {
         while (server_count < (u8) countof(servers)) {
@@ -437,7 +442,7 @@ static void handle_server_list_request(struct connection *conn)
                   "just in case, this is the format i'm expecting:" nl
                   nl
                   "id=1" nl
-                  "ip=0.0.0.0" nl
+                  "ip=127.0.0.1" nl
                   "port=7777" nl
                   "max_players=1000" nl
                   "status=1" nl
