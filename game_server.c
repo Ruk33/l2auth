@@ -201,6 +201,9 @@ struct character {
     
     union action_payload {
         struct {
+            int queue_action;
+            u32 offset;
+            
             u64 ticks_to_move;
             u64 move_start_time;
             u64 move_timestamp;
@@ -215,6 +218,8 @@ struct character {
             s32 target_x;
             s32 target_y;
             s32 target_z;
+            
+            u32 target_id;
         } moving;
         
         struct {
@@ -256,7 +261,7 @@ static void handle_action(struct state *state, struct connection *conn, byte *re
 static void handle_deselect_target(struct state *state, struct connection *conn);
 
 // order character to walk to a point.
-static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z, int queue_action);
+static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z, u32 offset, u32 target_id, int queue_action);
 // make character select a target. this is the first step
 // in order to interact with the target character.
 static void select_target(struct state *state, struct character *src, u32 target_id);
@@ -264,6 +269,41 @@ static void select_target(struct state *state, struct character *src, u32 target
 // - if target is attackable, then an attack order will take place.
 // - if target isn't attackable, then a dialog will show up.
 static void start_interaction(struct state *state, struct character *src);
+// NOTE(fmontenegro): not sure about this one...
+static void broadcast_char_info(struct state *state, struct character *src);
+//
+
+enum attr_status {
+    attr_status_level = 0x01,
+    attr_status_xp = 0x02,
+    attr_status_str = 0x03,
+    attr_status_dex = 0x04,
+    attr_status_con = 0x05,
+    attr_status_int = 0x06,
+    attr_status_wit = 0x07,
+    attr_status_men = 0x08,
+    attr_status_current_hp = 0x09,
+    attr_status_max_hp = 0x0a,
+    attr_status_current_mp = 0x0b,
+    attr_status_max_mp = 0x0c,
+    attr_status_sp = 0x0d,
+    attr_status_current_load = 0x0e,
+    attr_status_max_load = 0x0f,
+    attr_status_p_atk = 0x11,
+    attr_status_atk_speed = 0x12,
+    attr_status_p_def = 0x13,
+    attr_status_evasion = 0x14,
+    attr_status_accuracy = 0x15,
+    attr_status_critical = 0x16,
+    attr_status_m_atk = 0x17,
+    attr_status_cast_speed = 0x18,
+    attr_status_m_def = 0x19,
+    attr_status_pvp_flag = 0x1a,
+    attr_status_karma = 0x1b,
+    attr_status_current_cp = 0x21,
+    attr_status_max_cp = 0x22,
+};
+static void send_attr_status(struct state *state, struct character *from, struct character *to, enum attr_status *status, size_t n);
 
 // get character by id. if none is found, null will be returned.
 static struct character *get_character_by_id(struct state *state, u32 id);
@@ -596,6 +636,10 @@ void on_disconnect(void **buf, int socket)
         return;
     trace("client disconnected" nl);
     conn->socket = 0;
+    if (conn->character) {
+        conn->character->active = 0;
+        conn->character = 0;
+    }
 }
 
 // int64_t millis()
@@ -627,7 +671,7 @@ int on_tick(void **buf)
     // trace("clock %d" nl, millis());
     // trace("tick" nl);
     
-    for (int i = 0; i < countof(state->characters); i++) {
+    for (size_t i = 0; i < countof(state->characters); i++) {
         struct character *character = state->characters + i;
         if (!character->active)
             continue;
@@ -1700,6 +1744,75 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                   "%u", conn->character->fish_y,
                   "%u", conn->character->fish_z,
                   "%u", conn->character->name_color);
+    
+    // go through all npcs
+    for (size_t i = 0; i < countof(state->characters); i++) {
+        struct character *npc = state->characters + i;
+        if (!npc->active)
+            continue;
+        if (npc->conn)
+            continue;
+        
+        struct character *orc = npc;
+        u32 attackable = 1;
+        push_response(conn, 1,
+                      "%h", 0,
+                      "%c", 0x16,
+                      "%u", get_character_id(state, orc),
+                      "%u", orc->template_id,
+                      "%u", attackable,
+                      "%u", orc->x,
+                      "%u", orc->y,
+                      "%u", orc->z,
+                      "%u", orc->heading,
+                      "%u", 0,
+                      "%u", orc->m_atk_speed,
+                      "%u", orc->p_atk_speed,
+                      "%u", orc->run_speed,
+                      "%u", orc->walk_speed,
+                      // swim speed
+                      "%u", orc->run_speed,
+                      "%u", orc->walk_speed,
+                      // fly speed
+                      "%u", orc->run_speed,
+                      "%u", orc->walk_speed,
+                      "%u", orc->run_speed,
+                      "%u", orc->walk_speed,
+                      "%lf", 1.1,
+                      "%lf", (double) orc->p_atk_speed / 277.478340719,
+                      "%lf", orc->collision_radius,
+                      "%lf", orc->collision_height,
+                      // right hand weapon
+                      "%u", 0,
+                      "%u", 0,
+                      // left hand weapon
+                      "%u", 0,
+                      "%c", 1,
+                      // running?
+                      "%c", 1,
+                      // combat?
+                      "%c", 0,
+                      // alike dead?
+                      "%c", 0,
+                      // summoned?
+                      "%c", 0,
+                      "%ls", countof(orc->name), orc->name,
+                      "%ls", countof(orc->title), orc->title,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      // abnormal effect
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%u", 0,
+                      "%c", 0,
+                      "%c", 0,
+                      "%lf", 0.0,
+                      "%lf", 0.0,
+                      "%u", 0);
+    }
 }
 
 static void handle_leave_world(struct state *state, struct connection *conn)
@@ -1750,7 +1863,7 @@ static void handle_movement(struct state *state, struct connection *conn, byte *
     conn->character->x = origin_x;
     conn->character->y = origin_y;
     conn->character->z = origin_z;
-    move_to(state, conn->character, target_x, target_y, target_z, 0);
+    move_to(state, conn->character, target_x, target_y, target_z, 0, 0, 0);
 }
 
 static void handle_validate_position(struct state *state, struct connection *conn, byte *req)
@@ -1759,7 +1872,7 @@ static void handle_validate_position(struct state *state, struct connection *con
     assert(conn);
     assert(req);
     
-#if 0
+#if 1
     s32 x = 0;
     s32 y = 0;
     s32 z = 0;
@@ -1771,8 +1884,8 @@ static void handle_validate_position(struct state *state, struct connection *con
            "%u", &z,
            "%u", &heading);
     
-    conn->character->x = x;
-    conn->character->y = y;
+    // conn->character->x = x;
+    // conn->character->y = y;
     conn->character->z = z;
     conn->character->heading = heading;
 #endif
@@ -1812,7 +1925,7 @@ static void handle_show_map(struct state *state, struct connection *conn)
     orc->active = 1;
     
     swprintf(orc->name, sizeof(orc->name) - 1, L"%ls", L"Orc");
-    swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Payoneer?");
+    swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Orc");
     
     // orc.template_id = 7082 + 1000000;
     orc->template_id = 500 + 1000000;
@@ -1842,65 +1955,7 @@ static void handle_show_map(struct state *state, struct connection *conn)
     orc->walk_speed = 45;
     orc->run_speed = 110;
     
-    u32 attackable = 1;
-    
-    push_response(conn, 1,
-                  "%h", 0,
-                  "%c", 0x16,
-                  "%u", id,
-                  "%u", orc->template_id,
-                  "%u", attackable,
-                  "%u", orc->x,
-                  "%u", orc->y,
-                  "%u", orc->z,
-                  "%u", orc->heading,
-                  "%u", 0,
-                  "%u", orc->m_atk_speed,
-                  "%u", orc->p_atk_speed,
-                  "%u", orc->run_speed,
-                  "%u", orc->walk_speed,
-                  // swim speed
-                  "%u", orc->run_speed,
-                  "%u", orc->walk_speed,
-                  // fly speed
-                  "%u", orc->run_speed,
-                  "%u", orc->walk_speed,
-                  "%u", orc->run_speed,
-                  "%u", orc->walk_speed,
-                  "%lf", 1.1,
-                  "%lf", (double) orc->p_atk_speed / 277.478340719,
-                  "%lf", orc->collision_radius,
-                  "%lf", orc->collision_height,
-                  // right hand weapon
-                  "%u", 0,
-                  "%u", 0,
-                  // left hand weapon
-                  "%u", 0,
-                  "%c", 1,
-                  // running?
-                  "%c", 0,
-                  // combat?
-                  "%c", 0,
-                  // alike dead?
-                  "%c", 0,
-                  // summoned?
-                  "%c", 0,
-                  "%ls", countof(orc->name), orc->name,
-                  "%ls", countof(orc->title), orc->title,
-                  "%u", 0,
-                  "%u", 0,
-                  "%u", 0,
-                  // abnormal effect
-                  "%u", 0,
-                  "%u", 0,
-                  "%u", 0,
-                  "%u", 0,
-                  "%u", 0,
-                  "%c", 0,
-                  "%c", 0,
-                  "%lf", 0.0,
-                  "%lf", 0.0,
-                  "%u", 0);
+    broadcast_char_info(state, orc);
 }
 
 static void handle_action(struct state *state, struct connection *conn, byte *req)
@@ -1969,7 +2024,7 @@ static void handle_deselect_target(struct state *state, struct connection *conn)
                   "%u", target_z);
 }
 
-static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z, int queue_action)
+static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z, u32 offset, u32 target_id, int queue_action)
 {
     assert(state);
     assert(character);
@@ -1977,13 +2032,14 @@ static void move_to(struct state *state, struct character *character, s32 x, s32
     if (queue_action) {
         character->prev_action_type = character->action_type;
         character->prev_action_payload = character->action_payload;
-    } else {
-        character->prev_action_type = idle;
-        character->prev_action_payload = (union action_payload) {0};
     }
     
     character->action_type = moving;
     character->action_payload = (union action_payload) {0};
+    
+    character->action_payload.moving.queue_action = queue_action;
+    character->action_payload.moving.offset = offset;
+    character->action_payload.moving.target_id = target_id;
     
     character->action_payload.moving.src_x = character->x;
     character->action_payload.moving.src_y = character->y;
@@ -2029,13 +2085,32 @@ static void select_target(struct state *state, struct character *src, u32 target
     assert(state);
     assert(src);
     
+    struct character *target = get_character_by_id(state, target_id);
+    if (!target || !target->active)
+        return;
+    
     src->target_id = target_id;
     
+    // select target.
     push_response(src->conn, 1,
                   "%h", 0,
                   "%c", 0xa6,
                   "%u", target_id,
                   "%h", 0);
+    
+    // display correct life and max life.
+    enum attr_status status[] = {attr_status_current_hp, attr_status_max_hp};
+    send_attr_status(state, target, src, status, 2);
+    
+    // validate position.
+    push_response(src->conn, 1,
+                  "%h", 0,
+                  "%c", 0x61,
+                  "%u", target_id,
+                  "%u", target->x,
+                  "%u", target->y,
+                  "%u", target->z,
+                  "%u", target->heading);
 }
 
 static void start_interaction(struct state *state, struct character *src)
@@ -2052,9 +2127,217 @@ static void start_interaction(struct state *state, struct character *src)
     if (attacker_id == target_id)
         return;
     
+    broadcast_char_info(state, get_character_by_id(state, target_id));
+    
     src->action_type = attacking;
     src->action_payload = (union action_payload) {0};
     src->action_payload.attacking.obj_id = target_id;
+    
+    attacking_update(state, src);
+}
+
+static void broadcast_char_info(struct state *state, struct character *src)
+{
+    assert(state);
+    // assert(src);
+    if (!src || !src->active)
+        return;
+    
+    int is_npc = !src->conn;
+    if (is_npc) {
+        u32 attackable = 1;
+        broadcast(state,
+                  src, 1,
+                  "%h", 0,
+                  "%c", 0x16,
+                  "%u", get_character_id(state, src),
+                  "%u", src->template_id,
+                  "%u", attackable,
+                  "%u", src->x,
+                  "%u", src->y,
+                  "%u", src->z,
+                  "%u", src->heading,
+                  "%u", 0,
+                  "%u", src->m_atk_speed,
+                  "%u", src->p_atk_speed,
+                  "%u", src->run_speed,
+                  "%u", src->walk_speed,
+                  // swim speed
+                  "%u", src->run_speed,
+                  "%u", src->walk_speed,
+                  // fly speed
+                  "%u", src->run_speed,
+                  "%u", src->walk_speed,
+                  "%u", src->run_speed,
+                  "%u", src->walk_speed,
+                  "%lf", 1.1,
+                  "%lf", (double) src->p_atk_speed / 277.478340719,
+                  "%lf", src->collision_radius,
+                  "%lf", src->collision_height,
+                  // right hand weapon
+                  "%u", 0,
+                  "%u", 0,
+                  // left hand weapon
+                  "%u", 0,
+                  "%c", 1,
+                  // running?
+                  "%c", 1,
+                  // combat?
+                  "%c", src->action_type == attacking,
+                  // alike dead?
+                  "%c", 0,
+                  // summoned?
+                  "%c", 0,
+                  "%ls", countof(src->name), src->name,
+                  "%ls", countof(src->title), src->title,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  // abnormal effect
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%u", 0,
+                  "%c", 0,
+                  "%c", 0,
+                  "%lf", 0.0,
+                  "%lf", 0.0,
+                  "%u", 0);
+        return;
+    }
+    
+    // send char info...
+}
+
+static void send_attr_status(struct state *state, struct character *from, struct character *to,
+                             enum attr_status *status, size_t n)
+{
+    assert(state);
+    assert(status);
+    if (!from || !to || !from->active || !to->active || !to->conn)
+        return;
+    
+    byte attrs[256] = {0};
+    byte *end = attrs;
+    
+    for (size_t i = 0; i < n; i++) {
+        u32 value = 0;
+        
+        switch (status[i]) {
+            case attr_status_level:
+            value = from->level;
+            break;
+            case attr_status_xp:
+            // TODO(fmontenegro): ?
+            value = 1;
+            break;
+            case attr_status_str:
+            value = from->attributes.str;
+            break;
+            case attr_status_dex:
+            value = from->attributes.dex;
+            break;
+            case attr_status_con:
+            value = from->attributes.con;
+            break;
+            case attr_status_int:
+            value = from->attributes._int;
+            break;
+            case attr_status_wit:
+            value = from->attributes.wit;
+            break;
+            case attr_status_men:
+            value = from->attributes.men;
+            break;
+            case attr_status_current_hp:
+            value = (u32) from->current_hp;
+            break;
+            case attr_status_max_hp:
+            value = (u32) from->max_hp;
+            break;
+            case attr_status_current_mp:
+            value = (u32) from->current_mp;
+            break;
+            case attr_status_max_mp:
+            value = (u32) from->max_mp;
+            break;
+            // TODO(fmontenegro): implement.
+            case attr_status_sp:
+            value = 1;
+            break;
+            case attr_status_current_load:
+            value = from->current_load;
+            break;
+            case attr_status_max_load:
+            value = from->max_load;
+            break;
+            case attr_status_p_atk:
+            value = from->p_atk;
+            break;
+            case attr_status_atk_speed:
+            value = from->p_atk_speed;
+            break;
+            case attr_status_p_def:
+            value = from->p_def;
+            break;
+            case attr_status_evasion:
+            value = from->evasion_rate;
+            break;
+            case attr_status_accuracy:
+            value = from->accuracy;
+            break;
+            // TODO(fmontenegro): ?
+            case attr_status_critical:
+            value = from->critical_hit;
+            break;
+            case attr_status_m_atk:
+            value = from->m_atk;
+            break;
+            // NOTE(fmontenegro): is this ok?
+            case attr_status_cast_speed:
+            value = from->m_atk_speed;
+            break;
+            case attr_status_m_def:
+            value = from->m_def;
+            break;
+            // TODO(fmontenegro): check if pvp flag is sent as 0 and 1.
+            case attr_status_pvp_flag: {
+                value = 0;
+                if (from->action_type == attacking) {
+                    u32 target_id = from->action_payload.attacking.obj_id;
+                    struct character *target = get_character_by_id(state, target_id);
+                    if (target && target->active && target->conn)
+                        value = 1;
+                }
+            } break;
+            case attr_status_karma:
+            value = from->karma;
+            break;
+            case attr_status_current_cp:
+            value = (u32) from->current_cp;
+            break;
+            case attr_status_max_cp:
+            value = (u32) from->max_cp;
+            break;
+            default:
+            warn("invalid status %d" nl, status[i]);
+            break;
+        }
+        
+        end = bprintf(end, 
+                      sizeof(attrs) - (size_t) (end - attrs),
+                      "%u", status[i],
+                      "%u", value);
+    }
+    
+    u32 from_id = get_character_id(state, from);
+    push_response(to->conn, 1,
+                  "%h", 0,
+                  "%c", 0x0e,
+                  "%u", from_id,
+                  "%u", (u32) n,
+                  "%b", (size_t) (end - attrs), attrs);
 }
 
 static struct character *get_character_by_id(struct state *state, u32 id)
@@ -2082,8 +2365,26 @@ static void moving_update(struct state *state, struct character *character)
     if (character->action_payload.moving.move_timestamp == state->ticks)
         return;
     
+    if (character->action_payload.moving.target_id) {
+        struct character *target = get_character_by_id(state, character->action_payload.moving.target_id);
+        if (!target || !target->active) {
+            character->action_type = idle;
+            return;
+        }
+        
+        s32 x = target->x;
+        s32 y = target->y;
+        s32 z = target->z;
+        
+        if (x != character->action_payload.moving.target_x ||
+            y != character->action_payload.moving.target_y ||
+            z != character->action_payload.moving.target_z) {
+            move_to(state, character, x, y, z, character->action_payload.moving.offset, character->action_payload.moving.target_id, 0);
+            return;
+        }
+    }
+    
     u64 elapsed = (state->ticks - character->action_payload.moving.move_start_time);
-    trace("elapsed %u / ticks to move %u" nl, elapsed, character->action_payload.moving.ticks_to_move);
     
     if (elapsed >= character->action_payload.moving.ticks_to_move)
         goto reached;
@@ -2096,17 +2397,40 @@ static void moving_update(struct state *state, struct character *character)
     float y_speed_ticks = character->action_payload.moving.y_speed_ticks;
     character->y = src_y + (s32) (elapsed * y_speed_ticks);
     
-    character->z = character->action_payload.moving.target_z;
-    
     character->action_payload.moving.move_timestamp = state->ticks;
+    
+#if 0
+    character->active = 1;
+    broadcast(state,
+              character, 1,
+              "%h", 0,
+              "%c", 0x61,
+              "%u", get_character_id(state, character),
+              "%u", character->x,
+              "%u", character->y,
+              "%u", character->z,
+              "%u", character->heading);
+    broadcast_char_info(state, character);
+    character->active = 1;
+#endif
+    
+    s32 dx = character->action_payload.moving.target_x - character->x;
+    s32 dy = character->action_payload.moving.target_y - character->y;
+    s32 dz = character->action_payload.moving.target_z - character->z;
+    u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+    if (d2 <= sqr(character->action_payload.moving.offset))
+        goto reached;
+    
     return;
     
     reached:
     trace("reached!" nl);
     
+#if 1
     character->x = character->action_payload.moving.target_x;
     character->y = character->action_payload.moving.target_y;
-    character->z = character->action_payload.moving.target_z;
+    // character->z = character->action_payload.moving.target_z;
+#endif
     
     character->action_type = character->prev_action_type;
     character->action_payload = character->prev_action_payload;
@@ -2133,14 +2457,14 @@ static void attacking_update(struct state *state, struct character *attacker)
         s32 dx = target->x - attacker->x;
         s32 dy = target->y - attacker->y;
         s32 dz = target->z - attacker->z;
-        s32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-        s32 atk_range = 100;
+        u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+        u32 atk_range = 100;
         
         // check if we are in attack range.
         // if not in range, walk closer to the
         // target.
         if (d2 > sqr(atk_range)) {
-            move_to(state, attacker, target->x, target->y, target->z, 1);
+            move_to(state, attacker, target->x, target->y, target->z, atk_range, target_id, 1);
             return;
         }
         
