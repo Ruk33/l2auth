@@ -1,127 +1,29 @@
-L2 AUTH
-    L2auth is a simple Lineage 2 Chronicle 4 (C4) server emulator written in 
-    the C programming language as a learning exercise. The project's objective
-    is not to be a 1:1 implementation with the official servers but rather, 
-    just a fun experiment to see and explore what can be made with it.
+lineage 2 server emulator for the chronicle 4 written in c just for fun.
 
-HOW TO USE (WINDOWS)
-    - Update your C:/Windows/System32/Drivers/etc/hosts file to include: 127.0.0.1 l2authd.lineage2.com
-    - Install https://learn.microsoft.com/en-us/windows/wsl/install
-      You can use the Windows App Store to make the installation easier. Just
-      search for WSL, click install and that's it.
-    - Download or clone the project.
-    - Run build/login_server.bat to start the login server.
-    - Run build/game_server.bat to start the game server.
-    - Run the game
+in windows, how to use?
+- update your Windows/System32/drivers/etc/hosts file to 
+  include: 127.0.0.1 l2authd.lineage2.com
+- run bin/login_server.exe
+- that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
-HOW TO USE (LINUX)
-    - Update your /etc/host file to include: 127.0.0.1 l2authd.lineage2.com
-    - Download or clone the project.
-    - Run build/login_server to start the login server.
-    - Run build/game_server to start the game server.
-    - Run the game
+in windows, how to build?
+- download visual studio
+- update your environment path to include the folder containing the file vcvarsall.bat
+- run build.bat
 
-HOW TO USE (NOTES)
-    The login server will listen for connections to localhost using port 2106.
-    The game server will listen for connections to localhost using port 7777.
-    The accounts will be automatically created.
-    The server should work out of the box. No additional steps are required.
+TODO: in linux, how to use?
+- update /etc/hosts to include: 127.0.0.1 l2authd.lineage2.com
+- in linux, run bin/linux_server
+- that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
-COMMUNITY
-    - Help support the project https://ko-fi.com/francomontenegro
-        - Get access to early videos
-        - Get access to our members-only Discord channel
-    - Watch the development of the project in:
-        - Youtube: https://www.youtube.com/channel/UCmbdpFvxXfxk4KbmUgTAomw
-        - Twitch: https://www.twitch.tv/franco_montenegro
+TODO: in linux, how to build?
+- install openssl lib
+- run build.sh
 
-CONTRIBUTE
-    Just open up an issue detailing what you will be working on, this way
-    we can be more organized with the work. After that, just have 
-    fun working on it.
+notes
+- the login server uses the port 2106
+- the game server will automatically use the port 7777 
 
-    A few rules for contributors:
-    - No dynamic memory allocation. Exceptions:
-        - Third party libraries
-        - Platform specific code (win32, linux, etc. layers)
-    - All variables must be initialized
-    - No NULL, use 0 (shorter to write)
-    - OS related code must be prefixed with the OS's name (ie, linux_game_server.c)
-    - Only 1 thread is used to handle requests
-    - The code should be robust enough to handle bad and good requests without crashing
-    - Have fun
-
-CREDITS
-    - l2jserver: http://l2jserver.com/
-    - http://fursoffers.narod.ru/Packets.htm
-    - https://code.google.com/archive/p/l2adenalib/wikis/L2LoginServerProtocol.wiki
-
-LICENSE
-    GPL
-
-PROJECT DOCUMENTATION
-    The project is split between the login server (where the user can 
-    authenticate with a username and password) from the game server.
-
-    To make it portable to multiple operating systems (Windows, Linux, etc.),
-    the project separates all that platform specific code from the game code.
-    The game server produces a library/dll in order to provide hot code reload.
-    With this, any change in the game server code can be reflected in a 
-    running server without restarting or shutting it down.
-
-    For storage, a similar approach is taken. To support multiple databases,
-    the storage code is separated from the rest of the code. In order to provide 
-    a new storage/database (ie, MySQL, PostgreSQL, etc.), you only need to 
-    create a new file in the storage folder and provide the implementation for
-    the functions declared in src/include/storage.h. After that, just update 
-    gs_lib.c and ls_lib.c to include your implementation instead of sqlite.c.
-
-DEPENDENCIES
-    - openssl: https://www.openssl.org
-
-COMPILE IN WINDOWS
-    - Run: build.bat (requires WSL)
-
-COMPILE IN LINUX
-    - Run: bash build.sh
-
-START LOGIN SERVER
-    - Run: build/login_server
-    The login server will listen for connections to localhost using port 2106.
-
-START GAME SERVER
-    Run: build/game_server
-    The game server will listen for connection to localhost using port 7777.
-
-LINEAGE 2 PROTOCOL
-    Lineage 2 uses TCP to send packets.
-
-    All integers are little-endian and this project is MEANT to run on little
-    endian machines.
-
-    The first two bytes of the packet contain the packet size and the third one, 
-    usually the packet type.
-
-    Other than the first packet, all the login server packets are encrypted with 
-    Blowfish using the following hardcoded key ;5.]94-31==-%xT!^[$\000
-
-F.A.Q.
-    Why the build folder isn't ignored?
-    Simplifies the whole process for testing/playing with the server. Not all
-    users want or can compile the project from the source code, so there is no
-    harm in actually providing the executables ready to be used.
-
-    What O.S. are supported?
-    For the moment, only Linux (specifically Ubuntu) is supported. Windows can
-    also be used using WSL, although I haven't entirely discarded the idea
-    of providing native support.
-
-    Can this be used in a real server? is production ready?
-    No. The server still lacks a lot of features and it haven't been tested
-    thoroughly.
-
-    Will/Does it support Geo-Data?
-    At the moment, since I'm the only developer I have decided to not add 
-    support for Geo-Data. In order to prevent harming the game play, I will
-    also not implement any kind of range attacks so missing the Geo-Data 
-    shouldn't be a big thing.
+credits
+- l2j: https://www.l2jserver.com
+- openssl: https://www.openssl.org
