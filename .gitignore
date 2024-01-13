@@ -1,0 +1,5 @@
+*.obj
+*.exp
+*.pdb
+*.ilk
+bin/data/*

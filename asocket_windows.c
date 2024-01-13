@@ -142,9 +142,9 @@ void asocket_listen(int server, asocket_handler *handler)
                     if (bytes_read == SOCKET_ERROR) {
                         if (WSAGetLastError() != WSAEWOULDBLOCK) {
                             printf("failed while reading. closing the socket.\n");
+                            handler((int) clients[i], ASOCKET_CLOSED, 0, 0);
                             closesocket(clients[i]);
                             clients[i] = INVALID_SOCKET;
-                            // handler((int) clients[i], ASOCKET_CLOSED, 0, 0);
                         }
                         break;
                     } else if (bytes_read == 0) {

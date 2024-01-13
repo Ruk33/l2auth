@@ -1,9 +1,5 @@
 // TODO(fmontenegro):
-// - use threads, 1 to read and write requests/responses
-//   and 1 for game ticks.
-// - remove timeout from asocket
 // - fix movement
-// - don't use return in coroutine, break should be fine.
 
 #define WIN32_LEAN_AND_MEAN
 
@@ -65,7 +61,7 @@ case 0:
 
 #define yield \
 __coro->line = __COUNTER__ + 1; \
-return; \
+break; \
 case __COUNTER__:
 
 #define syield(sleep, delta) \
@@ -73,7 +69,7 @@ __coro->sleep_for = (sleep); \
 yield; \
 __coro->sleep_for -= (delta); \
 if (__coro->sleep_for > 0) \
-return;
+break;
 
 #define reset *__coro = (struct coroutine) {0}
 
@@ -200,7 +196,7 @@ struct character {
     } action_type, prev_action_type;
     
     union action_payload {
-        struct {
+        struct action_moving {
             int queue_action;
             u32 offset;
             
@@ -222,7 +218,7 @@ struct character {
             u32 target_id;
         } moving;
         
-        struct {
+        struct action_attacking {
             u32 obj_id;
             struct coroutine state;
         } attacking;
@@ -312,6 +308,8 @@ static u32 get_character_id(struct state *state, struct character *src);
 // static void idle_update(struct state *state, struct character *character);
 static void moving_update(struct state *state, struct character *character);
 static void attacking_update(struct state *state, struct character *character);
+
+static u32 distance_between2(struct character *a, struct character *b);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -1890,6 +1888,23 @@ static void handle_validate_position(struct state *state, struct connection *con
     conn->character->heading = heading;
 #endif
     
+#if 0
+    for (size_t i = 0; i < countof(state->characters); i++) {
+        if (state->characters[i].active && !state->characters[i].conn) {
+            struct character *target = state->characters + i;
+            push_response(conn, 1,
+                          "%h", 0,
+                          "%c", 0x61,
+                          "%u", get_character_id(state, target),
+                          "%u", target->x,
+                          "%u", target->y,
+                          "%u", target->z,
+                          "%u", target->heading);
+            // broadcast_char_info(state, state->characters + i);
+        }
+    }
+#endif
+    
     // TODO(fmontenegro): only if the diff is too large.
 #if 0
     u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
@@ -2045,36 +2060,61 @@ static void move_to(struct state *state, struct character *character, s32 x, s32
     character->action_payload.moving.src_y = character->y;
     character->action_payload.moving.src_z = character->z;
     
-    character->action_payload.moving.target_x = x;
-    character->action_payload.moving.target_y = y;
-    character->action_payload.moving.target_z = z;
-    
     s32 dx = x - character->x;
     s32 dy = y - character->y;
     s32 dz = z - character->z;
     float d = sqrtf(sqr((float) dx) + sqr((float) dy) + sqr((float) dz));
+    d -= offset;
     float speed = (float) character->run_speed;
     
     float ticks_per_second = 10.0f;
     
     character->action_payload.moving.move_start_time = state->ticks;
     character->action_payload.moving.ticks_to_move = (u64) (ticks_per_second * d / speed);
+    if (character->action_payload.moving.ticks_to_move <= 0)
+        character->action_payload.moving.ticks_to_move = 1;
     
     float sin = (float) dy / d;
     float cos = (float) dx / d;
     character->action_payload.moving.x_speed_ticks = cos * speed / ticks_per_second;
     character->action_payload.moving.y_speed_ticks = sin * speed / ticks_per_second;
     
+    x = character->x + (s32) (d * cos);
+    y = character->y + (s32) (d * sin);
+    
+    character->action_payload.moving.target_x = x;
+    character->action_payload.moving.target_y = y;
+    character->action_payload.moving.target_z = z;
+    
     u32 in_world_id = (u32) (size_t) (character - state->characters);
+    
+    if (!character->conn) {
+        character->z = z;
+        broadcast_char_info(state, character);
+    }
+    
+    if (!target_id) {
+        broadcast(state,
+                  character, 1,
+                  "%h", 0,
+                  "%c", 0x01,
+                  "%u", in_world_id,
+                  "%u", x,
+                  "%u", y,
+                  "%u", z,
+                  "%u", character->x,
+                  "%u", character->y,
+                  "%u", character->z);
+        return;
+    }
     
     broadcast(state,
               character, 1,
               "%h", 0,
-              "%c", 0x01,
+              "%c", 0x60,
               "%u", in_world_id,
-              "%u", x,
-              "%u", y,
-              "%u", z,
+              "%u", target_id,
+              "%u", offset,
               "%u", character->x,
               "%u", character->y,
               "%u", character->z);
@@ -2360,47 +2400,30 @@ static void moving_update(struct state *state, struct character *character)
     assert(state);
     assert(character);
     
-    // trace("moving update!" nl);
+    struct action_moving payload = character->action_payload.moving;
     
-    if (character->action_payload.moving.move_timestamp == state->ticks)
+    if (payload.move_timestamp == state->ticks)
         return;
     
-    if (character->action_payload.moving.target_id) {
-        struct character *target = get_character_by_id(state, character->action_payload.moving.target_id);
-        if (!target || !target->active) {
-            character->action_type = idle;
-            return;
-        }
-        
-        s32 x = target->x;
-        s32 y = target->y;
-        s32 z = target->z;
-        
-        if (x != character->action_payload.moving.target_x ||
-            y != character->action_payload.moving.target_y ||
-            z != character->action_payload.moving.target_z) {
-            move_to(state, character, x, y, z, character->action_payload.moving.offset, character->action_payload.moving.target_id, 0);
-            return;
-        }
-    }
+    u64 elapsed = state->ticks - payload.move_start_time;
     
-    u64 elapsed = (state->ticks - character->action_payload.moving.move_start_time);
+    if (elapsed >= payload.ticks_to_move)
+        goto arrived;
     
-    if (elapsed >= character->action_payload.moving.ticks_to_move)
-        goto reached;
-    
-    s32 src_x = character->action_payload.moving.src_x;
-    float x_speed_ticks = character->action_payload.moving.x_speed_ticks;
+    s32 src_x = payload.src_x;
+    float x_speed_ticks = payload.x_speed_ticks;
     character->x = src_x + (s32) (elapsed * x_speed_ticks);
     
-    s32 src_y = character->action_payload.moving.src_y;
-    float y_speed_ticks = character->action_payload.moving.y_speed_ticks;
+    s32 src_y = payload.src_y;
+    float y_speed_ticks = payload.y_speed_ticks;
     character->y = src_y + (s32) (elapsed * y_speed_ticks);
     
     character->action_payload.moving.move_timestamp = state->ticks;
     
 #if 0
-    character->active = 1;
+    character->active = 0;
+    if (!character->conn)
+        broadcast_char_info(state, character);
     broadcast(state,
               character, 1,
               "%h", 0,
@@ -2410,61 +2433,109 @@ static void moving_update(struct state *state, struct character *character)
               "%u", character->y,
               "%u", character->z,
               "%u", character->heading);
-    broadcast_char_info(state, character);
     character->active = 1;
 #endif
     
-    s32 dx = character->action_payload.moving.target_x - character->x;
-    s32 dy = character->action_payload.moving.target_y - character->y;
-    s32 dz = character->action_payload.moving.target_z - character->z;
-    u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-    if (d2 <= sqr(character->action_payload.moving.offset))
-        goto reached;
+    if (payload.target_id) {
+        struct character *target = get_character_by_id(state, payload.target_id);
+        if (!target || !target->active) {
+            payload.target_x = character->x;
+            payload.target_y = character->y;
+            payload.target_z = character->z;
+            
+            // stop movement.
+            broadcast(state,
+                      character, 1,
+                      "%h", 0,
+                      "%c", 0x47,
+                      "%u", get_character_id(state, character),
+                      "%u", character->x,
+                      "%u", character->y,
+                      "%u", character->z,
+                      "%u", character->heading);
+            
+            goto arrived;
+        }
+        
+        u32 d2 = distance_between2(character, target);
+        if (d2 < sqr(payload.offset)) {
+            payload.target_x = character->x;
+            payload.target_y = character->y;
+            payload.target_z = character->z;
+            
+            // stop movement.
+            broadcast(state,
+                      character, 1,
+                      "%h", 0,
+                      "%c", 0x47,
+                      "%u", get_character_id(state, character),
+                      "%u", character->x,
+                      "%u", character->y,
+                      "%u", character->z,
+                      "%u", character->heading);
+            
+            goto arrived;
+        }
+    }
     
     return;
     
-    reached:
-    trace("reached!" nl);
-    
-#if 1
-    character->x = character->action_payload.moving.target_x;
-    character->y = character->action_payload.moving.target_y;
-    // character->z = character->action_payload.moving.target_z;
-#endif
+    arrived:
+    character->x = payload.target_x;
+    character->y = payload.target_y;
+    character->z = payload.target_z;
     
     character->action_type = character->prev_action_type;
     character->action_payload = character->prev_action_payload;
     
     character->prev_action_type = idle;
     character->prev_action_payload = (union action_payload) {0};
+    
+    character->active = 0;
+    broadcast(state,
+              character, 1,
+              "%h", 0,
+              "%c", 0x61,
+              "%u", get_character_id(state, character),
+              "%u", character->x,
+              "%u", character->y,
+              "%u", character->z,
+              "%u", character->heading);
+    character->active = 1;
 }
 
 static void attacking_update(struct state *state, struct character *attacker)
 {
+    u32 attacker_id = get_character_id(state, attacker);
+    u32 target_id = attacker->action_payload.attacking.obj_id;
+    struct character *target = get_character_by_id(state, target_id);
+    
+    u32 atk_range = 60;
+    
     coroutine(attacker->action_payload.attacking.state) {
-        trace("attacking update!" nl);
-        
-        u32 attacker_id = get_character_id(state, attacker);
-        u32 target_id = attacker->action_payload.attacking.obj_id;
-        
-        struct character *target = get_character_by_id(state, target_id);
-        
         if (!target || !target->active) {
             attacker->action_type = idle;
             return;
         }
         
-        s32 dx = target->x - attacker->x;
-        s32 dy = target->y - attacker->y;
-        s32 dz = target->z - attacker->z;
-        u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
-        u32 atk_range = 100;
+        u32 d2 = distance_between2(attacker, target);
         
         // check if we are in attack range.
         // if not in range, walk closer to the
         // target.
         if (d2 > sqr(atk_range)) {
-            move_to(state, attacker, target->x, target->y, target->z, atk_range, target_id, 1);
+            s32 target_x = target->x;
+            s32 target_y = target->y;
+            s32 target_z = target->z;
+            u32 offset = atk_range - 10;
+            if (target->action_type == moving) {
+                struct action_moving payload = target->action_payload.moving;
+                target_x = payload.target_x;
+                target_y = payload.target_y;
+                target_z = payload.target_z;
+                offset = 0;
+            }
+            move_to(state, attacker, target_x, target_y, target_z, offset, target_id, 1);
             return;
         }
         
@@ -2503,8 +2574,21 @@ static void attacking_update(struct state *state, struct character *attacker)
 #endif
         
         trace("launch first attack." nl);
-        syield(2000.0f, state->d);
+        syield(200.0f, state->d);
         trace("wait completed, reset!" nl);
         reset;
     }
+}
+
+static u32 distance_between2(struct character *a, struct character *b)
+{
+    if (!a || !a->active || !b || !b->active)
+        return 0;
+    
+    s32 dx = b->x - a->x;
+    s32 dy = b->y - a->y;
+    s32 dz = b->z - a->z;
+    u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+    
+    return d2;
 }
