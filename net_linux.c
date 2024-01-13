@@ -10,14 +10,14 @@
 #include <sys/un.h>     // sockaddr_un
 #include <netinet/in.h> // sockaddr_in, INADDR_ANY, htons
 #include <unistd.h>     // unlink, close
-#include "asocket.h"
+#include "net.h"
 
 static void print_err(const char *context)
 {
-    printf("asocket error (%s): %s\n", context, strerror(errno));
+    printf("net error (%s): %s\n", context, strerror(errno));
 }
 
-int asocket_port(unsigned short port)
+int net_port(unsigned short port)
 {
     int server = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (server == -1)
@@ -41,12 +41,12 @@ int asocket_port(unsigned short port)
     return server;
     
     abort:
-    print_err("asocket_port");
+    print_err("net_port");
     close(server);
     return -1;
 }
 
-int asocket_sock(char *path)
+int net_sock(char *path)
 {
     if (!path) {
         printf("error: no path provided for socket.\n");
@@ -76,18 +76,18 @@ int asocket_sock(char *path)
     return server;
     
     abort:
-    print_err("asocket_sock");
+    print_err("net_sock");
     close(server);
     return -1;
 }
 
-void asocket_listen(int server, asocket_handler *handler)
+void net_listen(int server, net_handler *handler)
 {
-    static struct epoll_event events[128] = {0};
+    static struct epoll_event events[32] = {0};
     static unsigned char read_buf[8192] = {0};
     
     if (!handler) {
-        printf("asocket error: no socket request handler provided.\n");
+        printf("net error: no socket request handler provided.\n");
         return;
     }
     
@@ -131,7 +131,7 @@ void asocket_listen(int server, asocket_handler *handler)
                         print_err("failed to add new client to epoll");
                         close(client);
                     } else {
-                        handler(client, ASOCKET_NEW_CONN, 0, 0);
+                        handler(client, net_conn, 0, 0);
                     }
                 }
                 continue;
@@ -148,25 +148,25 @@ void asocket_listen(int server, asocket_handler *handler)
                         break;
                     }
                     if (received == 0) {
-                        handler(events[i].data.fd, ASOCKET_CLOSED, 0, 0);
+                        handler(events[i].data.fd, net_closed, 0, 0);
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &event);
                         break;
                     }
-                    handler(events[i].data.fd, ASOCKET_READ, read_buf, (size_t) received);
+                    handler(events[i].data.fd, net_read, read_buf, (size_t) received);
                 }
             }
             if (events[i].events & EPOLLOUT)
-                handler(events[i].data.fd, ASOCKET_CAN_WRITE, 0, 0);
+                handler(events[i].data.fd, net_write, 0, 0);
         }
     }
     
     abort:
-    print_err("asocket_listen");
+    print_err("net_listen");
     close(epoll_fd);
     close(server);
 }
 
-unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
+unsigned long long net_send(int socket, void *buf, unsigned long long n)
 {
     unsigned long long sent = 0;
     if (!buf)
@@ -176,7 +176,7 @@ unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
         if (tmp == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
             break;
         if (tmp == -1) {
-            print_err("asocket_write");
+            print_err("net_write");
             break;
         }
         sent += tmp;
@@ -184,7 +184,7 @@ unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
     return sent;
 }
 
-void asocket_close(int socket)
+void net_close(int socket)
 {
     close(socket);
 }

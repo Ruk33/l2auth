@@ -15,7 +15,7 @@
 #include <math.h>   // sqrtf
 
 #include "directory.h"
-#include "asocket.h"
+#include "net.h"
 
 typedef uint8_t byte;
 
@@ -575,7 +575,7 @@ void on_connection(void **buf, int socket)
     struct connection *connection = get_connection_from_socket(state, socket);
     if (!connection) {
         trace("there is no more space to accept new players. dropping new connection" nl);
-        asocket_close(socket);
+        net_close(socket);
         return;
     }
     memset(connection, 0, sizeof(*connection));
@@ -613,9 +613,9 @@ void on_response(void **buf, int socket)
     }
     if (conn->sent < conn->to_send_count) {
         trace("sending %lu bytes of data" nl, conn->to_send_count - conn->sent);
-        conn->sent += asocket_write(conn->socket,
-                                    conn->to_send + conn->sent,
-                                    conn->to_send_count - conn->sent);
+        conn->sent += net_send(conn->socket, 
+                               conn->to_send + conn->sent,
+                               conn->to_send_count - conn->sent);
     }
     // reset counters when all data has been sent.
     if (conn->sent >= conn->to_send_count) {
@@ -720,7 +720,7 @@ if (type != (expected)) { \
 error("expecting packet %d but got %d. the connection will be dropped." nl, \
 (expected), \
 type); \
-asocket_close(conn->socket); \
+net_close(conn->socket); \
 conn->socket = 0; \
 return; \
 }
@@ -863,7 +863,7 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
         error("unable to read %s. can't check if this is a valid auth."
               "the user will be dropped." nl, 
               access_path);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -885,7 +885,7 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     if (stored_login_ok1 != conn->login_ok1 || stored_login_ok2 != conn->login_ok2) {
         warn("invalid loginok1 or loginok2 from %ls. the connection will be dropped." nl, 
              conn->username);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -893,7 +893,7 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
     if (stored_valid_until < time(0)) {
         trace("keys expired for %ls. the connection will be dropped." nl,
               conn->username);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -1327,7 +1327,7 @@ static void handle_select_character(struct state *state, struct connection *conn
     if (!conn->character) {
         error("can't enter more characters in the world. dropping %ls." nl,
               conn->username);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -1473,7 +1473,7 @@ static void handle_select_character(struct state *state, struct connection *conn
               index,
               conn->username);
         conn->character->active = 0;
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -2026,17 +2026,13 @@ static void handle_deselect_target(struct state *state, struct connection *conn)
     
     conn->character->action_type = idle;
     
-    s32 target_x = target->x;
-    s32 target_y = target->y;
-    s32 target_z = target->z;
-    
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x2a,
-                  "%u", target_id,
-                  "%u", target_x,
-                  "%u", target_y,
-                  "%u", target_z);
+                  "%u", get_character_id(state, conn->character),
+                  "%u", conn->character->x,
+                  "%u", conn->character->y,
+                  "%u", conn->character->z);
 }
 
 static void move_to(struct state *state, struct character *character, s32 x, s32 y, s32 z, u32 offset, u32 target_id, int queue_action)

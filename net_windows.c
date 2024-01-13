@@ -1,12 +1,12 @@
 #include <stdio.h> // printf
 #include <winsock2.h>
-#include "asocket.h"
+#include "net.h"
 
-int asocket_port(unsigned short port)
+int net_port(unsigned short port)
 {
     WSADATA wsa_data = {0};
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
-        printf("failed to initialize Winsock\n");
+        printf("failed to initialize winsock\n");
         return 0;
     }
     
@@ -18,7 +18,7 @@ int asocket_port(unsigned short port)
     
     u_long mode = 1; // 1 to enable non-blocking mode
     if (ioctlsocket(server, FIONBIO, &mode) == SOCKET_ERROR) {
-        printf("failed to set server socket to nonblockingt\n");
+        printf("failed to set server socket to nonblocking\n");
         return 0;
     }
     
@@ -42,25 +42,25 @@ int asocket_port(unsigned short port)
     return (int) server;
 }
 
-int asocket_sock(char *path)
+int net_sock(char *path)
 {
     path = path;
     printf("to implement :)\n");
     return 0;
 }
 
-void asocket_listen(int server, asocket_handler *handler)
+void net_listen(int server, net_handler *handler)
 {
-#define MAX_CLIENTS 128
-#define MAX_BUF_SIZE 8192
+    #define max_clients 128
+    static SOCKET clients[max_clients];
+    static unsigned char read_buf[8192] = {0};
     
     if (!handler) {
-        printf("asocket error: no socket request handler provided.\n");
+        printf("net error: no socket request handler provided.\n");
         return;
     }
     
-    SOCKET clients[MAX_CLIENTS];
-    for (int i = 0; i < MAX_CLIENTS; i++)
+    for (int i = 0; i < max_clients; i++)
         clients[i] = INVALID_SOCKET;
     
     while (1) {
@@ -70,7 +70,7 @@ void asocket_listen(int server, asocket_handler *handler)
         FD_ZERO(&writefds);
         FD_SET(server, &readfds);
         
-        for (int i = 0; i < MAX_CLIENTS; i++) {
+        for (int i = 0; i < max_clients; i++) {
             if (clients[i] == INVALID_SOCKET)
                 continue;
             // check it's a valid socket before adding it to
@@ -85,22 +85,11 @@ void asocket_listen(int server, asocket_handler *handler)
             }
         }
         
-        // struct timeval timeout = {0};
-        // 30 ms
-        // timeout.tv_usec = 30000;
-        // 1 second.
-        // timeout.tv_sec = 1;
-        // timeout.tv_usec = 1000000;
-        // int activity = select(0, &readfds, &writefds, 0, &timeout);
         int activity = select(0, &readfds, &writefds, 0, 0);
         if (activity == SOCKET_ERROR) {
             printf("select error %d\n", WSAGetLastError());
             break;
         }
-        // if (activity == 0) {
-        // handler(0, ASOCKET_TIMEOUT, 0, 0);
-        // continue;
-        // }
         
         // accept new connections.
         if (FD_ISSET(server, &readfds)) {
@@ -109,7 +98,7 @@ void asocket_listen(int server, asocket_handler *handler)
                 if (new_client == INVALID_SOCKET)
                     break;
                 int accepted = 0;
-                for (int i = 0; i < MAX_CLIENTS; i++) {
+                for (int i = 0; i < max_clients; i++) {
                     if (clients[i] == INVALID_SOCKET) {
                         // set the client socket to non-blocking mode
                         u_long client_mode = 1;
@@ -119,7 +108,7 @@ void asocket_listen(int server, asocket_handler *handler)
                         }
                         
                         clients[i] = new_client;
-                        handler((int) new_client, ASOCKET_NEW_CONN, 0, 0);
+                        handler((int) new_client, net_conn, 0, 0);
                         accepted = 1;
                         break;
                     }
@@ -131,18 +120,17 @@ void asocket_listen(int server, asocket_handler *handler)
             }
         }
         
-        for (int i = 0; i < MAX_CLIENTS; i++) {
+        for (int i = 0; i < max_clients; i++) {
             if (clients[i] == INVALID_SOCKET)
                 continue;
             // read.
             if (FD_ISSET(clients[i], &readfds)) {
                 while (1) {
-                    char buffer[MAX_BUF_SIZE] = {0};
-                    int bytes_read = recv(clients[i], buffer, sizeof(buffer), 0);
+                    int bytes_read = recv(clients[i], (char *) read_buf, sizeof(read_buf), 0);
                     if (bytes_read == SOCKET_ERROR) {
                         if (WSAGetLastError() != WSAEWOULDBLOCK) {
                             printf("failed while reading. closing the socket.\n");
-                            handler((int) clients[i], ASOCKET_CLOSED, 0, 0);
+                            handler((int) clients[i], net_closed, 0, 0);
                             closesocket(clients[i]);
                             clients[i] = INVALID_SOCKET;
                         }
@@ -151,25 +139,23 @@ void asocket_listen(int server, asocket_handler *handler)
                         // connection closed by client.
                         closesocket(clients[i]);
                         clients[i] = INVALID_SOCKET;
-                        handler((int) clients[i], ASOCKET_CLOSED, 0, 0);
+                        handler((int) clients[i], net_closed, 0, 0);
                         break;
                     } else {
                         // read.
-                        handler((int) clients[i], ASOCKET_READ, buffer, bytes_read);
+                        handler((int) clients[i], net_read, read_buf, bytes_read);
                     }
                 }
             }
             
             // write.
             if (FD_ISSET(clients[i], &writefds))
-                handler((int) clients[i], ASOCKET_CAN_WRITE, 0, 0);
+                handler((int) clients[i], net_write, 0, 0);
         }
-        
-        handler(0, ASOCKET_TIMEOUT, 0, 0);
     }
 }
 
-unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
+unsigned long long net_send(int socket, void *buf, unsigned long long n)
 {
     unsigned long long sent = 0;
     if (!buf)
@@ -178,7 +164,7 @@ unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
         int tmp = send((SOCKET) socket, (char *) buf + sent, (int) (n - sent), 0);
         if (tmp == SOCKET_ERROR) {
             if (WSAGetLastError() != WSAEWOULDBLOCK)
-                printf("asocket_write error\n");
+                printf("net_write error\n");
             break;
         }
         sent += tmp;
@@ -186,7 +172,7 @@ unsigned long long asocket_write(int socket, void *buf, unsigned long long n)
     return sent;
 }
 
-void asocket_close(int socket)
+void net_close(int socket)
 {
     closesocket(socket);
 }

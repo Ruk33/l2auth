@@ -15,7 +15,7 @@
 #include <openssl/evp.h>
 
 #include "directory.h"
-#include "asocket.h"
+#include "net.h"
 
 typedef uint8_t byte;
 
@@ -337,7 +337,7 @@ static void handle_auth_request(struct connection *conn, byte *request)
     // to send before dropping the connection (invalid password)
     if (!authenticated) {
         trace("unable to authenticate %s, dropping connection" nl, conn->username);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -538,7 +538,7 @@ static void handle_enter_game_server(struct connection *conn)
               "the connection with %s will be dropped" nl,
               access_path,
               conn->username);
-        asocket_close(conn->socket);
+        net_close(conn->socket);
         conn->socket = 0;
         return;
     }
@@ -666,14 +666,14 @@ static void on_request(struct connection *conn)
     conn->request_count -= size;
 }
 
-static void handle_event(int socket, enum asocket_event event, void *read, size_t len)
+static void handle_event(int socket, enum net_event event, void *read, size_t len)
 {
     struct connection *conn = find_connection(socket);
     switch (event) {
-        case ASOCKET_NEW_CONN: {
+        case net_conn: {
             if (!conn) {
                 trace("no more room. can't accept new connection (will be dropped)" nl);
-                asocket_close(socket);
+                net_close(socket);
                 return;
             }
             conn->socket = socket;
@@ -692,25 +692,25 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
             send_init_packet(conn);
         } break;
         
-        case ASOCKET_CLOSED: {
+        case net_closed: {
             conn->socket = 0;
             trace("client closed the connection" nl);
         } break;
         
-        case ASOCKET_READ: {
+        case net_read: {
             trace("bytes %d received from client" nl, (s32) len);
             memcpy(conn->request + conn->request_count, read, len);
             conn->request_count += len;
             on_request(conn);
         } break;
         
-        case ASOCKET_CAN_WRITE: {
+        case net_write: {
             if (conn->sent < conn->to_send_count) {
                 trace("sending %d bytes of data" nl, 
                       (s32) (conn->to_send_count - conn->sent));
-                conn->sent += asocket_write(conn->socket,
-                                            conn->to_send + conn->sent,
-                                            conn->to_send_count - conn->sent);
+                conn->sent += net_send(conn->socket,
+                                       conn->to_send + conn->sent,
+                                       conn->to_send_count - conn->sent);
             }
             // reset counters when all data has been sent.
             if (conn->sent >= conn->to_send_count) {
@@ -727,8 +727,8 @@ static void handle_event(int socket, enum asocket_event event, void *read, size_
 int main()
 {
 #define port 2106
-    int socket = asocket_port(port);
+    int socket = net_port(port);
     trace("login server, listening for connection on port %d" nl, port);
-    asocket_listen(socket, handle_event);
+    net_listen(socket, handle_event);
     return 0;
 }

@@ -4,7 +4,7 @@
 #include <windows.h>
 #endif
 
-#include "asocket.h"
+#include "net.h"
 
 typedef int on_init(void **buf);
 typedef void on_connection(void **buf, int socket);
@@ -92,30 +92,26 @@ static void load_lib_if_required(void)
 #endif
 }
 
-void handle_event(int socket, enum asocket_event event, void *read, size_t len)
+void handle_event(int socket, enum net_event event, void *read, size_t len)
 {
     load_lib_if_required();
     
     switch (event) {
-        case ASOCKET_NEW_CONN:
+        case net_conn:
         state.on_connection(&state.buf, socket);
         break;
         
-        case ASOCKET_CLOSED:
+        case net_closed:
         state.on_disconnect(&state.buf, socket);
         break;
         
-        case ASOCKET_READ:
+        case net_read:
         state.on_request(&state.buf, socket, read, len);
         break;
         
-        case ASOCKET_CAN_WRITE:
+        case net_write:
         state.on_response(&state.buf, socket);
         break;
-        
-        // case ASOCKET_TIMEOUT:
-        // state.on_tick(&state.buf);
-        // break;
         
         default:
         break;
@@ -143,8 +139,8 @@ int main()
     
     CreateThread(0, 0, timer_thread, 0, 0, 0);
     
-    int socket = asocket_port(7777);
-    asocket_listen(socket, handle_event);
+    int socket = net_port(7777);
+    net_listen(socket, handle_event);
     
     return 0;
 }
