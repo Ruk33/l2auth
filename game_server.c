@@ -612,7 +612,7 @@ void on_response(void **buf, int socket)
         return;
     }
     if (conn->sent < conn->to_send_count) {
-        trace("sending %lu bytes of data" nl, conn->to_send_count - conn->sent);
+        trace("sending %llu bytes of data" nl, conn->to_send_count - conn->sent);
         conn->sent += net_send(conn->socket, 
                                conn->to_send + conn->sent,
                                conn->to_send_count - conn->sent);
@@ -1606,7 +1606,6 @@ static void handle_enter_world(struct state *state, struct connection *conn)
     assert(conn);
     
     byte type = 0x04;
-    u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
     u32 clan_leader = 0;
     
     push_response(conn, 1,
@@ -1616,7 +1615,7 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                   "%u", conn->character->y,
                   "%u", conn->character->z,
                   "%u", conn->character->heading,
-                  "%u", in_world_id,
+                  "%u", get_character_id(state, conn->character),
                   "%ls", countof(conn->character->name), conn->character->name,
                   "%u", conn->character->race_id,
                   "%u", conn->character->sex,
@@ -2082,8 +2081,6 @@ static void move_to(struct state *state, struct character *character, s32 x, s32
     character->action_payload.moving.target_y = y;
     character->action_payload.moving.target_z = z;
     
-    u32 in_world_id = (u32) (size_t) (character - state->characters);
-    
     if (!character->conn) {
         character->z = z;
         broadcast_char_info(state, character);
@@ -2094,7 +2091,7 @@ static void move_to(struct state *state, struct character *character, s32 x, s32
                   character, 1,
                   "%h", 0,
                   "%c", 0x01,
-                  "%u", in_world_id,
+                  "%u", get_character_id(state, character),
                   "%u", x,
                   "%u", y,
                   "%u", z,
@@ -2108,7 +2105,7 @@ static void move_to(struct state *state, struct character *character, s32 x, s32
               character, 1,
               "%h", 0,
               "%c", 0x60,
-              "%u", in_world_id,
+              "%u", get_character_id(state, character),
               "%u", target_id,
               "%u", offset,
               "%u", character->x,
@@ -2175,7 +2172,6 @@ static void start_interaction(struct state *state, struct character *src)
 static void broadcast_char_info(struct state *state, struct character *src)
 {
     assert(state);
-    // assert(src);
     if (!src || !src->active)
         return;
     
@@ -2486,7 +2482,7 @@ static void moving_update(struct state *state, struct character *character)
     
     character->prev_action_type = idle;
     character->prev_action_payload = (union action_payload) {0};
-    
+
     character->active = 0;
     broadcast(state,
               character, 1,
@@ -2537,7 +2533,7 @@ static void attacking_update(struct state *state, struct character *attacker)
         
         u32 damage = 2;
         
-        // start agro state.
+        // start aggro state.
         broadcast(state,
                   attacker, 1,
                   "%h", 0,
@@ -2558,7 +2554,7 @@ static void attacking_update(struct state *state, struct character *attacker)
                   "%u", attacker->y,
                   "%u", attacker->z,
                   // TODO(not-set): i think this should be 0
-                  "%h", 1);
+                  "%h", 0);
         
 #if 1
         int is_target_npc = !target->conn;

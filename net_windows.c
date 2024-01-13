@@ -54,6 +54,8 @@ void net_listen(int server, net_handler *handler)
     #define max_clients 128
     static SOCKET clients[max_clients];
     static unsigned char read_buf[8192] = {0};
+
+    int highest = 0;
     
     if (!handler) {
         printf("net error: no socket request handler provided.\n");
@@ -69,6 +71,8 @@ void net_listen(int server, net_handler *handler)
         FD_ZERO(&readfds);
         FD_ZERO(&writefds);
         FD_SET(server, &readfds);
+
+        highest = server;
         
         for (int i = 0; i < max_clients; i++) {
             if (clients[i] == INVALID_SOCKET)
@@ -80,12 +84,14 @@ void net_listen(int server, net_handler *handler)
             if (getsockopt(clients[i], SOL_SOCKET, SO_ERROR, (char*) &optval, &optlen) != SOCKET_ERROR && optval == 0) {
                 FD_SET(clients[i], &readfds);
                 FD_SET(clients[i], &writefds);
+                if (clients[i] > highest)
+                    highest = clients[i];
             } else {
-                clients[i] = INVALID_SOCKET; 
+                clients[i] = INVALID_SOCKET;
             }
         }
         
-        int activity = select(0, &readfds, &writefds, 0, 0);
+        int activity = select(highest + 1, &readfds, &writefds, 0, 0);
         if (activity == SOCKET_ERROR) {
             printf("select error %d\n", WSAGetLastError());
             break;
