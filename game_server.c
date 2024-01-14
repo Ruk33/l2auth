@@ -99,7 +99,7 @@ static void handle_net_event(int socket, enum net_event event, void *read, size_
         case net_read:
         state.on_pevent(&state.buf, pevent_socket_request, &payload);
         break;
-        
+
         default:
         break;
     }

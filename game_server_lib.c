@@ -22,12 +22,12 @@
 
 typedef uint8_t byte;
 
-typedef uint8_t u8;
+typedef  uint8_t  u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef int8_t s8;
+typedef  int8_t  s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
@@ -35,11 +35,12 @@ typedef int64_t s64;
 typedef float seconds;
 
 #define nl "\n"
+#define kb *1024
 #define mb *1024*1024
 #define sqr(x) ((x)*(x))
 #define trace(...) fprintf(stderr, __VA_ARGS__)
-#define warn(...) trace("warning / " __VA_ARGS__)
-#define error(...) trace("error / " __VA_ARGS__)
+#define warn(...)  trace("warning / " __VA_ARGS__)
+#define error(...) trace("  error / " __VA_ARGS__)
 #define countof(x) (sizeof(x) / sizeof(*(x)))
 
 #define bprintf(dest, n, ...) \
@@ -98,11 +99,11 @@ struct connection {
     
     struct coroutine state;
     
-    byte to_send[65535 * 4];
+    byte to_send[8 kb];
     size_t to_send_count;
     size_t sent;
     
-    byte request[65535 * 2];
+    byte request[8 kb];
     size_t request_count;
     
     struct character *character;
@@ -117,6 +118,8 @@ struct character {
     s32 y;
     s32 z;
     s32 heading;
+    s32 client_x;
+    s32 client_y;
     u32 race_id;
     u32 sex;
     u32 class_id;
@@ -314,7 +317,8 @@ static u32 get_character_id(struct state *state, struct character *src);
 static void moving_update(struct state *state, struct character *character);
 static void attacking_update(struct state *state, struct character *character);
 
-static u32 distance_between2(struct character *a, struct character *b);
+static u32 distance_between(s32 x, s32 y, s32 z, s32 x2, s32 y2, s32 z2);
+static u32 distance_between_characters(struct character *a, struct character *b);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -396,13 +400,13 @@ static byte *bprintf_va(byte *dest, size_t n, va_list va)
             continue;
         }
         if (fmt[0] == '%' && fmt[1] == 'h') {
-            u16 src = va_arg(va, u16);
+            u16 src = (u16) va_arg(va, u32);
             *(u16 *) tail = src;
             tail += sizeof(src);
             continue;
         }
         if (fmt[0] == '%' && fmt[1] == 'c') {
-            u8 src = va_arg(va, u8);
+            u8 src = (u8) va_arg(va, u32);
             *tail = src;
             tail += sizeof(src);
             continue;
@@ -455,8 +459,7 @@ static void push_response_va(struct connection *conn, int _encrypt, va_list va)
     byte *start = conn->to_send + conn->to_send_count;
     size_t max = sizeof(conn->to_send) - (size_t) (start - conn->to_send);
     byte *end = bprintf_va(start, max, va);
-    
-    assert((end - start) < 65535);
+
     u16 size = (u16) (end - start);
     *(u16 *) start = size;
     
@@ -559,11 +562,17 @@ static void decrypt(struct connection *conn, byte *request)
 static void send_responses(struct wqueue *q, void *w)
 {
     struct connection *conn = (struct connection *) w;
+    if (!conn->socket)
+        return;
 
     void *head = conn->to_send + conn->sent;
     unsigned long long to_send = conn->to_send_count - conn->sent;
-    trace("sending %d bytes of data" nl, (s32) to_send);
-    conn->sent += net_send(conn->socket, head, to_send);
+    trace("sending %d bytes of data to %d" nl, (s32) to_send, conn->socket);
+    unsigned long long sent = net_send(conn->socket, head, to_send);
+    if (!sent)
+        return;
+
+    conn->sent += sent;
 
     // if we couldn't sent the entire response, re-add
     // this connection to the worker so we try
@@ -579,13 +588,6 @@ static void send_responses(struct wqueue *q, void *w)
     conn->sent = 0;
     conn->to_send_count = 0;
 }
-
-// int64_t millis()
-// {
-// struct timespec now;
-// timespec_get(&now, TIME_UTC);
-// return (((int64_t) now.tv_sec) * 1000 + ((int64_t) now.tv_nsec) / 1000000) / 100000000000;
-// }
 
 static void on_tick(struct state *state)
 {
@@ -619,7 +621,9 @@ static void on_tick(struct state *state)
 
     for (size_t i = 0; i < countof(state->connections); i++) {
         struct connection *conn = state->connections + i;
-        if (!conn->character)
+        if (!conn->socket)
+            continue;
+        if (!conn->character || !conn->character->active)
             continue;
         if (!conn->to_send_count)
             continue;
@@ -647,7 +651,7 @@ static void init_threads(struct state *state)
 static int on_init(void **buf)
 {
     assert(buf);
-    size_t to_alloc = 512 mb;
+    size_t to_alloc = 256 mb;
     assert(to_alloc > sizeof(struct state));
     *buf = calloc(1, to_alloc);
     if (!*buf) {
@@ -701,6 +705,7 @@ static void on_disconnect(void **buf, int socket)
     assert(buf);
     struct state *state = *(struct state **) buf;
     assert(state);
+    
     struct connection *conn = get_connection_from_socket(state, socket);
     if (!conn)
         return;
@@ -721,6 +726,7 @@ int on_pevent(void **buf, enum pevent event, union ppayload *payload)
     case pevent_before_reload: {
         struct state *state = *(struct state **) buf;
         wclose(&state->send_responses_worker);
+        TerminateThread(state->timer, 0);
         CloseHandle(state->timer);
     } break;
     case pevent_after_reload: {
@@ -1804,36 +1810,34 @@ static void handle_enter_world(struct state *state, struct connection *conn)
             continue;
         if (npc->conn)
             continue;
-        
-        struct character *orc = npc;
         u32 attackable = 1;
         push_response(conn, 1,
                       "%h", 0,
                       "%c", 0x16,
-                      "%u", get_character_id(state, orc),
-                      "%u", orc->template_id,
+                      "%u", get_character_id(state, npc),
+                      "%u", npc->template_id,
                       "%u", attackable,
-                      "%u", orc->x,
-                      "%u", orc->y,
-                      "%u", orc->z,
-                      "%u", orc->heading,
+                      "%u", npc->x,
+                      "%u", npc->y,
+                      "%u", npc->z,
+                      "%u", npc->heading,
                       "%u", 0,
-                      "%u", orc->m_atk_speed,
-                      "%u", orc->p_atk_speed,
-                      "%u", orc->run_speed,
-                      "%u", orc->walk_speed,
+                      "%u", npc->m_atk_speed,
+                      "%u", npc->p_atk_speed,
+                      "%u", npc->run_speed,
+                      "%u", npc->walk_speed,
                       // swim speed
-                      "%u", orc->run_speed,
-                      "%u", orc->walk_speed,
+                      "%u", npc->run_speed,
+                      "%u", npc->walk_speed,
                       // fly speed
-                      "%u", orc->run_speed,
-                      "%u", orc->walk_speed,
-                      "%u", orc->run_speed,
-                      "%u", orc->walk_speed,
-                      "%lf", 1.1,
-                      "%lf", (double) orc->p_atk_speed / 277.478340719,
-                      "%lf", orc->collision_radius,
-                      "%lf", orc->collision_height,
+                      "%u", npc->run_speed,
+                      "%u", npc->walk_speed,
+                      "%u", npc->run_speed,
+                      "%u", npc->walk_speed,
+                      "%lf", 1.0,
+                      "%lf", 1.0,
+                      "%lf", npc->collision_radius,
+                      "%lf", npc->collision_height,
                       // right hand weapon
                       "%u", 0,
                       "%u", 0,
@@ -1848,8 +1852,8 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                       "%c", 0,
                       // summoned?
                       "%c", 0,
-                      "%ls", countof(orc->name), orc->name,
-                      "%ls", countof(orc->title), orc->title,
+                      "%ls", countof(npc->name), npc->name,
+                      "%ls", countof(npc->title), npc->title,
                       "%u", 0,
                       "%u", 0,
                       "%u", 0,
@@ -1861,8 +1865,8 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                       "%u", 0,
                       "%c", 0,
                       "%c", 0,
-                      "%lf", 0.0,
-                      "%lf", 0.0,
+                      "%lf", npc->collision_radius,
+                      "%lf", npc->collision_height,
                       "%u", 0);
     }
 }
@@ -1924,53 +1928,11 @@ static void handle_validate_position(struct state *state, struct connection *con
     assert(conn);
     assert(req);
     
-#if 1
-    s32 x = 0;
-    s32 y = 0;
-    s32 z = 0;
-    s32 heading = 0;
-    
     pscanf(req,
-           "%u", &x,
-           "%u", &y,
-           "%u", &z,
-           "%u", &heading);
-    
-    // conn->character->x = x;
-    // conn->character->y = y;
-    conn->character->z = z;
-    conn->character->heading = heading;
-#endif
-    
-#if 0
-    for (size_t i = 0; i < countof(state->characters); i++) {
-        if (state->characters[i].active && !state->characters[i].conn) {
-            struct character *target = state->characters + i;
-            push_response(conn, 1,
-                          "%h", 0,
-                          "%c", 0x61,
-                          "%u", get_character_id(state, target),
-                          "%u", target->x,
-                          "%u", target->y,
-                          "%u", target->z,
-                          "%u", target->heading);
-            // broadcast_char_info(state, state->characters + i);
-        }
-    }
-#endif
-    
-    // TODO(fmontenegro): only if the diff is too large.
-#if 0
-    u32 in_world_id = (u32) (size_t) (conn->character - state->characters);
-    push_response(conn, 1,
-                  "%h", 0,
-                  "%c", 0x61,
-                  "%u", in_world_id,
-                  "%u", x,
-                  "%u", y,
-                  "%u", z,
-                  "%u", heading);
-#endif
+           "%u", &conn->character->client_x,
+           "%u", &conn->character->client_y,
+           "%u", &conn->character->z,
+           "%u", &conn->character->heading);
 }
 
 static void handle_show_map(struct state *state, struct connection *conn)
@@ -1982,7 +1944,6 @@ static void handle_show_map(struct state *state, struct connection *conn)
     
     // TODO(fmontenegro): show map.
     
-    // struct character orc = {0};
     struct character *orc = 0;
     u32 id = 1;
     for (; id < countof(state->characters); id++) {
@@ -1996,7 +1957,6 @@ static void handle_show_map(struct state *state, struct connection *conn)
     swprintf(orc->name, sizeof(orc->name) - 1, L"%ls", L"Orc");
     swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Orc");
     
-    // orc.template_id = 7082 + 1000000;
     orc->template_id = 500 + 1000000;
     orc->x = conn->character->x;
     orc->y = conn->character->y;
@@ -2257,12 +2217,15 @@ static void broadcast_char_info(struct state *state, struct character *src)
                   "%u", src->walk_speed,
                   "%u", src->run_speed,
                   "%u", src->walk_speed,
-                  "%lf", 1.1,
-                  "%lf", (double) src->p_atk_speed / 277.478340719,
+                  // "%lf", 1.1,
+                  "%lf", 1.0,
+                  // "%lf", (double) src->p_atk_speed / 277.478340719,
+                  "%lf", 1.0,
                   "%lf", src->collision_radius,
                   "%lf", src->collision_height,
                   // right hand weapon
                   "%u", 0,
+                  // chest
                   "%u", 0,
                   // left hand weapon
                   "%u", 0,
@@ -2277,19 +2240,26 @@ static void broadcast_char_info(struct state *state, struct character *src)
                   "%c", 0,
                   "%ls", countof(src->name), src->name,
                   "%ls", countof(src->title), src->title,
+                  // playable flag?
                   "%u", 0,
                   "%u", 0,
                   "%u", 0,
                   // abnormal effect
                   "%u", 0,
+                  // clan id
                   "%u", 0,
+                  // clan crest
                   "%u", 0,
+                  // ally id
                   "%u", 0,
+                  // ally crest
                   "%u", 0,
                   "%c", 0,
+                  // aura color?
                   "%c", 0,
-                  "%lf", 0.0,
-                  "%lf", 0.0,
+                  // collision radius
+                  "%lf", src->collision_radius,
+                  "%lf", src->collision_height,
                   "%u", 0);
         return;
     }
@@ -2467,22 +2437,6 @@ static void moving_update(struct state *state, struct character *character)
     
     character->action_payload.moving.move_timestamp = state->ticks;
     
-#if 0
-    character->active = 0;
-    if (!character->conn)
-        broadcast_char_info(state, character);
-    broadcast(state,
-              character, 1,
-              "%h", 0,
-              "%c", 0x61,
-              "%u", get_character_id(state, character),
-              "%u", character->x,
-              "%u", character->y,
-              "%u", character->z,
-              "%u", character->heading);
-    character->active = 1;
-#endif
-    
     if (payload.target_id) {
         struct character *target = get_character_by_id(state, payload.target_id);
         if (!target || !target->active) {
@@ -2504,8 +2458,8 @@ static void moving_update(struct state *state, struct character *character)
             goto arrived;
         }
         
-        u32 d2 = distance_between2(character, target);
-        if (d2 < sqr(payload.offset)) {
+        u32 d2 = distance_between_characters(character, target);
+        if (d2 <= sqr(payload.offset)) {
             payload.target_x = character->x;
             payload.target_y = character->y;
             payload.target_z = character->z;
@@ -2524,6 +2478,24 @@ static void moving_update(struct state *state, struct character *character)
             goto arrived;
         }
     }
+
+#if 1
+    u32 distance = distance_between(character->x, 
+                                    character->y, 
+                                    character->z,
+                                    character->client_x, 
+                                    character->client_y, 
+                                    character->z);
+    if (distance < sqr(32))
+        push_response(character->conn, 1,
+                      "%h", 0,
+                      "%c", 0x61,
+                      "%u", get_character_id(state, character),
+                      "%u", character->x,
+                      "%u", character->y,
+                      "%u", character->z,
+                      "%u", character->heading);
+#endif
     
     return;
     
@@ -2565,7 +2537,7 @@ static void attacking_update(struct state *state, struct character *attacker)
             return;
         }
         
-        u32 d2 = distance_between2(attacker, target);
+        u32 d2 = distance_between_characters(attacker, target);
         
         // check if we are in attack range.
         // if not in range, walk closer to the
@@ -2627,7 +2599,17 @@ static void attacking_update(struct state *state, struct character *attacker)
     }
 }
 
-static u32 distance_between2(struct character *a, struct character *b)
+static u32 distance_between(s32 x, s32 y, s32 z, s32 x2, s32 y2, s32 z2)
+{
+    s32 dx = x2 - x;
+    s32 dy = y2 - y;
+    s32 dz = z2 - z;
+    u32 d2 = sqr(dx) + sqr(dy) + sqr(dz);
+    
+    return d2;
+}
+
+static u32 distance_between_characters(struct character *a, struct character *b)
 {
     if (!a || !a->active || !b || !b->active)
         return 0;

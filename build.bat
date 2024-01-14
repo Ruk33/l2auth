@@ -4,9 +4,9 @@ call vcvarsall x64 >nul
 
 pushd bin
 
-del *.pdb
+del *.pdb >nul
 
-set flags=/Z7 /W4 /wd4996 /wd4201 /wd4477 /nologo /diagnostics:column -FC -Gm- -GR-
+set flags=/Od /Z7 /W4 /wd4996 /wd4201 /wd4477 /nologo /diagnostics:column -FC -Gm- -GR-
 
 cl %flags% ../login_server.c ../directory.c ../net_windows.c ../wqueue.c /Fe:login_server.exe -I../openssl-1.1/x64/include ../openssl-1.1/x64/lib/libcrypto.lib Ws2_32.lib
 
