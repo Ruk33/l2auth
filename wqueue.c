@@ -23,8 +23,8 @@ static unsigned long wqueue_thread(void *p)
         for (size_t i = 1; i < q->wcount; i++)
             q->work[i - 1] = q->work[i];
         q->wcount--;
-
         ReleaseMutex(q->lock);
+        
         q->worker((void *) q, work);
     }
 

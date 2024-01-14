@@ -1,6 +1,3 @@
-// TODO(fmontenegro):
-// - fix movement
-
 #define WIN32_LEAN_AND_MEAN
 
 #include <assert.h> // assert
@@ -236,10 +233,10 @@ struct state {
     double run_time;
     u64 ticks;
     struct wqueue send_responses_worker;
-    HANDLE timer;
     struct connection connections[1024];
     struct character characters[1024];
-    // CRITICAL_SECTION lock;
+
+    HANDLE timer;
     HANDLE lock;
 };
 
@@ -248,7 +245,7 @@ static struct connection *get_connection_from_socket(struct state *state, int so
 static void encrypt(struct connection *conn, byte *packet);
 static void decrypt(struct connection *conn, byte *request);
 
-static void handle_request(struct state *state, struct connection *conn);
+static int handle_request(struct state *state, struct connection *conn);
 static void handle_send_protocol(struct state *state, struct connection *conn);
 static void handle_auth(struct state *state, struct connection *conn, byte *req);
 static void handle_show_create_character_screen(struct state *state, struct connection *conn);
@@ -697,7 +694,7 @@ static void on_request(void **buf, int socket, void *request, size_t len)
     }
     memcpy(conn->request + conn->request_count, request, len);
     conn->request_count += len;
-    handle_request(state, conn);
+    while (handle_request(state, conn));
     wpush(&state->send_responses_worker, conn);
 }
 
@@ -864,7 +861,7 @@ return; \
     }
 }
 
-static void handle_request(struct state *state, struct connection *conn)
+static int handle_request(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
@@ -872,7 +869,7 @@ static void handle_request(struct state *state, struct connection *conn)
     
     u16 size = *(u16 *) request;
     if (size > conn->request_count)
-        return;
+        return 0;
     
     if (conn->encrypted)
         decrypt(conn, request);
@@ -881,6 +878,8 @@ static void handle_request(struct state *state, struct connection *conn)
     
     memmove(conn->request, conn->request + size, conn->request_count - size);
     conn->request_count -= size;
+
+    return 1;
 }
 
 static void handle_send_protocol(struct state *state, struct connection *conn)
@@ -1882,7 +1881,8 @@ static void handle_leave_world(struct state *state, struct connection *conn)
 {
     assert(state);
     assert(conn);
-    conn->character->active = 0;
+    if (conn->character)
+        conn->character->active = 0;
     push_response(conn, 1,
                   "%h", 0,
                   "%c", 0x7e);
@@ -2502,7 +2502,6 @@ static void moving_update(struct state *state, struct character *character)
 
     // correct position if client position and server
     // position are way too off.
-#if 1
     u32 distance = distance_between(character->x, 
                                     character->y, 
                                     character->z,
@@ -2518,8 +2517,6 @@ static void moving_update(struct state *state, struct character *character)
                       "%u", character->y,
                       "%u", character->z,
                       "%u", character->heading);
-#endif
-    
     return;
     
     arrived:
