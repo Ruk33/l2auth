@@ -16,6 +16,7 @@
 
 #include "directory.h"
 #include "net.h"
+#include "wqueue.h"
 
 typedef uint8_t byte;
 
@@ -67,6 +68,7 @@ struct connection {
     RSA *rsa_key;
 };
 
+static struct wqueue send_responses_worker = {0};
 static struct connection connections[32] = {0};
 
 static u32 ip_to_u32(char *ip)
@@ -704,31 +706,46 @@ static void handle_event(int socket, enum net_event event, void *read, size_t le
             on_request(conn);
         } break;
         
-        case net_write: {
-            if (conn->sent < conn->to_send_count) {
-                trace("sending %d bytes of data" nl, 
-                      (s32) (conn->to_send_count - conn->sent));
-                conn->sent += net_send(conn->socket,
-                                       conn->to_send + conn->sent,
-                                       conn->to_send_count - conn->sent);
-            }
-            // reset counters when all data has been sent.
-            if (conn->sent >= conn->to_send_count) {
-                conn->sent = 0;
-                conn->to_send_count = 0;
-            }
-        } break;
-        
         default:
         break;
     }
+    // we assume we always need to reply with something
+    // when we get a request
+    wpush(&send_responses_worker, conn);
+}
+
+static void send_responses(struct wqueue *q, void *w)
+{
+    struct connection *conn = (struct connection *) w;
+
+    void *head = conn->to_send + conn->sent;
+    unsigned long long to_send = conn->to_send_count - conn->sent;
+    trace("sending %d bytes of data" nl, to_send);
+    conn->sent += net_send(conn->socket, head, to_send);
+
+    // if we couldn't sent the entire response, re-add
+    // this connection to the worker so we try
+    // to flush later again.
+    // NOTE(fmontenegro) do we want to try up to n times
+    // and then dropping the connection?
+    if (conn->sent < conn->to_send_count) {
+        wpush(q, conn);
+        return;
+    }
+
+    // all data has been sent, reset the counters.
+    conn->sent = 0;
+    conn->to_send_count = 0;
 }
 
 int main()
 {
-#define port 2106
+    wstart(&send_responses_worker, send_responses);
+
+    unsigned short port = 2106;
     int socket = net_port(port);
     trace("login server, listening for connection on port %d" nl, port);
     net_listen(socket, handle_event);
+
     return 0;
 }

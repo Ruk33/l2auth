@@ -5,11 +5,12 @@
 #endif
 
 #include "net.h"
+#include "wqueue.h"
 
 typedef int on_init(void **buf);
 typedef void on_connection(void **buf, int socket);
 typedef void on_request(void **buf, int socket, void *request, size_t len);
-typedef void on_response(void **buf, int socket);
+typedef void on_response(void **buf);
 typedef void on_disconnect(void **buf, int socket);
 typedef int on_tick(void **buf);
 
@@ -26,6 +27,8 @@ struct state {
     on_response *on_response;
     on_disconnect *on_disconnect;
     on_tick *on_tick;
+
+    struct wqueue send_responses_worker;
     
 #ifdef _WIN32
     FILETIME lib_write_time;
@@ -92,7 +95,7 @@ static void load_lib_if_required(void)
 #endif
 }
 
-void handle_event(int socket, enum net_event event, void *read, size_t len)
+static void handle_event(int socket, enum net_event event, void *read, size_t len)
 {
     load_lib_if_required();
     
@@ -109,24 +112,31 @@ void handle_event(int socket, enum net_event event, void *read, size_t len)
         state.on_request(&state.buf, socket, read, len);
         break;
         
-        case net_write:
-        state.on_response(&state.buf, socket);
-        break;
-        
         default:
         break;
     }
+
+    wpush(&state.send_responses_worker, 0);
 }
 
-DWORD timer_thread(LPVOID param)
+static DWORD timer_thread(LPVOID param)
 {
     param = param;
     while (1) {
         Sleep(1000);
         load_lib_if_required();
-        state.on_tick(&state.buf);
+        if (state.on_tick(&state.buf))
+            wpush(&state.send_responses_worker, 0);
     }
     return 0;
+}
+
+static void send_responses(struct wqueue *q, void *w)
+{
+    q = q;
+    w = w;
+    load_lib_if_required();
+    state.on_response(&state.buf);
 }
 
 int main()
@@ -138,6 +148,8 @@ int main()
         return 0;
     
     CreateThread(0, 0, timer_thread, 0, 0, 0);
+
+    wstart(&state.send_responses_worker, send_responses);
     
     int socket = net_port(7777);
     net_listen(socket, handle_event);

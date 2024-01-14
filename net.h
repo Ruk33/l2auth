@@ -5,8 +5,6 @@ enum net_event {
     net_closed,
     // can read
     net_read,
-    // can write
-    net_write,
 };
 
 typedef void (net_handler)
@@ -20,8 +18,8 @@ int net_sock(char *path);
 void net_listen(int server, net_handler *handler);
 // try to send the full buffer. returns the amount
 // of bytes that was able to send. if it writes
-// less than the intended amount, wait for net_write
-// to keep sending past the bytes already sent.
+// less than the intended amount, you will have to 
+// keep trying sending the rest of the data.
 unsigned long long net_send(int socket, void *buf, unsigned long long n);
 // close the socket.
 void net_close(int socket);

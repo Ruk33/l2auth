@@ -126,7 +126,7 @@ void net_listen(int server, net_handler *handler)
                         break;
                     }
                     event.data.fd = client;
-                    event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+                    event.events = EPOLLIN | EPOLLET;
                     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client, &event) == -1) {
                         print_err("failed to add new client to epoll");
                         close(client);
@@ -155,8 +155,6 @@ void net_listen(int server, net_handler *handler)
                     handler(events[i].data.fd, net_read, read_buf, (size_t) received);
                 }
             }
-            if (events[i].events & EPOLLOUT)
-                handler(events[i].data.fd, net_write, 0, 0);
         }
     }
     

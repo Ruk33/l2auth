@@ -601,26 +601,25 @@ void on_request(void **buf, int socket, void *request, size_t len)
     handle_request(state, conn);
 }
 
-void on_response(void **buf, int socket)
+void on_response(void **buf)
 {
     assert(buf);
     struct state *state = *(struct state **) buf;
     assert(state);
-    struct connection *conn = get_connection_from_socket(state, socket);
-    if (!conn) {
-        trace("answering a non connected client?" nl);
-        return;
-    }
-    if (conn->sent < conn->to_send_count) {
-        trace("sending %llu bytes of data" nl, conn->to_send_count - conn->sent);
-        conn->sent += net_send(conn->socket, 
-                               conn->to_send + conn->sent,
-                               conn->to_send_count - conn->sent);
-    }
-    // reset counters when all data has been sent.
-    if (conn->sent >= conn->to_send_count) {
-        conn->sent = 0;
-        conn->to_send_count = 0;
+
+    for (size_t i = 0; i < countof(state->connections); i++) {
+        struct connection *conn = state->connections + i;
+        if (conn->sent < conn->to_send_count) {
+            void *head = conn->to_send + conn->sent;
+            unsigned long long to_send = conn->to_send_count - conn->sent;
+            trace("sending %d bytes of data" nl, (s32) to_send);
+            conn->sent += net_send(conn->socket, head, to_send);
+        }
+        // reset counters when all data has been sent.
+        if (conn->sent >= conn->to_send_count) {
+            conn->sent = 0;
+            conn->to_send_count = 0;
+        }
     }
 }
 
@@ -656,23 +655,19 @@ int on_tick(void **buf)
     
     state->d = 1000.0f;
     state->run_time += (double) state->d;
-    // state->ticks++;
     // 1000/10 = 100
     state->ticks = (u64) (state->run_time / 100.0);
     
-    // trace("ticks %u" nl, state->ticks);
-    
     if (state->ticks == old_ticks)
-        return 1;
-    
-    // returns 17
-    // trace("clock %d" nl, millis());
-    // trace("tick" nl);
+        return 0;
+
+    int flush_responses = 0;
     
     for (size_t i = 0; i < countof(state->characters); i++) {
         struct character *character = state->characters + i;
         if (!character->active)
             continue;
+        flush_responses = 1;
         switch (character->action_type) {
             case idle:
             // idle_update(state, character);
@@ -688,7 +683,7 @@ int on_tick(void **buf)
         }
     }
     
-    return 1;
+    return flush_responses;
 }
 
 static struct connection *get_connection_from_socket(struct state *state, int socket)
