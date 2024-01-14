@@ -7,8 +7,12 @@ static unsigned long wqueue_thread(void *p)
     while (1) {
         int close = 0;
         EnterCriticalSection(&q->lock);
-        close = q->closed && !q->wcount;
+        // close = q->closed && !q->wcount;
+        close = q->closed;
         LeaveCriticalSection(&q->lock);
+        // add a signal for this, so wclose can block
+        // until all work is done and then released
+        // when everything is done and ready to properly close.
         if (close)
             break;
 
