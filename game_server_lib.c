@@ -239,6 +239,8 @@ struct state {
     HANDLE timer;
     struct connection connections[1024];
     struct character characters[1024];
+    // CRITICAL_SECTION lock;
+    HANDLE lock;
 };
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
@@ -561,32 +563,24 @@ static void decrypt(struct connection *conn, byte *request)
 
 static void send_responses(struct wqueue *q, void *w)
 {
-    struct connection *conn = (struct connection *) w;
-    if (!conn->socket)
-        return;
+    struct state *state = q->p;
+    WaitForSingleObject(state->lock, INFINITE);
 
+    struct connection *conn = (struct connection *) w;
     void *head = conn->to_send + conn->sent;
     unsigned long long to_send = conn->to_send_count - conn->sent;
     trace("sending %d bytes of data to %d" nl, (s32) to_send, conn->socket);
-    unsigned long long sent = net_send(conn->socket, head, to_send);
-    if (!sent)
-        return;
-
-    conn->sent += sent;
-
-    // if we couldn't sent the entire response, re-add
-    // this connection to the worker so we try
-    // to flush later again.
-    // NOTE(fmontenegro) do we want to try up to n times
-    // and then dropping the connection?
-    if (conn->sent < conn->to_send_count) {
-        wpush(q, conn);
-        return;
-    }
+    conn->sent += net_send(conn->socket, head, to_send);
 
     // all data has been sent, reset the counters.
-    conn->sent = 0;
-    conn->to_send_count = 0;
+    if (conn->sent >= conn->to_send_count) {
+        conn->sent = 0;
+        conn->to_send_count = 0;
+    }
+
+    end:
+    ReleaseMutex(state->lock);
+    return;
 }
 
 static void on_tick(struct state *state)
@@ -636,7 +630,9 @@ static DWORD timer_thread(LPVOID param)
     struct state *state = (struct state *) param;
     while (1) {
         Sleep(1000);
+        WaitForSingleObject(state->lock, INFINITE);
         on_tick(state);
+        ReleaseMutex(state->lock);
     }
     return 0;
 }
@@ -644,6 +640,8 @@ static DWORD timer_thread(LPVOID param)
 static void init_threads(struct state *state)
 {
     assert(state);
+    state->lock = CreateMutex(0, FALSE, 0);
+    state->send_responses_worker.p = state;
     wstart(&state->send_responses_worker, send_responses);
     state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
 }
@@ -719,31 +717,37 @@ static void on_disconnect(void **buf, int socket)
 
 int on_pevent(void **buf, enum pevent event, union ppayload *payload)
 {
+    struct state *state = *(struct state **) buf;
     switch (event) {
     case pevent_init: {
         return on_init(buf);
     } break;
     case pevent_before_reload: {
-        struct state *state = *(struct state **) buf;
         wclose(&state->send_responses_worker);
         TerminateThread(state->timer, 0);
         CloseHandle(state->timer);
+        CloseHandle(state->lock);
     } break;
     case pevent_after_reload: {
-        struct state *state = *(struct state **) buf;
         init_threads(state);
     } break;
     case pevent_socket_connection: {
+        WaitForSingleObject(state->lock, INFINITE);
         on_connection(buf, payload->pevent_socket.socket);
+        ReleaseMutex(state->lock);
     } break;
     case pevent_socket_request: {
+        WaitForSingleObject(state->lock, INFINITE);
         on_request(buf, 
                    payload->pevent_socket.socket, 
                    payload->pevent_socket.read, 
                    payload->pevent_socket.len);
+        ReleaseMutex(state->lock);
     } break;
     case pevent_socket_disconnected: {
+        WaitForSingleObject(state->lock, INFINITE);
         on_disconnect(buf, payload->pevent_socket.socket);
+        ReleaseMutex(state->lock);
     } break;
     default:
     break;

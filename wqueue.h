@@ -4,7 +4,8 @@ struct wqueue;
 typedef void (worker)(struct wqueue *q, void *work);
 
 struct wqueue {
-    CRITICAL_SECTION lock;
+    void *p;
+    HANDLE lock;
     HANDLE wpending;
     HANDLE thread;
     worker *worker;
