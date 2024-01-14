@@ -578,9 +578,24 @@ static void send_responses(struct wqueue *q, void *w)
         conn->to_send_count = 0;
     }
 
-    end:
     ReleaseMutex(state->lock);
-    return;
+}
+
+static void character_update(struct state *state, struct character *character)
+{
+    switch (character->action_type) {
+        case idle:
+        // idle_update(state, character);
+        break;
+        case moving:
+        moving_update(state, character);
+        break;
+        case attacking:
+        attacking_update(state, character);
+        break;
+        default:
+        break;
+    }
 }
 
 static void on_tick(struct state *state)
@@ -598,19 +613,7 @@ static void on_tick(struct state *state)
         struct character *character = state->characters + i;
         if (!character->active)
             continue;
-        switch (character->action_type) {
-            case idle:
-            // idle_update(state, character);
-            break;
-            case moving:
-            moving_update(state, character);
-            break;
-            case attacking:
-            attacking_update(state, character);
-            break;
-            default:
-            break;
-        }
+        character_update(state, character);
     }
 
     for (size_t i = 0; i < countof(state->connections); i++) {
@@ -2443,6 +2446,8 @@ static void moving_update(struct state *state, struct character *character)
     
     if (payload.target_id) {
         struct character *target = get_character_by_id(state, payload.target_id);
+        
+        // stop movement if the target is no longer valid.
         if (!target || !target->active) {
             payload.target_x = character->x;
             payload.target_y = character->y;
@@ -2462,6 +2467,7 @@ static void moving_update(struct state *state, struct character *character)
             goto arrived;
         }
         
+        // stop the movement if we have arrived.
         u32 d2 = distance_between_characters(character, target);
         if (d2 <= sqr(payload.offset)) {
             payload.target_x = character->x;
@@ -2481,8 +2487,21 @@ static void moving_update(struct state *state, struct character *character)
             
             goto arrived;
         }
+
+        // recalculate
+        move_to(state, 
+                character, 
+                target->x, 
+                target->y, 
+                target->z, 
+                payload.offset, 
+                payload.target_id, 
+                0);
+        return;
     }
 
+    // correct position if client position and server
+    // position are way too off.
 #if 1
     u32 distance = distance_between(character->x, 
                                     character->y, 
@@ -2525,6 +2544,23 @@ static void moving_update(struct state *state, struct character *character)
               "%u", character->z,
               "%u", character->heading);
     character->active = 1;
+
+    // when arrived, if there was a queued action
+    // try to update the character and push any 
+    // packets if needed. this is done so we don't 
+    // have to wait for the tick event to fire.
+    // for instance, when attacking, if the target
+    // is too far, we must first walk closer to the
+    // target and then attack. the flow then goes as
+    // walk closer -> attack. if we didn't update
+    // the character, the flow would be
+    // walk -> wait for tick event -> attack, which
+    // doesn't seem like much but it's a HUGE difference.
+    // the tick event refers to the function that updates
+    // the world state every second.
+    character_update(state, character);
+    if (character->conn)
+        wpush(&state->send_responses_worker, character->conn);
 }
 
 static void attacking_update(struct state *state, struct character *attacker)
@@ -2551,14 +2587,14 @@ static void attacking_update(struct state *state, struct character *attacker)
             s32 target_y = target->y;
             s32 target_z = target->z;
             u32 offset = atk_range - 10;
-            if (target->action_type == moving) {
-                struct action_moving payload = target->action_payload.moving;
-                target_x = payload.target_x;
-                target_y = payload.target_y;
-                target_z = payload.target_z;
-                offset = 0;
-            }
-            move_to(state, attacker, target_x, target_y, target_z, offset, target_id, 1);
+            move_to(state, 
+                    attacker, 
+                    target_x, 
+                    target_y, 
+                    target_z, 
+                    offset, 
+                    target_id, 
+                    1);
             return;
         }
         
