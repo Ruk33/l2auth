@@ -1,87 +1,87 @@
-#define WIN32_LEAN_AND_MEAN
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
 
-#include <stddef.h> // size_t
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
+#include "lib.h"
 #include "net.h"
 #include "pevent.h"
 
-static int lib_load(void);
-static int lib_has_new_version(void);
-
 struct state {
     void *buf;
-    void *lib;
-    peventf *on_pevent;
-#ifdef _WIN32
-    FILETIME lib_write_time;
-#endif
+    struct lib gameserver;
 };
 
 static struct state state = {0};
 
-#ifdef _WIN32
-static int lib_load(void)
-{
-    if (state.lib) {
-        FreeLibrary(state.lib);
-        state.lib = 0;
-    }
-    // create a copy of the dll and then load the copy,
-    // not the original file, otherwise, windows will
-    // complain when trying to make a change to it.
-    if (CopyFile("game_server.dll", ".game_server.dll", FALSE) == 0)
-        return 0;
-
-    state.lib = LoadLibraryA(".game_server.dll");
-    if (!state.lib)
-        return 0;
-    
-    WIN32_FILE_ATTRIBUTE_DATA data = {0};
-    GetFileAttributesEx("game_server.dll", GetFileExInfoStandard, &data);
-    
-    state.lib_write_time = data.ftLastWriteTime;
-    state.on_pevent = (peventf *) GetProcAddress(state.lib, "on_pevent");
-    
-    return 1;
-}
-
-static int lib_has_new_version(void)
-{
-    WIN32_FILE_ATTRIBUTE_DATA data = {0};
-    GetFileAttributesEx("game_server.dll", GetFileExInfoStandard, &data);
-    int has_new_version = CompareFileTime(&state.lib_write_time, &data.ftLastWriteTime) != 0;
-    return has_new_version;
-}
-
-static void load_lib_if_required(void)
-{
-    if (lib_has_new_version()) {
-        state.on_pevent(&state.buf, pevent_before_reload, 0);
-
-        int tries = 5;
-        int loaded = 0;
-        for (int i = 0; i < tries; i++) {
-            if (lib_load()) {
-                loaded = 1;
-                break;
-            }
-            Sleep(1000);
-        }
-
-        if (!loaded)
-            ExitProcess(0);
-
-        state.on_pevent(&state.buf, pevent_after_reload, 0);
-    }
-}
-#endif
-
 static void handle_net_event(int socket, enum net_event event, void *read, size_t len)
 {
-    load_lib_if_required();
+    enum lstatus lstatus = lfailed;
+    peventf *on_pevent = 0;
+    /*
+     * try loading the library n amount of times.
+     */
+    for (int i = 0; i < 5; i++) {
+        lstatus = lload(&state.gameserver);
+        if (lstatus == lneedsreload) {
+            /*
+             * before reloading the library, make sure
+             * to run the before reload event.
+             */
+            on_pevent = (peventf *) lfunction(&state.gameserver, "on_pevent");
+            assert(on_pevent);
+            on_pevent(&state.buf, pevent_before_reload, 0);
+            /*
+             * if the library can't be reloaded, just exit.
+             */
+            lstatus = lload(&state.gameserver);
+            if (lstatus != lreloaded) {
+                lstatus = lfailed;
+                break;
+            }
+            /*
+             * library reloaded! run after reload event.
+             */
+            on_pevent = (peventf *) lfunction(&state.gameserver, "on_pevent");
+            assert(on_pevent);
+            on_pevent(&state.buf, pevent_after_reload, 0);
+        }
+        /*
+         * the library has been loaded, we can exit the loop.
+         */
+        if (lstatus != lfailed)
+            break;
+        /*
+         * before trying to load again, sleep for a second
+         * letting the os make the required writing/processing
+         * in case the library was updated.
+         */
+#ifdef _WIN32
+        Sleep(1000);
+#endif
+#ifdef __linux__
+        sleep(1);
+#endif
+    }
+    /*
+     * if the library couldn't be loaded, crash the server.
+     */
+    if (lstatus == lfailed) {
+        fprintf(stderr, "failed to load library.\n");
+        assert(!"game server library couldn't be loaded");
+        return;
+    }
+
+    on_pevent = (peventf *) lfunction(&state.gameserver, "on_pevent");
+    assert(on_pevent);
     
     union ppayload payload = {0};
     payload.pevent_socket.socket = socket;
@@ -90,15 +90,15 @@ static void handle_net_event(int socket, enum net_event event, void *read, size_
 
     switch (event) {
         case net_conn:
-        state.on_pevent(&state.buf, pevent_socket_connection, &payload);
+        on_pevent(&state.buf, pevent_socket_connection, &payload);
         break;
         
         case net_closed:
-        state.on_pevent(&state.buf, pevent_socket_disconnected, &payload);
+        on_pevent(&state.buf, pevent_socket_disconnected, &payload);
         break;
         
         case net_read:
-        state.on_pevent(&state.buf, pevent_socket_request, &payload);
+        on_pevent(&state.buf, pevent_socket_request, &payload);
         break;
 
         default:
@@ -108,13 +108,28 @@ static void handle_net_event(int socket, enum net_event event, void *read, size_
 
 int main()
 {
-    if (!lib_load())
+#ifdef _WIN32
+    state.gameserver.path = "game_server.dll";
+#endif
+
+#ifdef __linux__
+    state.gameserver.path = "game_server.so";
+#endif
+
+    if (lload(&state.gameserver) == lfailed) {
+        fprintf(stderr, "failed to load game server library.\n");
         return 0;
-    
-    if (!state.on_pevent(&state.buf, pevent_init, 0))
+    }
+
+    peventf *on_pevent = (peventf *) lfunction(&state.gameserver, "on_pevent");
+    assert(on_pevent);
+
+    if (!on_pevent(&state.buf, pevent_init, 0))
         return 0;
 
-    int socket = net_port(7777);
+    unsigned short port = 7777;
+    int socket = net_port(port);
+    fprintf(stderr, "game server listening on port %d\n", port);
     net_listen(socket, handle_net_event);
     
     return 0;

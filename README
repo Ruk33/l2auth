@@ -1,3 +1,9 @@
+todo
+- fix linux implementation
+- add stop timer flag to stop the timer thread
+- wclose should signal instead of just setting the variable
+- implement lneedsreload in lib.c
+
 lineage 2 server emulator for the chronicle 4 written in c just for fun.
 
 in windows, how to use?
@@ -17,8 +23,8 @@ TODO: in linux, how to use?
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
 TODO: in linux, how to build?
-- install openssl lib
-- run build.sh
+- install openssl lib (sudo apt install libssl-dev)
+- run bash build.sh
 
 notes
 - the login server uses the port 2106

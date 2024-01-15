@@ -2,6 +2,11 @@
 #include <windows.h>
 #endif
 
+#ifdef __linux__
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
+
 #include <stdio.h>
 #include "directory.h"
 
@@ -19,6 +24,13 @@ struct directory directory_open(char *path)
     if (result.handle == INVALID_HANDLE_VALUE)
         result.handle = 0;
     
+    return result;
+#endif
+
+#ifdef __linux__
+    struct directory result = {0};
+    result.path = path;
+    result.handle = opendir(path);
     return result;
 #endif
 }
@@ -44,6 +56,28 @@ int directory_next(struct directory *directory)
     
     return 1;
 #endif
+
+#ifdef __linux__
+    if (!directory->handle)
+        return 0;
+
+    struct dirent *entry = readdir(directory->handle);
+    if (!entry) {
+        closedir(directory->handle);
+        directory->handle = 0;
+        return 0;
+    }
+
+    directory->is_directory = entry->d_type == DT_DIR;
+    snprintf(directory->name, sizeof(directory->name) - 1, "%s", entry->d_name);
+    snprintf(directory->full_path, 
+             sizeof(directory->full_path) - 1, 
+             "%s/%s", 
+             directory->path, 
+             directory->name);
+
+    return 1;
+#endif
 }
 
 int directory_create(char *path)
@@ -52,5 +86,14 @@ int directory_create(char *path)
     if (CreateDirectory(path, 0) || GetLastError() == ERROR_ALREADY_EXISTS)
         return 1;
 #endif
+
+#ifdef __linux__
+    /*
+     * create directoy for read and write.
+     */
+    if (mkdir(path, 0666) == 0)
+        return 1;
+#endif
+
     return 0;
 }

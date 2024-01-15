@@ -2,6 +2,10 @@
 #include <windows.h>
 #endif
 
+#ifdef __linux__
+#include <dirent.h>
+#endif
+
 struct directory {
     char *path;
     
@@ -13,6 +17,10 @@ struct directory {
 #ifdef _WIN32
     WIN32_FIND_DATA find_data;
     HANDLE handle;
+#endif
+
+#ifdef __linux__
+    DIR *handle;
 #endif
 };
 

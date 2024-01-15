@@ -1,6 +1,4 @@
-#define WIN32_LEAN_AND_MEAN
-
-#include <assert.h> // assert
+#include <assert.h>
 #include <stdlib.h> // calloc, size_t
 #include <stdio.h>  // fprintf
 #include <string.h> // memset, memcpy, strncpy, strnlen
@@ -10,7 +8,15 @@
 #include <time.h>   // time_t, now
 #include <stdarg.h> // va_arg, va_list
 #include <math.h>   // sqrtf
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
+
+#ifdef __linux__
+#include <pthread.h> // pthread_create
+#endif
 
 #include "directory.h"
 #include "net.h"
@@ -236,9 +242,38 @@ struct state {
     struct connection connections[1024];
     struct character characters[1024];
 
+#ifdef _WIN32
     HANDLE timer;
     HANDLE lock;
+#endif
+
+#ifdef __linux__
+    pthread_t timer;
+    pthread_mutex_t lock;
+#endif
 };
+
+static void lock(struct state *state)
+{
+#ifdef _WIN32
+    WaitForSingleObject(state->lock, INFINITE);
+#endif
+
+#ifdef __linux__
+    pthread_mutex_lock(&state->lock);
+#endif
+}
+
+static void unlock(struct state *state)
+{
+#ifdef _WIN32
+    ReleaseMutex(state->lock);
+#endif
+
+#ifdef __linux__
+    pthread_mutex_unlock(&state->lock);
+#endif
+}
 
 static struct connection *get_connection_from_socket(struct state *state, int socket);
 
@@ -561,7 +596,7 @@ static void decrypt(struct connection *conn, byte *request)
 static void send_responses(struct wqueue *q, void *w)
 {
     struct state *state = q->p;
-    WaitForSingleObject(state->lock, INFINITE);
+    lock(state);
 
     struct connection *conn = (struct connection *) w;
     void *head = conn->to_send + conn->sent;
@@ -575,7 +610,7 @@ static void send_responses(struct wqueue *q, void *w)
         conn->to_send_count = 0;
     }
 
-    ReleaseMutex(state->lock);
+    unlock(state);
 }
 
 static void character_update(struct state *state, struct character *character)
@@ -625,14 +660,26 @@ static void on_tick(struct state *state)
     }
 }
 
+#ifdef _WIN32
 static DWORD timer_thread(LPVOID param)
+#endif
+#ifdef __linux__
+static void *timer_thread(void *param)
+#endif
 {
     struct state *state = (struct state *) param;
+
     while (1) {
+#ifdef _WIN32
         Sleep(1000);
-        WaitForSingleObject(state->lock, INFINITE);
+#endif
+#ifdef __linux__
+        sleep(1);
+#endif
+
+        lock(state);
         on_tick(state);
-        ReleaseMutex(state->lock);
+        unlock(state);
     }
     return 0;
 }
@@ -640,10 +687,19 @@ static DWORD timer_thread(LPVOID param)
 static void init_threads(struct state *state)
 {
     assert(state);
+
+#ifdef _WIN32
     state->lock = CreateMutex(0, FALSE, 0);
+    state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
+#endif
+
+#ifdef __linux__
+    pthread_mutex_init(&state->lock, 0);
+    pthread_create(&state->timer, 0, timer_thread, state);
+#endif
+
     state->send_responses_worker.p = state;
     wstart(&state->send_responses_worker, send_responses);
-    state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
 }
 
 static int on_init(void **buf)
@@ -724,30 +780,38 @@ int on_pevent(void **buf, enum pevent event, union ppayload *payload)
     } break;
     case pevent_before_reload: {
         wclose(&state->send_responses_worker);
+
+#ifdef _WIN32
         TerminateThread(state->timer, 0);
         CloseHandle(state->timer);
         CloseHandle(state->lock);
+#endif
+
+#ifdef __linux__
+        pthread_cancel(state->timer);
+        pthread_mutex_destroy(&state->lock);
+#endif
     } break;
     case pevent_after_reload: {
         init_threads(state);
     } break;
     case pevent_socket_connection: {
-        WaitForSingleObject(state->lock, INFINITE);
+        lock(state);
         on_connection(buf, payload->pevent_socket.socket);
-        ReleaseMutex(state->lock);
+        unlock(state);
     } break;
     case pevent_socket_request: {
-        WaitForSingleObject(state->lock, INFINITE);
+        lock(state);
         on_request(buf, 
                    payload->pevent_socket.socket, 
                    payload->pevent_socket.read, 
                    payload->pevent_socket.len);
-        ReleaseMutex(state->lock);
+        unlock(state);
     } break;
     case pevent_socket_disconnected: {
-        WaitForSingleObject(state->lock, INFINITE);
+        lock(state);
         on_disconnect(buf, payload->pevent_socket.socket);
-        ReleaseMutex(state->lock);
+        unlock(state);
     } break;
     default:
     break;
