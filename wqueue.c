@@ -45,28 +45,30 @@ static void *wqueue_thread(void *p)
 
 #ifdef __linux__
     while (1) {
-        int close = 0;
-
         pthread_mutex_lock(&q->lock);
-        close = q->closed;
-        pthread_mutex_unlock(&q->lock);
-        if (close)
+        if (q->closed) {
+            pthread_mutex_unlock(&q->lock);
             break;
+        }
 
         pthread_cond_wait(&q->wpending, &q->lock);
-        pthread_mutex_lock(&q->lock);
         void *work = q->work[0];
         for (size_t i = 1; i < q->wcount; i++)
             q->work[i - 1] = q->work[i];
         q->wcount--;
         pthread_mutex_unlock(&q->lock);
         
-        q->worker((void *) q, work);
+        q->worker(q, work);
     }
 
     pthread_cond_destroy(&q->wpending);
     pthread_mutex_destroy(&q->lock);
-    pthread_exit(0);
+    /* 
+     * seems like this call is not required, we
+     * can simply return from the thread and
+     * it should be the same 
+     */
+    /* pthread_exit(0); */
 #endif
 
     return 0;

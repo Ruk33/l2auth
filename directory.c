@@ -89,7 +89,7 @@ int directory_create(char *path)
 
 #ifdef __linux__
     /*
-     * create directoy for read and write.
+     * create directory for read and write.
      */
     if (mkdir(path, 0666) == 0)
         return 1;

@@ -75,7 +75,7 @@ static u32 ip_to_u32(char *ip)
 {
     if (!ip)
         return 0;
-    u8 ip_bytes[4] = {0};
+    u32 ip_bytes[4] = {0};
     sscanf(ip, 
            "%u.%u.%u.%u", 
            &ip_bytes[0], 
@@ -407,6 +407,9 @@ static void handle_server_list_request(struct connection *conn)
     FILE *servers_file = fopen("data/servers.txt", "r");
     if (servers_file) {
         while (server_count < (u8) countof(servers)) {
+            int id = 0;
+            int max_players = 0;
+            int status = 0;
             int matched = fscanf(servers_file, 
                                  "id=%d" nl
                                  "ip=%s" nl
@@ -418,14 +421,18 @@ static void handle_server_list_request(struct connection *conn)
                                  // "extra=%d" nl
                                  // "brackets=%d" nl
                                  ,
-                                 &servers[server_count].id,
+                                 &id,
                                  servers[server_count].text_ip,
                                  &servers[server_count].port,
                                  // &servers[server_count].age_limit,
                                  // &servers[server_count].pvp,
-                                 &servers[server_count].max_players,
-                                 &servers[server_count].status);
+                                 &max_players,
+                                 &status);
             
+            servers[server_count].id = id;
+            servers[server_count].max_players = max_players;
+            servers[server_count].status = status;
+
             if (matched != 5)
                 break;
             
@@ -573,8 +580,8 @@ static void handle_enter_game_server(struct connection *conn)
             "valid_until(yyyy-mm-dd hh:mm:ss utc)=%s" nl,
             conn->login_ok1,
             conn->login_ok2,
-            created_at,
-            valid_until,
+            (unsigned int) created_at,
+            (unsigned int) valid_until,
             created_at_str,
             valid_until_str);
     fclose(access_file);
