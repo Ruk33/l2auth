@@ -113,7 +113,7 @@ int main()
 #endif
 
 #ifdef __linux__
-    state.gameserver.path = "game_server.so";
+    state.gameserver.path = "./game_server.so";
 #endif
 
     if (lload(&state.gameserver) == lfailed) {

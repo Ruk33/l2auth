@@ -1475,6 +1475,12 @@ static void handle_select_character(struct state *state, struct connection *conn
         FILE *character_file = fopen(directory.full_path, "r");
         if (character_file) {
             found = 1;
+            u32 recommendations_left = 0;
+            u32 recommendations_have = 0;
+            u32 inventory_limit = 0;
+            u32 hero_symbol = 0;
+            u32 hero = 0;
+
             fscanf(character_file,
                    "name=%ls" nl
                    "race_id=%u" nl
@@ -1584,17 +1590,23 @@ static void handle_select_character(struct state *state, struct connection *conn
                    &conn->character->ally_crest_id,
                    &conn->character->pk_kills,
                    &conn->character->pvp_kills,
-                   &conn->character->recommendations_left,
-                   &conn->character->recommendations_have,
-                   &conn->character->inventory_limit,
+                   &recommendations_left,
+                   &recommendations_have,
+                   &inventory_limit,
                    &conn->character->clan_crest_large_id,
-                   &conn->character->hero_symbol,
-                   &conn->character->hero,
+                   &hero_symbol,
+                   &hero,
                    &conn->character->fish_x,
                    &conn->character->fish_y,
                    &conn->character->fish_z,
                    &conn->character->name_color);
             fclose(character_file);
+
+            conn->character->recommendations_left = recommendations_left;
+            conn->character->recommendations_have = recommendations_have;
+            conn->character->inventory_limit = inventory_limit;
+            conn->character->hero_symbol = hero_symbol;
+            conn->character->hero = hero;
         }
         break;
     }
