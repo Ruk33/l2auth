@@ -3,6 +3,8 @@ todo
 - add stop timer flag to stop the timer thread
 - wclose should signal instead of just setting the variable
 - implement lneedsreload in lib.c
+- game server in linux doesn't seem to be reading the user's name correctly:
+  error / unable to read data/accounts/𕌽/access.txt. can't check if this is a valid auth.the user w ill be dropped.
 
 lineage 2 server emulator for the chronicle 4 written in c just for fun.
 
