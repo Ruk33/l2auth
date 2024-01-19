@@ -33,4 +33,3 @@ credits
 todo
 - add stop timer flag to stop the timer thread
 - wclose should signal instead of just setting the variable
-- implement lneedsreload in lib.c

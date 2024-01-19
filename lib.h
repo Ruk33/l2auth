@@ -9,6 +9,7 @@
 struct lib {
     void *handle;
     const char *path;
+    int reload_on_next_call;
 
 #ifdef _WIN32
     char copy_path[256];

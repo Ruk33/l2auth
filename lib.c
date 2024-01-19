@@ -23,6 +23,11 @@ enum lstatus lload(struct lib *lib)
         return luptodate;
 
     if (lib->handle) {
+        if (!lib->reload_on_next_call) {
+            lib->reload_on_next_call = 1;
+            return lneedsreload;
+        }
+
         result = lreloaded;
         FreeLibrary(lib->handle);
         lib->handle = 0;
@@ -42,6 +47,7 @@ enum lstatus lload(struct lib *lib)
         return lfailed;
 
     lib->loaded_time = fattr.ftLastWriteTime;
+    lib->reload_on_next_call = 0;
 
     return result;
 #endif
@@ -57,6 +63,11 @@ enum lstatus lload(struct lib *lib)
         return luptodate;
 
     if (lib->handle) {
+        if (!lib->reload_on_next_call) {
+            lib->reload_on_next_call = 1;
+            return lneedsreload;
+        }
+        
         result = lreloaded;
         dlclose(lib->handle);
         lib->handle = 0;
@@ -67,6 +78,7 @@ enum lstatus lload(struct lib *lib)
         return lfailed;
 
     lib->loaded_time = fattr.st_mtime;
+    lib->reload_on_next_call = 0;
 
     return result;
 #endif
