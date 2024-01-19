@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stddef.h>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -22,7 +21,7 @@ struct state {
 
 static struct state state = {0};
 
-static void handle_net_event(int socket, enum net_event event, void *read, size_t len)
+static void handle_net_event(int socket, enum net_event event, void *read, unsigned long long len)
 {
     enum lstatus lstatus = lfailed;
     peventf *on_pevent = 0;

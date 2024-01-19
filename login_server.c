@@ -126,7 +126,10 @@ static u16 checksum(byte *dest, byte *start, byte *end)
         result ^= ecx;
     }
     
-    append(end, result);
+    /*
+     * get rid of unused return value warning...
+     */
+    (void) append(end, result);
     size += (u16) sizeof(result);
     
     // the packet must be multiple of 8
@@ -175,7 +178,7 @@ static void send_init_packet(struct connection *conn)
     } init = {
         {0xfd, 0x8a, 0x22, 0x00}, // unknown?
         {0x5a, 0x78, 0x00, 0x00}, // c4 protocol
-        0,
+        {0},
     };
     
     const BIGNUM *n = 0;
@@ -258,8 +261,11 @@ static void handle_auth_request(struct connection *conn, byte *request)
             continue;
         
         account_exists = 1;
-        char hash_password_path[256] = {0};
-        snprintf(hash_password_path, sizeof(hash_password_path) - 1, "%s/hash_password.txt", directory.full_path);
+        char hash_password_path[1024] = {0};
+        snprintf(hash_password_path, 
+                 sizeof(hash_password_path) - 1, 
+                 "%s/hash_password.txt", 
+                 directory.full_path);
         FILE *hash_password = fopen(hash_password_path, "r");
         if (hash_password) {
             byte stored_salt[16] = {0};
@@ -429,9 +435,9 @@ static void handle_server_list_request(struct connection *conn)
                                  &max_players,
                                  &status);
             
-            servers[server_count].id = id;
-            servers[server_count].max_players = max_players;
-            servers[server_count].status = status;
+            servers[server_count].id = (u8) id;
+            servers[server_count].max_players = (u16) max_players;
+            servers[server_count].status = (u8) status;
 
             if (matched != 5)
                 break;
@@ -675,7 +681,7 @@ static void on_request(struct connection *conn)
     conn->request_count -= size;
 }
 
-static void handle_event(int socket, enum net_event event, void *read, size_t len)
+static void handle_event(int socket, enum net_event event, void *read, unsigned long long len)
 {
     struct connection *conn = find_connection(socket);
     switch (event) {
@@ -727,7 +733,7 @@ static void send_responses(struct wqueue *q, void *w)
 
     void *head = conn->to_send + conn->sent;
     unsigned long long to_send = conn->to_send_count - conn->sent;
-    trace("sending %d bytes of data" nl, to_send);
+    trace("sending %d bytes of data" nl, (u32) to_send);
     conn->sent += net_send(conn->socket, head, to_send);
 
     // if we couldn't sent the entire response, re-add

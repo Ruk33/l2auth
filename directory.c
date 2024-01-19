@@ -69,7 +69,11 @@ int directory_next(struct directory *directory)
     }
 
     directory->is_directory = entry->d_type == DT_DIR;
-    snprintf(directory->name, sizeof(directory->name) - 1, "%s", entry->d_name);
+    /*
+     * entry->d_name SHOULD be a null terminated string
+     * so there is no need for -1 in dest buffer size.
+     */
+    snprintf(directory->name, sizeof(directory->name), "%s", entry->d_name);
     snprintf(directory->full_path, 
              sizeof(directory->full_path) - 1, 
              "%s/%s", 

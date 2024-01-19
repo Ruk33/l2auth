@@ -16,6 +16,7 @@
 
 #ifdef __linux__
 #include <pthread.h> // pthread_create
+#include <unistd.h>
 #endif
 
 #include "directory.h"
@@ -364,8 +365,23 @@ static byte *bscanf_va(byte *src, size_t n, va_list va)
         if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
             size_t max_letters = va_arg(va, size_t);
             wchar_t *dest = va_arg(va, wchar_t *);
-            wcsncpy(dest, (const wchar_t *) tail, max_letters - 1);
-            tail += (wcsnlen(dest, max_letters) + 1) * 2;
+
+            /*
+             * wchar_t is 2 bytes in windows and 4
+             * in linux, which means, we can't use
+             * predefined functions such as wcsncpy,
+             * we have to do it manually. lineage 
+             * sends us two bytes per character.
+             */
+            for (size_t i = 0; i < max_letters && *(u16 *) tail; i++) {
+                *dest++ = (wchar_t) ((tail[1] << 8) | tail[0]);
+                tail += 2;
+            }
+            /*
+             * null terminator.
+             */
+            *dest = 0;
+            tail += 2;
             continue;
         }
         if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'f') {
@@ -983,8 +999,10 @@ static void handle_auth(struct state *state, struct connection *conn, byte *req)
            "%u", &conn->play_ok1,
            "%u", &conn->login_ok1,
            "%u", &conn->login_ok2);
-    
-    char access_path[256] = {0};
+
+    trace("username is %S" nl, conn->username);
+
+    char access_path[512] = {0};
     snprintf(access_path, 
              sizeof(access_path) - 1, 
              "data/accounts/%ls/access.txt",
@@ -1077,14 +1095,14 @@ static void handle_character_creation(struct state *state, struct connection *co
     
     // TODO(fmontenegro): check if name exists
     
-    char characters_path[256] = {0};
+    char characters_path[512] = {0};
     snprintf(characters_path, 
              sizeof(characters_path) - 1, 
              "data/accounts/%ls/characters",
              conn->username);
     directory_create(characters_path);
     
-    char info_path[256] = {0};
+    char info_path[1024] = {0};
     snprintf(info_path, 
              sizeof(info_path) - 1, 
              "data/accounts/%ls/characters/%ls.txt",
@@ -1290,7 +1308,7 @@ static void handle_send_character_list(struct state *state, struct connection *c
     byte type = 0x13;
     u32 count = 0;
     
-    char characters_path[256] = {0};
+    char characters_path[512] = {0};
     snprintf(characters_path, 
              sizeof(characters_path) - 1, 
              "data/accounts/%ls/characters",
@@ -1439,14 +1457,14 @@ static void handle_select_character(struct state *state, struct connection *conn
     u32 index = 0;
     pscanf(req, "%u", &index);
     
-    char characters_path[256] = {0};
+    char characters_path[512] = {0};
     snprintf(characters_path, 
              sizeof(characters_path) - 1, 
              "data/accounts/%ls/characters",
              conn->username);
     
     conn->character = 0;
-    for (int i = 1; i < countof(state->characters); i++) {
+    for (size_t i = 1; i < countof(state->characters); i++) {
         if (state->characters[i].active)
             continue;
         memset(state->characters + i, 0, sizeof(struct character));
@@ -1583,7 +1601,7 @@ static void handle_select_character(struct state *state, struct connection *conn
                    &conn->character->collision_radius,
                    &conn->character->collision_height,
                    &conn->character->access_level,
-                   &conn->character->title,
+                   conn->character->title,
                    &conn->character->clan_id,
                    &conn->character->crest_id,
                    &conn->character->ally_id,
@@ -1602,11 +1620,11 @@ static void handle_select_character(struct state *state, struct connection *conn
                    &conn->character->name_color);
             fclose(character_file);
 
-            conn->character->recommendations_left = recommendations_left;
-            conn->character->recommendations_have = recommendations_have;
-            conn->character->inventory_limit = inventory_limit;
-            conn->character->hero_symbol = hero_symbol;
-            conn->character->hero = hero;
+            conn->character->recommendations_left = (u16) recommendations_left;
+            conn->character->recommendations_have = (u16) recommendations_have;
+            conn->character->inventory_limit = (u16) inventory_limit;
+            conn->character->hero_symbol = (u8) hero_symbol;
+            conn->character->hero = (u8) hero;
         }
         break;
     }

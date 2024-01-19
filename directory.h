@@ -11,8 +11,8 @@ struct directory {
     
     // for iteration.
     int is_directory;
-    char full_path[256];
-    char name[64];
+    char full_path[512];
+    char name[256];
     
 #ifdef _WIN32
     WIN32_FIND_DATA find_data;
