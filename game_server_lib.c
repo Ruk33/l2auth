@@ -439,8 +439,20 @@ static byte *bprintf_va(byte *dest, size_t n, va_list va)
         if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 's') {
             size_t max_letters = va_arg(va, size_t);
             wchar_t *src = va_arg(va, wchar_t *);
-            wcsncpy((wchar_t *) tail, src, max_letters - 1);
-            tail += (wcsnlen(src, max_letters) + 1) * 2;
+            /*
+             * wchar_t is 2 bytes in windows and 4
+             * in linux, which means, we can't use
+             * predefined functions such as wcsncpy.
+             */
+            for (size_t i = 0; i < max_letters && *(u16 *) src; i++) {
+                *(u16 *) tail = *src++;
+                tail += 2;
+            }
+            /*
+             * null terminator.
+             */
+            *(u16 *) tail = 0;
+            tail += 2;
             continue;
         }
         if (fmt[0] == '%' && fmt[1] == 'u') {
