@@ -1,17 +1,10 @@
-todo
-- fix linux implementation
-- add stop timer flag to stop the timer thread
-- wclose should signal instead of just setting the variable
-- implement lneedsreload in lib.c
-- game server in linux doesn't seem to be reading the user's name correctly:
-  error / unable to read data/accounts/𕌽/access.txt. can't check if this is a valid auth.the user w ill be dropped.
-
 lineage 2 server emulator for the chronicle 4 written in c just for fun.
 
 in windows, how to use?
 - update your Windows/System32/drivers/etc/hosts file to 
   include: 127.0.0.1 l2authd.lineage2.com
-- run bin/login_server.exe
+- to run the login server, cd bin && login_server.exe
+- to run the game server, cd bin && game_server.exe
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
 in windows, how to build?
@@ -19,14 +12,15 @@ in windows, how to build?
 - update your environment path to include the folder containing the file vcvarsall.bat
 - run build.bat
 
-TODO: in linux, how to use?
+in linux, how to use?
 - update /etc/hosts to include: 127.0.0.1 l2authd.lineage2.com
-- in linux, run bin/linux_server
+- to run the login server, cd bin && ./login_server
+- to run the game server, cd bin && ./game_server
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
-TODO: in linux, how to build?
+in linux, how to build?
 - install openssl lib (sudo apt install libssl-dev)
-- run bash build.sh
+- run bash ./build.sh
 
 notes
 - the login server uses the port 2106
@@ -35,3 +29,8 @@ notes
 credits
 - l2j: https://www.l2jserver.com
 - openssl: https://www.openssl.org
+
+todo
+- add stop timer flag to stop the timer thread
+- wclose should signal instead of just setting the variable
+- implement lneedsreload in lib.c
