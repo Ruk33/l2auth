@@ -1,258 +1,233 @@
-#include <assert.h>
-#include <stdlib.h> // calloc, size_t
-#include <stdio.h>  // fprintf
-#include <string.h> // memset, memcpy, strncpy, strnlen
-#include <stdint.h> // fixed int types
-#include <locale.h> // setlocale
-#include <wchar.h>  // wchar_t
-#include <time.h>   // time_t, now
-#include <stdarg.h> // va_arg, va_list
-#include <math.h>   // sqrtf
+#include "game_server_lib.h"
+
+int on_pevent(void **buf, enum pevent event, union ppayload *payload)
+{
+    struct state *state = *(struct state **) buf;
+    switch (event) {
+    case pevent_init: {
+        return on_init(buf);
+    } break;
+    case pevent_before_reload: {
+        wclose(&state->send_responses_worker);
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+        TerminateThread(state->timer, 0);
+        CloseHandle(state->timer);
+        CloseHandle(state->lock);
 #endif
 
 #ifdef __linux__
-#include <pthread.h> // pthread_create
-#include <unistd.h>
+        pthread_cancel(state->timer);
+        pthread_mutex_destroy(&state->lock);
 #endif
+    } break;
+    case pevent_after_reload: {
+        init_threads(state);
+    } break;
+    case pevent_socket_connection: {
+        lock(state);
+        on_connection(buf, payload->pevent_socket.socket);
+        unlock(state);
+    } break;
+    case pevent_socket_request: {
+        lock(state);
+        on_request(buf, 
+                   payload->pevent_socket.socket, 
+                   payload->pevent_socket.read, 
+                   payload->pevent_socket.len);
+        unlock(state);
+    } break;
+    case pevent_socket_disconnected: {
+        lock(state);
+        on_disconnect(buf, payload->pevent_socket.socket);
+        unlock(state);
+    } break;
+    default:
+    break;
+    }
 
-#include "directory.h"
-#include "net.h"
-#include "wqueue.h"
-#include "pevent.h"
+    return 1;
+}
 
-typedef uint8_t byte;
-
-typedef  uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-typedef  int8_t  s8;
-typedef int16_t s16;
-typedef int32_t s32;
-typedef int64_t s64;
-
-typedef float seconds;
-
-#define nl "\n"
-#define kb *1024
-#define mb *1024*1024
-#define sqr(x) ((x)*(x))
-#define trace(...) fprintf(stderr, __VA_ARGS__)
-#define warn(...)  trace("warning / " __VA_ARGS__)
-#define error(...) trace("  error / " __VA_ARGS__)
-#define countof(x) (sizeof(x) / sizeof(*(x)))
-
-#define bprintf(dest, n, ...) \
-bprintf_((dest), (n), __VA_ARGS__, 0)
-
-#define bscanf(src, n, ...) \
-bscanf_((src), (n), __VA_ARGS__, 0)
-
-#define pscanf(src, ...) \
-bscanf_((src) + 3, packet_size(src) - 3, __VA_ARGS__, 0)
-
-#define push_response(conn, _encrypt, ...) \
-push_response_((conn), (_encrypt), __VA_ARGS__, 0)
-
-#define broadcast(state, character, _encrypt, ...) \
-broadcast_((state), (character), (_encrypt), __VA_ARGS__, 0)
-
-#define coroutine(x) \
-struct coroutine *__coro = &(x); \
-switch (__coro->line) \
-case 0:
-
-#define yield \
-__coro->line = __COUNTER__ + 1; \
-break; \
-case __COUNTER__:
-
-#define syield(sleep, delta) \
-__coro->sleep_for = (sleep); \
-yield; \
-__coro->sleep_for -= (delta); \
-if (__coro->sleep_for > 0) \
-break;
-
-#define reset *__coro = (struct coroutine) {0}
-
-struct coroutine {
-    u32 line;
-    seconds sleep_for;
-};
-
-struct connection {
-    int socket;
-    int encrypted;
-    
-    u32 login_ok1;
-    u32 login_ok2;
-    
-    u32 play_ok1;
-    u32 play_ok2;
-    
-    wchar_t username[32];
-    
-    byte encrypt_key[8];
-    byte decrypt_key[8];
-    
-    struct coroutine state;
-    
-    byte to_send[8 kb];
-    size_t to_send_count;
-    size_t sent;
-    
-    byte request[8 kb];
-    size_t request_count;
-    
-    struct character *character;
-};
-
-struct character {
-    int active;
-    struct connection *conn;
-    wchar_t name[32];
-    u32 template_id;
-    s32 x;
-    s32 y;
-    s32 z;
-    s32 heading;
-    s32 client_x;
-    s32 client_y;
-    u32 race_id;
-    u32 sex;
-    u32 class_id;
-    u32 level;
-    u32 xp;
-    struct attributes {
-        u32 str;
-        u32 dex;
-        u32 con;
-        u32 _int;
-        u32 wit;
-        u32 men;
-    } attributes;
-    double max_hp;
-    double current_hp;
-    double max_mp;
-    double current_mp;
-    double max_cp;
-    double current_cp;
-    u32 sp;
-    u32 current_load;
-    u32 max_load;
-    u32 p_atk;
-    u32 p_atk_speed;
-    u32 p_def;
-    u32 evasion_rate;
-    u32 accuracy;
-    u32 critical_hit;
-    u32 m_atk;
-    u32 m_atk_speed;
-    u32 m_def;
-    u32 pvp_flag;
-    u32 karma;
-    u32 run_speed;
-    u32 walk_speed;
-    u32 swim_run_speed;
-    u32 swim_walk_speed;
-    u32 fly_run_speed;
-    u32 fly_walk_speed;
-    double movement_speed_multiplier;
-    double atk_speed_multiplier;
-    double collision_radius;
-    double collision_height;
-    u32 hair_style_id;
-    u32 hair_color_id;
-    u32 face_id;
-    u32 access_level;
-    wchar_t title[32];
-    u32 clan_id;
-    u32 crest_id;
-    u32 ally_id;
-    u32 ally_crest_id;
-    u8 mount_type;
-    u8 private_store_type;
-    u8 dwarven_craft;
-    u32 pk_kills;
-    u32 pvp_kills;
-    u16 cubics;
-    u8 party_members;
-    u32 abnormal_effect;
-    u32 clan_privileges;
-    u16 recommendations_left;
-    u16 recommendations_have;
-    u16 inventory_limit;
-    u8 mounted;
-    u32 clan_crest_large_id;
-    u8 hero_symbol;
-    u8 hero;
-    s32 fish_x;
-    s32 fish_y;
-    s32 fish_z;
-    u32 name_color;
-    
-    u32 target_id;
-    
-    enum action_type {
-        idle,
-        moving,
-        attacking,
-    } action_type, prev_action_type;
-    
-    union action_payload {
-        struct action_moving {
-            int queue_action;
-            u32 offset;
-            
-            u64 ticks_to_move;
-            u64 move_start_time;
-            u64 move_timestamp;
-            
-            float x_speed_ticks;
-            float y_speed_ticks;
-            
-            s32 src_x;
-            s32 src_y;
-            s32 src_z;
-            
-            s32 target_x;
-            s32 target_y;
-            s32 target_z;
-            
-            u32 target_id;
-        } moving;
-        
-        struct action_attacking {
-            u32 obj_id;
-            struct coroutine state;
-        } attacking;
-    } action_payload, prev_action_payload;
-};
-
-struct state {
-    float d;
-    double run_time;
-    u64 ticks;
-    struct wqueue send_responses_worker;
-    struct connection connections[1024];
-    struct character characters[1024];
+static int on_init(void **buf)
+{
+    assert(buf);
+    size_t to_alloc = 256 mb;
+    assert(to_alloc > sizeof(struct state));
+    *buf = calloc(1, to_alloc);
+    if (!*buf) {
+        trace("unable to allocate memory for game server" nl);
+        return 0;
+    }
+    init_threads((struct state *) *buf);
+    setlocale(LC_ALL, "");
+    return 1;
+}
 
 #ifdef _WIN32
-    HANDLE timer;
-    HANDLE lock;
+static DWORD timer_thread(LPVOID param)
+#endif
+#ifdef __linux__
+static void *timer_thread(void *param)
+#endif
+{
+    struct state *state = (struct state *) param;
+
+    while (1) {
+#ifdef _WIN32
+        Sleep(1000);
+#endif
+#ifdef __linux__
+        sleep(1);
+#endif
+
+        lock(state);
+        on_tick(state);
+        unlock(state);
+    }
+    return 0;
+}
+
+static void init_threads(struct state *state)
+{
+    assert(state);
+
+#ifdef _WIN32
+    state->lock = CreateMutex(0, FALSE, 0);
+    state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
 #endif
 
 #ifdef __linux__
-    pthread_t timer;
-    pthread_mutex_t lock;
+    pthread_mutex_init(&state->lock, 0);
+    pthread_create(&state->timer, 0, timer_thread, state);
 #endif
-};
+
+    state->send_responses_worker.p = state;
+    wstart(&state->send_responses_worker, send_responses);
+}
+
+static void on_tick(struct state *state)
+{
+    u64 old_ticks = state->ticks;
+    
+    state->d = 1000.0f;
+    state->run_time += (double) state->d;
+    state->ticks = (u64) state->run_time / 100;
+
+    if (state->ticks == old_ticks)
+        return;
+
+    for (size_t i = 0; i < countof(state->characters); i++) {
+        struct character *character = state->characters + i;
+        if (!character->active)
+            continue;
+        character_update(state, character);
+    }
+
+    for (size_t i = 0; i < countof(state->connections); i++) {
+        struct connection *conn = state->connections + i;
+        if (!conn->socket)
+            continue;
+        if (!conn->character || !conn->character->active)
+            continue;
+        if (!conn->to_send_count)
+            continue;
+        wpush(&state->send_responses_worker, conn);
+    }
+}
+
+static void on_connection(void **buf, int socket)
+{
+    assert(buf);
+    
+    struct state *state = *(struct state **) buf;
+    assert(state);
+    trace("new connection to game server!" nl);
+    struct connection *connection = get_connection_from_socket(state, socket);
+    if (!connection) {
+        trace("there is no more space to accept new players. dropping new connection" nl);
+        net_close(socket);
+        return;
+    }
+    memset(connection, 0, sizeof(*connection));
+    connection->socket = socket;
+    
+    byte key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
+    memcpy(connection->encrypt_key, key, sizeof(key));
+    memcpy(connection->decrypt_key, key, sizeof(key));
+}
+
+static void on_request(void **buf, int socket, void *request, size_t len)
+{
+    assert(buf);
+    struct state *state = *(struct state **) buf;
+    assert(state);
+    struct connection *conn = get_connection_from_socket(state, socket);
+    if (!conn) {
+        trace("request for a non connected client?" nl);
+        return;
+    }
+    memcpy(conn->request + conn->request_count, request, len);
+    conn->request_count += len;
+    while (handle_request(state, conn));
+    wpush(&state->send_responses_worker, conn);
+}
+
+static void on_disconnect(void **buf, int socket)
+{
+    assert(buf);
+    struct state *state = *(struct state **) buf;
+    assert(state);
+    
+    struct connection *conn = get_connection_from_socket(state, socket);
+    if (!conn)
+        return;
+    trace("client disconnected" nl);
+    conn->socket = 0;
+    if (conn->character) {
+        conn->character->active = 0;
+        conn->character = 0;
+    }
+}
+
+static void send_responses(struct wqueue *q, void *w)
+{
+    struct state *state = q->p;
+    lock(state);
+
+    struct connection *conn = (struct connection *) w;
+    void *head = conn->to_send + conn->sent;
+    unsigned long long to_send = conn->to_send_count - conn->sent;
+    trace("sending %d bytes of data to %d" nl, (s32) to_send, conn->socket);
+    conn->sent += net_send(conn->socket, head, to_send);
+
+    // all data has been sent, reset the counters.
+    if (conn->sent >= conn->to_send_count) {
+        conn->sent = 0;
+        conn->to_send_count = 0;
+    }
+
+    unlock(state);
+}
+
+static void character_update(struct state *state, struct character *character)
+{
+    switch (character->action_type) {
+    case idle:
+        // idle_update(state, character);
+        break;
+    case moving:
+        moving_update(state, character);
+        break;
+    case attacking:
+        attacking_update(state, character);
+        break;
+    case dead:
+        break;
+    default:
+        break;
+    }
+}
 
 static void lock(struct state *state)
 {
@@ -275,85 +250,6 @@ static void unlock(struct state *state)
     pthread_mutex_unlock(&state->lock);
 #endif
 }
-
-static struct connection *get_connection_from_socket(struct state *state, int socket);
-
-static void encrypt(struct connection *conn, byte *packet);
-static void decrypt(struct connection *conn, byte *request);
-
-static int handle_request(struct state *state, struct connection *conn);
-static void handle_send_protocol(struct state *state, struct connection *conn);
-static void handle_auth(struct state *state, struct connection *conn, byte *req);
-static void handle_show_create_character_screen(struct state *state, struct connection *conn);
-static void handle_character_creation(struct state *state, struct connection *conn, byte *req);
-static void handle_send_character_list(struct state *state, struct connection *conn);
-static void handle_select_character(struct state *state, struct connection *conn, byte *req);
-static void handle_auto_ss_bsps(struct state *state, struct connection *conn);
-static void handle_send_quest_list(struct state *state, struct connection *conn);
-static void handle_enter_world(struct state *state, struct connection *conn);
-static void handle_leave_world(struct state *state, struct connection *conn);
-static void handle_restart(struct state *state, struct connection *conn);
-static void handle_movement(struct state *state, struct connection *conn, byte *req);
-static void handle_validate_position(struct state *state, struct connection *conn, byte *req);
-static void handle_show_map(struct state *state, struct connection *conn);
-static void handle_action(struct state *state, struct connection *conn, byte *req);
-static void handle_deselect_target(struct state *state, struct connection *conn);
-
-// order character to walk to a point.
-static void move_to(struct state *state, struct character *src, s32 x, s32 y, s32 z, u32 offset, u32 target_id, int queue_action);
-// make character select a target. this is the first step
-// in order to interact with the target character.
-static void select_target(struct state *state, struct character *src, u32 target_id);
-// make character interact with a target.
-// - if target is attackable, then an attack order will take place.
-// - if target isn't attackable, then a dialog will show up.
-static void start_interaction(struct state *state, struct character *src);
-// NOTE(fmontenegro): not sure about this one...
-static void broadcast_char_info(struct state *state, struct character *src);
-//
-
-enum attr_status {
-    attr_status_level = 0x01,
-    attr_status_xp = 0x02,
-    attr_status_str = 0x03,
-    attr_status_dex = 0x04,
-    attr_status_con = 0x05,
-    attr_status_int = 0x06,
-    attr_status_wit = 0x07,
-    attr_status_men = 0x08,
-    attr_status_current_hp = 0x09,
-    attr_status_max_hp = 0x0a,
-    attr_status_current_mp = 0x0b,
-    attr_status_max_mp = 0x0c,
-    attr_status_sp = 0x0d,
-    attr_status_current_load = 0x0e,
-    attr_status_max_load = 0x0f,
-    attr_status_p_atk = 0x11,
-    attr_status_atk_speed = 0x12,
-    attr_status_p_def = 0x13,
-    attr_status_evasion = 0x14,
-    attr_status_accuracy = 0x15,
-    attr_status_critical = 0x16,
-    attr_status_m_atk = 0x17,
-    attr_status_cast_speed = 0x18,
-    attr_status_m_def = 0x19,
-    attr_status_pvp_flag = 0x1a,
-    attr_status_karma = 0x1b,
-    attr_status_current_cp = 0x21,
-    attr_status_max_cp = 0x22,
-};
-static void send_attr_status(struct state *state, struct character *from, struct character *to, enum attr_status *status, size_t n);
-
-// get character by id. if none is found, null will be returned.
-static struct character *get_character_by_id(struct state *state, u32 id);
-static u32 get_character_id(struct state *state, struct character *src);
-
-// static void idle_update(struct state *state, struct character *character);
-static void moving_update(struct state *state, struct character *character);
-static void attacking_update(struct state *state, struct character *character);
-
-static u32 distance_between(s32 x, s32 y, s32 z, s32 x2, s32 y2, s32 z2);
-static u32 distance_between_characters(struct character *a, struct character *b);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
 {
@@ -619,233 +515,6 @@ static void decrypt(struct connection *conn, byte *request)
     conn->decrypt_key[1] = (byte) (old >> 0x08 & 0xff);
     conn->decrypt_key[2] = (byte) (old >> 0x10 & 0xff);
     conn->decrypt_key[3] = (byte) (old >> 0x18 & 0xff);
-}
-
-static void send_responses(struct wqueue *q, void *w)
-{
-    struct state *state = q->p;
-    lock(state);
-
-    struct connection *conn = (struct connection *) w;
-    void *head = conn->to_send + conn->sent;
-    unsigned long long to_send = conn->to_send_count - conn->sent;
-    trace("sending %d bytes of data to %d" nl, (s32) to_send, conn->socket);
-    conn->sent += net_send(conn->socket, head, to_send);
-
-    // all data has been sent, reset the counters.
-    if (conn->sent >= conn->to_send_count) {
-        conn->sent = 0;
-        conn->to_send_count = 0;
-    }
-
-    unlock(state);
-}
-
-static void character_update(struct state *state, struct character *character)
-{
-    switch (character->action_type) {
-        case idle:
-        // idle_update(state, character);
-        break;
-        case moving:
-        moving_update(state, character);
-        break;
-        case attacking:
-        attacking_update(state, character);
-        break;
-        default:
-        break;
-    }
-}
-
-static void on_tick(struct state *state)
-{
-    u64 old_ticks = state->ticks;
-    
-    state->d = 1000.0f;
-    state->run_time += (double) state->d;
-    state->ticks = (u64) state->run_time / 100;
-
-    if (state->ticks == old_ticks)
-        return;
-
-    for (size_t i = 0; i < countof(state->characters); i++) {
-        struct character *character = state->characters + i;
-        if (!character->active)
-            continue;
-        character_update(state, character);
-    }
-
-    for (size_t i = 0; i < countof(state->connections); i++) {
-        struct connection *conn = state->connections + i;
-        if (!conn->socket)
-            continue;
-        if (!conn->character || !conn->character->active)
-            continue;
-        if (!conn->to_send_count)
-            continue;
-        wpush(&state->send_responses_worker, conn);
-    }
-}
-
-#ifdef _WIN32
-static DWORD timer_thread(LPVOID param)
-#endif
-#ifdef __linux__
-static void *timer_thread(void *param)
-#endif
-{
-    struct state *state = (struct state *) param;
-
-    while (1) {
-#ifdef _WIN32
-        Sleep(1000);
-#endif
-#ifdef __linux__
-        sleep(1);
-#endif
-
-        lock(state);
-        on_tick(state);
-        unlock(state);
-    }
-    return 0;
-}
-
-static void init_threads(struct state *state)
-{
-    assert(state);
-
-#ifdef _WIN32
-    state->lock = CreateMutex(0, FALSE, 0);
-    state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
-#endif
-
-#ifdef __linux__
-    pthread_mutex_init(&state->lock, 0);
-    pthread_create(&state->timer, 0, timer_thread, state);
-#endif
-
-    state->send_responses_worker.p = state;
-    wstart(&state->send_responses_worker, send_responses);
-}
-
-static int on_init(void **buf)
-{
-    assert(buf);
-    size_t to_alloc = 256 mb;
-    assert(to_alloc > sizeof(struct state));
-    *buf = calloc(1, to_alloc);
-    if (!*buf) {
-        trace("unable to allocate memory for game server" nl);
-        return 0;
-    }
-    init_threads((struct state *) *buf);
-    setlocale(LC_ALL, "");
-    return 1;
-}
-
-static void on_connection(void **buf, int socket)
-{
-    assert(buf);
-    
-    struct state *state = *(struct state **) buf;
-    assert(state);
-    trace("new connection to game server!" nl);
-    struct connection *connection = get_connection_from_socket(state, socket);
-    if (!connection) {
-        trace("there is no more space to accept new players. dropping new connection" nl);
-        net_close(socket);
-        return;
-    }
-    memset(connection, 0, sizeof(*connection));
-    connection->socket = socket;
-    
-    byte key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
-    memcpy(connection->encrypt_key, key, sizeof(key));
-    memcpy(connection->decrypt_key, key, sizeof(key));
-}
-
-static void on_request(void **buf, int socket, void *request, size_t len)
-{
-    assert(buf);
-    struct state *state = *(struct state **) buf;
-    assert(state);
-    struct connection *conn = get_connection_from_socket(state, socket);
-    if (!conn) {
-        trace("request for a non connected client?" nl);
-        return;
-    }
-    memcpy(conn->request + conn->request_count, request, len);
-    conn->request_count += len;
-    while (handle_request(state, conn));
-    wpush(&state->send_responses_worker, conn);
-}
-
-static void on_disconnect(void **buf, int socket)
-{
-    assert(buf);
-    struct state *state = *(struct state **) buf;
-    assert(state);
-    
-    struct connection *conn = get_connection_from_socket(state, socket);
-    if (!conn)
-        return;
-    trace("client disconnected" nl);
-    conn->socket = 0;
-    if (conn->character) {
-        conn->character->active = 0;
-        conn->character = 0;
-    }
-}
-
-int on_pevent(void **buf, enum pevent event, union ppayload *payload)
-{
-    struct state *state = *(struct state **) buf;
-    switch (event) {
-    case pevent_init: {
-        return on_init(buf);
-    } break;
-    case pevent_before_reload: {
-        wclose(&state->send_responses_worker);
-
-#ifdef _WIN32
-        TerminateThread(state->timer, 0);
-        CloseHandle(state->timer);
-        CloseHandle(state->lock);
-#endif
-
-#ifdef __linux__
-        pthread_cancel(state->timer);
-        pthread_mutex_destroy(&state->lock);
-#endif
-    } break;
-    case pevent_after_reload: {
-        init_threads(state);
-    } break;
-    case pevent_socket_connection: {
-        lock(state);
-        on_connection(buf, payload->pevent_socket.socket);
-        unlock(state);
-    } break;
-    case pevent_socket_request: {
-        lock(state);
-        on_request(buf, 
-                   payload->pevent_socket.socket, 
-                   payload->pevent_socket.read, 
-                   payload->pevent_socket.len);
-        unlock(state);
-    } break;
-    case pevent_socket_disconnected: {
-        lock(state);
-        on_disconnect(buf, payload->pevent_socket.socket);
-        unlock(state);
-    } break;
-    default:
-    break;
-    }
-
-    return 1;
 }
 
 static struct connection *get_connection_from_socket(struct state *state, int socket)
@@ -1959,9 +1628,9 @@ static void handle_enter_world(struct state *state, struct connection *conn)
                       // running?
                       "%c", 1,
                       // combat?
-                      "%c", 0,
+                      "%c", npc->action_type == attacking,
                       // alike dead?
-                      "%c", 0,
+                      "%c", npc->current_hp <= 0.0,
                       // summoned?
                       "%c", 0,
                       "%ls", countof(npc->name), npc->name,
@@ -2272,6 +1941,23 @@ static void select_target(struct state *state, struct character *src, u32 target
                   "%u", target->y,
                   "%u", target->z,
                   "%u", target->heading);
+}
+
+static void die(struct state *state, struct character *src)
+{
+    assert(state);
+    assert(src);
+    src->current_hp = 0;
+    src->action_type = dead;
+    src->action_payload = (union action_payload) {0};
+    src->prev_action_type = idle;
+    src->prev_action_payload = (union action_payload) {0};
+    broadcast(state,
+              src, 1,
+              "%h", 0,
+              "%c", 0x06,
+              "%u", get_character_id(state, src),
+              "%u", 0x01);
 }
 
 static void start_interaction(struct state *state, struct character *src)
@@ -2625,7 +2311,7 @@ static void moving_update(struct state *state, struct character *character)
                       "%u", character->heading);
     return;
     
-    arrived:
+arrived:
     character->x = payload.target_x;
     character->y = payload.target_y;
     character->z = payload.target_z;
@@ -2673,18 +2359,22 @@ static void attacking_update(struct state *state, struct character *attacker)
     struct character *target = get_character_by_id(state, target_id);
     
     u32 atk_range = 60;
+    u32 damage = 10;
     
     coroutine(attacker->action_payload.attacking.state) {
-        if (!target || !target->active) {
+        if (!target || !target->active || target->current_hp <= 0.0) {
             attacker->action_type = idle;
+            attacker->wait_before_attacking = 0;
             return;
         }
         
         u32 d2 = distance_between_characters(attacker, target);
         
-        // check if we are in attack range.
-        // if not in range, walk closer to the
-        // target.
+        /*
+         * check if the attacker is in attack range.
+         * if not in range, make the attacker walk closer
+         * to the target.
+         */
         if (d2 > sqr(atk_range)) {
             s32 target_x = target->x;
             s32 target_y = target->y;
@@ -2701,8 +2391,6 @@ static void attacking_update(struct state *state, struct character *attacker)
             return;
         }
         
-        u32 damage = 2;
-        
         // start aggro state.
         broadcast(state,
                   attacker, 1,
@@ -2710,6 +2398,10 @@ static void attacking_update(struct state *state, struct character *attacker)
                   "%c", 0x2b,
                   "%u", target_id);
         
+        if (attacker->wait_before_attacking)
+            syield(200, state->d);
+        attacker->wait_before_attacking = 0;
+
         // launch attack.
         broadcast(state,
                   attacker, 1,
@@ -2736,7 +2428,25 @@ static void attacking_update(struct state *state, struct character *attacker)
 #endif
         
         trace("launch first attack." nl);
-        syield(200.0f, state->d);
+        /*
+         * wait for the attack to hit the target.
+         */
+        // syield(50.0f, state->d);
+        /*
+         * do damage.
+         */
+        target->current_hp -= (double) damage;
+        if (target->current_hp <= 0.0)
+            die(state, target);
+        enum attr_status status[] = {attr_status_current_hp, attr_status_max_hp};
+        send_attr_status(state, target, attacker, status, 2);
+        send_attr_status(state, target, target, status, 2);
+        /*
+         * wait for the rest of the attack animation.
+         * this would be the attack cooldown.
+         */
+        // syield(50.0f, state->d);
+        attacker->wait_before_attacking = 1;
         trace("wait completed, reset!" nl);
         reset;
     }
