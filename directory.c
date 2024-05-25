@@ -12,6 +12,9 @@
 
 struct directory directory_open(char *path)
 {
+/*
+ * Windows implementation.
+ */
 #ifdef _WIN32
     struct directory result = {0};
     
@@ -27,6 +30,9 @@ struct directory directory_open(char *path)
     return result;
 #endif
 
+/*
+ * Linux implementation.
+ */
 #ifdef __linux__
     struct directory result = {0};
     result.path = path;
@@ -37,6 +43,9 @@ struct directory directory_open(char *path)
 
 int directory_next(struct directory *directory)
 {
+/*
+ * Windows implementation.
+ */
 #ifdef _WIN32
     if (!directory->handle)
         return 0;
@@ -57,6 +66,9 @@ int directory_next(struct directory *directory)
     return 1;
 #endif
 
+/*
+ * Linux implementation.
+ */
 #ifdef __linux__
     if (!directory->handle)
         return 0;
@@ -86,18 +98,26 @@ int directory_next(struct directory *directory)
 
 int directory_create(char *path)
 {
+/*
+ * Windows implementation.
+ */
 #ifdef _WIN32
     if (CreateDirectory(path, 0) || GetLastError() == ERROR_ALREADY_EXISTS)
         return 1;
+
+    return 0;
 #endif
 
+/*
+ * Linux implementation.
+ */
 #ifdef __linux__
     /*
-     * create directory for read and write.
+     * Create directory for read and write.
      */
     if (mkdir(path, 0666) == 0)
         return 1;
-#endif
 
     return 0;
+#endif
 }

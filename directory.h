@@ -9,7 +9,9 @@
 struct directory {
     char *path;
     
-    // for iteration.
+    /*
+     * For iteration.
+     */
     int is_directory;
     char full_path[512];
     char name[256];
@@ -25,8 +27,8 @@ struct directory {
 };
 
 #define in_directory(path) \
-for (struct directory directory = directory_open(path); directory_next(&directory);) \
-if (strcmp(directory.name, ".") != 0 && strcmp(directory.name, "..") != 0)
+    for (struct directory directory = directory_open(path); directory_next(&directory);) \
+        if (strcmp(directory.name, ".") != 0 && strcmp(directory.name, "..") != 0)
 
 struct directory directory_open(char *path);
 int directory_next(struct directory *directory);

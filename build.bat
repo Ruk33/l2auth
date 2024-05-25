@@ -12,6 +12,6 @@ cl %flags% ../login_server.c ../directory.c ../net_windows.c ../wqueue.c /Fe:log
 
 cl %flags% /LD ../game_server_lib.c ../directory.c ../net_windows.c ../wqueue.c /Fe:game_server.dll /link -incremental:no /PDB:game_server_%random%.pdb /EXPORT:on_pevent Ws2_32.lib
 
-cl %flags% ../game_server.c ../net_windows.c ../lib.c /Fe:game_server.exe /link /PDB:game_server.pdb Ws2_32.lib
+cl %flags% ../game_server.c ../net_windows.c ../library.c /Fe:game_server.exe /link /PDB:game_server.pdb Ws2_32.lib
 
 popd
