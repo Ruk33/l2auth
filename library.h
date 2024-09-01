@@ -49,4 +49,4 @@ enum library_status library_load(struct library *library);
  * Get function name from library.
  * On error/not-found, 0 is returned.
  */
-void *library_function(struct library *libray, const char *name);
+void *library_function(struct library *library, const char *name);
