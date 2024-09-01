@@ -115,7 +115,7 @@ int directory_create(char *path)
     /*
      * Create directory for read and write.
      */
-    if (mkdir(path, 0666) == 0)
+    if (mkdir(path, 0770) == 0)
         return 1;
 
     return 0;
