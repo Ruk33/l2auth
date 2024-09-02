@@ -8,39 +8,28 @@ int on_pevent(void **buf, enum pevent event, union ppayload *payload)
         return on_init(buf);
     } break;
     case pevent_before_reload: {
-        wclose(&state->send_responses_worker);
-
-#ifdef _WIN32
-        TerminateThread(state->timer, 0);
-        CloseHandle(state->timer);
-        CloseHandle(state->lock);
-#endif
-
-#ifdef __linux__
-        pthread_cancel(state->timer);
-        pthread_mutex_destroy(&state->lock);
-#endif
     } break;
     case pevent_after_reload: {
-        init_threads(state);
     } break;
     case pevent_socket_connection: {
-        lock(state);
-        on_connection(buf, payload->pevent_socket.socket);
-        unlock(state);
+        on_connection(state, payload->pevent_socket.socket);
+        on_tick(state);
     } break;
     case pevent_socket_request: {
-        lock(state);
-        on_request(buf, 
-                   payload->pevent_socket.socket, 
-                   payload->pevent_socket.read, 
-                   payload->pevent_socket.len);
-        unlock(state);
+        on_request(
+            state, 
+            payload->pevent_socket.socket, 
+            payload->pevent_socket.read, 
+            payload->pevent_socket.len
+        );
+        on_tick(state);
     } break;
     case pevent_socket_disconnected: {
-        lock(state);
-        on_disconnect(buf, payload->pevent_socket.socket);
-        unlock(state);
+        on_disconnect(state, payload->pevent_socket.socket);
+        on_tick(state);
+    } break;
+    case pevent_socket_no_events: {
+        on_tick(state);
     } break;
     default:
     break;
@@ -56,72 +45,37 @@ static int on_init(void **buf)
     assert(to_alloc > sizeof(struct state));
     *buf = calloc(1, to_alloc);
     if (!*buf) {
-        trace("unable to allocate memory for game server" nl);
+        error("unable to allocate memory for game server" nl);
         return 0;
     }
-    init_threads((struct state *) *buf);
     setlocale(LC_ALL, "");
+
+    struct state *state = *(struct state **) buf;
+    state->last_clock = clock();
+
     return 1;
-}
-
-#ifdef _WIN32
-static DWORD timer_thread(LPVOID param)
-#endif
-#ifdef __linux__
-static void *timer_thread(void *param)
-#endif
-{
-    struct state *state = (struct state *) param;
-
-    while (1) {
-#ifdef _WIN32
-        Sleep(1000);
-#endif
-#ifdef __linux__
-        sleep(1);
-#endif
-
-        lock(state);
-        on_tick(state);
-        unlock(state);
-    }
-    return 0;
-}
-
-static void init_threads(struct state *state)
-{
-    assert(state);
-
-#ifdef _WIN32
-    state->lock = CreateMutex(0, FALSE, 0);
-    state->timer = CreateThread(0, 0, timer_thread, state, 0, 0);
-#endif
-
-#ifdef __linux__
-    pthread_mutex_init(&state->lock, 0);
-    pthread_create(&state->timer, 0, timer_thread, state);
-#endif
-
-    state->send_responses_worker.p = state;
-    wstart(&state->send_responses_worker, send_responses);
 }
 
 static void on_tick(struct state *state)
 {
-    u64 old_ticks = state->ticks;
-    
-    state->d = 1000.0f;
-    state->run_time += (double) state->d;
-    state->ticks = (u64) state->run_time / 100;
+    clock_t now = clock();
+    float d = ((float) (now - state->last_clock) / 1000);
 
-    if (state->ticks == old_ticks)
-        return;
+    while (d >= 0.1f) {
+        d -= 0.1f;
 
-    for (size_t i = 0; i < countof(state->characters); i++) {
-        struct character *character = state->characters + i;
-        if (!character->active)
-            continue;
-        character_update(state, character);
+        state->last_clock = clock();
+
+        state->d = 100.0f;
+        state->run_time += (double) state->d;
+        state->ticks = (u64) state->run_time / 100;
+
+        for (size_t i = 0; i < countof(state->characters); i++) {
+            struct character *character = state->characters + i;
+            if (!character->active)
+                continue;
+            character_update(state, character);
+        }
     }
 
     for (size_t i = 0; i < countof(state->connections); i++) {
@@ -132,35 +86,31 @@ static void on_tick(struct state *state)
             continue;
         if (!conn->to_send_count)
             continue;
-        wpush(&state->send_responses_worker, conn);
+        send_responses(conn);
     }
 }
 
-static void on_connection(void **buf, int socket)
+static void on_connection(struct state *state, int socket)
 {
-    assert(buf);
-    
-    struct state *state = *(struct state **) buf;
     assert(state);
     trace("new connection to game server!" nl);
-    struct connection *connection = get_connection_from_socket(state, socket);
-    if (!connection) {
+    struct connection *conn = get_connection_from_socket(state, socket);
+    if (!conn) {
         trace("there is no more space to accept new players. dropping new connection" nl);
         net_close(socket);
         return;
     }
-    memset(connection, 0, sizeof(*connection));
-    connection->socket = socket;
+    memset(conn, 0, sizeof(*conn));
+    conn->socket = socket;
     
     byte key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
-    memcpy(connection->encrypt_key, key, sizeof(key));
-    memcpy(connection->decrypt_key, key, sizeof(key));
+    memcpy(conn->encrypt_key, key, sizeof(key));
+    memcpy(conn->decrypt_key, key, sizeof(key));
+    send_responses(conn);
 }
 
-static void on_request(void **buf, int socket, void *request, size_t len)
+static void on_request(struct state *state, int socket, void *request, size_t len)
 {
-    assert(buf);
-    struct state *state = *(struct state **) buf;
     assert(state);
     struct connection *conn = get_connection_from_socket(state, socket);
     if (!conn) {
@@ -170,13 +120,11 @@ static void on_request(void **buf, int socket, void *request, size_t len)
     memcpy(conn->request + conn->request_count, request, len);
     conn->request_count += len;
     while (handle_request(state, conn));
-    wpush(&state->send_responses_worker, conn);
+    send_responses(conn);
 }
 
-static void on_disconnect(void **buf, int socket)
+static void on_disconnect(struct state *state, int socket)
 {
-    assert(buf);
-    struct state *state = *(struct state **) buf;
     assert(state);
     
     struct connection *conn = get_connection_from_socket(state, socket);
@@ -190,24 +138,23 @@ static void on_disconnect(void **buf, int socket)
     }
 }
 
-static void send_responses(struct wqueue *q, void *w)
+static void send_responses(struct connection *conn)
 {
-    struct state *state = q->p;
-    lock(state);
+    if (!conn)
+        return;
 
-    struct connection *conn = (struct connection *) w;
     void *head = conn->to_send + conn->sent;
     unsigned long long to_send = conn->to_send_count - conn->sent;
     trace("sending %d bytes of data to %d" nl, (s32) to_send, conn->socket);
     conn->sent += net_send(conn->socket, head, to_send);
 
-    // all data has been sent, reset the counters.
+    /*
+     * All data has been sent. Reset counters.
+     */
     if (conn->sent >= conn->to_send_count) {
         conn->sent = 0;
         conn->to_send_count = 0;
     }
-
-    unlock(state);
 }
 
 static void character_update(struct state *state, struct character *character)
@@ -227,28 +174,6 @@ static void character_update(struct state *state, struct character *character)
     default:
         break;
     }
-}
-
-static void lock(struct state *state)
-{
-#ifdef _WIN32
-    WaitForSingleObject(state->lock, INFINITE);
-#endif
-
-#ifdef __linux__
-    pthread_mutex_lock(&state->lock);
-#endif
-}
-
-static void unlock(struct state *state)
-{
-#ifdef _WIN32
-    ReleaseMutex(state->lock);
-#endif
-
-#ifdef __linux__
-    pthread_mutex_unlock(&state->lock);
-#endif
 }
 
 static byte *bscanf_va(byte *src, size_t n, va_list va)
@@ -524,7 +449,9 @@ static struct connection *get_connection_from_socket(struct state *state, int so
         if (state->connections[i].socket == socket)
             return state->connections + i;
     }
-    // find a free connection to be used for this socket.
+    /*
+     * Find a free connection to be used for this socket.
+     */
     for (size_t i = 0; i < countof(state->connections); i++) {
         if (!state->connections[i].socket)
             return state->connections + i;
@@ -539,18 +466,22 @@ static void handle_request_by_type(struct state *state, struct connection *conn)
     byte type = *(request + 2);
     trace("received packet is of type %#04x" nl, (int) type);
     
-    // check if the received packet matches the expected packet.
-    // if it doesn't, drop/close the connection.
-#define expected_or_close(expected) \
-if (type != (expected)) { \
-error("expecting packet %d but got %d. the connection will be dropped." nl, \
-(expected), \
-type); \
-net_close(conn->socket); \
-conn->socket = 0; \
-return; \
-}
-    
+    /*
+     * Check if the received packet matches the expected packet.
+     * If it doesn't, drop/close the connection.
+     */
+#define expected_or_close(expected)                                                 \
+    if (type != (expected)) {                                                       \
+        error(                                                                      \
+            "expecting packet %d but got %d. the connection will be dropped." nl,   \
+            (expected),                                                             \
+            type                                                                    \
+        );                                                                          \
+        net_close(conn->socket);                                                    \
+        conn->socket = 0;                                                           \
+        return;                                                                     \
+    }
+
     coroutine(conn->state) {
         // expect protocol request.
         expected_or_close(0x00);
@@ -1736,8 +1667,9 @@ static void handle_show_map(struct state *state, struct connection *conn)
     }
     orc->active = 1;
     
-    swprintf(orc->name, sizeof(orc->name) - 1, L"%ls", L"Orc");
-    swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Orc");
+    orc->name[0] = 'O';
+    // swprintf(orc->name, sizeof(orc->name) - 1, L"%ls", L"Orc");
+    // swprintf(orc->title, sizeof(orc->title) - 1, L"%ls", L"Orc");
     
     orc->template_id = 500 + 1000000;
     orc->x = conn->character->x;
@@ -2348,8 +2280,6 @@ arrived:
     // the tick event refers to the function that updates
     // the world state every second.
     character_update(state, character);
-    if (character->conn)
-        wpush(&state->send_responses_worker, character->conn);
 }
 
 static void attacking_update(struct state *state, struct character *attacker)

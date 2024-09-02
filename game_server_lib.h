@@ -15,13 +15,12 @@
 #endif
 
 #ifdef __linux__
-#include <pthread.h> // pthread_create
+// #include <pthread.h> // pthread_create
 #include <unistd.h>  // sleep
 #endif
 
 #include "directory.h"
 #include "net.h"
-#include "wqueue.h"
 #include "pevent.h"
 
 typedef uint8_t byte;
@@ -39,8 +38,8 @@ typedef  int64_t s64;
 typedef float seconds;
 
 #define nl "\n"
-#define kb *1024
-#define mb *1024*1024
+#define kb * 1024
+#define mb * 1024 * 1024
 #define sqr(x) ((x)*(x))
 #define trace(...) fprintf(stderr, __VA_ARGS__)
 #define warn(...)  trace("warning / " __VA_ARGS__)
@@ -65,22 +64,22 @@ typedef float seconds;
 #define coroutine(x)                    \
     struct coroutine *__coro = &(x);    \
     switch (__coro->line)               \
-    case 0:
+        case 0:
 
-#define yield                       \
-    {                               \
-    __coro->line = __COUNTER__ + 1; \
-    break;                          \
-    }                               \
+#define yield                           \
+    {                                   \
+        __coro->line = __COUNTER__ + 1; \
+        break;                          \
+    }                                   \
     case __COUNTER__:
 
-#define syield(sleep, delta)        \
-    {                               \
-    __coro->sleep_for = (sleep);    \
-    yield;                          \
-    __coro->sleep_for -= (delta);   \
-    if (__coro->sleep_for > 0)      \
-    break;                          \
+#define syield(sleep, delta)            \
+    {                                   \
+        __coro->sleep_for = (sleep);    \
+        yield;                          \
+        __coro->sleep_for -= (delta);   \
+        if (__coro->sleep_for > 0)      \
+            break;                      \
     }
 
 #define reset *__coro = (struct coroutine) {0}
@@ -273,36 +272,23 @@ enum attr_status {
 };
 
 struct state {
+    clock_t last_clock;
     float d;
     double run_time;
     u64 ticks;
-    struct wqueue send_responses_worker;
     struct connection connections[1024];
     struct character characters[1024];
-
-#ifdef _WIN32
-    HANDLE timer;
-    HANDLE lock;
-#endif
-
-#ifdef __linux__
-    pthread_t timer;
-    pthread_mutex_t lock;
-#endif
 };
 
 static int on_init(void **buf);
-static void init_threads(struct state *state);
 static void on_tick(struct state *state);
-static void on_connection(void **buf, int socket);
-static void on_request(void **buf, int socket, void *request, size_t len);
-static void on_disconnect(void **buf, int socket);
+static void on_connection(struct state *state, int socket);
+static void on_request(struct state *state, int socket, void *request, size_t len);
+static void on_disconnect(struct state *state, int socket);
 
-static void send_responses(struct wqueue *q, void *w);
+static void send_responses(struct connection *conn);
+
 static void character_update(struct state *state, struct character *character);
-
-static void lock(struct state *state);
-static void unlock(struct state *state);
 
 static byte *bscanf_va(byte *src, size_t n, va_list va);
 static byte *bscanf_(byte *src, size_t n, ...);

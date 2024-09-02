@@ -14,6 +14,12 @@
 #include "net.h"
 #include "pevent.h"
 
+/*
+ * printf alternative.
+ * Write to stderr so we don't have to fflush the buffer.
+ */
+#define trace(...) fprintf(stderr, __VA_ARGS__)
+
 struct state {
     void *buf;
     struct library gameserver;
@@ -26,20 +32,20 @@ static void handle_net_event(int socket, enum net_event event, void *read, unsig
     enum library_status library_status = library_failed;
     peventf *on_pevent = 0;
     /*
-     * try loading the library n amount of times.
+     * Try loading the library n amount of times.
      */
     for (int i = 0; i < 5; i++) {
         library_status = library_load(&state.gameserver);
         if (library_status == library_needs_reload) {
             /*
-             * before reloading the library, make sure
+             * Before reloading the library, make sure
              * to run the before reload event.
              */
             on_pevent = (peventf *) library_function(&state.gameserver, "on_pevent");
             assert(on_pevent);
             on_pevent(&state.buf, pevent_before_reload, 0);
             /*
-             * if the library can't be reloaded, just exit.
+             * If the library can't be reloaded, just exit.
              */
             library_status = library_load(&state.gameserver);
             if (library_status != library_reloaded) {
@@ -47,19 +53,19 @@ static void handle_net_event(int socket, enum net_event event, void *read, unsig
                 break;
             }
             /*
-             * library reloaded! run after reload event.
+             * Library reloaded! run after reload event.
              */
             on_pevent = (peventf *) library_function(&state.gameserver, "on_pevent");
             assert(on_pevent);
             on_pevent(&state.buf, pevent_after_reload, 0);
         }
         /*
-         * the library has been loaded, we can exit the loop.
+         * The library has been loaded, we can exit the loop.
          */
         if (library_status != library_failed)
             break;
         /*
-         * before trying to load again, sleep for a second
+         * Before trying to load again, sleep for a second
          * letting the os make the required writing/processing
          * in case the library was updated.
          */
@@ -71,10 +77,10 @@ static void handle_net_event(int socket, enum net_event event, void *read, unsig
 #endif
     }
     /*
-     * if the library couldn't be loaded, crash the server.
+     * If the library couldn't be loaded, crash the server.
      */
     if (library_status == library_failed) {
-        fprintf(stderr, "failed to load library.\n");
+        trace("failed to load library.\n");
         assert(!"game server library couldn't be loaded");
         return;
     }
@@ -100,6 +106,10 @@ static void handle_net_event(int socket, enum net_event event, void *read, unsig
         on_pevent(&state.buf, pevent_socket_request, &payload);
         break;
 
+        case net_no_events:
+        on_pevent(&state.buf, pevent_socket_no_events, &payload);
+        break;
+
         default:
         break;
     }
@@ -116,7 +126,7 @@ int main()
 #endif
 
     if (library_load(&state.gameserver) == library_failed) {
-        fprintf(stderr, "failed to load game server library.\n");
+        trace("failed to load game server library.\n");
         return 0;
     }
 
@@ -128,7 +138,7 @@ int main()
 
     unsigned short port = 7777;
     int socket = net_port(port);
-    fprintf(stderr, "game server listening on port %d\n", port);
+    trace("game server listening on port %d\n", port);
     net_listen(socket, handle_net_event);
     
     return 0;

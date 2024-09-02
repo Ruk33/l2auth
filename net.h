@@ -5,6 +5,8 @@ enum net_event {
     net_closed,
     // can read
     net_read,
+    // no events after 100 ms of timeout
+    net_no_events,
 };
 
 typedef void (net_handler)

@@ -6,6 +6,7 @@ enum pevent {
     pevent_after_reload,
     pevent_socket_connection,
     pevent_socket_request,
+    pevent_socket_no_events,
     pevent_socket_disconnected,
 };
 

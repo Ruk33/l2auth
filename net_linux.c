@@ -105,9 +105,12 @@ void net_listen(int server, net_handler *handler)
         goto abort;
     
     while (1) {
-        ev_count = epoll_wait(epoll_fd, events, sizeof(events) / sizeof(*events), -1);
+        ev_count = epoll_wait(epoll_fd, events, sizeof(events) / sizeof(*events), 100);
         if (ev_count == -1)
             goto abort;
+
+        if (ev_count == 0)
+            handler(server, net_no_events, 0, 0);
         
         for (int i = 0; i < ev_count; i += 1) {
             // only read and write, ignore the rest.
