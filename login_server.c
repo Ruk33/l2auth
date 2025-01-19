@@ -1,11 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 
-#include <assert.h> // assert
-#include <stddef.h> // size_t
-#include <stdio.h>  // fprintf, fscanf, fopen, fclose, fread, fwrite, fgetc, sscanf
-#include <string.h> // memcpy, memcmp, strlen, strncpy, strcmp
-#include <stdint.h> // fixed int types
-#include <time.h>   // time_t, time
+#include <stddef.h>
+#include <time.h>
 
 #include <openssl/err.h>
 #include <openssl/rand.h>
@@ -14,49 +10,16 @@
 #include <openssl/blowfish.h>
 #include <openssl/evp.h>
 
+#include "utils.h"
 #include "directory.h"
 #include "net.h"
-#include "wqueue.h"
-
-typedef uint8_t byte;
-
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-typedef int8_t  s8;
-typedef int16_t s16;
-typedef int32_t s32;
-typedef int64_t s64;
 
 u32 htonl(u32 x);
 u32 ntohl(u32 x);
 
-#define nl "\n"
-
-/*
- * Convert minutes to seconds.
- * Example: 1 minute = 60 seconds.
- */
-#define minute * 60
-
-#define countof(x) (sizeof(x) / sizeof(*(x)))
-
-/*
- * printf alternative.
- * Write to stderr so we don't have to fflush the buffer.
- */
-#define trace(...) fprintf(stderr, __VA_ARGS__)
-
-/*
- * Append src to dest and return dest + sizeof(src)
- */
-#define append(dest, src) (memcpy((dest), &(src), sizeof(src)), (dest) + sizeof(src))
-
 struct connection {
     int socket;
-    char username[32];
+    char username[16];
     u32 login_ok1;
     u32 login_ok2;
     /*
@@ -67,27 +30,25 @@ struct connection {
      * how many bytes of the entire response ("to_send_count")
      * has been already sent.
      */
-    byte to_send[1024];
-    size_t to_send_count;
-    size_t sent;
+    byte to_send[512];
+    u64 to_send_count;
+    u64 sent;
     /*
      * Buffer reserved for the request of client.
      */
-    byte request[1024];
-    size_t request_count;
+    byte request[512];
+    u64 request_count;
     
     BF_KEY blowfish;
     BIGNUM *rsa_e;
     RSA *rsa_key;
 };
 
-static struct wqueue send_responses_worker = {0};
-static struct connection connections[32] = {0};
+static struct connection connections[32];
 
-static u32 ip_to_u32(char *src)
+u32 ip_to_u32(char *src)
 {
-    if (!src)
-        return 0;
+    check(src);
 
     u32 ip[4] = {0};
     sscanf(src, "%u.%u.%u.%u", &ip[0], &ip[1], &ip[2], &ip[3]);
@@ -96,19 +57,19 @@ static u32 ip_to_u32(char *src)
     return result;
 }
 
-static struct connection *find_connection(int socket)
+struct connection *find_connection(int socket)
 {
     /*
      * Check for a connection already using this socket.
      */
-    for (size_t i = 0; i < countof(connections); i++) {
+    for (u64 i = 0; i < array_length(connections); i++) {
         if (connections[i].socket == socket)
             return connections + i;
     }
     /*
      * Or try to give a new usable connection.
      */
-    for (size_t i = 0; i < countof(connections); i++) {
+    for (u64 i = 0; i < array_length(connections); i++) {
         /*
          * Skip if the connection is being used.
          */
@@ -122,19 +83,19 @@ static struct connection *find_connection(int socket)
     return 0;
 }
 
-static u16 checksum(byte *dest, byte *start, byte *end)
+u16 checksum(byte *dest, byte *start, byte *end)
 {
-    assert(dest);
-    assert(start);
-    assert(end);
-    assert(start < end);
-    assert(end - start < 65535);
+    check(dest);
+    check(start);
+    check(end);
+    check(start < end);
+    check(end - start < 65535);
     
     u16 size = (u16) (end - start);
     u32 result = 0;
     for (u16 i = 0; i < size; i += 4) {
         u32 ecx = *start++ & 0xff;
-        ecx |= (*start++ << 8) & 0xff00;
+        ecx |= (*start++ <<  0x8) & 0xff00;
         ecx |= (*start++ << 0x10) & 0xff0000;
         ecx |= (*start++ << 0x18) & 0xff000000;
         result ^= ecx;
@@ -154,18 +115,18 @@ static u16 checksum(byte *dest, byte *start, byte *end)
      * big the packet is.
      */
     u16 final_size = body_padded_size + size_header;
-    memcpy(dest, &final_size, sizeof(final_size));
+    copy_memory(dest, &final_size, sizeof(final_size));
     
     return final_size;
 }
 
-static void encrypt_packet(struct connection *conn, byte *start, byte *end)
+void encrypt_packet(struct connection *conn, byte *start, byte *end)
 {
-    assert(conn);
-    assert(start);
-    assert(end);
-    assert(start < end);
-    assert(end - start < 65535);
+    check(conn);
+    check(start);
+    check(end);
+    check(start < end);
+    check(end - start < 65535);
 
     u16 size = (u16) (end - start);
     for (u16 i = 0; i < size; i += 8) {
@@ -183,9 +144,9 @@ static void encrypt_packet(struct connection *conn, byte *start, byte *end)
     }
 }
 
-static void send_init_packet(struct connection *conn)
+void push_init_packet(struct connection *conn)
 {
-    assert(conn);
+    check(conn);
     
     struct {
         byte session_id[4];
@@ -205,19 +166,19 @@ static void send_init_packet(struct connection *conn)
     // credits: l2j
     {
         byte *modulus = init.modulus;
-        //
+
         for (int i = 0; i < 4; i++) {
             byte temp = modulus[i];
             modulus[i] = modulus[0x4d + i];
             modulus[0x4d + i] = temp;
-        };
-        // step 2 xor first 0x40 bytes with last 0x40 bytes
+        }
+
         for (int i = 0; i < 0x40; i++)
             modulus[i] = (byte) (modulus[i] ^ modulus[0x40 + i]);
-        // step 3 xor bytes 0x0d-0x10 with bytes 0x34-0x38
+
         for (int i = 0; i < 4; i++)
             modulus[0x0d + i] = (byte) (modulus[0x0d + i] ^ modulus[0x34 + i]);
-        // step 4 xor last 0x40 bytes with first 0x40 bytes
+
         for (int i = 0; i < 0x40; i++)
             modulus[0x40 + i] = (byte) (modulus[0x40 + i] ^ modulus[i]);
     }
@@ -235,7 +196,7 @@ static void send_init_packet(struct connection *conn)
     trace("sending init packet" nl);
 }
 
-static void send_ignore_gg_packet(struct connection *conn)
+void push_ignore_gg_packet(struct connection *conn)
 {
     assert(conn);
     
@@ -254,7 +215,7 @@ static void send_ignore_gg_packet(struct connection *conn)
     conn->to_send_count += size;
 }
 
-static void handle_auth_request(struct connection *conn, byte *request)
+void handle_auth_request(struct connection *conn, byte *request)
 {
     assert(conn);
     assert(request);
@@ -266,14 +227,14 @@ static void handle_auth_request(struct connection *conn, byte *request)
     int account_exists = 0;
     int authenticated = 0;
     
-    strncpy(conn->username, username, sizeof(conn->username) - 1);
+    copy_string(conn->username, username, sizeof(conn->username) - 1);
     trace("user %s is trying to authenticate" nl, conn->username);
     
     directory_create("data");
     directory_create("data/accounts");
     
     in_directory("data/accounts") {
-        if (strcmp(directory.name, conn->username) != 0)
+        if (!same_string(directory.name, conn->username))
             continue;
         
         account_exists = 1;
@@ -314,7 +275,7 @@ static void handle_auth_request(struct connection *conn, byte *request)
          */
         authenticated = 
             hash_password &&
-            memcmp(stored_hash, hash_from_request, sizeof(stored_hash)) == 0;
+            same_memory(stored_hash, hash_from_request, sizeof(stored_hash));
         
         break;
     }
@@ -345,10 +306,10 @@ static void handle_auth_request(struct connection *conn, byte *request)
                   "check your permissions. the connection will be dropped." nl,
                   hash_password_path);
 
-        unsigned char salt[16] = {0};
+        byte salt[16] = {0};
         RAND_bytes(salt, sizeof(salt));
         
-        unsigned char hash[32] = {0};
+        byte hash[32] = {0};
         PKCS5_PBKDF2_HMAC(
             password, 
             (int) strnlen(password, 32), 
@@ -390,10 +351,10 @@ static void handle_auth_request(struct connection *conn, byte *request)
     u8 type = 0x03;
     end = append(end, type);
     
-    RAND_bytes((unsigned char *) &conn->login_ok1, sizeof(conn->login_ok1));
+    RAND_bytes((byte *) &conn->login_ok1, sizeof(conn->login_ok1));
     end = append(end, conn->login_ok1);
     
-    RAND_bytes((unsigned char *) &conn->login_ok2, sizeof(conn->login_ok2));
+    RAND_bytes((byte *) &conn->login_ok2, sizeof(conn->login_ok2));
     end = append(end, conn->login_ok2);
     
     byte unknown[] = {
@@ -418,25 +379,25 @@ static void handle_auth_request(struct connection *conn, byte *request)
     trace("access granted to %s" nl, username);
 }
 
-static void handle_server_list_request(struct connection *conn)
+void handle_server_list_request(struct connection *conn)
 {
-    assert(conn);
+    check(conn);
     
-    struct {
-        u8 id;
-        union {
-            char text_ip[sizeof("255.255.255.255")];
-            u32 ip;
-        };
+    struct server {
+        u32 ip;
         u32 port;
-        u8 age_limit;
-        u8 pvp;
+        u32 extra;
+
         u16 players;
         u16 max_players;
+
+        u8 id;
+        u8 age_limit;
+        u8 pvp;
         u8 status;
-        u32 extra;
         u8 brackets;
     } servers[8] = {0};
+
     u8 server_count = 0;
     
     trace("%s requested the servers list" nl, conn->username);
@@ -444,100 +405,64 @@ static void handle_server_list_request(struct connection *conn)
     directory_create("data");
     
     FILE *servers_file = fopen("data/servers.txt", "r");
-    if (servers_file) {
-        while (server_count < (u8) countof(servers)) {
-            int id = 0;
-            int max_players = 0;
-            int status = 0;
-            int matched = fscanf(servers_file, 
-                                 "id=%d" nl
-                                 "ip=%s" nl
-                                 "port=%d" nl
-                                 // "age_limit=%d" nl
-                                 // "pvp=%d" nl
-                                 "max_players=%d" nl
-                                 "status=%d" nl
-                                 // "extra=%d" nl
-                                 // "brackets=%d" nl
-                                 ,
-                                 &id,
-                                 servers[server_count].text_ip,
-                                 &servers[server_count].port,
-                                 // &servers[server_count].age_limit,
-                                 // &servers[server_count].pvp,
-                                 &max_players,
-                                 &status);
-            
-            servers[server_count].id = (u8) id;
-            servers[server_count].max_players = (u16) max_players;
-            servers[server_count].status = (u8) status;
 
-            if (matched != 5)
-                break;
-            
-            servers[server_count].ip = ip_to_u32(servers[server_count].text_ip);
-            servers[server_count].age_limit = 18;
-            servers[server_count].pvp = 1;
-            servers[server_count].extra = 0;
-            servers[server_count].brackets = 0;
-            
-            server_count++;
-        }
-        fclose(servers_file);
-        
-        if (!server_count)
-            trace("WARNING: i couldn't find any server in data/servers.txt." nl
-                  "just in case, this is the format i'm expecting:" nl
-                  nl
-                  "id=1" nl
-                  "ip=127.0.0.1" nl
-                  "port=7777" nl
-                  "max_players=1000" nl
-                  "status=1" nl
-                  nl);
-    } else {
-        server_count = 1;
-        servers[0].id = 1;
-        servers[0].port = 7777;
-        servers[0].max_players = 1000;
-        servers[0].status = 1;
-        
-        trace("WARNING! no data/servers.txt file found, i will try to create a default one" nl);
-        
+    /*
+     * Try to create a default servers config file if we can't open the file.
+     */
+    if (!servers_file) {
+        trace("no data/servers.txt file found, will try to create a new one with a default server." nl);
+
         FILE *default_servers_file = fopen("data/servers.txt", "w+");
+
         if (default_servers_file) {
-            fprintf(default_servers_file, 
-                    "id=%d" nl
-                    "ip=0.0.0.0" nl
-                    "port=%d" nl
-                    "max_players=%d" nl
-                    "status=%d" nl,
-                    servers[0].id,
-                    servers[0].port,
-                    servers[0].max_players,
-                    servers[0].status);
+            write_config(default_servers_file, "id", "%d", 1);
+            write_config(default_servers_file, "ip", "%s", "0.0.0.0");
+            write_config(default_servers_file, "port", "%d", 7777);
+            write_config(default_servers_file, "max_players", "%d", 1000);
+            write_config(default_servers_file, "status", "%d", 1);
+
             fclose(default_servers_file);
+
+            /*
+             * Once we have written the default configuration, try to re-open
+             * the file to be parsed later.
+             */
+            servers_file = fopen("data/servers.txt", "r");
         } else {
-            trace("i was unable to create the default file." nl
-                  "please check the folder's permission or, " nl
-                  "create a data/servers.txt file manually with:" nl
-                  nl
-                  "id=%d" nl
-                  "ip=0.0.0.0" nl
-                  "port=%d" nl
-                  "max_players=%d" nl
-                  "status=%d" nl
-                  nl
-                  "in the meantime, i'll send the player the default server" nl
-                  "i would if you had the default data/servers.txt file i just" nl
-                  "showed you" nl,
-                  servers[0].id,
-                  servers[0].port,
-                  servers[0].max_players,
-                  servers[0].status);
+            trace("i was not able to create the data/servers.txt file (check permissions of perhaps you are out of space)" nl);
         }
     }
-    
+
+    if (servers_file) {
+        while (server_count < array_length(servers)) {
+            char formatted_ip[sizeof("255.255.255.255")] = {0};
+
+            struct server server = {0};
+
+            int parsed_correctly =
+                read_config(servers_file, "id", "%d", &server.id) &&
+                read_config(servers_file, "ip", "%s", formatted_ip) &&
+                read_config(servers_file, "port", "%d", &server.port) &&
+                read_config(servers_file, "max_players", "%d", &server.max_players) &&
+                read_config(servers_file, "status", "%d", &server.status);
+
+            if (!parsed_correctly)
+                break;
+
+            server.id = 1;
+            server.ip = ip_to_u32(formatted_ip);
+            server.age_limit = 18;
+            server.pvp = 1;
+
+            servers[server_count] = server;
+            server_count++;
+        }
+
+        fclose(servers_file);
+    }
+
+    trace("%d servers found and will be sent to the client." nl, server_count);
+
     byte *start = conn->to_send + sizeof(u16);
     byte *end = start;
     
@@ -568,9 +493,9 @@ static void handle_server_list_request(struct connection *conn)
     conn->to_send_count += size;
 }
 
-static void handle_enter_game_server(struct connection *conn)
+void handle_enter_game_server(struct connection *conn)
 {
-    assert(conn);
+    check(conn);
     
     char access_path[256] = {0};
     snprintf(access_path, 
@@ -643,17 +568,17 @@ static void handle_enter_game_server(struct connection *conn)
     
     conn->to_send_count += size;
     
-    trace("the user %s entered the game server sucessfully" nl, conn->username);
+    trace("the user %s entered the game server successfully" nl, conn->username);
 }
 
-static void on_request(struct connection *conn)
+void on_request(struct connection *conn)
 {
-    assert(conn);
+    check(conn);
     
     byte *request = conn->request;
     
     u16 size = 0;
-    memcpy(&size, request, sizeof(size));
+    copy_memory(&size, request, sizeof(size));
     
     /*
      * Check for incomplete packet.
@@ -695,7 +620,7 @@ static void on_request(struct connection *conn)
                         RSA_NO_PADDING);
     
     byte type = 0;
-    memcpy(&type, request, sizeof(type));
+    copy_memory(&type, request, sizeof(type));
     trace("received packet is of type %d" nl, (int) type);
     
     /*
@@ -704,7 +629,7 @@ static void on_request(struct connection *conn)
      */
     switch (type) {
         case 0x07:
-        send_ignore_gg_packet(conn);
+        push_ignore_gg_packet(conn);
         break;
         
         case 0x00:
@@ -727,7 +652,26 @@ static void on_request(struct connection *conn)
     conn->request_count -= size;
 }
 
-static void handle_event(int socket, enum net_event event, void *read, unsigned long long len)
+void send_queued_packets(struct connection *conn)
+{
+    check(conn);
+
+    byte *head = conn->to_send + conn->sent;
+    u64 to_send = conn->to_send_count - conn->sent;
+
+    if (!to_send)
+        return;
+
+    trace("sending %d bytes of data" nl, (u32) to_send);
+    conn->sent += net_send(conn->socket, head, to_send);
+
+    if (conn->sent >= conn->to_send_count) {
+        conn->sent = 0;
+        conn->to_send_count = 0;
+    }
+}
+
+void handle_event(int socket, enum net_event event, void *read, unsigned long long len)
 {
     struct connection *conn = find_connection(socket);
     switch (event) {
@@ -743,8 +687,8 @@ static void handle_event(int socket, enum net_event event, void *read, unsigned 
             /*
              * Blowfish key.
              */
-            unsigned char key[] = "_;5.]94-31==-%xT!^[$";
-            BF_set_key(&conn->blowfish, (int) (sizeof(key)), key);
+            byte key[] = "_;5.]94-31==-%xT!^[$";
+            BF_set_key(&conn->blowfish, sizeof(key), key);
             
             /*
              * Generate a new rsa key if required.
@@ -755,7 +699,7 @@ static void handle_event(int socket, enum net_event event, void *read, unsigned 
                 RSA_generate_key_ex(conn->rsa_key, 1024, conn->rsa_e, 0);
             }
             
-            send_init_packet(conn);
+            push_init_packet(conn);
         } break;
         
         case net_closed: {
@@ -765,7 +709,7 @@ static void handle_event(int socket, enum net_event event, void *read, unsigned 
         
         case net_read: {
             trace("bytes %d received from client" nl, (s32) len);
-            memcpy(conn->request + conn->request_count, read, len);
+            copy_memory(conn->request + conn->request_count, read, len);
             conn->request_count += len;
             on_request(conn);
         } break;
@@ -773,45 +717,13 @@ static void handle_event(int socket, enum net_event event, void *read, unsigned 
         default:
         break;
     }
-    /*
-     * We assume we always need to reply with something when we get a request.
-     */
-    wpush(&send_responses_worker, conn);
-}
 
-static void send_responses(struct wqueue *q, void *w)
-{
-    struct connection *conn = (struct connection *) w;
-
-    void *head = conn->to_send + conn->sent;
-    unsigned long long to_send = conn->to_send_count - conn->sent;
-    trace("sending %d bytes of data" nl, (u32) to_send);
-    conn->sent += net_send(conn->socket, head, to_send);
-
-    /*
-     * If we couldn't sent the entire response, re-add
-     * this connection to the worker so we try
-     * to flush later again.
-     * NOTE(fmontenegro) do we want to try up to n times
-     * and then dropping the connection?
-     */
-    if (conn->sent < conn->to_send_count) {
-        wpush(q, conn);
-        return;
-    }
-
-    /*
-     * All data has been sent, reset the counters.
-     */
-    conn->sent = 0;
-    conn->to_send_count = 0;
+    send_queued_packets(conn);
 }
 
 int main()
 {
-    wstart(&send_responses_worker, send_responses);
-
-    unsigned short port = 2106;
+    u16 port = 2106;
     int socket = net_port(port);
     trace("login server, listening for connection on port %d" nl, port);
     net_listen(socket, handle_event);
