@@ -39,6 +39,7 @@
 #define same_memory(a, b, size) (memcmp((a), (b), (size)) == 0)
 #define copy_memory(dest, src, size) (memcpy((dest), (src), (size)))
 #define copy_string(dest, src, size) (strncpy((dest), (src), (size)))
+#define copy_string_from_format(dest, format, ...) (snprintf((dest), sizeof(dest) - 1, (format), __VA_ARGS__))
 
 /*
  * Format:

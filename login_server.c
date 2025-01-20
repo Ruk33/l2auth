@@ -162,8 +162,10 @@ void push_init_packet(struct connection *conn)
     RSA_get0_key(conn->rsa_key, &n, 0, 0);
     BN_bn2bin(n, init.modulus);
     
-    // scramble modulus
-    // credits: l2j
+    /*
+     * scramble modulus
+     * credits: l2j
+     */
     {
         byte *modulus = init.modulus;
 
@@ -498,19 +500,16 @@ void handle_enter_game_server(struct connection *conn)
     check(conn);
     
     char access_path[256] = {0};
-    snprintf(access_path, 
-             sizeof(access_path) - 1, 
-             "data/accounts/%s/access.txt", 
-             conn->username);
+    copy_string_from_format(access_path, "data/accounts/%s/access.txt", conn->username);
     
     FILE *access_file = fopen(access_path, "w");
     if (!access_file) {
-        trace("unable to create the file %s." nl
-              "this file is used to check if a connection to a game server" nl
-              "actually went through the login server successfully." nl
-              "the connection with %s will be dropped" nl,
-              access_path,
-              conn->username);
+        trace("unable to create the file %s." nl, access_path);
+        trace(
+            "this file is used to check if a connection to a game server "
+            "actually went through the login server successfully." nl
+        );
+        trace("the connection with %s will be dropped" nl, conn->username);
         net_close(conn->socket);
         conn->socket = 0;
         return;
@@ -539,19 +538,13 @@ void handle_enter_game_server(struct connection *conn)
      * Save dates in utc format, in number (easier to check) and 
      * formatted, easier to read & debug :)
      */
-    fprintf(access_file, 
-            "login_ok1=%u" nl
-            "login_ok2=%u" nl
-            "created_at=%u" nl
-            "valid_until=%u" nl
-            "created_at(yyyy-mm-dd hh:mm:ss utc)=%s" nl
-            "valid_until(yyyy-mm-dd hh:mm:ss utc)=%s" nl,
-            conn->login_ok1,
-            conn->login_ok2,
-            (unsigned int) created_at,
-            (unsigned int) valid_until,
-            created_at_str,
-            valid_until_str);
+    write_config(access_file, "login_ok1", "%u", conn->login_ok1);
+    write_config(access_file, "login_ok2", "%u", conn->login_ok2);
+    write_config(access_file, "created_at", "%u", created_at);
+    write_config(access_file, "valid_until", "%u", valid_until);
+    write_config(access_file, "created_at(yyyy-mm-dd hh:mm:ss utc)", "%s", created_at_str);
+    write_config(access_file, "valid_until(yyyy-mm-dd hh:mm:ss utc)", "%s", valid_until_str);
+
     fclose(access_file);
     
     byte *start = conn->to_send + sizeof(u16);
@@ -613,11 +606,13 @@ void on_request(struct connection *conn)
      * RSA decrypt.
      * +1 don't include the packet type, just the body of the packet.
      */
-    RSA_private_decrypt(RSA_size(conn->rsa_key),
-                        request + 1,
-                        request + 1,
-                        conn->rsa_key,
-                        RSA_NO_PADDING);
+    RSA_private_decrypt(
+        RSA_size(conn->rsa_key),
+        request + 1,
+        request + 1,
+        conn->rsa_key,
+        RSA_NO_PADDING
+    );
     
     byte type = 0;
     copy_memory(&type, request, sizeof(type));
