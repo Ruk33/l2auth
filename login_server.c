@@ -524,14 +524,18 @@ void handle_enter_game_server(struct connection *conn)
     struct tm valid_until_tm = *gmtime(&valid_until);
     char created_at_str[128] = {0};
     char valid_until_str[128] = {0};
-    strftime(created_at_str, 
-             sizeof(created_at_str) - 1, 
-             "%Y-%m-%d %H:%M:%S", 
-             &created_at_tm);
-    strftime(valid_until_str, 
-             sizeof(valid_until_str) - 1, 
-             "%Y-%m-%d %H:%M:%S", 
-             &valid_until_tm);
+    strftime(
+        created_at_str, 
+        sizeof(created_at_str) - 1, 
+        "%Y-%m-%d %H:%M:%S", 
+        &created_at_tm
+    );
+    strftime(
+        valid_until_str, 
+        sizeof(valid_until_str) - 1, 
+        "%Y-%m-%d %H:%M:%S", 
+        &valid_until_tm
+    );
     /*
      * Save these ids so later the game server can check that the user
      * went through the login server successfully.
