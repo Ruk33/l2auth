@@ -63,21 +63,19 @@ struct connection *find_connection(int socket)
      * Check for a connection already using this socket.
      */
     for (u64 i = 0; i < array_length(connections); i++) {
-        if (connections[i].socket == socket)
-            return connections + i;
+        struct connection *connection = connections + i;
+
+        if (connection->socket == socket)
+            return connection;
     }
     /*
      * Or try to give a new usable connection.
      */
     for (u64 i = 0; i < array_length(connections); i++) {
-        /*
-         * Skip if the connection is being used.
-         */
-        if (connections[i].socket)
-            continue;
+        struct connection *connection = connections + i;
 
-        connections[i] = (struct connection) {0};
-        return connections + i;
+        if (!connection->socket)
+            return connection;
     }
 
     return 0;

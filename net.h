@@ -12,8 +12,6 @@ typedef void (net_handler)
 
 // create a new socket for ipv4 assigned to a port.
 int net_port(unsigned short port);
-// create a new socket using a file (.sock, .socket, etc.)
-int net_sock(char *path);
 // block and listen for events.
 void net_listen(int server, net_handler *handler);
 // try to send the full buffer. returns the amount

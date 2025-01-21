@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "library.h"
 
-enum library_status library_load(struct library *library)
+enum library_status load_library(struct library *library, const char *path)
 {
 /*
  * Windows implementation.
@@ -20,7 +20,7 @@ enum library_status library_load(struct library *library)
     enum library_status result = library_loaded;
 
     WIN32_FILE_ATTRIBUTE_DATA fattr = {0};
-    GetFileAttributesEx(library->path, GetFileExInfoStandard, &fattr);
+    GetFileAttributesEx(path, GetFileExInfoStandard, &fattr);
 
     /*
      * Library is up to date?
@@ -47,8 +47,8 @@ enum library_status library_load(struct library *library)
      * not the original file, otherwise, windows will
      * complain when trying to make a change to it.
      */
-    snprintf(library->copy_path, sizeof(library->copy_path) - 1, ".%s", library->path);
-    if (CopyFileA(library->path, library->copy_path, FALSE) == 0)
+    snprintf(library->copy_path, sizeof(library->copy_path) - 1, ".%s", path);
+    if (CopyFileA(path, library->copy_path, FALSE) == 0)
         return library_failed;
 
     library->handle = LoadLibraryA(library->copy_path);
@@ -68,7 +68,7 @@ enum library_status library_load(struct library *library)
     enum library_status result = library_loaded;
 
     struct stat fattr = {0};
-    if (stat(library->path, &fattr) != 0)
+    if (stat(path, &fattr) != 0)
         return library_failed;
 
     /*
@@ -91,7 +91,7 @@ enum library_status library_load(struct library *library)
         library->handle = 0;
     }
 
-    library->handle = dlopen(library->path, RTLD_LAZY);
+    library->handle = dlopen(path, RTLD_LAZY);
     if (!library->handle)
         return library_failed;
 
@@ -102,7 +102,7 @@ enum library_status library_load(struct library *library)
 #endif
 }
 
-void *library_function(struct library *library, const char *name)
+void *load_function(struct library *library, const char *name)
 {
 /*
  * Windows implementation.
@@ -118,4 +118,3 @@ void *library_function(struct library *library, const char *name)
     return dlsym(library->handle, name);
 #endif
 }
-

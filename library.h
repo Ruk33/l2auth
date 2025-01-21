@@ -8,7 +8,6 @@
 
 struct library {
     void *handle;
-    const char *path;
     int reload_on_next_call;
 
 #ifdef _WIN32
@@ -40,13 +39,10 @@ enum library_status {
  * reloaded, returning library_reloaded.
  * 
  * If at some point there is an error, library_failed will be returned.
- *
- * IMPORTANT, don't forget to assign the path property
- * before calling this function.
  */
-enum library_status library_load(struct library *library);
+enum library_status load_library(struct library *library, const char *path);
 /*
  * Get function name from library.
  * On error/not-found, 0 is returned.
  */
-void *library_function(struct library *libray, const char *name);
+void *load_function(struct library *libray, const char *name);

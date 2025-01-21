@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define nl "\n"
 
@@ -34,12 +35,15 @@
 #define kb * 1024
 #define mb * 1024 * 1024
 
+#define get_memory(bytes) (calloc(1, (bytes)))
+
 #define array_length(x) (sizeof(x) / sizeof(*(x)))
 
 #define same_memory(a, b, size) (memcmp((a), (b), (size)) == 0)
 #define copy_memory(dest, src, size) (memcpy((dest), (src), (size)))
 #define copy_string(dest, src, size) (strncpy((dest), (src), (size)))
 #define copy_string_from_format(dest, format, ...) (snprintf((dest), sizeof(dest) - 1, (format), __VA_ARGS__))
+#define reset_memory(memory, size) (memset((memory), 0, (size)))
 
 /*
  * Format:

@@ -42,16 +42,9 @@ int net_port(unsigned short port)
     return (int) server;
 }
 
-int net_sock(char *path)
-{
-    path = path;
-    printf("to implement :)\n");
-    return 0;
-}
-
 void net_listen(int server, net_handler *handler)
 {
-    #define max_clients 128
+    #define max_clients 1024
     static SOCKET clients[max_clients];
     static unsigned char read_buf[8192] = {0};
 

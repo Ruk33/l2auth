@@ -46,41 +46,6 @@ int net_port(unsigned short port)
     return -1;
 }
 
-int net_sock(char *path)
-{
-    if (!path) {
-        printf("error: no path provided for socket.\n");
-        return -1;
-    }
-    
-    int server = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (server == -1)
-        goto abort;
-    
-    int reuse = 1;
-    if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
-        goto abort;
-    
-    struct sockaddr_un address = {0};
-    address.sun_family = AF_UNIX;
-    strcpy(address.sun_path, path);
-    if (unlink(path) == -1)
-        goto abort;
-    
-    if (bind(server, (struct sockaddr *) &address, sizeof(address)) == -1)
-        goto abort;
-    
-    if (listen(server, SOMAXCONN) == -1)
-        goto abort;
-    
-    return server;
-    
-    abort:
-    print_err("net_sock");
-    close(server);
-    return -1;
-}
-
 void net_listen(int server, net_handler *handler)
 {
     static struct epoll_event events[32] = {0};
