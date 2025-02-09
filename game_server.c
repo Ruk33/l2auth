@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "net.h"
+#include "thread.h"
 
 #ifdef LIB
 
@@ -28,13 +29,6 @@ void init(byte **memory)
     struct state *state = *(struct state **) memory;
 
     trace("init executed" nl);
-}
-
-void update(byte **memory)
-{
-    struct state *state = *(struct state **) memory;
-    
-    // trace("foo is %d" nl, state->foo);
 }
 
 void push_packet(struct connection *connection, byte *end_of_packet, int encrypt)
@@ -190,7 +184,7 @@ void try_handling_request(struct connection *connection)
     trace("here you need to handle a packet of type x" nl);
 }
 
-void handle_request(byte **memory, int socket, enum net_event event, byte *read, u64 len)
+void handle_request(struct thread *thread, byte **memory, int socket, enum net_event event, byte *read, u64 len)
 {
     struct state *state = *(struct state **) memory;
 
@@ -232,12 +226,30 @@ void handle_request(byte **memory, int socket, enum net_event event, byte *read,
                 return;
 
             copy_memory(connection->request + connection->request_count, read, len);
+
+            lock(thread);
             connection->request_count += len;
-
-            try_handling_request(connection);
-
-            send_queued_packets(connection);
+            unlock(thread);
         break;
+    }
+}
+
+void update(byte **memory)
+{
+    struct state *state = *(struct state **) memory;
+
+    for (u64 i = 0; i < array_length(state->connections); i++) {
+        struct connection *connection = state->connections + i;
+
+        if (!connection->socket)
+            continue;
+
+        // "input"
+        try_handling_request(connection);
+
+        // update
+
+        send_queued_packets(connection);
     }
 }
 
@@ -247,14 +259,14 @@ void handle_request(byte **memory, int socket, enum net_event event, byte *read,
  */
 
 #include "library.h"
-#include "thread.h"
 
 typedef void init_cb(byte **memory);
 typedef void update_cb(byte **memory);
-typedef void handle_request_cb(byte **memory, int socket, enum net_event event, byte *read, u64 len);
+typedef void handle_request_cb(struct thread *thread, byte **memory, int socket, enum net_event event, byte *read, u64 len);
 
 static struct library library = {0};
 static byte *memory = 0;
+static struct thread net_thread = {0};
 
 static init_cb *init_from_library = 0;
 static update_cb *update_from_library = 0;
@@ -262,10 +274,10 @@ static handle_request_cb *handle_request_from_library = 0;
 
 void net_request_handler(int socket, enum net_event event, void *read, unsigned long long len)
 {
-    handle_request_from_library(&memory, socket, event, read, len);
+    handle_request_from_library(&net_thread, &memory, socket, event, read, len);
 }
 
-int net_thread(void *buf)
+int net_thread_loop(struct thread *thread)
 {
     trace("listening for requests in port 7777" nl);
 
@@ -290,7 +302,7 @@ int main()
 
     init_from_library(&memory);
 
-    run_in_thread(net_thread, 0);
+    run_in_thread(&net_thread, net_thread_loop);
 
     while (1) {
         /*

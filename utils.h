@@ -58,6 +58,23 @@
 #define write_config(file, config_name, format, value) \
     (fprintf((file), config_name "=" format nl, (value)))
 
+#define start_coroutine(c)                  \
+    struct coroutine *__coroutine = (c);    \
+    switch (__coroutine->line)              \
+        case 0:
+
+#define yield                       \
+    __coroutine->line = __LINE__;   \
+    break;                          \
+    case (__LINE__):
+
+#define yield_for(sleep_ms, passed_time)    \
+    __coroutine->sleep = (sleep_ms);        \
+    yield;                                  \
+    __coroutine->sleep -= (passed_time);    \
+    if (__coroutine->sleep > 0)             \
+        break
+
 typedef uint8_t byte;
 
 typedef uint8_t  u8;
@@ -69,6 +86,11 @@ typedef int8_t  s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
+
+struct coroutine {
+    u64 line;
+    float sleep;
+};
 
 u64 string_size(char *src)
 {
