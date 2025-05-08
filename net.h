@@ -1,23 +1,37 @@
 enum net_event {
-    // new connection
     net_conn,
-    // client closed the connection
     net_closed,
-    // can read
     net_read,
 };
 
-typedef void (net_handler)
-(int socket, enum net_event event, void *read, unsigned long long len);
+struct net_socket {
+#ifdef _WIN32
+    SOCKET handle;
+#endif
 
-// create a new socket for ipv4 assigned to a port.
-int net_port(unsigned short port);
-// block and listen for events.
-void net_listen(int server, net_handler *handler);
-// try to send the full buffer. returns the amount
-// of bytes that was able to send. if it writes
-// less than the intended amount, you will have to 
-// keep trying sending the rest of the data.
-unsigned long long net_send(int socket, void *buf, unsigned long long n);
-// close the socket.
-void net_close(int socket);
+#ifdef __linux__
+    int handle;
+#endif
+};
+
+typedef void (net_handler)(struct net_socket socket, enum net_event event, void *read, int bytes_read);
+
+/*
+ * Create a new socket for ipv4 assigned to a port.
+ */
+struct net_socket net_port(unsigned short port);
+
+/*
+ * Block and listen for events.
+ */
+void net_block_and_listen(struct net_socket socket, net_handler *handler);
+
+/*
+ * Try to send the full buffer. returns the amount
+ * of bytes that was able to send. if it writes
+ * less than the intended amount, you will have to
+ * keep trying sending the rest of the data.
+ */
+int net_send(struct net_socket socket, void *buf, int bytes_count);
+
+void net_close(struct net_socket socket);

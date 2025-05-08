@@ -1,14 +1,32 @@
+struct directory {
+    char *path;
+
+    /*
+     * For iteration.
+     */
+    int is_directory;
+    char full_path[512];
+    char name[256];
+
 #ifdef _WIN32
-#include <windows.h>
+    WIN32_FIND_DATA find_data;
+    HANDLE handle;
 #endif
 
 #ifdef __linux__
-#include <dirent.h>
-#include <sys/stat.h>
+    DIR *handle;
 #endif
+};
 
-#include <stdio.h>
-#include "directory.h"
+/*
+ * Iterate through each file in a path. The file/directory will be
+ * assigned to an "it" variable created by this macro.
+ */
+#define each_in_path(path) \
+    for (struct directory it = directory_open(path); directory_next(&it);) \
+        if (!same_string(it.name, ".") && !same_string(it.name, ".."))
+
+int directory_create(char *path);
 
 struct directory directory_open(char *path)
 {
@@ -17,16 +35,16 @@ struct directory directory_open(char *path)
  */
 #ifdef _WIN32
     struct directory result = {0};
-    
+
     char path_pattern[256] = {0};
     snprintf(path_pattern, sizeof(path_pattern) - 1, "%s/*", path);
-    
+
     result.path = path;
     result.handle = FindFirstFile(path_pattern, &result.find_data);
-    
+
     if (result.handle == INVALID_HANDLE_VALUE)
         result.handle = 0;
-    
+
     return result;
 #endif
 
@@ -49,20 +67,20 @@ int directory_next(struct directory *directory)
 #ifdef _WIN32
     if (!directory->handle)
         return 0;
-    
+
     directory->is_directory = directory->find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
     snprintf(directory->name, sizeof(directory->name) - 1, "%s", directory->find_data.cFileName);
-    snprintf(directory->full_path, 
-             sizeof(directory->full_path) - 1, 
-             "%s/%s", 
-             directory->path, 
+    snprintf(directory->full_path,
+             sizeof(directory->full_path) - 1,
+             "%s/%s",
+             directory->path,
              directory->name);
-    
+
     if (!FindNextFile(directory->handle, &directory->find_data)) {
         FindClose(directory->handle);
         directory->handle = 0;
     }
-    
+
     return 1;
 #endif
 
@@ -86,10 +104,10 @@ int directory_next(struct directory *directory)
      * so there is no need for -1 in dest buffer size.
      */
     snprintf(directory->name, sizeof(directory->name), "%s", entry->d_name);
-    snprintf(directory->full_path, 
-             sizeof(directory->full_path) - 1, 
-             "%s/%s", 
-             directory->path, 
+    snprintf(directory->full_path,
+             sizeof(directory->full_path) - 1,
+             "%s/%s",
+             directory->path,
              directory->name);
 
     return 1;

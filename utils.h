@@ -16,7 +16,7 @@
  * assert alternative.
  */
 #define check(what) \
-    ((what) ? (what) : (trace("assertion failed in %s:%d: %s" nl, __FILE__, __LINE__, #what), *((int *) 0) = 0, (what)))
+    ((what) ? (what) : (trace("assertion failed in %s:%d: %s" nl, __FILE__, __LINE__, #what), *((volatile int *) 0) = 0, (what)))
 
 /*
  * Append src to dest and return dest + sizeof(src)
@@ -58,15 +58,15 @@
 #define write_config(file, config_name, format, value) \
     (fprintf((file), config_name "=" format nl, (value)))
 
-#define start_coroutine(c)                  \
+#define coroutine(c)                        \
     struct coroutine *__coroutine = (c);    \
     switch (__coroutine->line)              \
         case 0:
 
-#define yield                       \
-    __coroutine->line = __LINE__;   \
-    break;                          \
-    case (__LINE__):
+#define yield                               \
+    __coroutine->line = __COUNTER__ + 1;    \
+    break;                                  \
+    case (__COUNTER__):
 
 #define yield_for(sleep_ms, passed_time)    \
     __coroutine->sleep = (sleep_ms);        \
@@ -88,7 +88,7 @@ typedef int32_t s32;
 typedef int64_t s64;
 
 struct coroutine {
-    u64 line;
+    int line;
     float sleep;
 };
 
