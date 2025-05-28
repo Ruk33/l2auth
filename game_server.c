@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "utils.h"
+#include "utils.c"
 #include "library.c"
 #include "thread.c"
 

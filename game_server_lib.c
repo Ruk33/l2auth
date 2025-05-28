@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "utils.h"
+#include "utils.c"
 #include "thread.c"
 
 #ifdef _WIN32

@@ -21,7 +21,7 @@
 #include <openssl/blowfish.h>
 #include <openssl/evp.h>
 
-#include "utils.h"
+#include "utils.c"
 #include "directory.c"
 #include "packet.c"
 
@@ -42,18 +42,15 @@ struct connection {
      * Buffer reserved for the response of the connection/client.
      * When bytes are sent, we have to keep in mind that
      * sometimes the entire response can't be sent as once,
-     * instead, in chunks. If that's the case, "sent" records
-     * how many bytes of the entire response ("to_send_count")
-     * has been already sent.
+     * instead, in chunks.
      */
-    byte to_send[8 kb];
-    u64 to_send_count;
-    u64 sent;
+    u32 response_size;
+    byte response_buffer[8 kb];
     /*
      * Buffer reserved for the request of client.
      */
+    u32 request_size;
     byte request[8 kb];
-    u64 request_count;
 
     BF_KEY blowfish;
     BIGNUM *rsa_e;
@@ -62,12 +59,72 @@ struct connection {
 
 static struct connection connections[32];
 
+void drop_connection(struct connection *connection)
+{
+    net_close(connection->socket);
+    connection->socket = (struct net_socket) {0};
+}
+
+void flush_responses(struct connection *connection)
+{
+    if (!connection->response_size)
+        return;
+
+    trace("flushing %d bytes of data" nl, connection->response_size);
+
+    int sent = net_send(connection->socket,
+                        connection->response_buffer,
+                        connection->response_size);
+
+    trace("flushed %d bytes of data (%d bytes remaining)" nl,
+          sent,
+          connection->response_size - sent);
+
+    connection->response_size -= sent;
+
+    move_memory(connection->response_buffer,
+                connection->response_buffer + sent,
+                connection->response_size);
+}
+
+void push_response(struct connection *connection, byte *packet)
+{
+    u16 size = packet_size(packet);
+
+    u64 response_buffer_size = sizeof(connection->response_buffer);
+
+    /*
+     * Try flushing packets if there is no more room in the queue.
+     */
+    if (connection->response_size + size > response_buffer_size) {
+        flush_responses(connection);
+
+        /*
+         * If we can't flush and make room for more packets, we will have to
+         * drop the client.
+         */
+        if (connection->response_size + size > response_buffer_size) {
+            trace("there is no more room to queue packets for this client. the client will be dropped." nl);
+
+            drop_connection(connection);
+
+            return;
+        }
+    }
+
+    copy_memory(connection->response_buffer + connection->response_size,
+                packet,
+                size);
+
+    connection->response_size += size;
+}
+
 u32 ip_to_u32(char *src)
 {
-    check(src);
-
     u32 ip[4] = {0};
+
     sscanf(src, "%u.%u.%u.%u", &ip[0], &ip[1], &ip[2], &ip[3]);
+
     u32 result = ip[0] | ip[1] << 8 | ip[2] << 16 | ip[3] << 24;
 
     return result;
@@ -97,47 +154,18 @@ struct connection *find_connection(struct net_socket socket)
     return 0;
 }
 
-u16 checksum(byte *dest, byte *start, byte *end)
-{
-    check(dest);
-    check(start);
-    check(end);
-    check(start < end);
-    check(end - start < 65535);
-
-    u16 size = (u16) (end - start);
-    u32 result = 0;
-    // for (u16 i = 0; i < size; i += 4) {
-    //     u32 ecx = *start++ & 0xff;
-    //     ecx |= (*start++ <<  0x8) & 0xff00;
-    //     ecx |= (*start++ << 0x10) & 0xff0000;
-    //     ecx |= (*start++ << 0x18) & 0xff000000;
-    //     result ^= ecx;
-    // }
-
-    append(end, result);
-    size += (u16) sizeof(result);
-
-    /*
-     * The packet must be multiple of 8
-     */
-    u16 body_padded_size = ((size + 7) & (~7));
-    u16 size_header = 2;
-    /*
-     * The final size of the packet consists of
-     * the padded size plus 2 bytes used to store how
-     * big the packet is.
-     */
-    u16 final_size = body_padded_size + size_header;
-    copy_memory(dest, &final_size, sizeof(final_size));
-
-    return final_size;
-}
-
 void encrypt_packet(struct connection *conn, byte *packet)
 {
+    /*
+     * Size without the size bytes.
+     * The packet consists of:
+     * [2 bytes for size][1 byte for packet type][packet content]
+     */
     u16 size = packet_size(packet) - 2;
 
+    /*
+     * Encrypt only the packet (ignore the 2 bytes of packet size)
+     */
     for (u16 i = 2; i < size; i += 8) {
         union {
             u32 ints[2];
@@ -168,8 +196,6 @@ void encrypt_packet(struct connection *conn, byte *packet)
 
 void push_init_packet(struct connection *conn)
 {
-    check(conn);
-
     struct {
         byte session_id[4];
         byte protocol[4];
@@ -214,11 +240,7 @@ void push_init_packet(struct connection *conn)
                           strn2(init.protocol)
                           strn2(init.modulus));
 
-    u16 size = packet_size(packet);
-
-    copy_memory(conn->to_send, packet, size);
-
-    conn->to_send_count += size;
+    push_response(conn, packet);
 
     trace("sending init packet" nl);
 }
@@ -234,13 +256,9 @@ void push_ignore_gg_packet(struct connection *conn)
     byte *packet = packet(byte(type)
                           int(ignore_gg));
 
-    u16 size = packet_size(packet);
-
     encrypt_packet(conn, packet);
 
-    copy_memory(conn->to_send, packet, size);
-
-    conn->to_send_count += size;
+    push_response(conn, packet);
 
     trace("sending ignore gg" nl);
 }
@@ -268,13 +286,13 @@ void handle_auth_request(struct connection *conn, byte *request)
             continue;
 
         account_exists = 1;
+
         char hash_password_path[1024] = {0};
-        snprintf(
-            hash_password_path,
-            sizeof(hash_password_path) - 1,
-            "%s/hash_password.txt",
-            it.full_path
-        );
+
+        snprintf(hash_password_path,
+                 sizeof(hash_password_path) - 1,
+                 "%s/hash_password.txt",
+                 it.full_path);
 
         byte stored_salt[16] = {0};
         byte stored_hash[32] = {0};
@@ -289,16 +307,14 @@ void handle_auth_request(struct connection *conn, byte *request)
         fclose(hash_password);
 
         byte hash_from_request[32] = {0};
-        PKCS5_PBKDF2_HMAC(
-            password,
-            (int) strnlen(password, 32),
-            stored_salt,
-            sizeof(stored_salt),
-            1000,
-            EVP_sha256(),
-            sizeof(hash_from_request),
-            hash_from_request
-        );
+        PKCS5_PBKDF2_HMAC(password,
+                          (int) strnlen(password, 32),
+                          stored_salt,
+                          sizeof(stored_salt),
+                          1000,
+                          EVP_sha256(),
+                          sizeof(hash_from_request),
+                          hash_from_request);
 
         /*
          * Check if passwords match.
@@ -314,23 +330,23 @@ void handle_auth_request(struct connection *conn, byte *request)
         trace("the user %s doesn't exist. trying to create the account" nl, conn->username);
 
         char account_folder[256] = {0};
-        snprintf(
-            account_folder,
-            sizeof(account_folder) - 1,
-            "data/accounts/%s",
-            conn->username
-        );
+
+        snprintf(account_folder,
+                 sizeof(account_folder) - 1,
+                 "data/accounts/%s",
+                 conn->username);
+
         directory_create(account_folder);
 
         char hash_password_path[256] = {0};
-        snprintf(
-            hash_password_path,
-            sizeof(hash_password_path) - 1,
-            "data/accounts/%s/hash_password.txt",
-            conn->username
-        );
+
+        snprintf(hash_password_path,
+                 sizeof(hash_password_path) - 1,
+                 "data/accounts/%s/hash_password.txt",
+                 conn->username);
 
         FILE *hash_password = fopen(hash_password_path, "w");
+
         if (!hash_password)
             trace("ERROR: unable to create or write to file %s." nl
                   "check your permissions. the connection will be dropped." nl,
@@ -340,19 +356,18 @@ void handle_auth_request(struct connection *conn, byte *request)
         RAND_bytes(salt, sizeof(salt));
 
         byte hash[32] = {0};
-        PKCS5_PBKDF2_HMAC(
-            password,
-            (int) strnlen(password, 32),
-            salt,
-            sizeof(salt),
-            1000,
-            EVP_sha256(),
-            sizeof(hash),
-            hash
-        );
+        PKCS5_PBKDF2_HMAC(password,
+                          (int) strnlen(password, 32),
+                          salt,
+                          sizeof(salt),
+                          1000,
+                          EVP_sha256(),
+                          sizeof(hash),
+                          hash);
 
         fwrite(salt, 1, sizeof(salt), hash_password);
         fwrite(hash, 1, sizeof(hash), hash_password);
+
         fclose(hash_password);
 
         authenticated = hash_password != 0;
@@ -367,8 +382,7 @@ void handle_auth_request(struct connection *conn, byte *request)
      */
     if (!authenticated) {
         trace("unable to authenticate %s, dropping connection" nl, conn->username);
-        net_close(conn->socket);
-        conn->socket = (struct net_socket) {0};
+        drop_connection(conn);
         return;
     }
 
@@ -399,13 +413,9 @@ void handle_auth_request(struct connection *conn, byte *request)
                           int(conn->login_ok2)
                           strn2(unknown));
 
-    u16 size = packet_size(packet);
-
     encrypt_packet(conn, packet);
 
-    copy_memory(conn->to_send, packet, size);
-
-    conn->to_send_count += size;
+    push_response(conn, packet);
 
     trace("access granted to %s" nl, username);
 }
@@ -471,16 +481,15 @@ void handle_server_list_request(struct connection *conn)
             struct server server = {0};
 
             int parsed_correctly =
-                read_config(servers_file, "id", "%c", &server.id) &&
+                read_config(servers_file, "id", "%d", (int *) &server.id) &&
                 read_config(servers_file, "ip", "%s", formatted_ip) &&
                 read_config(servers_file, "port", "%d", &server.port) &&
                 read_config(servers_file, "max_players", "%hd", &server.max_players) &&
-                read_config(servers_file, "status", "%c", &server.status);
+                read_config(servers_file, "status", "%d", (int *) &server.status);
 
             if (!parsed_correctly)
                 break;
 
-            server.id = 1;
             server.ip = ip_to_u32(formatted_ip);
             server.age_limit = 18;
             server.pvp = 1;
@@ -499,24 +508,22 @@ void handle_server_list_request(struct connection *conn)
     byte *packet = packet(byte(type)
                           byte(server_count)
                           byte(0)
-                          byte(servers[0].id)
-                          int(servers[0].ip)
-                          int(servers[0].port)
-                          byte(servers[0].age_limit)
-                          byte(servers[0].pvp)
-                          short(servers[0].players)
-                          short(servers[0].max_players)
-                          byte(servers[0].status)
-                          byte(servers[0].extra)
-                          byte(servers[0].brackets));
-
-    u16 size = packet_size(packet);
+                          start_array(servers, server_count)
+                              byte_in_array(struct server, id)
+                              int_in_array(struct server, ip)
+                              int_in_array(struct server, port)
+                              byte_in_array(struct server, age_limit)
+                              byte_in_array(struct server, pvp)
+                              short_in_array(struct server, players)
+                              short_in_array(struct server, max_players)
+                              byte_in_array(struct server, status)
+                              byte_in_array(struct server, extra)
+                              byte_in_array(struct server, brackets)
+                          stop_array());
 
     encrypt_packet(conn, packet);
 
-    copy_memory(conn->to_send, packet, size);
-
-    conn->to_send_count += size;
+    push_response(conn, packet);
 }
 
 void handle_enter_game_server(struct connection *conn)
@@ -529,37 +536,42 @@ void handle_enter_game_server(struct connection *conn)
     FILE *access_file = fopen(access_path, "w");
     if (!access_file) {
         trace("unable to create the file %s." nl, access_path);
-        trace(
-            "this file is used to check if a connection to a game server "
-            "actually went through the login server successfully." nl
-        );
+        trace("this file is used to check if a connection to a game server "
+              "actually went through the login server successfully." nl);
         trace("the connection with %s will be dropped" nl, conn->username);
-        net_close(conn->socket);
-        conn->socket = (struct net_socket) {0};
+
+        drop_connection(conn);
+
         return;
     }
+
     time_t now = time(0);
+
     time_t created_at = now;
+
     /*
      * Make these ids valid for 1 minute.
      */
     time_t valid_until = now + 1 minute;
+
     struct tm created_at_tm = *gmtime(&created_at);
+
     struct tm valid_until_tm = *gmtime(&valid_until);
+
     char created_at_str[128] = {0};
+
     char valid_until_str[128] = {0};
-    strftime(
-        created_at_str,
-        sizeof(created_at_str) - 1,
-        "%Y-%m-%d %H:%M:%S",
-        &created_at_tm
-    );
-    strftime(
-        valid_until_str,
-        sizeof(valid_until_str) - 1,
-        "%Y-%m-%d %H:%M:%S",
-        &valid_until_tm
-    );
+
+    strftime(created_at_str,
+             sizeof(created_at_str) - 1,
+             "%Y-%m-%d %H:%M:%S",
+             &created_at_tm);
+
+    strftime(valid_until_str,
+             sizeof(valid_until_str) - 1,
+             "%Y-%m-%d %H:%M:%S",
+             &valid_until_tm);
+
     /*
      * Save these ids so later the game server can check that the user
      * went through the login server successfully.
@@ -581,13 +593,9 @@ void handle_enter_game_server(struct connection *conn)
                           int(conn->login_ok1)
                           int(conn->login_ok2));
 
-    u16 size = packet_size(packet);
-
     encrypt_packet(conn, packet);
 
-    copy_memory(conn->to_send, packet, size);
-
-    conn->to_send_count += size;
+    push_response(conn, packet);
 
     trace("the user %s entered the game server successfully" nl, conn->username);
 }
@@ -604,7 +612,7 @@ void on_request(struct connection *conn)
     /*
      * Check for incomplete packet.
      */
-    if (size > conn->request_count)
+    if (size > conn->request_size)
         return;
 
     trace("new packet of size %d (mod 8 = %d)" nl, (int) size, size % 8);
@@ -648,13 +656,11 @@ void on_request(struct connection *conn)
      * RSA decrypt.
      * +1 don't include the packet type, just the body of the packet.
      */
-    RSA_private_decrypt(
-        RSA_size(conn->rsa_key),
-        request + 1,
-        request + 1,
-        conn->rsa_key,
-        RSA_NO_PADDING
-    );
+    RSA_private_decrypt(RSA_size(conn->rsa_key),
+                        request + 1,
+                        request + 1,
+                        conn->rsa_key,
+                        RSA_NO_PADDING);
 
     byte type = 0;
     copy_memory(&type, request, sizeof(type));
@@ -685,27 +691,8 @@ void on_request(struct connection *conn)
         break;
     }
 
-    memmove(conn->request, conn->request + size, conn->request_count - size);
-    conn->request_count -= size;
-}
-
-void send_queued_packets(struct connection *conn)
-{
-    check(conn);
-
-    byte *head = conn->to_send + conn->sent;
-    u64 to_send = conn->to_send_count - conn->sent;
-
-    if (!to_send)
-        return;
-
-    trace("sending %d bytes of data" nl, (u32) to_send);
-    conn->sent += net_send(conn->socket, head, to_send);
-
-    if (conn->sent >= conn->to_send_count) {
-        conn->sent = 0;
-        conn->to_send_count = 0;
-    }
+    move_memory(conn->request, conn->request + size, conn->request_size - size);
+    conn->request_size -= size;
 }
 
 void handle_net_event(struct net_socket socket, enum net_event event, void *read, int len)
@@ -718,7 +705,9 @@ void handle_net_event(struct net_socket socket, enum net_event event, void *read
 
         if (!conn) {
             trace("no more room. can't accept new connection (will be dropped)" nl);
+
             net_close(socket);
+
             return;
         }
 
@@ -749,23 +738,26 @@ void handle_net_event(struct net_socket socket, enum net_event event, void *read
 
     case net_read: {
         trace("bytes %d received from client" nl, (s32) len);
-        copy_memory(conn->request + conn->request_count, read, len);
-        conn->request_count += len;
+        copy_memory(conn->request + conn->request_size, read, len);
+        conn->request_size += len;
         on_request(conn);
     } break;
 
-    default:
-    break;
+    default: {
+    } break;
     }
 
-    send_queued_packets(conn);
+    flush_responses(conn);
 }
 
 int main()
 {
     unsigned short port = 2106;
+
     struct net_socket server = net_port(port);
+
     trace("login server, listening for connection on port %d" nl, port);
+
     net_block_and_listen(server, handle_net_event);
 
     return 0;
