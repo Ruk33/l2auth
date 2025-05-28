@@ -517,7 +517,7 @@ void handle_server_list_request(struct connection *conn)
                               short_in_array(struct server, players)
                               short_in_array(struct server, max_players)
                               byte_in_array(struct server, status)
-                              byte_in_array(struct server, extra)
+                              int_in_array(struct server, extra)
                               byte_in_array(struct server, brackets)
                           stop_array());
 
