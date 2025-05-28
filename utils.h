@@ -1,9 +1,3 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-
 #define nl "\n"
 
 /*
@@ -24,9 +18,11 @@
 #define append(dest, src) (memcpy((dest), &(src), sizeof(src)), (dest) + sizeof(src))
 
 /*
- * In seconds.
+ * In ms.
  */
-#define minutes * 60
+#define seconds * 1000
+#define second seconds
+#define minutes * 60 * 1000
 #define minute minutes
 
 /*
@@ -60,11 +56,11 @@
 
 #define coroutine(c)                        \
     struct coroutine *__coroutine = (c);    \
-    switch (__coroutine->line)              \
+    switch (__coroutine->state)             \
         case 0:
 
 #define yield                               \
-    __coroutine->line = __COUNTER__ + 1;    \
+    __coroutine->state = __COUNTER__ + 1;   \
     break;                                  \
     case (__COUNTER__):
 
@@ -77,18 +73,18 @@
 
 typedef uint8_t byte;
 
-typedef uint8_t  u8;
+typedef  uint8_t  u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-typedef int8_t  s8;
+typedef  int8_t  s8;
 typedef int16_t s16;
 typedef int32_t s32;
 typedef int64_t s64;
 
 struct coroutine {
-    int line;
+    int state;
     float sleep;
 };
 

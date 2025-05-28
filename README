@@ -1,15 +1,15 @@
 lineage 2 server emulator for the chronicle 4 written in c just for fun.
 
 in windows, how to use?
-- update your Windows/System32/drivers/etc/hosts file to 
+- update your Windows/System32/drivers/etc/hosts file to
   include: 127.0.0.1 l2authd.lineage2.com
 - to run the login server, cd bin && login_server.exe
 - to run the game server, cd bin && game_server.exe
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
 in windows, how to build?
-- download visual studio
-- update your environment path to include the folder containing the file vcvarsall.bat
+- download zig for windows from https://ziglang.org/
+- update your environment path so zig can be used from anywhere in the terminal
 - run build.bat
 
 in linux, how to use?
@@ -19,17 +19,13 @@ in linux, how to use?
 - that's it, open your lineage 2 client and enjoy. accounts are created automatically
 
 in linux, how to build?
-- install openssl lib (sudo apt install libssl-dev)
+- install openssl lib (sudo apt install libssl-dev) and zig
 - run bash ./build.sh
 
 notes
 - the login server uses the port 2106
-- the game server will automatically use the port 7777 
+- the game server will automatically use the port 7777
 
 credits
 - l2j: https://www.l2jserver.com
 - openssl: https://www.openssl.org
-
-todo
-- add stop timer flag to stop the timer thread
-- wclose should signal instead of just setting the variable

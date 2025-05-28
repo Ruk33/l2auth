@@ -1,29 +1,35 @@
-#include "thread.h"
+struct lock {
+#ifdef _WIN32
+    CRITICAL_SECTION handle;
+#endif
 
-void run_in_thread(struct thread *thread, thread_cb *function)
+#ifdef __linux__
+    pthread_mutex_t handle;
+#endif
+};
+
+typedef int thread_cb(void *data);
+
+void thread_run(void *data, thread_cb *function)
 {
 /*
  * Windows implementation.
  */
 #ifdef _WIN32
-    InitializeCriticalSection(&thread->lock);
-
     DWORD thread_id = 0;
-    CreateThread(0, 0, (void *) function, thread, 0, &thread_id);
+    CreateThread(0, 0, (void *) function, data, 0, &thread_id);
 #endif
 
 /*
  * Linux implementation.
  */
 #ifdef __linux__
-    pthread_mutex_init(&thread->lock, 0);
-
     pthread_t thread_id = 0;
-    pthread_create(&thread_id, 0, function, thread);
+    pthread_create(&thread_id, 0, function, data);
 #endif
 }
 
-void sleep(int ms)
+void thread_sleep(int ms)
 {
 /*
  * Windows implementation.
@@ -40,36 +46,61 @@ void sleep(int ms)
 #endif
 }
 
-void lock(struct thread *thread)
+struct lock lock_init(void)
 {
 /*
- * Windows implementation.
+ * Windows implementation
  */
 #ifdef _WIN32
-    EnterCriticalSection(&thread->lock);
+    struct lock result = {0};
+
+    InitializeCriticalSection(&result.handle);
+
+    return result;
 #endif
 
 /*
- * Linux implementation.
+ * Linux implementation
  */
 #ifdef __linux__
-    pthread_mutex_lock(&thread->lock);
+    struct lock result = {0};
+
+    pthread_mutex_init(&result.handle, 0);
+
+    return result;
 #endif
 }
 
-void unlock(struct thread *thread)
+void lock(struct lock lock)
 {
 /*
  * Windows implementation.
  */
 #ifdef _WIN32
-    LeaveCriticalSection(&thread->lock);
+    EnterCriticalSection(&lock.handle);
 #endif
 
 /*
  * Linux implementation.
  */
 #ifdef __linux__
-    pthread_mutex_unlock(&thread->lock);
+    pthread_mutex_lock(&lock.handle);
+#endif
+}
+
+void unlock(struct lock lock)
+{
+/*
+ * Windows implementation.
+ */
+#ifdef _WIN32
+    LeaveCriticalSection(&lock.handle);
+#endif
+
+/*
+ * Linux implementation.
+ */
+#ifdef __linux__
+    pthread_mutex_unlock(&lock.handle);
 #endif
 }

@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #endif
 
+#include <assert.h>
 #include <stddef.h>
 #include <time.h>
 #include <stdio.h>
@@ -22,6 +23,7 @@
 
 #include "utils.h"
 #include "directory.c"
+#include "packet.c"
 
 #ifdef _WIN32
 #include "net_windows.c"
@@ -44,13 +46,13 @@ struct connection {
      * how many bytes of the entire response ("to_send_count")
      * has been already sent.
      */
-    byte to_send[8192];
+    byte to_send[8 kb];
     u64 to_send_count;
     u64 sent;
     /*
      * Buffer reserved for the request of client.
      */
-    byte request[8192];
+    byte request[8 kb];
     u64 request_count;
 
     BF_KEY blowfish;
@@ -132,16 +134,11 @@ u16 checksum(byte *dest, byte *start, byte *end)
     return final_size;
 }
 
-void encrypt_packet(struct connection *conn, byte *start, byte *end)
+void encrypt_packet(struct connection *conn, byte *packet)
 {
-    check(conn);
-    check(start);
-    check(end);
-    check(start < end);
-    check(end - start < 65535);
+    u16 size = packet_size(packet) - 2;
 
-    u16 size = (u16) (end - start);
-    for (u16 i = 0; i < size; i += 8) {
+    for (u16 i = 2; i < size; i += 8) {
         union {
             u32 ints[2];
             byte raw[sizeof(u32) * 2];
@@ -157,7 +154,7 @@ void encrypt_packet(struct connection *conn, byte *start, byte *end)
          * endian used by most computers)
          */
 
-        copy_memory(chunk.raw, start + i, sizeof(chunk.raw));
+        copy_memory(chunk.raw, packet + i, sizeof(chunk.raw));
         chunk.ints[0] = htonl(chunk.ints[0]);
         chunk.ints[1] = htonl(chunk.ints[1]);
 
@@ -165,7 +162,7 @@ void encrypt_packet(struct connection *conn, byte *start, byte *end)
 
         chunk.ints[0] = ntohl(chunk.ints[0]);
         chunk.ints[1] = ntohl(chunk.ints[1]);
-        copy_memory(start + i, chunk.raw, sizeof(chunk.raw));
+        copy_memory(packet + i, chunk.raw, sizeof(chunk.raw));
     }
 }
 
@@ -210,16 +207,18 @@ void push_init_packet(struct connection *conn)
             modulus[0x40 + i] = (byte) (modulus[0x40 + i] ^ modulus[i]);
     }
 
-    byte *start = conn->to_send + sizeof(u16);
-    byte *end = start;
-
     byte type = 0x00;
-    end = append(end, type);
-    end = append(end, init.session_id);
-    end = append(end, init.protocol);
-    end = append(end, init.modulus);
 
-    conn->to_send_count += checksum(conn->to_send, start, end);
+    byte *packet = packet(byte(type)
+                          strn2(init.session_id)
+                          strn2(init.protocol)
+                          strn2(init.modulus));
+
+    u16 size = packet_size(packet);
+
+    copy_memory(conn->to_send, packet, size);
+
+    conn->to_send_count += size;
 
     trace("sending init packet" nl);
 }
@@ -228,19 +227,22 @@ void push_ignore_gg_packet(struct connection *conn)
 {
     assert(conn);
 
-    byte *start = conn->to_send + sizeof(u16);
-    byte *end = start;
-
     byte type = 0x0b;
-    end = append(end, type);
 
     u32 ignore_gg = 0x0b;
-    end = append(end, ignore_gg);
 
-    u16 size = checksum(conn->to_send, start, end);
-    encrypt_packet(conn, start, start + size - 2);
+    byte *packet = packet(byte(type)
+                          int(ignore_gg));
+
+    u16 size = packet_size(packet);
+
+    encrypt_packet(conn, packet);
+
+    copy_memory(conn->to_send, packet, size);
 
     conn->to_send_count += size;
+
+    trace("sending ignore gg" nl);
 }
 
 void handle_auth_request(struct connection *conn, byte *request)
@@ -370,20 +372,14 @@ void handle_auth_request(struct connection *conn, byte *request)
         return;
     }
 
-    byte *start = conn->to_send + sizeof(u16);
-    byte *end = start;
-
     /*
      * Assume success login.
      */
     u8 type = 0x03;
-    end = append(end, type);
 
     RAND_bytes((byte *) &conn->login_ok1, sizeof(conn->login_ok1));
-    end = append(end, conn->login_ok1);
 
     RAND_bytes((byte *) &conn->login_ok2, sizeof(conn->login_ok2));
-    end = append(end, conn->login_ok2);
 
     byte unknown[] = {
         0x00, 0x00, 0x00, 0x00,
@@ -397,10 +393,17 @@ void handle_auth_request(struct connection *conn, byte *request)
         0x60, 0x62, 0xe0, 0x00,
         0x00, 0x00, 0x00,
     };
-    end = append(end, unknown);
 
-    u16 size = checksum(conn->to_send, start, end);
-    encrypt_packet(conn, start, start + size - 2);
+    byte *packet = packet(byte(type)
+                          int(conn->login_ok1)
+                          int(conn->login_ok2)
+                          strn2(unknown));
+
+    u16 size = packet_size(packet);
+
+    encrypt_packet(conn, packet);
+
+    copy_memory(conn->to_send, packet, size);
 
     conn->to_send_count += size;
 
@@ -491,32 +494,27 @@ void handle_server_list_request(struct connection *conn)
 
     trace("%d servers found and will be sent to the client." nl, server_count);
 
-    byte *start = conn->to_send + sizeof(u16);
-    byte *end = start;
-
     byte type = 0x04;
-    end = append(end, type);
 
-    end = append(end, server_count);
+    byte *packet = packet(byte(type)
+                          byte(server_count)
+                          byte(0)
+                          byte(servers[0].id)
+                          int(servers[0].ip)
+                          int(servers[0].port)
+                          byte(servers[0].age_limit)
+                          byte(servers[0].pvp)
+                          short(servers[0].players)
+                          short(servers[0].max_players)
+                          byte(servers[0].status)
+                          byte(servers[0].extra)
+                          byte(servers[0].brackets));
 
-    u8 unknown = 0;
-    end = append(end, unknown);
+    u16 size = packet_size(packet);
 
-    for (u8 i = 0; i < server_count; i += 1) {
-        end = append(end, servers[i].id);
-        end = append(end, servers[i].ip);
-        end = append(end, servers[i].port);
-        end = append(end, servers[i].age_limit);
-        end = append(end, servers[i].pvp);
-        end = append(end, servers[i].players);
-        end = append(end, servers[i].max_players);
-        end = append(end, servers[i].status);
-        end = append(end, servers[i].extra);
-        end = append(end, servers[i].brackets);
-    }
+    encrypt_packet(conn, packet);
 
-    u16 size = checksum(conn->to_send, start, end);
-    encrypt_packet(conn, start, start + size - 2);
+    copy_memory(conn->to_send, packet, size);
 
     conn->to_send_count += size;
 }
@@ -577,17 +575,17 @@ void handle_enter_game_server(struct connection *conn)
 
     fclose(access_file);
 
-    byte *start = conn->to_send + sizeof(u16);
-    byte *end = start;
-
     byte type = 0x07;
-    end = append(end, type);
 
-    end = append(end, conn->login_ok1);
-    end = append(end, conn->login_ok2);
+    byte *packet = packet(byte(type)
+                          int(conn->login_ok1)
+                          int(conn->login_ok2));
 
-    u16 size = checksum(conn->to_send, start, end);
-    encrypt_packet(conn, start, start + size - 2);
+    u16 size = packet_size(packet);
+
+    encrypt_packet(conn, packet);
+
+    copy_memory(conn->to_send, packet, size);
 
     conn->to_send_count += size;
 
