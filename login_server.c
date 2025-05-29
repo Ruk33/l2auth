@@ -236,9 +236,9 @@ void push_init_packet(struct connection *conn)
     byte type = 0x00;
 
     byte *packet = packet(byte(type)
-                          strn2(init.session_id)
-                          strn2(init.protocol)
-                          strn2(init.modulus));
+                          bytes2(init.session_id)
+                          bytes2(init.protocol)
+                          bytes2(init.modulus));
 
     push_response(conn, packet);
 
@@ -411,7 +411,7 @@ void handle_auth_request(struct connection *conn, byte *request)
     byte *packet = packet(byte(type)
                           int(conn->login_ok1)
                           int(conn->login_ok2)
-                          strn2(unknown));
+                          bytes2(unknown));
 
     encrypt_packet(conn, packet);
 
@@ -508,7 +508,7 @@ void handle_server_list_request(struct connection *conn)
     byte *packet = packet(byte(type)
                           byte(server_count)
                           byte(0)
-                          start_array(servers, server_count)
+                          begin_array(servers, server_count)
                               byte_in_array(struct server, id)
                               int_in_array(struct server, ip)
                               int_in_array(struct server, port)
@@ -519,7 +519,7 @@ void handle_server_list_request(struct connection *conn)
                               byte_in_array(struct server, status)
                               int_in_array(struct server, extra)
                               byte_in_array(struct server, brackets)
-                          stop_array());
+                          end_array());
 
     encrypt_packet(conn, packet);
 
@@ -536,8 +536,7 @@ void handle_enter_game_server(struct connection *conn)
     FILE *access_file = fopen(access_path, "w");
     if (!access_file) {
         trace("unable to create the file %s." nl, access_path);
-        trace("this file is used to check if a connection to a game server "
-              "actually went through the login server successfully." nl);
+        trace("this file is used to check if a connection to a game server actually went through the login server successfully." nl);
         trace("the connection with %s will be dropped" nl, conn->username);
 
         drop_connection(conn);
@@ -756,7 +755,7 @@ int main()
 
     struct net_socket server = net_port(port);
 
-    trace("login server, listening for connection on port %d" nl, port);
+    trace("login server, listening for connections on port %d" nl, port);
 
     net_block_and_listen(server, handle_net_event);
 

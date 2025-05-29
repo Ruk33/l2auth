@@ -13,11 +13,11 @@
 #define str(x) \
     "", "%s", (x), ""
 
-#define strn(x, n) \
-    "", "%*s", (x), (long long) (n), ""
+#define bytes(x, n) \
+    "", "%*s", (x), (u64) (n), ""
 
-#define strn2(x) \
-    strn((x), sizeof(x))
+#define bytes2(x) \
+    bytes((x), sizeof(x))
 
 #define packet(...) \
     packet_(__VA_ARGS__, 0)
@@ -25,11 +25,20 @@
 #define offset_of(type, field) \
     offsetof(type, field)
 
-#define start_array(variable, times) \
+#define begin_array(variable, times) \
     "", "%a", (byte *) (variable), (int) (times), ""
 
-#define stop_array() \
+#define end_array() \
     "", "%A", ""
+
+#define str_in_array(type, field) \
+    "", "%s", (u64) sizeof(type), offset_of(type, field), ""
+
+#define bytes_in_array(type, field, n) \
+    "", "%*s", (u64) sizeof(type), offset_of(type, field), (u64) (n), ""
+
+#define bytes2_in_array(type, field) \
+    strn_in_array(type, field, sizeof(((type *) 0)->field))
 
 #define byte_in_array(type, field) \
     "", "%b", (u64) sizeof(type), offset_of(type, field), ""
@@ -41,7 +50,7 @@
     "", "%d", (u64) sizeof(type), offset_of(type, field), ""
 
 #define long_in_array(type, field) \
-    "", "%ld", sizeof(type), offset_of((type), (field)), ""
+    "", "%ld", sizeof(type), offset_of(type, field), ""
 
 struct variable {
     union {
@@ -52,7 +61,15 @@ struct variable {
         u64 _long;
         struct fixed_bytes { byte *buf; int size; } bytes;
     } value;
-    int type;
+    enum variable_type {
+        string_type,
+        byte_type,
+        short_type,
+        int_type,
+        long_type,
+        fixed_bytes_type,
+        null_type,
+    } type;
 };
 
 void packet_with_variables(byte *dest, struct variable *variable)
@@ -63,41 +80,42 @@ void packet_with_variables(byte *dest, struct variable *variable)
 
     while (!completed) {
         switch (variable->type) {
-        // string
-        case 0: {
+        case string_type: {
             int size = string_size(variable->value.string);
             copy_memory(tail, variable->value.string, size);
             tail += size;
         } break;
-        // byte
-        case 1: {
+
+        case byte_type: {
             *tail++ = variable->value._char;
         } break;
-        // short
-        case 2: {
+
+        case short_type: {
             int size = sizeof(variable->value._short);
             copy_memory(tail, &variable->value._short, size);
             tail += size;
         } break;
-        // int
-        case 3: {
+
+        case int_type: {
             int size = sizeof(variable->value._int);
             copy_memory(tail, &variable->value._int, size);
             tail += size;
         } break;
-        // long
-        case 4: {
+
+        case long_type: {
             int size = sizeof(variable->value._long);
             copy_memory(tail, &variable->value._long, size);
             tail += size;
         } break;
-        // bytes
-        case 5: {
+
+        case fixed_bytes_type: {
             copy_memory(tail,
                         variable->value.bytes.buf,
                         variable->value.bytes.size);
             tail += variable->value.bytes.size;
         } break;
+
+        case null_type:
         default: {
             completed = 1;
         } break;
@@ -132,6 +150,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
 
             u64 offsets[16] = {0};
             char *formats[16] = {0};
+            u64 sizes[16] = {0};
             u32 fields = 0;
 
             while (!(fmt[0] == '%' && fmt[1] == 'A')) {
@@ -155,6 +174,17 @@ void packet_va(byte *dest, char *fmt, va_list va)
                     offsets[fields] = va_arg(va, u64);
                     formats[fields] = fmt;
                     fields++;
+                } else if (fmt[0] == '%' && fmt[1] == 's') {
+                    stride = va_arg(va, u64);
+                    offsets[fields] = va_arg(va, u64);
+                    formats[fields] = fmt;
+                    fields++;
+                } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
+                    stride = va_arg(va, u64);
+                    offsets[fields] = va_arg(va, u64);
+                    formats[fields] = fmt;
+                    sizes[fields]   = va_arg(va, u64);
+                    fields++;
                 }
 
                 fmt = va_arg(va, char *);
@@ -170,28 +200,41 @@ void packet_va(byte *dest, char *fmt, va_list va)
                         copy_memory(&value, variable + offset, sizeof(value));
                         variables[variable_count++] = (struct variable) {
                             .value._char = value,
-                            .type = 1,
+                            .type = byte_type,
                         };
                     } else if (fmt[0] == '%' && fmt[1] == 'h') {
                         u16 value = 0;
                         copy_memory(&value, variable + offset, sizeof(value));
                         variables[variable_count++] = (struct variable) {
                             .value._short = value,
-                            .type = 2,
+                            .type = short_type,
                         };
                     } else if (fmt[0] == '%' && fmt[1] == 'd') {
                         u32 value = 0;
                         copy_memory(&value, variable + offset, sizeof(value));
                         variables[variable_count++] = (struct variable) {
                             .value._int = value,
-                            .type = 3,
+                            .type = int_type,
                         };
                     } else if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'd') {
                         u64 value = 0;
                         copy_memory(&value, variable + offset, sizeof(value));
                         variables[variable_count++] = (struct variable) {
                             .value._long = value,
-                            .type = 4,
+                            .type = long_type,
+                        };
+                    } else if (fmt[0] == '%' && fmt[1] == 's') {
+                        char *value = (char *) (variable + offset);
+                        variables[variable_count++] = (struct variable) {
+                            .value.string = value,
+                            .type = string_type,
+                        };
+                    } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
+                        byte *value = variable + offset;
+                        u64 size = sizes[n];
+                        variables[variable_count++] = (struct variable) {
+                            .value.bytes = { .buf = value, .size = size, },
+                            .type = fixed_bytes_type,
                         };
                     }
                 }
@@ -201,7 +244,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
 
             variables[variable_count++] = (struct variable) {
                 .value.string = value,
-                .type = 0,
+                .type = string_type,
             };
         } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
         	byte *value = va_arg(va, byte *);
@@ -209,35 +252,35 @@ void packet_va(byte *dest, char *fmt, va_list va)
 
             variables[variable_count++] = (struct variable) {
                 .value.bytes = { .buf = value, .size = size, },
-                .type = 5,
+                .type = fixed_bytes_type,
             };
         } else if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'd') {
         	u64 value = va_arg(va, long long);
 
             variables[variable_count++] = (struct variable) {
                 .value._long = value,
-                .type = 4,
+                .type = long_type,
             };
         } else if (fmt[0] == '%' && fmt[1] == 'd') {
         	u32 value = va_arg(va, int);
 
             variables[variable_count++] = (struct variable) {
                 .value._int = value,
-                .type = 3,
+                .type = int_type,
             };
         } else if (fmt[0] == '%' && fmt[1] == 'h') {
         	u16 value = va_arg(va, int);
 
             variables[variable_count++] = (struct variable) {
                 .value._short = value,
-                .type = 2,
+                .type = short_type,
             };
         } else if (fmt[0] == '%' && fmt[1] == 'b') {
         	byte value = va_arg(va, int);
 
             variables[variable_count++] = (struct variable) {
                 .value._char = value,
-                .type = 1,
+                .type = byte_type,
             };
         }
 
@@ -246,7 +289,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
 
     variables[variable_count++] = (struct variable) {
         .value.string = 0,
-        .type = -1,
+        .type = null_type,
     };
 
     packet_with_variables(dest, variables);
