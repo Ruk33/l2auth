@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "utils.c"
-#include "thread.c"
+#include "packet.c"
 
 #ifdef _WIN32
 #include "net_windows.c"
@@ -21,20 +21,20 @@
 struct connection {
     struct net_socket socket;
 
+    int is_encrypted;
+
     byte encrypt_key[8];
     byte decrypt_key[8];
 
-    byte to_send[8 kb];
-    byte request[8 kb];
+    byte response_buffer[8 kb];
+    byte request_buffer[8 kb];
 
-    int to_send_size;
-    int request_size;
+    u32 response_size;
+    u32 request_size;
 };
 
 struct state {
     struct connection connections[1024];
-
-    struct lock lock;
 };
 
 void init(byte **memory)
@@ -45,70 +45,111 @@ void init(byte **memory)
 
     *memory = get_memory(memory_to_allocate);
 
-    struct state *state = *(struct state **) memory;
-
-    state->lock = lock_init();
-
-    trace("init executed" nl);
+    trace("game server initialized" nl);
 }
 
-void push_packet(struct connection *connection, byte *end_of_packet, int encrypt)
+void drop_connection(struct connection *connection)
 {
-    byte *start_of_packet = connection->to_send;
+    net_close(connection->socket);
+    connection->socket = (struct net_socket) {0};
+}
 
-    u16 size = (u16) (end_of_packet - start_of_packet);
+void flush_responses(struct connection *connection)
+{
+    if (!connection->response_size)
+        return;
 
-    connection->to_send_size += size;
+    trace("flushing %d bytes of data" nl, connection->response_size);
 
-    if (size > 1)
-        size -= 2;
+    int sent = net_send(connection->socket,
+                        connection->response_buffer,
+                        connection->response_size);
 
-    if (encrypt) {
-        byte *body = start_of_packet + 2;
+    trace("flushed %d bytes of data (%d bytes remaining)" nl,
+          sent,
+          connection->response_size - sent);
 
-        u32 temp = 0;
-        u32 temp2 = 0;
-        for (u16 i = 0; i < size; i++) {
-            temp2 = body[i] & 0xff;
-            body[i] = (byte) (temp2 ^ connection->encrypt_key[i & 7] ^ temp);
-            temp = body[i];
+    connection->response_size -= sent;
+
+    move_memory(connection->response_buffer,
+                connection->response_buffer + sent,
+                connection->response_size);
+}
+
+void push_response(struct connection *connection, byte *packet)
+{
+    u16 size = packet_size(packet);
+
+    u64 response_buffer_size = sizeof(connection->response_buffer);
+
+    /*
+     * Try flushing packets if there is no more room in the queue.
+     */
+    if (connection->response_size + size > response_buffer_size) {
+        flush_responses(connection);
+
+        /*
+         * If we can't flush and make room for more packets, we will have to
+         * drop the client.
+         */
+        if (connection->response_size + size > response_buffer_size) {
+            trace("there is no more room to queue packets for this client. the client will be dropped." nl);
+
+            drop_connection(connection);
+
+            return;
         }
-
-        u32 old = ((u32) connection->encrypt_key[0] & 0xff);
-        old |= ((u32) connection->encrypt_key[1] << 8 & 0xff00);
-        old |= ((u32) connection->encrypt_key[2] << 0x10 & 0xff0000);
-        old |= ((u32) connection->encrypt_key[3] << 0x18 & 0xff000000);
-
-        old += size;
-
-        connection->encrypt_key[0] = (byte) (old & 0xff);
-        connection->encrypt_key[1] = (byte) (old >> 0x08 & 0xff);
-        connection->encrypt_key[2] = (byte) (old >> 0x10 & 0xff);
-        connection->encrypt_key[3] = (byte) (old >> 0x18 & 0xff);
     }
 
-    copy_memory(start_of_packet, &size, sizeof(size));
+    copy_memory(connection->response_buffer + connection->response_size,
+                packet,
+                size);
+
+    connection->response_size += size;
 }
 
-void decrypt(struct connection *conn, byte *request)
+void encrypt_packet(struct connection *connection, byte *packet)
 {
-    check(conn);
-    check(request);
+    u16 size = packet_size(packet);
 
-    u16 size = *(u16 *) request;
-    if (size > 1)
-        size -= 2;
-
-    byte *body = request + 2;
-    u32 temp = 0;
+    u32 temp  = 0;
     u32 temp2 = 0;
-    for (u16 i = 0; i < size; i++) {
-        temp2 = body[i];
-        body[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
-        temp = temp2;
+
+    for (u16 i = 2; i < size - 2; i++) {
+        temp2     = packet[i] & 0xff;
+        packet[i] = (byte) (temp2 ^ connection->encrypt_key[i & 7] ^ temp);
+        temp      = packet[i];
     }
 
-    u32 old = conn->decrypt_key[0] & 0xff;
+    u32 old = 0;
+    old  = ((u32) connection->encrypt_key[0] & 0xff);
+    old |= ((u32) connection->encrypt_key[1] << 8 & 0xff00);
+    old |= ((u32) connection->encrypt_key[2] << 0x10 & 0xff0000);
+    old |= ((u32) connection->encrypt_key[3] << 0x18 & 0xff000000);
+
+    old += size;
+
+    connection->encrypt_key[0] = (byte) (old & 0xff);
+    connection->encrypt_key[1] = (byte) (old >> 0x08 & 0xff);
+    connection->encrypt_key[2] = (byte) (old >> 0x10 & 0xff);
+    connection->encrypt_key[3] = (byte) (old >> 0x18 & 0xff);
+}
+
+void decrypt_packet(struct connection *conn, byte *request)
+{
+    u16 size = packet_size(request);
+
+    u32 temp  = 0;
+    u32 temp2 = 0;
+
+    for (u16 i = 2; i < size - 2; i++) {
+        temp2      = request[i];
+        request[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
+        temp       = temp2;
+    }
+
+    u32 old = 0;
+    old  = conn->decrypt_key[0] & 0xff;
     old |= conn->decrypt_key[1] << 8 & 0xff00;
     old |= conn->decrypt_key[2] << 0x10 & 0xff0000;
     old |= conn->decrypt_key[3] << 0x18 & 0xff000000;
@@ -119,11 +160,6 @@ void decrypt(struct connection *conn, byte *request)
     conn->decrypt_key[1] = (byte) (old >> 0x08 & 0xff);
     conn->decrypt_key[2] = (byte) (old >> 0x10 & 0xff);
     conn->decrypt_key[3] = (byte) (old >> 0x18 & 0xff);
-}
-
-byte *new_packet(struct connection *connection)
-{
-    return connection->to_send + connection->to_send_size + sizeof(u16);
 }
 
 struct connection *find_connection(struct state *state, struct net_socket socket)
@@ -149,52 +185,49 @@ struct connection *find_connection(struct state *state, struct net_socket socket
     return 0;
 }
 
-void push_protocol(struct connection *connection)
+void push_protocol_packet(struct connection *connection)
 {
     byte type = 0x00;
 
     byte protocol[] = {
         0x01,
+        connection->encrypt_key[0],
+        connection->encrypt_key[1],
+        connection->encrypt_key[2],
+        connection->encrypt_key[3],
+        connection->encrypt_key[4],
+        connection->encrypt_key[5],
+        connection->encrypt_key[6],
+        connection->encrypt_key[7],
         // crypt key
-        0x94,
-        0x35,
-        0x00,
-        0x00,
-        0xa1,
-        0x6c,
-        0x54,
-        0x87,
+        // 0x94,
+        // 0x35,
+        // 0x00,
+        // 0x00,
+        // 0xa1,
+        // 0x6c,
+        // 0x54,
+        // 0x87,
     };
 
-    byte *packet = new_packet(connection);
-    byte *tail = packet;
+    byte *packet = packet(byte(type)
+                          bytes2(protocol));
 
-    tail = append(tail, type);
-    tail = append(tail, protocol);
+    // encrypt_packet(connection, packet);
 
-    push_packet(connection, tail, 0);
-}
+    push_response(connection, packet);
 
-void flush_packets(struct connection *connection)
-{
-    if (!connection->to_send_size) {
-        trace("nothing to send?" nl);
-        return;
-    }
-
-    trace("sending %d bytes of data" nl, connection->to_send_size);
-    int sent = net_send(connection->socket, connection->to_send, connection->to_send_size);
-
-    connection->to_send_size -= sent;
-    memmove(connection->to_send, connection->to_send + sent, connection->to_send_size);
+    trace("sending protocol packet" nl);
 }
 
 void try_handling_request(struct connection *connection)
 {
-    byte *request = connection->request;
+    if (!connection->request_size)
+        return;
 
-    u16 size = 0;
-    copy_memory(&size, request, sizeof(size));
+    byte *request = connection->request_buffer;
+
+    u16 size = packet_size(request);
 
     /*
      * Check for incomplete packet.
@@ -202,7 +235,31 @@ void try_handling_request(struct connection *connection)
     if (size > connection->request_size)
         return;
 
-    trace("here you need to handle a packet of type x" nl);
+    if (connection->is_encrypted)
+        decrypt_packet(connection, request);
+
+    u8 type = packet_type(request);
+
+    trace("here you need to handle a packet of type: %d" nl,
+          (int) type);
+
+    switch (type) {
+    case 0x00:
+        connection->is_encrypted = 1;
+        push_protocol_packet(connection);
+        break;
+    default:
+        trace("ok, no more implementations." nl);
+        break;
+    }
+
+    move_memory(connection->request_buffer,
+                connection->request_buffer + size,
+                sizeof(connection->request_buffer) - size);
+
+    connection->request_size -= size;
+
+    try_handling_request(connection);
 }
 
 void handle_request(byte **memory, struct net_socket socket, enum net_event event, byte *read, int len)
@@ -223,12 +280,11 @@ void handle_request(byte **memory, struct net_socket socket, enum net_event even
 
             trace("connection accepted, will send the init packet." nl);
 
+            connection->socket = socket;
+
             byte key[] = {0x94, 0x35, 0x00, 0x00, 0xa1, 0x6c, 0x54, 0x87};
             copy_memory(connection->encrypt_key, key, sizeof(key));
             copy_memory(connection->decrypt_key, key, sizeof(key));
-
-            push_protocol(connection);
-            flush_packets(connection);
         } break;
 
         case net_closed: {
@@ -246,14 +302,21 @@ void handle_request(byte **memory, struct net_socket socket, enum net_event even
             if (!connection)
                 return;
 
-            // lock(state->lock);
+            // TODO:
+            // we need to make sure we don't read exceeding the buf size.
+            // we could perform a loop, so we handle, make room, and then
+            // continue handling the rest. if there is no more space,
+            // drop the connection.
 
-            copy_memory(connection->request + connection->request_size, read, len);
+            copy_memory(connection->request_buffer + connection->request_size,
+                        read,
+                        len);
+
             connection->request_size += len;
 
             try_handling_request(connection);
 
-            // unlock(state->lock);
+            flush_responses(connection);
         } break;
     }
 }

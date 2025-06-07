@@ -16,7 +16,6 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -24,7 +23,6 @@
 
 #include "utils.c"
 #include "library.c"
-#include "thread.c"
 
 #ifdef _WIN32
 #include "net_windows.c"
@@ -35,67 +33,42 @@
 #endif
 
 typedef void init_cb(byte **memory);
-
 typedef void update_cb(byte **memory);
-
 typedef void handle_request_cb(byte **memory, struct net_socket socket, enum net_event event, byte *read, int size);
-
-static struct library library = {0};
 
 static byte *memory = 0;
 
+static struct library library = {0};
 static init_cb *init_from_library = 0;
-
 static update_cb *update_from_library = 0;
-
 static handle_request_cb *handle_net_request_in_library = 0;
 
 void net_request_handler(struct net_socket socket, enum net_event event, void *read, int bytes)
 {
+    load_library(&library, "game_server_lib.dll");
+    update_from_library = (update_cb *) load_function(&library, "update");
+    handle_net_request_in_library = (handle_request_cb *) load_function(&library, "handle_request");
+
     handle_net_request_in_library(&memory, socket, event, read, bytes);
-}
-
-int net_thread_loop()
-{
-    trace("listening for requests in port 7777" nl);
-
-    struct net_socket socket = net_port(7777);
-
-    net_block_and_listen(socket, net_request_handler);
-
-    return 0;
+    update_from_library(&memory);
 }
 
 int main()
 {
-    trace("starting game server" nl);
+    int port = 7777;
 
-    load_library(&library, "game_server.dll");
+    trace("starting game server in port %d" nl, port);
 
+    load_library(&library, "game_server_lib.dll");
     init_from_library = (init_cb *) load_function(&library, "init");
-
     update_from_library = (update_cb *) load_function(&library, "update");
-
     handle_net_request_in_library = (handle_request_cb *) load_function(&library, "handle_request");
 
     init_from_library(&memory);
 
-    thread_run(0, net_thread_loop);
+    struct net_socket socket = net_port(port);
 
-    while (1) {
-        load_library(&library, "game_server_lib.dll");
-
-        update_from_library = (update_cb *) load_function(&library, "update");
-
-        handle_net_request_in_library = (handle_request_cb *) load_function(&library, "handle_request");
-
-        /*
-         * ~60fps
-         */
-        thread_sleep(16);
-
-        update_from_library(&memory);
-    }
+    net_block_and_listen(socket, net_request_handler);
 
     return 0;
 }

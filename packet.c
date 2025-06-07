@@ -8,13 +8,13 @@
     "", "%d", (int) (x), ""
 
 #define long(x) \
-    "", "%ld", (long long) (x), ""
+    "", "%D", (long long) (x), ""
 
 #define str(x) \
     "", "%s", (x), ""
 
 #define bytes(x, n) \
-    "", "%*s", (x), (u64) (n), ""
+    "", "%S", (x), (u64) (n), ""
 
 #define bytes2(x) \
     bytes((x), sizeof(x))
@@ -35,7 +35,7 @@
     "", "%s", (u64) sizeof(type), offset_of(type, field), ""
 
 #define bytes_in_array(type, field, n) \
-    "", "%*s", (u64) sizeof(type), offset_of(type, field), (u64) (n), ""
+    "", "%S", (u64) sizeof(type), offset_of(type, field), (u64) (n), ""
 
 #define bytes2_in_array(type, field) \
     strn_in_array(type, field, sizeof(((type *) 0)->field))
@@ -50,7 +50,7 @@
     "", "%d", (u64) sizeof(type), offset_of(type, field), ""
 
 #define long_in_array(type, field) \
-    "", "%ld", sizeof(type), offset_of(type, field), ""
+    "", "%D", sizeof(type), offset_of(type, field), ""
 
 struct variable {
     union {
@@ -169,7 +169,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                     offsets[fields] = va_arg(va, u64);
                     formats[fields] = fmt;
                     fields++;
-                } else if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'd') {
+                } else if (fmt[0] == '%' && fmt[1] == 'D') {
                     stride = va_arg(va, u64);
                     offsets[fields] = va_arg(va, u64);
                     formats[fields] = fmt;
@@ -179,7 +179,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                     offsets[fields] = va_arg(va, u64);
                     formats[fields] = fmt;
                     fields++;
-                } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
+                } else if (fmt[0] == '%' && fmt[1] == 'S') {
                     stride = va_arg(va, u64);
                     offsets[fields] = va_arg(va, u64);
                     formats[fields] = fmt;
@@ -216,7 +216,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                             .value._int = value,
                             .type = int_type,
                         };
-                    } else if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'd') {
+                    } else if (fmt[0] == '%' && fmt[1] == 'D') {
                         u64 value = 0;
                         copy_memory(&value, variable + offset, sizeof(value));
                         variables[variable_count++] = (struct variable) {
@@ -229,7 +229,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                             .value.string = value,
                             .type = string_type,
                         };
-                    } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
+                    } else if (fmt[0] == '%' && fmt[1] == 'S') {
                         byte *value = variable + offset;
                         u64 size = sizes[n];
                         variables[variable_count++] = (struct variable) {
@@ -246,7 +246,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                 .value.string = value,
                 .type = string_type,
             };
-        } else if (fmt[0] == '%' && fmt[1] == '*' && fmt[2] == 's') {
+        } else if (fmt[0] == '%' && fmt[1] == 'S') {
         	byte *value = va_arg(va, byte *);
         	u64 size = va_arg(va, u64);
 
@@ -254,7 +254,7 @@ void packet_va(byte *dest, char *fmt, va_list va)
                 .value.bytes = { .buf = value, .size = size, },
                 .type = fixed_bytes_type,
             };
-        } else if (fmt[0] == '%' && fmt[1] == 'l' && fmt[2] == 'd') {
+        } else if (fmt[0] == '%' && fmt[1] == 'D') {
         	u64 value = va_arg(va, long long);
 
             variables[variable_count++] = (struct variable) {
@@ -312,4 +312,9 @@ u16 packet_size(byte *packet)
 	u16 size = 0;
 	copy_memory(&size, packet, sizeof(size));
 	return size;
+}
+
+u8 packet_type(byte *packet)
+{
+    return packet[2] & 0xff;
 }
