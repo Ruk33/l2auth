@@ -115,10 +115,12 @@ void encrypt_packet(struct connection *connection, byte *packet)
     u32 temp  = 0;
     u32 temp2 = 0;
 
-    for (u16 i = 2; i < size - 2; i++) {
-        temp2     = packet[i] & 0xff;
-        packet[i] = (byte) (temp2 ^ connection->encrypt_key[i & 7] ^ temp);
-        temp      = packet[i];
+    byte *body = packet + 2;
+
+    for (u16 i = 0; i < size - 2; i++) {
+        temp2   = body[i] & 0xff;
+        body[i] = (byte) (temp2 ^ connection->encrypt_key[i & 7] ^ temp);
+        temp    = body[i];
     }
 
     u32 old = 0;
@@ -142,10 +144,12 @@ void decrypt_packet(struct connection *conn, byte *request)
     u32 temp  = 0;
     u32 temp2 = 0;
 
-    for (u16 i = 2; i < size - 2; i++) {
-        temp2      = request[i];
-        request[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
-        temp       = temp2;
+    byte *body = request + 2;
+
+    for (u16 i = 0; i < size - 2; i++) {
+        temp2   = body[i];
+        body[i] = (byte) (temp2 ^ conn->decrypt_key[i & 7] ^ temp);
+        temp    = temp2;
     }
 
     u32 old = 0;
