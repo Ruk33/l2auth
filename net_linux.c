@@ -22,24 +22,24 @@ int net_port(unsigned short port)
     int server = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (server == -1)
         goto abort;
-    
+
     int reuse = 1;
     if (setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
         goto abort;
-    
+
     struct sockaddr_in address = {0};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
-    
+
     if (bind(server, (struct sockaddr *) &address, sizeof(address)) == -1)
         goto abort;
-    
+
     if (listen(server, SOMAXCONN) == -1)
         goto abort;
-    
+
     return server;
-    
+
     abort:
     print_err("net_port");
     close(server);
@@ -49,37 +49,37 @@ int net_port(unsigned short port)
 void net_listen(int server, net_handler *handler)
 {
     static struct epoll_event events[32] = {0};
-    static unsigned char read_buf[8192] = {0};
-    
+    static unsigned char read_buf[65535] = {0};
+
     if (!handler) {
         printf("net error: no socket request handler provided.\n");
         return;
     }
-    
+
     int epoll_fd = 0;
     struct epoll_event event = {0};
     int ev_count = 0;
-    
+
     epoll_fd = epoll_create1(0);
     if (epoll_fd == -1)
         goto abort;
-    
+
     event.data.fd = server;
     event.events = EPOLLIN | EPOLLET;
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server, &event) == -1)
         goto abort;
-    
+
     while (1) {
         ev_count = epoll_wait(epoll_fd, events, sizeof(events) / sizeof(*events), -1);
         if (ev_count == -1)
             goto abort;
-        
+
         for (int i = 0; i < ev_count; i += 1) {
             // only read and write, ignore the rest.
             if (!(events[i].events & EPOLLIN) &&
                 !(events[i].events & EPOLLOUT))
                 continue;
-            
+
             // server
             if (events[i].data.fd == server) {
                 while (1) {
@@ -101,7 +101,7 @@ void net_listen(int server, net_handler *handler)
                 }
                 continue;
             }
-            
+
             // clients.
             if (events[i].events & EPOLLIN) {
                 while (1) {
@@ -122,7 +122,7 @@ void net_listen(int server, net_handler *handler)
             }
         }
     }
-    
+
     abort:
     print_err("net_listen");
     close(epoll_fd);

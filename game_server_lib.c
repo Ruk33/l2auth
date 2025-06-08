@@ -203,21 +203,10 @@ void push_protocol_packet(struct connection *connection)
         connection->encrypt_key[5],
         connection->encrypt_key[6],
         connection->encrypt_key[7],
-        // crypt key
-        // 0x94,
-        // 0x35,
-        // 0x00,
-        // 0x00,
-        // 0xa1,
-        // 0x6c,
-        // 0x54,
-        // 0x87,
     };
 
     byte *packet = packet(byte(type)
                           bytes2(protocol));
-
-    // encrypt_packet(connection, packet);
 
     push_response(connection, packet);
 

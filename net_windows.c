@@ -61,7 +61,7 @@ void net_block_and_listen(struct net_socket server, net_handler *handler)
 {
     #define max_clients 1024
     static SOCKET clients[max_clients];
-    static unsigned char read_buf[8192] = {0};
+    static unsigned char read_buf[65535] = {0};
 
     SOCKET highest = 0;
 
